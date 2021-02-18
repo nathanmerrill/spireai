@@ -23,28 +23,42 @@ pub enum CardClass {
     Curse,
 }
 
-pub enum CardEffect {
-    Block(i32),
-    CustomBlock(fn(&GameCard, &GameState) -> i32),
+pub enum Effect {
+    Block(i32, EffectTarget),
+    
+    Damage(i32, EffectTarget),
+    DamageIfFatal(i32, EffectTarget, Vec<Effect>)
 
-    Damage(i32),
-    RandomTargetDamage(i32),
-    AoeDamage(i32),
-    CustomDamage(fn(&GameCard, &GameState) -> i32),
-
-    TargetStatus(Status, i32),
-    SelfStatus(Status, i32),
-    AoeStatus(Status, i32),
+    Status(Status, i32, EffectTarget),
 
     Draw(i32),
-    LoseHp(i32),
     AddEnergy(i32),
     IncreaseMaxHp(i32),
-    IfTargetStatus(Status, Vec<CardEffect>),
-    IfTargetAttacking(Vec<CardEffect>),
-    IfDamageFatal(i32, Vec<CardEffect>),
+    LoseHp(i32, EffectTarget),
+
+    IfStatus(EffectTarget, Status, Vec<Effect>)
+    IfAttacking(EffectTarget, Vec<Effect>)    
     
-    PlayableIf(fn(&GameCard, &GameState) -> bool),
+    CustomAction(fn(&GameAction, &GameState) -> GamePossibilitySet),
+}
+
+pub enum EffectTarget {
+    Player,
+    RandomEnemy,
+    TargetEnemy,
+    AllEnemies,
+}
+
+pub enum CardEffect {
+    OnPlay(Effect),
+    OnDraw(Effect),
+    OnDiscard(Effect),
+
+    CustomBlock(fn(&GameCard, &GameState) -> i32, EffectTarget),
+    CustomDamage(fn(&GameCard, &GameState) -> i32, EffectTarget),
+    CustomStatus(Status, fn(&GameCard, &GameState) -> i32, EffectTarget),
+    PlayableIf(fn(&GameCard, &GameState) -> bool)
+    
     Ethereal,
     Exhaust,
     Innate,
@@ -52,7 +66,6 @@ pub enum CardEffect {
     RepeatX(Vec<CardEffect>),
     
     CustomCost(fn(&GameCard, &GameState) -> i32),
-    CustomAction(fn(&GameAction, &GameState) -> GamePossibilitySet),
 
     ExhaustCard(CardReference),
     AddCard{
