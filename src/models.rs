@@ -1,5 +1,8 @@
 use serde::{Deserialize};
 pub mod cards;
+pub mod statuses;
+pub mod relics;
+pub mod effects;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all="SCREAMING_SNAKE_CASE")]

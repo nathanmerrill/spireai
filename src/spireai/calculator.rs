@@ -2,6 +2,7 @@ use crate::models;
 
 use models::GameState;
 use models::cards;
+use models::cards::*;
 
 struct GamePossibility {
     probability: f64,
@@ -46,44 +47,55 @@ pub fn clash_playable(card: &GameCard, state: &GameState) -> bool {
     return state.combat_state.unwrap().hand.iter().all(|a| a.card_type == models::CardType::Attack)
 }
 
-// Calculations
+pub fn damage(amount: i32, target: Option<i32>, state: &GameState) -> GamePossibilitySet {
 
-pub fn body_slam_damage(card: &GameCard, state: &GameState) -> i32 {
-    return state.combat_state.unwrap().player.block
 }
 
-pub fn heavy_blade_damage(card: &GameCard, state: &GameState) -> i32 {
+pub fn block(amount: i32, state: &GameState) -> GamePossibilitySet {
+
+}
+
+
+pub fn body_slam_damage(action: &GameAction, state: &GameState) -> GamePossibilitySet {
+    return damage(state.combat_state.unwrap().player.block, action.target, state)
+}
+
+pub fn heavy_blade_damage(action: &GameAction, state: &GameState) -> GamePossibilitySet {
     let strength: i32 = state.combat_state.unwrap().player.powers.iter().find(|a| a.id == "Strength".to_string()).map(|a| a.amount).unwrap_or(0);
-    if card.upgrades == 0 {
-        return 14 + 2*strength
+    let amount = 14 + (if action.card.upgrades == 0 {
+        2*strength
     } else {
-        return 14 + 4*strength
-    }
+        4*strength
+    })*strength;
+
+    return damage(amount, action.target, state);
 }
 
-pub fn perfected_strike_damage(card: &GameCard, state: &GameState) -> i32 {
+pub fn perfected_strike_damage(action: &GameAction, state: &GameState) -> GamePossibilitySet {
     let combat_state = state.combat_state.unwrap();
     let num_strikes = 
         (combat_state.discard_pile.iter().filter(|a| a.id.contains("Strike")).count() + 
         combat_state.hand.iter().filter(|a| a.id.contains("Strike")).count() + 
         combat_state.draw_pile.iter().filter(|a| a.id.contains("Strike")).count()) as i32;
 
-    if card.upgrades == 0 {
-        return 6 + 2*num_strikes
+    let amount = 6 + (if action.card.upgrades == 0 {
+        2*num_strikes
     } else {
-        return 6 + 3*num_strikes
-    }    
+        3*num_strikes
+    });
+
+    return damage(amount, action.target, state);
 }
 
 pub fn blood_for_blood_cost(card: &GameCard, state: &GameState) -> i32 {
     card.base_card.cost;
 }
 
-pub fn entrench_block(card: &GameCard, state: &GameState) -> i32 {
-    
+pub fn entrench_block(action: &GameAction, state: &GameState)-> GamePossibilitySet {
+    return block(state.combat_state.unwrap().player.block, state);
 }
 
-pub fn searing_blow_damage(card: &GameCard, state: &GameState) -> i32 {
+pub fn searing_blow_damage(action: &GameAction, state: &GameState) -> GamePossibilitySet {
     
 }
 
