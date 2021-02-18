@@ -100,19 +100,19 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
     BaseCard {
         name: STRIKE,
         rarity: CardRarity::Starter,
-        effects: vec![OnPlay(Damage(6, TargetEnemy))],
-        on_upgrade: OnUpgrade::SetEffects(vec![OnPlay(Damage(9, TargetEnemy))]),
+        effects: vec![OnPlay(AttackDamage(6, TargetEnemy))],
+        on_upgrade: OnUpgrade::SetEffects(vec![OnPlay(AttackDamage(9, TargetEnemy))]),
         ..BaseCard::default(CardClass::All, CardType::Attack)
     },
     BaseCard {
         name: BASH,
         rarity: CardRarity::Starter,
         effects: vec![
-            OnPlay(Damage(8, TargetEnemy)), 
+            OnPlay(AttackDamage(8, TargetEnemy)), 
             OnPlay(SetStatus(statuses::VULNERABLE, 2, TargetEnemy)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(10, TargetEnemy)), 
+            OnPlay(AttackDamage(10, TargetEnemy)), 
             OnPlay(SetStatus(statuses::VULNERABLE, 3, TargetEnemy)),
         ]),
         cost: 2,
@@ -121,7 +121,7 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
     BaseCard {
         name: ANGER,
         effects: vec![
-            OnPlay(Damage(6, TargetEnemy)),
+            OnPlay(AttackDamage(6, TargetEnemy)),
             OnPlay(AddCard{
                 card: CardReference::CopyOf(CardLocation::This), 
                 destination: DiscardPile(RelativePosition::Bottom), 
@@ -130,7 +130,7 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
             })
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(8, TargetEnemy)), 
+            OnPlay(AttackDamage(8, TargetEnemy)), 
             OnPlay(AddCard{
                 card: CardReference::CopyOf(CardLocation::This), 
                 destination: DiscardPile(RelativePosition::Bottom), 
@@ -148,7 +148,7 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
             OnPlay(UpgradeCard(PlayerHand(RelativePosition::Random))),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(8, TargetEnemy)), 
+            OnPlay(AttackDamage(8, TargetEnemy)), 
             OnPlay(UpgradeCard(PlayerHand(RelativePosition::All))),
         ]),
         ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
@@ -165,11 +165,11 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         name: CLASH,
         effects: vec![
             PlayableIf(calculator::clash_playable),
-            OnPlay(Damage(14, TargetEnemy)), 
+            OnPlay(AttackDamage(14, TargetEnemy)), 
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
             PlayableIf(calculator::clash_playable),
-            OnPlay(Damage(18, TargetEnemy)), 
+            OnPlay(AttackDamage(18, TargetEnemy)), 
         ]),
         cost: 0,
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
@@ -178,21 +178,21 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         name: CLEAVE,
         targeted: false,
         effects: vec![
-            OnPlay(Damage(8, AllEnemies)),
+            OnPlay(AttackDamage(8, AllEnemies)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(11, AllEnemies)),
+            OnPlay(AttackDamage(11, AllEnemies)),
         ]),
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
     },
     BaseCard {
         name: CLOTHESLINE,
         effects: vec![
-            OnPlay(Damage(12, TargetEnemy)),
+            OnPlay(AttackDamage(12, TargetEnemy)),
             OnPlay(SetStatus(statuses::WEAK, 2, TargetEnemy)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(14, TargetEnemy)),
+            OnPlay(AttackDamage(14, TargetEnemy)),
             OnPlay(SetStatus(statuses::WEAK, 3, TargetEnemy)),
         ]),
         cost: 2,
@@ -222,11 +222,11 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
     BaseCard {
         name: HEADBUTT,
         effects: vec![
-            OnPlay(Damage(9, TargetEnemy)), 
+            OnPlay(AttackDamage(9, TargetEnemy)), 
             OnPlay(MoveCard(DiscardPile(RelativePosition::PlayerChoice(1)), CardLocation::DrawPile(RelativePosition::Top))),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(12, TargetEnemy)),
+            OnPlay(AttackDamage(12, TargetEnemy)),
             OnPlay(MoveCard(DiscardPile(RelativePosition::PlayerChoice(1)), CardLocation::DrawPile(RelativePosition::Top))),
         ]),
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
@@ -242,11 +242,11 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
     BaseCard {
         name: IRON_WAVE,
         effects: vec![
-            OnPlay(Damage(5, TargetEnemy)),
+            OnPlay(AttackDamage(5, TargetEnemy)),
             OnPlay(Block(5, _Self)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(7, TargetEnemy)),
+            OnPlay(AttackDamage(7, TargetEnemy)),
             OnPlay(Block(7, _Self)),
         ]),
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
@@ -275,15 +275,15 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         name: SWORD_BOOMERANG,
         targeted: false,
         effects: vec![
-            OnPlay(Damage(3, RandomEnemy)),
-            OnPlay(Damage(3, RandomEnemy)),
-            OnPlay(Damage(3, RandomEnemy)),
+            OnPlay(AttackDamage(3, RandomEnemy)),
+            OnPlay(AttackDamage(3, RandomEnemy)),
+            OnPlay(AttackDamage(3, RandomEnemy)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(3, RandomEnemy)),
-            OnPlay(Damage(3, RandomEnemy)),
-            OnPlay(Damage(3, RandomEnemy)),
-            OnPlay(Damage(3, RandomEnemy)),
+            OnPlay(AttackDamage(3, RandomEnemy)),
+            OnPlay(AttackDamage(3, RandomEnemy)),
+            OnPlay(AttackDamage(3, RandomEnemy)),
+            OnPlay(AttackDamage(3, RandomEnemy)),
         ]),
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
     },
@@ -292,11 +292,11 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         _type: CardType::Attack,
         targeted: false,
         effects: vec![
-            OnPlay(Damage(4, AllEnemies)),
+            OnPlay(AttackDamage(4, AllEnemies)),
             OnPlay(SetStatus(statuses::VULNERABLE, 1, AllEnemies)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(7, AllEnemies)),
+            OnPlay(AttackDamage(7, AllEnemies)),
             OnPlay(SetStatus(statuses::VULNERABLE, 1, AllEnemies)),
         ]),
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
@@ -316,12 +316,12 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
     BaseCard {
         name: TWIN_STRIKE,
         effects: vec![
-            OnPlay(Damage(5, TargetEnemy)),
-            OnPlay(Damage(5, TargetEnemy)),
+            OnPlay(AttackDamage(5, TargetEnemy)),
+            OnPlay(AttackDamage(5, TargetEnemy)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(7, TargetEnemy)),
-            OnPlay(Damage(7, TargetEnemy)),
+            OnPlay(AttackDamage(7, TargetEnemy)),
+            OnPlay(AttackDamage(7, TargetEnemy)),
         ]),
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
     },
@@ -349,7 +349,7 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
     BaseCard {
         name: WILD_STRIKE,
         effects: vec![
-            OnPlay(Damage(12, TargetEnemy)),
+            OnPlay(AttackDamage(12, TargetEnemy)),
             OnPlay(AddCard{
                 card: CardReference::ByName(WOUND), 
                 destination: CardLocation::DrawPile(RelativePosition::Random), 
@@ -358,7 +358,7 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
             }),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(17, TargetEnemy)),
+            OnPlay(AttackDamage(17, TargetEnemy)),
             OnPlay(AddCard{
                 card: CardReference::ByName(WOUND), 
                 destination: CardLocation::DrawPile(RelativePosition::Random), 
@@ -387,11 +387,11 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         rarity: CardRarity::Uncommon,
         effects: vec![
             CustomCost(calculator::blood_for_blood_cost),
-            OnPlay(Damage(18, TargetEnemy)),
+            OnPlay(AttackDamage(18, TargetEnemy)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
             CustomCost(calculator::blood_for_blood_cost),
-            OnPlay(Damage(22, TargetEnemy)),
+            OnPlay(AttackDamage(22, TargetEnemy)),
         ]),
         cost: 4,
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
@@ -428,10 +428,10 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         rarity: CardRarity::Uncommon,
         ethereal: true,
         effects: vec![
-            OnPlay(Damage(20, TargetEnemy)),
+            OnPlay(AttackDamage(20, TargetEnemy)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(28, TargetEnemy)),
+            OnPlay(AttackDamage(28, TargetEnemy)),
         ]),
         cost: 2,
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
@@ -451,7 +451,7 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         name: COMBUST,
         rarity: CardRarity::Uncommon,
         effects: vec![
-            OnPlay(SetStatus(statuses::DARK_EMBRANCE, 1, _Self)),
+            OnPlay(SetStatus(statuses::DARK_EMBRACE, 1, _Self)),
         ],
         on_upgrade: OnUpgrade::ReduceCost(1),
         cost: 2,
@@ -476,14 +476,14 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         rarity: CardRarity::Uncommon,
         targeted: true,
         effects: vec![
-            OnPlay(Damage(5, TargetEnemy)),
+            OnPlay(AttackDamage(5, TargetEnemy)),
             OnPlay(IfStatus(TargetEnemy, statuses::VULNERABLE, vec![
                 AddEnergy(1),
                 Draw(1),
             ]))
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(8, TargetEnemy)),
+            OnPlay(AttackDamage(8, TargetEnemy)),
             OnPlay(IfStatus(TargetEnemy, statuses::VULNERABLE, vec![
                 AddEnergy(1),
                 Draw(1),
@@ -587,11 +587,11 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         rarity: CardRarity::Uncommon,
         effects: vec![
             OnPlay(LoseHp(2, _Self)),
-            OnPlay(Damage(15, TargetEnemy)),
+            OnPlay(AttackDamage(15, TargetEnemy)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
             OnPlay(LoseHp(2, _Self)),
-            OnPlay(Damage(20, TargetEnemy)),
+            OnPlay(AttackDamage(20, TargetEnemy)),
         ]),
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
     },
@@ -674,18 +674,18 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         name: PUMMEL,
         rarity: CardRarity::Uncommon,
         effects: vec![
-            OnPlay(Damage(2, TargetEnemy)),
-            OnPlay(Damage(2, TargetEnemy)),
-            OnPlay(Damage(2, TargetEnemy)),
-            OnPlay(Damage(2, TargetEnemy)),
+            OnPlay(AttackDamage(2, TargetEnemy)),
+            OnPlay(AttackDamage(2, TargetEnemy)),
+            OnPlay(AttackDamage(2, TargetEnemy)),
+            OnPlay(AttackDamage(2, TargetEnemy)),
             Exhaust,
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(2, TargetEnemy)),
-            OnPlay(Damage(2, TargetEnemy)),
-            OnPlay(Damage(2, TargetEnemy)),
-            OnPlay(Damage(2, TargetEnemy)),
-            OnPlay(Damage(2, TargetEnemy)),
+            OnPlay(AttackDamage(2, TargetEnemy)),
+            OnPlay(AttackDamage(2, TargetEnemy)),
+            OnPlay(AttackDamage(2, TargetEnemy)),
+            OnPlay(AttackDamage(2, TargetEnemy)),
+            OnPlay(AttackDamage(2, TargetEnemy)),
             Exhaust,
         ]),
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
@@ -714,7 +714,7 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         name: RECKLESS_CHARGE,
         rarity: CardRarity::Uncommon,
         effects: vec![
-            OnPlay(Damage(7, TargetEnemy)),
+            OnPlay(AttackDamage(7, TargetEnemy)),
             OnPlay(AddCard{
                 card: CardReference::ByName(DAZED), 
                 destination: CardLocation::DrawPile(RelativePosition::Random), 
@@ -723,7 +723,7 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
             }),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(10, TargetEnemy)),
+            OnPlay(AttackDamage(10, TargetEnemy)),
             OnPlay(AddCard{
                 card: CardReference::ByName(DAZED), 
                 destination: CardLocation::DrawPile(RelativePosition::Random), 
@@ -789,11 +789,11 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         rarity: CardRarity::Uncommon,
         effects: vec![
             CustomOnPlay(calculator::sever_soul_effect),
-            OnPlay(Damage(16, TargetEnemy)),
+            OnPlay(AttackDamage(16, TargetEnemy)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
             CustomOnPlay(calculator::sever_soul_effect),
-            OnPlay(Damage(20, TargetEnemy)),
+            OnPlay(AttackDamage(20, TargetEnemy)),
         ]),
         cost: 2,
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
@@ -834,12 +834,12 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         name: UPPERCUT,
         rarity: CardRarity::Uncommon,
         effects: vec![
-            OnPlay(Damage(13, TargetEnemy)),
+            OnPlay(AttackDamage(13, TargetEnemy)),
             OnPlay(SetStatus(statuses::WEAK, 1, TargetEnemy)),
             OnPlay(SetStatus(statuses::VULNERABLE, 1, TargetEnemy)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(13, TargetEnemy)),
+            OnPlay(AttackDamage(13, TargetEnemy)),
             OnPlay(SetStatus(statuses::WEAK, 2, TargetEnemy)),
             OnPlay(SetStatus(statuses::VULNERABLE, 2, TargetEnemy)),
         ]),
@@ -852,12 +852,12 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         targeted: false,
         effects: vec![
             RepeatX(vec![
-                Damage(5, AllEnemies)
+                AttackDamage(5, AllEnemies)
             ])
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
             RepeatX(vec![
-                Damage(8, AllEnemies)
+                AttackDamage(8, AllEnemies)
             ])
         ]),
         cost: -1,
@@ -878,11 +878,11 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         rarity: CardRarity::Rare,
         effects: vec![
             OnPlay(SetStatus(statuses::VULNERABLE, 2, _Self)),
-            OnPlay(SetStatus(statuses::BESERK, 1, _Self)),
+            OnPlay(SetStatus(statuses::BERSERK, 1, _Self)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
             OnPlay(SetStatus(statuses::VULNERABLE, 1, _Self)),
-            OnPlay(SetStatus(statuses::BESERK, 1, _Self)),
+            OnPlay(SetStatus(statuses::BERSERK, 1, _Self)),
         ]),
         cost: 0,
         ..BaseCard::default(CardClass::Ironclad, CardType::Power)
@@ -891,10 +891,10 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         name: BLUDGEON,
         rarity: CardRarity::Rare,
         effects: vec![
-            OnPlay(Damage(32, TargetEnemy)),
+            OnPlay(AttackDamage(32, TargetEnemy)),
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(42, TargetEnemy)),
+            OnPlay(AttackDamage(42, TargetEnemy)),
         ]),
         cost: 3,
         ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
@@ -959,12 +959,12 @@ pub const cards: HashMap<&str, &BaseCard> = vec![
         name: FEED,
         rarity: CardRarity::Rare,
         effects: vec![
-            OnPlay(Damage(10, TargetEnemy)),
+            OnPlay(AttackDamage(10, TargetEnemy)),
             IfFatal(vec![IncreaseMaxHp(3)]),
             Exhaust,
         ],
         on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Damage(12, TargetEnemy)),
+            OnPlay(AttackDamage(12, TargetEnemy)),
             IfFatal(vec![IncreaseMaxHp(3)]),
             Exhaust,
         ]),
