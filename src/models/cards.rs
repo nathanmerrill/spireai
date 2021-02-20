@@ -1,1066 +1,1014 @@
-use std::collections::HashMap;
-use crate::models::{GameState};
-use crate::spireai::calculator;
 use crate::models::statuses;
-
-use crate::models::effects::*;
+use crate::models::core::*;
+use Class::*;
+use CardType::*;
+use Rarity::*;
 use Effect::*;
 use EffectTarget::*;
 use CardLocation::*;
 use CardEffect::*;
+use Amount::*;
+use RelativePosition::*;
 
-use calculator::{GameCard, GameAction, GamePossibilitySet};
-
-#[derive(PartialEq)]
-pub enum CardType {
-    Attack, Skill, Power, Status, Curse, All
-}
-
-pub enum CardRarity {
-    Starter, Common, Uncommon, Rare, Special, Status, Curse,
-}
-
-pub enum CardClass {
-    All,
-    Ironclad,
-    Silent,
-    Defect,
-    Watcher,
-    Neutral,
-    Status,
-    Curse,
-}
-
-pub const Exhaust: CardEffect = OnPlay(ExhaustCard(CardLocation::This));
-
-pub enum CardEffect {
-    OnPlay(Effect),
-    OnDraw(Effect),
-    OnDiscard(Effect),
-    OnExhaust(Effect),
-
-    RepeatX(Vec<Effect>),
-    IfFatal(Vec<Effect>),
-    
-    PlayableIf(fn(&GameCard, &GameState) -> bool),
-    CustomOnPlay(fn(&GameAction, &GameState) -> GamePossibilitySet),
-    CustomCost(fn(&GameCard, &GameState) -> i32),
-}
-
-pub enum OnUpgrade {
-    SetEffects(Vec<CardEffect>),
-    ReduceCost(i32),
-    Armaments,
-    Custom,
-    Burn,
-    Unupgradable,
-    Innate,
-    RemoveEthereal,
-    None
-}
-
-pub struct BaseCard {
-    pub cost: i32, //-1 means X
-    pub rarity: CardRarity,
-    pub _type: CardType,
-    pub _class: CardClass,
-    pub targeted: bool,
-    pub effects: Vec<CardEffect>,
-    pub on_upgrade: OnUpgrade,
-    pub name: &'static str,   
-    pub innate: bool,
-    pub ethereal: bool, 
-}
+pub const EXHAUST: CardEffect = OnPlay(ExhaustCard(This));
 
 impl BaseCard {
-    fn default(_class: CardClass, _type: CardType) -> Self {
+    fn default(_class: Class, _type: CardType) -> Self {
+        let targeted: bool = &_type == &Attack;
         Self {
             name: &"",
-            rarity: CardRarity::Common,
+            rarity: Common,
             _type: _type,
             _class: _class,
-            targeted: _type == CardType::Attack,
+            targeted: targeted,
             effects: vec![],
             on_upgrade: OnUpgrade::None,
+            starting_n: 0,
             cost: 1,
             innate: false,
             ethereal: false,
         }
     }
+    
+    pub fn by_name(name: &str) -> BaseCard {
+        match name {
+            DEFEND => BaseCard { 
+                name: DEFEND, 
+                rarity: Starter,
+                effects: vec![OnPlay(Block(Fixed(5), _Self))],
+                on_upgrade: OnUpgrade::SetEffects(vec![OnPlay(Block(Fixed(8), _Self))]),
+                ..BaseCard::default(Class::All, Skill)
+            },
+            STRIKE => BaseCard { 
+                name: STRIKE, 
+                rarity: Starter,
+                effects: vec![OnPlay(AttackDamage(Fixed(6), TargetEnemy))],
+                on_upgrade: OnUpgrade::SetEffects(vec![OnPlay(AttackDamage(Fixed(9), TargetEnemy))]),
+                ..BaseCard::default(Class::All, Attack)
+            },
+            BASH => BaseCard { 
+                name: BASH, 
+                rarity: Starter,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(8), TargetEnemy)), 
+                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(2), TargetEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(10), TargetEnemy)), 
+                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(3), TargetEnemy)),
+                ]),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            ANGER => BaseCard { 
+                name: ANGER, 
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(6), TargetEnemy)),
+                    OnPlay(AddCard{
+                        card: CardReference::CopyOf(This), 
+                        destination: DiscardPile(Bottom), 
+                        copies: Fixed(1),
+                        modifier: CardModifier::None
+                    })
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(8), TargetEnemy)), 
+                    OnPlay(AddCard{
+                        card: CardReference::CopyOf(This), 
+                        destination: DiscardPile(Bottom), 
+                        copies: Fixed(1),
+                        modifier: CardModifier::None
+                    })
+                ]),
+                cost: 0,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            ARMAMENTS => BaseCard { 
+                name: ARMAMENTS, 
+                effects: vec![
+                    OnPlay(Block(Fixed(5), _Self)),
+                    OnPlay(UpgradeCard(PlayerHand(Random))),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(8), TargetEnemy)), 
+                    OnPlay(UpgradeCard(PlayerHand(RelativePosition::All))),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            BODY_SLAM => BaseCard { 
+                name: BODY_SLAM, 
+                effects: vec![
+                    OnPlay(Block(Amount::Custom, _Self)),
+                ],
+                on_upgrade: OnUpgrade::ReduceCost(0),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            CLASH => BaseCard { 
+                name: CLASH, 
+                effects: vec![
+                    CustomPlayable,
+                    OnPlay(AttackDamage(Fixed(14), TargetEnemy)), 
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    CustomPlayable,
+                    OnPlay(AttackDamage(Fixed(18), TargetEnemy)), 
+                ]),
+                cost: 0,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            CLEAVE => BaseCard { 
+                name: CLEAVE, 
+                targeted: false,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(8), AllEnemies)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(11), AllEnemies)),
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            CLOTHESLINE => BaseCard { 
+                name: CLOTHESLINE, 
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(12), TargetEnemy)),
+                    OnPlay(SetStatus(statuses::WEAK, Fixed(2), TargetEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(14), TargetEnemy)),
+                    OnPlay(SetStatus(statuses::WEAK, Fixed(3), TargetEnemy)),
+                ]),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            FLEX => BaseCard { 
+                name: FLEX, 
+                effects: vec![
+                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(2), _Self)),
+                    OnPlay(SetStatus(statuses::STRENGTH_DOWN, Fixed(2), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(4), _Self)),
+                    OnPlay(SetStatus(statuses::STRENGTH_DOWN, Fixed(4), _Self)),
+                ]),
+                cost: 0,
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            HAVOC => BaseCard { 
+                name: HAVOC, 
+                effects: vec![
+                    OnPlay(AutoPlayCard(DrawPile(Top))),
+                ],
+                on_upgrade: OnUpgrade::ReduceCost(0),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            HEADBUTT => BaseCard { 
+                name: HEADBUTT, 
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(9), TargetEnemy)), 
+                    OnPlay(MoveCard(DiscardPile(PlayerChoice(1)), DrawPile(Top))),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(12), TargetEnemy)),
+                    OnPlay(MoveCard(DiscardPile(PlayerChoice(1)), DrawPile(Top))),
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            HEAVY_BLADE => BaseCard { 
+                name: HEAVY_BLADE, 
+                effects: vec![
+                    OnPlay(AttackDamage(Amount::Custom, TargetEnemy)),
+                ],
+                cost: 2,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            IRON_WAVE => BaseCard { 
+                name: IRON_WAVE, 
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(5), TargetEnemy)),
+                    OnPlay(Block(Fixed(5), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(7), TargetEnemy)),
+                    OnPlay(Block(Fixed(7), _Self)),
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            PERFECTED_STRIKE => BaseCard { 
+                name: PERFECTED_STRIKE, 
+                effects: vec![
+                    OnPlay(AttackDamage(Amount::Custom, TargetEnemy)),
+                ],
+                cost: 2,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            SHRUG_IT_OFF => BaseCard { 
+                name: SHRUG_IT_OFF, 
+                effects: vec![
+                    OnPlay(Block(Fixed(8), _Self)),
+                    OnPlay(Draw(Fixed(1))),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(Block(Fixed(11), _Self)),
+                    OnPlay(Draw(Fixed(1))),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            SWORD_BOOMERANG => BaseCard { 
+                name: SWORD_BOOMERANG, 
+                targeted: false,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(3), RandomEnemy)),
+                    OnPlay(AttackDamage(Fixed(3), RandomEnemy)),
+                    OnPlay(AttackDamage(Fixed(3), RandomEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(3), RandomEnemy)),
+                    OnPlay(AttackDamage(Fixed(3), RandomEnemy)),
+                    OnPlay(AttackDamage(Fixed(3), RandomEnemy)),
+                    OnPlay(AttackDamage(Fixed(3), RandomEnemy)),
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            THUNDERCLAP => BaseCard { 
+                name: THUNDERCLAP, 
+                _type: Attack,
+                targeted: false,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(4), AllEnemies)),
+                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(1), AllEnemies)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(7), AllEnemies)),
+                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(1), AllEnemies)),
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            TRUE_GRIT => BaseCard { 
+                name: TRUE_GRIT, 
+                effects: vec![
+                    OnPlay(Block(Fixed(7), _Self)),
+                    OnPlay(ExhaustCard(PlayerHand(Random))),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(Block(Fixed(9), _Self)),
+                    OnPlay(ExhaustCard(PlayerHand(PlayerChoice(1)))),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            TWIN_STRIKE => BaseCard { 
+                name: TWIN_STRIKE, 
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(5), TargetEnemy)),
+                    OnPlay(AttackDamage(Fixed(5), TargetEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(7), TargetEnemy)),
+                    OnPlay(AttackDamage(Fixed(7), TargetEnemy)),
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            WARCRY => BaseCard { 
+                name: WARCRY, 
+                effects: vec![
+                    OnPlay(Draw(Fixed(1))),
+                    OnPlay(MoveCard(
+                        PlayerHand(PlayerChoice(1)), 
+                        DrawPile(Top))
+                    ),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(Draw(Fixed(2))),
+                    OnPlay(MoveCard(
+                        PlayerHand(PlayerChoice(1)), 
+                        DrawPile(Top))
+                    ),
+                    EXHAUST,
+                ]),
+                cost: 0,
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            WILD_STRIKE => BaseCard { 
+                name: WILD_STRIKE, 
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(12), TargetEnemy)),
+                    OnPlay(AddCard{
+                        card: CardReference::ByName(WOUND), 
+                        destination: DrawPile(Random), 
+                        copies: Fixed(1),
+                        modifier: CardModifier::None
+                    }),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(17), TargetEnemy)),
+                    OnPlay(AddCard{
+                        card: CardReference::ByName(WOUND), 
+                        destination: DrawPile(Random), 
+                        copies: Fixed(1),
+                        modifier: CardModifier::None
+                    }),
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            BATTLE_TRANCE => BaseCard { 
+                name: BATTLE_TRANCE, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(Draw(Fixed(3))),
+                    OnPlay(SetStatus(statuses::NO_DRAW, Fixed(1), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(Draw(Fixed(4))),
+                    OnPlay(SetStatus(statuses::NO_DRAW, Fixed(1), _Self)),
+                ]),
+                cost: 0,
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            BLOOD_FOR_BLOOD => BaseCard { 
+                name: BLOOD_FOR_BLOOD, 
+                rarity: Uncommon,
+                effects: vec![
+                    CustomCardCost,
+                    OnPlay(AttackDamage(Fixed(18), TargetEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    CustomCardCost,
+                    OnPlay(AttackDamage(Fixed(22), TargetEnemy)),
+                ]),
+                cost: 4,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            BLOODLETTING => BaseCard { 
+                name: BLOODLETTING, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(LoseHp(Fixed(3), _Self)),
+                    OnPlay(AddEnergy(Fixed(2))),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(LoseHp(Fixed(3), _Self)),
+                    OnPlay(AddEnergy(Fixed(3))),
+                ]),
+                cost: 0,
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            BURNING_PACT => BaseCard { 
+                name: BURNING_PACT, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(ExhaustCard(PlayerHand(PlayerChoice(1)))),
+                    OnPlay(Draw(Fixed(2))),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(ExhaustCard(PlayerHand(PlayerChoice(1)))),
+                    OnPlay(Draw(Fixed(3))),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            CARNAGE => BaseCard { 
+                name: CARNAGE, 
+                rarity: Uncommon,
+                ethereal: true,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(20), TargetEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(28), TargetEnemy)),
+                ]),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            COMBUST => BaseCard { 
+                name: COMBUST, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::COMBUST, Fixed(5), _Self)),
+                    OnPlay(IncreaseStatusN(statuses::COMBUST, Fixed(1), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::COMBUST, Fixed(7), _Self)),
+                    OnPlay(IncreaseStatusN(statuses::COMBUST, Fixed(1), _Self)),
+                ]),
+                ..BaseCard::default(Ironclad, Power)
+            },
+            DARK_EMBRACE => BaseCard { 
+                name: DARK_EMBRACE, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::DARK_EMBRACE, Fixed(1), _Self)),
+                ],
+                on_upgrade: OnUpgrade::ReduceCost(1),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Power)
+            },
+            DISARM => BaseCard { 
+                name: DISARM, 
+                rarity: Uncommon,
+                targeted: true,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(-2), TargetEnemy)),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(-3), TargetEnemy)),
+                    EXHAUST,
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            DROPKICK => BaseCard { 
+                name: DROPKICK, 
+                rarity: Uncommon,
+                targeted: true,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(5), TargetEnemy)),
+                    OnPlay(IfStatus(TargetEnemy, statuses::VULNERABLE, vec![
+                        AddEnergy(Fixed(1)),
+                        Draw(Fixed(1)),
+                    ]))
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(8), TargetEnemy)),
+                    OnPlay(IfStatus(TargetEnemy, statuses::VULNERABLE, vec![
+                        AddEnergy(Fixed(1)),
+                        Draw(Fixed(1)),
+                    ]))
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            DUAL_WIELD => BaseCard { 
+                name: DUAL_WIELD, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(AddCard{
+                        card: CardReference::CopyOf(PlayerHand(PlayerChoice(1))), 
+                        destination: PlayerHand(Bottom), 
+                        copies: Fixed(1),
+                        modifier: CardModifier::None
+                    }),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AddCard{
+                        card: CardReference::CopyOf(PlayerHand(PlayerChoice(1))), 
+                        destination: PlayerHand(Bottom),
+                        copies: Fixed(2),
+                        modifier: CardModifier::None
+                    }),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            ENTRENCH => BaseCard { 
+                name: ENTRENCH, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(Block(Amount::Custom, EffectTarget::_Self))
+                ],
+                on_upgrade: OnUpgrade::ReduceCost(1),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            EVOLVE => BaseCard { 
+                name: EVOLVE, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::EVOLVE, Fixed(1), _Self))
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::EVOLVE, Fixed(2), _Self))
+                ]),
+                ..BaseCard::default(Ironclad, Power)
+            },
+            FEEL_NO_PAIN => BaseCard { 
+                name: FEEL_NO_PAIN, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::FEEL_NO_PAIN, Fixed(3), _Self))
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::FEEL_NO_PAIN, Fixed(4), _Self))
+                ]),
+                ..BaseCard::default(Ironclad, Power)
+            },
+            FIRE_BREATHING => BaseCard { 
+                name: FIRE_BREATHING, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::FIRE_BREATHING, Fixed(6), _Self))
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::FIRE_BREATHING, Fixed(10), _Self))
+                ]),
+                ..BaseCard::default(Ironclad, Power)
+            },
+            FLAME_BARRIER => BaseCard { 
+                name: FLAME_BARRIER, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(Block(Fixed(12), _Self)),
+                    OnPlay(SetStatus(statuses::FLAME_BARRIER, Fixed(4), _Self))
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(Block(Fixed(16), _Self)),
+                    OnPlay(SetStatus(statuses::FLAME_BARRIER, Fixed(6), _Self))
+                ]),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            GHOSTLY_ARMOR => BaseCard { 
+                name: GHOSTLY_ARMOR, 
+                rarity: Uncommon,
+                targeted: false,
+                ethereal: true,
+                effects: vec![
+                    OnPlay(Block(Fixed(10), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(Block(Fixed(13), _Self)),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            HEMOKINESIS => BaseCard { 
+                name: HEMOKINESIS, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(LoseHp(Fixed(2), _Self)),
+                    OnPlay(AttackDamage(Fixed(15), TargetEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(LoseHp(Fixed(2), _Self)),
+                    OnPlay(AttackDamage(Fixed(20), TargetEnemy)),
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            INFERNAL_BLADE => BaseCard { 
+                name: INFERNAL_BLADE, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(AddCard{
+                        card: CardReference::RandomType(Attack),
+                        destination: PlayerHand(Bottom), 
+                        copies: Fixed(1),
+                        modifier: CardModifier::SetZeroTurnCost
+                    }),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::ReduceCost(0),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            INFLAME => BaseCard { 
+                name: INFLAME, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(2), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(3), _Self)),
+                ]),
+                ..BaseCard::default(Ironclad, Power)
+            },
+            INTIMIDATE => BaseCard { 
+                name: INTIMIDATE, 
+                rarity: Uncommon,
+                _type: Power,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::WEAK, Fixed(1), AllEnemies)),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::WEAK, Fixed(2), AllEnemies)),
+                    EXHAUST,
+                ]),
+                cost: 0,
+                ..BaseCard::default(Ironclad, Power)
+            },
+            METALLICIZE => BaseCard { 
+                name: METALLICIZE, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::METALLICIZE, Fixed(3), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::METALLICIZE, Fixed(4), _Self)),
+                ]),
+                ..BaseCard::default(Ironclad, Power)
+            },
+            POWER_THROUGH => BaseCard { 
+                name: POWER_THROUGH, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(AddCard{
+                        card: CardReference::ByName(WOUND), 
+                        destination: PlayerHand(Bottom), 
+                        copies: Fixed(2),
+                        modifier: CardModifier::None
+                    }),
+                    OnPlay(Block(Fixed(15), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AddCard{
+                        card: CardReference::ByName(WOUND), 
+                        destination: PlayerHand(Bottom),
+                        copies: Fixed(2),
+                        modifier: CardModifier::None
+                    }),
+                    OnPlay(Block(Fixed(20), _Self)),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            PUMMEL => BaseCard { 
+                name: PUMMEL, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(2), TargetEnemy)),
+                    OnPlay(AttackDamage(Fixed(2), TargetEnemy)),
+                    OnPlay(AttackDamage(Fixed(2), TargetEnemy)),
+                    OnPlay(AttackDamage(Fixed(2), TargetEnemy)),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(2), TargetEnemy)),
+                    OnPlay(AttackDamage(Fixed(2), TargetEnemy)),
+                    OnPlay(AttackDamage(Fixed(2), TargetEnemy)),
+                    OnPlay(AttackDamage(Fixed(2), TargetEnemy)),
+                    OnPlay(AttackDamage(Fixed(2), TargetEnemy)),
+                    EXHAUST,
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            RAGE => BaseCard { 
+                name: RAGE, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::RAGE, Fixed(3), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::RAGE, Fixed(5), _Self)),
+                ]),
+                cost: 0,
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            RAMPAGE => BaseCard { 
+                name: RAMPAGE, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(AttackDamage(Amount::Custom, TargetEnemy)),
+                ],
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            RECKLESS_CHARGE => BaseCard { 
+                name: RECKLESS_CHARGE, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(7), TargetEnemy)),
+                    OnPlay(AddCard{
+                        card: CardReference::ByName(DAZED), 
+                        destination: DrawPile(Random), 
+                        copies: Fixed(1),
+                        modifier: CardModifier::None
+                    }),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(10), TargetEnemy)),
+                    OnPlay(AddCard{
+                        card: CardReference::ByName(DAZED), 
+                        destination: DrawPile(Random), 
+                        copies: Fixed(1),
+                        modifier: CardModifier::None
+                    }),
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            RUPTURE => BaseCard { 
+                name: RUPTURE, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::RUPTURE, Fixed(1), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::RUPTURE, Fixed(2), _Self)),
+                ]),
+                ..BaseCard::default(Ironclad, Power)
+            },
+            SEARING_BLOW => BaseCard { 
+                name: SEARING_BLOW, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(AttackDamage(Amount::Custom, TargetEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SearingBlow,
+                cost: 2,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            SECOND_WIND => BaseCard { 
+                name: SECOND_WIND, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(Effect::Custom),
+                ],
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            SEEING_RED => BaseCard { 
+                name: SEEING_RED, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(AddEnergy(Fixed(2))),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::ReduceCost(0),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            SENTINEL => BaseCard { 
+                name: SENTINEL, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(Block(Fixed(5), _Self)),
+                    OnExhaust(AddEnergy(Fixed(2))),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(Block(Fixed(8), _Self)),
+                    OnExhaust(AddEnergy(Fixed(3))),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            SEVER_SOUL => BaseCard { 
+                name: SEVER_SOUL, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(Effect::Custom),
+                    OnPlay(AttackDamage(Fixed(16), TargetEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(Effect::Custom),
+                    OnPlay(AttackDamage(Fixed(20), TargetEnemy)),
+                ]),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            SHOCKWAVE => BaseCard { 
+                name: SHOCKWAVE, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(3), AllEnemies)),
+                    OnPlay(SetStatus(statuses::WEAK, Fixed(3), AllEnemies)),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(5), AllEnemies)),
+                    OnPlay(SetStatus(statuses::WEAK, Fixed(5), AllEnemies)),
+                    EXHAUST,
+                ]),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            SPOT_WEAKNESS => BaseCard { 
+                name: SPOT_WEAKNESS, 
+                rarity: Uncommon,
+                targeted: true,
+                effects: vec![
+                    OnPlay(IfAttacking(TargetEnemy, vec![
+                        SetStatus(statuses::STRENGTH, Fixed(3), _Self)
+                    ])),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(IfAttacking(TargetEnemy, vec![
+                        SetStatus(statuses::STRENGTH, Fixed(4), _Self)
+                    ])),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            UPPERCUT => BaseCard { 
+                name: UPPERCUT, 
+                rarity: Uncommon,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(13), TargetEnemy)),
+                    OnPlay(SetStatus(statuses::WEAK, Fixed(1), TargetEnemy)),
+                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(1), TargetEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(13), TargetEnemy)),
+                    OnPlay(SetStatus(statuses::WEAK, Fixed(2), TargetEnemy)),
+                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(2), TargetEnemy)),
+                ]),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            WHIRLWIND => BaseCard { 
+                name: WHIRLWIND, 
+                rarity: Uncommon,
+                targeted: false,
+                effects: vec![
+                    RepeatX(vec![
+                        AttackDamage(Fixed(5), AllEnemies)
+                    ])
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    RepeatX(vec![
+                        AttackDamage(Fixed(8), AllEnemies)
+                    ])
+                ]),
+                cost: -1,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            BARRICADE => BaseCard { 
+                name: BARRICADE, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::BARRICADE, Fixed(1), _Self)),
+                ],
+                on_upgrade: OnUpgrade::ReduceCost(2),
+                cost: 3,
+                ..BaseCard::default(Ironclad, Power)
+            },
+            BERSERK => BaseCard { 
+                name: BERSERK, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(2), _Self)),
+                    OnPlay(SetStatus(statuses::BERSERK, Fixed(1), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(1), _Self)),
+                    OnPlay(SetStatus(statuses::BERSERK, Fixed(1), _Self)),
+                ]),
+                cost: 0,
+                ..BaseCard::default(Ironclad, Power)
+            },
+            BLUDGEON => BaseCard { 
+                name: BLUDGEON, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(32), TargetEnemy)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(42), TargetEnemy)),
+                ]),
+                cost: 3,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            BRUTALITY => BaseCard { 
+                name: BRUTALITY, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::BRUTALITY, Fixed(1), _Self)),
+                ],
+                on_upgrade: OnUpgrade::Innate,
+                cost: 0,
+                ..BaseCard::default(Ironclad, Power)
+            },
+            CORRUPTION => BaseCard { 
+                name: CORRUPTION, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::CORRUPTION, Fixed(1), _Self)),
+                ],
+                on_upgrade: OnUpgrade::ReduceCost(2),
+                cost: 3,
+                ..BaseCard::default(Ironclad, Power)
+            },
+            DEMON_FORM => BaseCard { 
+                name: DEMON_FORM, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::DEMON_FORM, Fixed(2), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::DEMON_FORM, Fixed(3), _Self)),
+                ]),
+                cost: 3,
+                ..BaseCard::default(Ironclad, Power)
+            },
+            DOUBLE_TAP => BaseCard { 
+                name: DOUBLE_TAP, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::DOUBLE_TAP, Fixed(1), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::DOUBLE_TAP, Fixed(2), _Self)),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            EXHUME => BaseCard { 
+                name: EXHUME, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(MoveCard(
+                        ExhaustPile(PlayerChoice(1)), 
+                        PlayerHand(Bottom))
+                    ),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::ReduceCost(0),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            FEED => BaseCard { 
+                name: FEED, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(AttackDamage(Fixed(10), TargetEnemy)),
+                    IfFatal(vec![IncreaseMaxHp(Fixed(3))]),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(AttackDamage(Fixed(12), TargetEnemy)),
+                    IfFatal(vec![IncreaseMaxHp(Fixed(3))]),
+                    EXHAUST,
+                ]),
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            FIEND_FIRE => BaseCard { 
+                name: FIEND_FIRE, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(Effect::Custom),
+                    EXHAUST,
+                ],
+                cost: 2,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            IMMOLATE => BaseCard { 
+                name: IMMOLATE, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(AddCard{
+                        card: CardReference::ByName(BURN), 
+                        destination: DiscardPile(Bottom), 
+                        copies: Fixed(1),
+                        modifier: CardModifier::None,
+                    }),
+                ],
+                cost: 2,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            IMPERVIOUS => BaseCard { 
+                name: IMPERVIOUS, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(Block(Fixed(30), _Self)),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(Block(Fixed(40), _Self)),
+                    EXHAUST,
+                ]),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            JUGGERNAUT => BaseCard { 
+                name: JUGGERNAUT, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::JUGGERNAUT, Fixed(5), _Self)),
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::JUGGERNAUT, Fixed(7), _Self)),
+                ]),
+                cost: 2,
+                ..BaseCard::default(Ironclad, Power)
+            },
+            LIMIT_BREAK => BaseCard { 
+                name: LIMIT_BREAK, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(SetStatus(statuses::STRENGTH, Amount::Custom, _Self)),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(SetStatus(statuses::STRENGTH, Amount::Custom, _Self)),
+                ]),
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            OFFERING => BaseCard { 
+                name: OFFERING, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(LoseHp(Fixed(6), _Self)),
+                    OnPlay(AddEnergy(Fixed(2))),
+                    OnPlay(Draw(Fixed(3))),
+                    EXHAUST,
+                ],
+                on_upgrade: OnUpgrade::SetEffects(vec![
+                    OnPlay(LoseHp(Fixed(6), _Self)),
+                    OnPlay(AddEnergy(Fixed(2))),
+                    OnPlay(Draw(Fixed(5))),
+                    EXHAUST,
+                ]),
+                cost: 0,
+                ..BaseCard::default(Ironclad, Skill)
+            },
+            REAPER => BaseCard { 
+                name: REAPER, 
+                rarity: Rare,
+                effects: vec![
+                    OnPlay(Effect::Custom),
+                    EXHAUST,
+                ],
+                cost: 0,
+                ..BaseCard::default(Ironclad, Attack)
+            },
+            _ => panic!("Unsupported card")
+        }
+    }
 }
-
-pub const cards: HashMap<&str, &BaseCard> = vec![
-    BaseCard {
-        name: DEFEND,
-        rarity: CardRarity::Starter,
-        effects: vec![OnPlay(Block(5, _Self))],
-        on_upgrade: OnUpgrade::SetEffects(vec![OnPlay(Block(8, _Self))]),
-        ..BaseCard::default(CardClass::All, CardType::Skill)
-    },
-    BaseCard {
-        name: STRIKE,
-        rarity: CardRarity::Starter,
-        effects: vec![OnPlay(AttackDamage(6, TargetEnemy))],
-        on_upgrade: OnUpgrade::SetEffects(vec![OnPlay(AttackDamage(9, TargetEnemy))]),
-        ..BaseCard::default(CardClass::All, CardType::Attack)
-    },
-    BaseCard {
-        name: BASH,
-        rarity: CardRarity::Starter,
-        effects: vec![
-            OnPlay(AttackDamage(8, TargetEnemy)), 
-            OnPlay(SetStatus(statuses::VULNERABLE, 2, TargetEnemy)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(10, TargetEnemy)), 
-            OnPlay(SetStatus(statuses::VULNERABLE, 3, TargetEnemy)),
-        ]),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: ANGER,
-        effects: vec![
-            OnPlay(AttackDamage(6, TargetEnemy)),
-            OnPlay(AddCard{
-                card: CardReference::CopyOf(CardLocation::This), 
-                destination: DiscardPile(RelativePosition::Bottom), 
-                copies: 1,
-                modifier: CardModifier::None
-            })
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(8, TargetEnemy)), 
-            OnPlay(AddCard{
-                card: CardReference::CopyOf(CardLocation::This), 
-                destination: DiscardPile(RelativePosition::Bottom), 
-                copies: 1,
-                modifier: CardModifier::None
-            })
-        ]),
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: ARMAMENTS,
-        effects: vec![
-            OnPlay(Block(5, _Self)),
-            OnPlay(UpgradeCard(PlayerHand(RelativePosition::Random))),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(8, TargetEnemy)), 
-            OnPlay(UpgradeCard(PlayerHand(RelativePosition::All))),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: BODY_SLAM,
-        effects: vec![
-            CustomOnPlay(calculator::body_slam_damage)
-        ],
-        on_upgrade: OnUpgrade::ReduceCost(0),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: CLASH,
-        effects: vec![
-            PlayableIf(calculator::clash_playable),
-            OnPlay(AttackDamage(14, TargetEnemy)), 
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            PlayableIf(calculator::clash_playable),
-            OnPlay(AttackDamage(18, TargetEnemy)), 
-        ]),
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: CLEAVE,
-        targeted: false,
-        effects: vec![
-            OnPlay(AttackDamage(8, AllEnemies)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(11, AllEnemies)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: CLOTHESLINE,
-        effects: vec![
-            OnPlay(AttackDamage(12, TargetEnemy)),
-            OnPlay(SetStatus(statuses::WEAK, 2, TargetEnemy)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(14, TargetEnemy)),
-            OnPlay(SetStatus(statuses::WEAK, 3, TargetEnemy)),
-        ]),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: FLEX,
-        effects: vec![
-            OnPlay(SetStatus(statuses::STRENGTH, 2, _Self)),
-            OnPlay(SetStatus(statuses::STRENGTH_DOWN, 2, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::STRENGTH, 4, _Self)),
-            OnPlay(SetStatus(statuses::STRENGTH_DOWN, 4, _Self)),
-        ]),
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: HAVOC,
-        effects: vec![
-            OnPlay(AutoPlayCard(DrawPile(RelativePosition::Top))),
-        ],
-        on_upgrade: OnUpgrade::ReduceCost(0),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: HEADBUTT,
-        effects: vec![
-            OnPlay(AttackDamage(9, TargetEnemy)), 
-            OnPlay(MoveCard(DiscardPile(RelativePosition::PlayerChoice(1)), CardLocation::DrawPile(RelativePosition::Top))),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(12, TargetEnemy)),
-            OnPlay(MoveCard(DiscardPile(RelativePosition::PlayerChoice(1)), CardLocation::DrawPile(RelativePosition::Top))),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: HEAVY_BLADE,
-        effects: vec![
-            CustomOnPlay(calculator::heavy_blade_damage), 
-        ],
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: IRON_WAVE,
-        effects: vec![
-            OnPlay(AttackDamage(5, TargetEnemy)),
-            OnPlay(Block(5, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(7, TargetEnemy)),
-            OnPlay(Block(7, _Self)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: PERFECTED_STRIKE,
-        effects: vec![
-            CustomOnPlay(calculator::perfected_strike_damage), 
-        ],
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: SHRUG_IT_OFF,
-        effects: vec![
-            OnPlay(Block(8, _Self)),
-            OnPlay(Draw(1)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Block(11, _Self)),
-            OnPlay(Draw(1)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: SWORD_BOOMERANG,
-        targeted: false,
-        effects: vec![
-            OnPlay(AttackDamage(3, RandomEnemy)),
-            OnPlay(AttackDamage(3, RandomEnemy)),
-            OnPlay(AttackDamage(3, RandomEnemy)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(3, RandomEnemy)),
-            OnPlay(AttackDamage(3, RandomEnemy)),
-            OnPlay(AttackDamage(3, RandomEnemy)),
-            OnPlay(AttackDamage(3, RandomEnemy)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: THUNDERCLAP,
-        _type: CardType::Attack,
-        targeted: false,
-        effects: vec![
-            OnPlay(AttackDamage(4, AllEnemies)),
-            OnPlay(SetStatus(statuses::VULNERABLE, 1, AllEnemies)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(7, AllEnemies)),
-            OnPlay(SetStatus(statuses::VULNERABLE, 1, AllEnemies)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: TRUE_GRIT,
-        effects: vec![
-            OnPlay(Block(7, _Self)),
-            OnPlay(ExhaustCard(CardLocation::PlayerHand(RelativePosition::Random))),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Block(9, _Self)),
-            OnPlay(ExhaustCard(CardLocation::PlayerHand(RelativePosition::PlayerChoice(1)))),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: TWIN_STRIKE,
-        effects: vec![
-            OnPlay(AttackDamage(5, TargetEnemy)),
-            OnPlay(AttackDamage(5, TargetEnemy)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(7, TargetEnemy)),
-            OnPlay(AttackDamage(7, TargetEnemy)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: WARCRY,
-        effects: vec![
-            OnPlay(Draw(1)),
-            OnPlay(MoveCard(
-                CardLocation::PlayerHand(RelativePosition::PlayerChoice(1)), 
-                CardLocation::DrawPile(RelativePosition::Top))
-            ),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Draw(2)),
-            OnPlay(MoveCard(
-                CardLocation::PlayerHand(RelativePosition::PlayerChoice(1)), 
-                CardLocation::DrawPile(RelativePosition::Top))
-            ),
-            Exhaust,
-        ]),
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: WILD_STRIKE,
-        effects: vec![
-            OnPlay(AttackDamage(12, TargetEnemy)),
-            OnPlay(AddCard{
-                card: CardReference::ByName(WOUND), 
-                destination: CardLocation::DrawPile(RelativePosition::Random), 
-                copies: 1,
-                modifier: CardModifier::None
-            }),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(17, TargetEnemy)),
-            OnPlay(AddCard{
-                card: CardReference::ByName(WOUND), 
-                destination: CardLocation::DrawPile(RelativePosition::Random), 
-                copies: 1,
-                modifier: CardModifier::None
-            }),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: BATTLE_TRANCE,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(Draw(3)),
-            OnPlay(SetStatus(statuses::NO_DRAW, 1, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Draw(4)),
-            OnPlay(SetStatus(statuses::NO_DRAW, 1, _Self)),
-        ]),
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: BLOOD_FOR_BLOOD,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            CustomCost(calculator::blood_for_blood_cost),
-            OnPlay(AttackDamage(18, TargetEnemy)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            CustomCost(calculator::blood_for_blood_cost),
-            OnPlay(AttackDamage(22, TargetEnemy)),
-        ]),
-        cost: 4,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: BLOODLETTING,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(LoseHp(3, _Self)),
-            OnPlay(AddEnergy(2)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(LoseHp(3, _Self)),
-            OnPlay(AddEnergy(3)),
-        ]),
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: BURNING_PACT,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(ExhaustCard(CardLocation::PlayerHand(RelativePosition::PlayerChoice(1)))),
-            OnPlay(Draw(2)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(ExhaustCard(CardLocation::PlayerHand(RelativePosition::PlayerChoice(1)))),
-            OnPlay(Draw(3)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: CARNAGE,
-        rarity: CardRarity::Uncommon,
-        ethereal: true,
-        effects: vec![
-            OnPlay(AttackDamage(20, TargetEnemy)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(28, TargetEnemy)),
-        ]),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: COMBUST,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(SetStatus(statuses::COMBUST, 5, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::COMBUST, 7, _Self)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: COMBUST,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(SetStatus(statuses::DARK_EMBRACE, 1, _Self)),
-        ],
-        on_upgrade: OnUpgrade::ReduceCost(1),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: DISARM,
-        rarity: CardRarity::Uncommon,
-        targeted: true,
-        effects: vec![
-            OnPlay(SetStatus(statuses::STRENGTH, -2, TargetEnemy)),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::STRENGTH, -3, TargetEnemy)),
-            Exhaust,
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: DROPKICK,
-        rarity: CardRarity::Uncommon,
-        targeted: true,
-        effects: vec![
-            OnPlay(AttackDamage(5, TargetEnemy)),
-            OnPlay(IfStatus(TargetEnemy, statuses::VULNERABLE, vec![
-                AddEnergy(1),
-                Draw(1),
-            ]))
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(8, TargetEnemy)),
-            OnPlay(IfStatus(TargetEnemy, statuses::VULNERABLE, vec![
-                AddEnergy(1),
-                Draw(1),
-            ]))
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: DUAL_WIELD,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(AddCard{
-                card: CardReference::CopyOf(CardLocation::PlayerHand(RelativePosition::PlayerChoice(1))), 
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
-                copies: 1,
-                modifier: CardModifier::None
-            }),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AddCard{
-                card: CardReference::CopyOf(CardLocation::PlayerHand(RelativePosition::PlayerChoice(1))), 
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: 2,
-                modifier: CardModifier::None
-            }),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: ENTRENCH,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            CustomOnPlay(calculator::entrench_block)
-        ],
-        on_upgrade: OnUpgrade::ReduceCost(1),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: EVOLVE,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(SetStatus(statuses::EVOLVE, 1, _Self))
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::EVOLVE, 2, _Self))
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: FEEL_NO_PAIN,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(SetStatus(statuses::FEEL_NO_PAIN, 3, _Self))
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::FEEL_NO_PAIN, 4, _Self))
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: FIRE_BREATHING,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(SetStatus(statuses::FIRE_BREATHING, 6, _Self))
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::FIRE_BREATHING, 10, _Self))
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: FLAME_BARRIER,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(Block(12, _Self)),
-            OnPlay(SetStatus(statuses::FLAME_BARRIER, 4, _Self))
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Block(16, _Self)),
-            OnPlay(SetStatus(statuses::FLAME_BARRIER, 6, _Self))
-        ]),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: GHOSTLY_ARMOR,
-        rarity: CardRarity::Uncommon,
-        targeted: false,
-        ethereal: true,
-        effects: vec![
-            OnPlay(Block(10, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Block(13, _Self)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: HEMOKINESIS,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(LoseHp(2, _Self)),
-            OnPlay(AttackDamage(15, TargetEnemy)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(LoseHp(2, _Self)),
-            OnPlay(AttackDamage(20, TargetEnemy)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: INFERNAL_BLADE,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(AddCard{
-                card: CardReference::RandomType(CardType::Attack),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
-                copies: 1,
-                modifier: CardModifier::SetZeroTurnCost
-            }),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::ReduceCost(0),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: INFLAME,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(SetStatus(statuses::STRENGTH, 2, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::STRENGTH, 3, _Self)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: INTIMIDATE,
-        rarity: CardRarity::Uncommon,
-        _type: CardType::Power,
-        effects: vec![
-            OnPlay(SetStatus(statuses::WEAK, 1, AllEnemies)),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::WEAK, 2, AllEnemies)),
-            Exhaust,
-        ]),
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: METALLICIZE,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(SetStatus(statuses::METALLICIZE, 3, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::METALLICIZE, 4, _Self)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: POWER_THROUGH,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(AddCard{
-                card: CardReference::ByName(WOUND), 
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
-                copies: 2,
-                modifier: CardModifier::None
-            }),
-            OnPlay(Block(15, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AddCard{
-                card: CardReference::ByName(WOUND), 
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: 2,
-                modifier: CardModifier::None
-            }),
-            OnPlay(Block(20, _Self)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: PUMMEL,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(AttackDamage(2, TargetEnemy)),
-            OnPlay(AttackDamage(2, TargetEnemy)),
-            OnPlay(AttackDamage(2, TargetEnemy)),
-            OnPlay(AttackDamage(2, TargetEnemy)),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(2, TargetEnemy)),
-            OnPlay(AttackDamage(2, TargetEnemy)),
-            OnPlay(AttackDamage(2, TargetEnemy)),
-            OnPlay(AttackDamage(2, TargetEnemy)),
-            OnPlay(AttackDamage(2, TargetEnemy)),
-            Exhaust,
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: RAGE,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(SetStatus(statuses::RAGE, 3, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::RAGE, 5, _Self)),
-        ]),
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: RAMPAGE,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            CustomOnPlay(calculator::rampage_effect),
-        ],
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: RECKLESS_CHARGE,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(AttackDamage(7, TargetEnemy)),
-            OnPlay(AddCard{
-                card: CardReference::ByName(DAZED), 
-                destination: CardLocation::DrawPile(RelativePosition::Random), 
-                copies: 1,
-                modifier: CardModifier::None
-            }),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(10, TargetEnemy)),
-            OnPlay(AddCard{
-                card: CardReference::ByName(DAZED), 
-                destination: CardLocation::DrawPile(RelativePosition::Random), 
-                copies: 1,
-                modifier: CardModifier::None
-            }),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: RUPTURE,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(SetStatus(statuses::RUPTURE, 1, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::RUPTURE, 2, _Self)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: SEARING_BLOW,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            CustomOnPlay(calculator::searing_blow_damage),
-        ],
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: SECOND_WIND,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            CustomOnPlay(calculator::second_wind_effect),
-        ],
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: SEEING_RED,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(AddEnergy(2)),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::ReduceCost(0),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: SENTINEL,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(Block(5, _Self)),
-            OnExhaust(AddEnergy(2)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Block(8, _Self)),
-            OnExhaust(AddEnergy(3)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: SEVER_SOUL,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            CustomOnPlay(calculator::sever_soul_effect),
-            OnPlay(AttackDamage(16, TargetEnemy)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            CustomOnPlay(calculator::sever_soul_effect),
-            OnPlay(AttackDamage(20, TargetEnemy)),
-        ]),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: SHOCKWAVE,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(SetStatus(statuses::VULNERABLE, 3, AllEnemies)),
-            OnPlay(SetStatus(statuses::WEAK, 3, AllEnemies)),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::VULNERABLE, 5, AllEnemies)),
-            OnPlay(SetStatus(statuses::WEAK, 5, AllEnemies)),
-            Exhaust,
-        ]),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: SPOT_WEAKNESS,
-        rarity: CardRarity::Uncommon,
-        targeted: true,
-        effects: vec![
-            OnPlay(IfAttacking(TargetEnemy, vec![
-                SetStatus(statuses::STRENGTH, 3, _Self)
-            ])),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(IfAttacking(TargetEnemy, vec![
-                SetStatus(statuses::STRENGTH, 4, _Self)
-            ])),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: UPPERCUT,
-        rarity: CardRarity::Uncommon,
-        effects: vec![
-            OnPlay(AttackDamage(13, TargetEnemy)),
-            OnPlay(SetStatus(statuses::WEAK, 1, TargetEnemy)),
-            OnPlay(SetStatus(statuses::VULNERABLE, 1, TargetEnemy)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(13, TargetEnemy)),
-            OnPlay(SetStatus(statuses::WEAK, 2, TargetEnemy)),
-            OnPlay(SetStatus(statuses::VULNERABLE, 2, TargetEnemy)),
-        ]),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: WHIRLWIND,
-        rarity: CardRarity::Uncommon,
-        targeted: false,
-        effects: vec![
-            RepeatX(vec![
-                AttackDamage(5, AllEnemies)
-            ])
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            RepeatX(vec![
-                AttackDamage(8, AllEnemies)
-            ])
-        ]),
-        cost: -1,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: BARRICADE,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(SetStatus(statuses::BARRICADE, 1, _Self)),
-        ],
-        on_upgrade: OnUpgrade::ReduceCost(2),
-        cost: 3,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: BERSERK,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(SetStatus(statuses::VULNERABLE, 2, _Self)),
-            OnPlay(SetStatus(statuses::BERSERK, 1, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::VULNERABLE, 1, _Self)),
-            OnPlay(SetStatus(statuses::BERSERK, 1, _Self)),
-        ]),
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: BLUDGEON,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(AttackDamage(32, TargetEnemy)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(42, TargetEnemy)),
-        ]),
-        cost: 3,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: BRUTALITY,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(SetStatus(statuses::BRUTALITY, 1, _Self)),
-        ],
-        on_upgrade: OnUpgrade::Innate,
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: CORRUPTION,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(SetStatus(statuses::CORRUPTION, 1, _Self)),
-        ],
-        on_upgrade: OnUpgrade::ReduceCost(2),
-        cost: 3,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: DEMON_FORM,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(SetStatus(statuses::DEMON_FORM, 2, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::DEMON_FORM, 3, _Self)),
-        ]),
-        cost: 3,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: DOUBLE_TAP,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(SetStatus(statuses::DOUBLE_TAP, 1, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::DOUBLE_TAP, 2, _Self)),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: EXHUME,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(MoveCard(
-                CardLocation::ExhaustPile(RelativePosition::PlayerChoice(1)), 
-                CardLocation::PlayerHand(RelativePosition::Bottom))
-            ),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::ReduceCost(0),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: FEED,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(AttackDamage(10, TargetEnemy)),
-            IfFatal(vec![IncreaseMaxHp(3)]),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(AttackDamage(12, TargetEnemy)),
-            IfFatal(vec![IncreaseMaxHp(3)]),
-            Exhaust,
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: FIEND_FIRE,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            CustomOnPlay(calculator::fiend_fire_effect),
-            Exhaust,
-        ],
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: IMMOLATE,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(AddCard{
-                card: CardReference::ByName(BURN), 
-                destination: CardLocation::DiscardPile(RelativePosition::Bottom), 
-                copies: 1,
-                modifier: CardModifier::None,
-            }),
-        ],
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-    BaseCard {
-        name: IMPERVIOUS,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(Block(30, _Self)),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(Block(40, _Self)),
-            Exhaust,
-        ]),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: JUGGERNAUT,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(SetStatus(statuses::JUGGERNAUT, 5, _Self)),
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(SetStatus(statuses::JUGGERNAUT, 7, _Self)),
-        ]),
-        cost: 2,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Power)
-    },
-    BaseCard {
-        name: LIMIT_BREAK,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            CustomOnPlay(calculator::limit_break_effect),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            CustomOnPlay(calculator::limit_break_effect),
-        ]),
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: OFFERING,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            OnPlay(LoseHp(6, _Self)),
-            OnPlay(AddEnergy(2)),
-            OnPlay(Draw(3)),
-            Exhaust,
-        ],
-        on_upgrade: OnUpgrade::SetEffects(vec![
-            OnPlay(LoseHp(6, _Self)),
-            OnPlay(AddEnergy(2)),
-            OnPlay(Draw(5)),
-            Exhaust,
-        ]),
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Skill)
-    },
-    BaseCard {
-        name: REAPER,
-        rarity: CardRarity::Rare,
-        effects: vec![
-            CustomOnPlay(calculator::reaper_effect),
-            Exhaust,
-        ],
-        cost: 0,
-        ..BaseCard::default(CardClass::Ironclad, CardType::Attack)
-    },
-].iter().map(|a| (a.name, a)).collect();
 
 pub const ACCURACY: &str = "Accuracy";
 pub const ACROBATICS: &str = "Acrobatics";

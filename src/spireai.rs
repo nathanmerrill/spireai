@@ -1,10 +1,8 @@
 use crate::models;
 
-pub mod calculator;
-
-use log::{error};
-use calculator::GamePossibilitySet;
+use crate::models::core::*;
 use models::GameState;
+use crate::models::state::*;
 
 pub struct SpireAi {
     expected_state: Option<GamePossibilitySet>
@@ -46,18 +44,23 @@ impl SpireAi {
         let choice = make_choice(state);
         let outcome = predict_outcome(state, &choice);
         self.expected_state = Some(outcome);
+
+        Status::by_name("");
+        BaseCard::by_name("");
         
         return choice;
     }
 
 
     fn verify_state(&mut self, new_state: &GameState) {
+        panic!("Not implemented");
+        /*
         if let Some(state) = &self.expected_state {
             if !state.contains_state(new_state) {
                 error!("New state does not match expected state.  New state: {:?}", new_state);
                 panic!()
             }
-        }
+        }*/
     }
 
     /*
@@ -86,7 +89,8 @@ impl SpireAi {
 }
 
 fn make_choice(state: &GameState) -> Choice {
-
+    panic!("Not implemented")
+    /*
     match state.room_phase {
         models::RoomPhase::Combat => {
 
@@ -103,13 +107,14 @@ fn make_choice(state: &GameState) -> Choice {
         _ => {
             Choice::Choose {choice_index: 0}
         }
-    };
+    };*/
 }
 
 fn handle_combat(state: &GameState) -> Choice {
+    panic!("Not implemented")
 
 }
 
 fn predict_outcome(state: &GameState, choice: &Choice) -> GamePossibilitySet {
-
+    panic!("Not implemented")
 }
