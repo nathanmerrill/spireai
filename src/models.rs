@@ -1,6 +1,6 @@
 use serde::{Deserialize};
 pub mod cards;
-pub mod statuses;
+pub mod buffs;
 pub mod relics;
 pub mod core;
 pub mod state;

@@ -2,7 +2,7 @@ use crate::models::cards;
 use crate::models::core::*;
 use Amount::*;
 
-impl Status {
+impl BaseBuff {
     fn default() -> Self {
         Self {
             name: &"",
@@ -17,109 +17,109 @@ impl Status {
         }
     }
     
-    pub fn by_name(name: &str) -> Status {
+    pub fn by_name(name: &str) -> BaseBuff {
         match name {
-            ARTIFACT => Status { 
+            ARTIFACT => BaseBuff { 
                 name: ARTIFACT,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            BARRICADE => Status { 
+            BARRICADE => BaseBuff { 
                 name: BARRICADE,
                 is_additive: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            BUFFER => Status { 
+            BUFFER => BaseBuff { 
                 name: BUFFER,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            DEXTERITY => Status { 
+            DEXTERITY => BaseBuff { 
                 name: DEXTERITY,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            DRAW_CARD => Status { 
+            DRAW_CARD => BaseBuff { 
                 name: DRAW_CARD,
                 effect_at: Event::TurnStart,
                 expire_at: Event::TurnStart,
                 effect: Effect::Draw(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            ENERGIZED => Status { 
+            ENERGIZED => BaseBuff { 
                 name: ENERGIZED,
                 effect_at: Event::TurnStart,
                 expire_at: Event::TurnStart,
                 effect: Effect::AddEnergy(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            FOCUS => Status { 
+            FOCUS => BaseBuff { 
                 name: FOCUS,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            INTANGIBLE => Status { 
+            INTANGIBLE => BaseBuff { 
                 name: INTANGIBLE,
                 reduce_at: Event::TurnStart,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            MANTRA => Status { 
+            MANTRA => BaseBuff { 
                 name: MANTRA,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            METALLICIZE => Status { 
+            METALLICIZE => BaseBuff { 
                 name: METALLICIZE,
                 effect_at: Event::TurnStart,
                 effect: Effect::Block(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            NEXT_TURN_BLOCK => Status { 
+            NEXT_TURN_BLOCK => BaseBuff { 
                 name: NEXT_TURN_BLOCK,
                 effect_at: Event::TurnStart,
                 expire_at: Event::TurnStart,
                 effect: Effect::Block(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            PLATED_ARMOR => Status { 
+            PLATED_ARMOR => BaseBuff { 
                 name: PLATED_ARMOR,
                 effect_at: Event::TurnStart,
-                reduce_at: Event::OnUnblockedDamage,
+                reduce_at: Event::UnblockedDamage(EffectTarget::_Self),
                 effect: Effect::Block(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            RITUAL => Status { 
+            RITUAL => BaseBuff { 
                 name: RITUAL,
                 effect_at: Event::TurnEnd,
-                effect: Effect::SetStatus(STRENGTH, X, EffectTarget::_Self),
-                ..Status::default()
+                effect: Effect::AddBuff(STRENGTH, X, EffectTarget::_Self),
+                ..BaseBuff::default()
             },
-            STRENGTH => Status { 
+            STRENGTH => BaseBuff { 
                 name: STRENGTH,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            THORNS => Status { 
+            THORNS => BaseBuff { 
                 name: THORNS,
-                effect_at: Event::OnAttackDamage,
+                effect_at: Event::AttackDamage(EffectTarget::_Self),
                 effect: Effect::Damage(X, EffectTarget::Attacker),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            VIGOR => Status { 
+            VIGOR => BaseBuff { 
                 name: VIGOR,
-                expire_at: Event::OnCard(CardType::Attack),
-                ..Status::default()
+                expire_at: Event::PlayCard(CardType::Attack),
+                ..BaseBuff::default()
             },
-            ACCURACY => Status { 
+            ACCURACY => BaseBuff { 
                 name: ACCURACY,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            AFTER_IMAGE => Status { 
+            AFTER_IMAGE => BaseBuff { 
                 name: AFTER_IMAGE,
-                effect_at: Event::OnCard(CardType::All),
+                effect_at: Event::PlayCard(CardType::All),
                 effect: Effect::Block(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            AMPLIFY => Status { 
+            AMPLIFY => BaseBuff { 
                 name: AMPLIFY,
                 expire_at: Event::TurnEnd,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            BATTLE_HYMN => Status { 
+            BATTLE_HYMN => BaseBuff { 
                 name: BATTLE_HYMN,
                 effect_at: Event::TurnStart,
                 effect: Effect::AddCard{
@@ -128,28 +128,28 @@ impl Status {
                     copies: X,
                     modifier: CardModifier::None,
                 },
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            BERSERK => Status { 
+            BERSERK => BaseBuff { 
                 name: BERSERK,
                 effect_at: Event::TurnStart,
                 effect: Effect::AddEnergy(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            BLASPHEMER => Status { 
+            BLASPHEMER => BaseBuff { 
                 name: BLASPHEMER,
                 is_additive: false,
                 effect_at: Event::TurnStart,
                 expire_at: Event::TurnStart,
                 effect: Effect::Damage(Fixed(9999), EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            BLUR => Status { 
+            BLUR => BaseBuff { 
                 name: BLUR,
                 reduce_at: Event::TurnStart,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            BRUTALITY => Status { 
+            BRUTALITY => BaseBuff { 
                 name: BRUTALITY,
                 effect_at: Event::TurnStart,
                 effect: Effect::Multiple(
@@ -157,14 +157,14 @@ impl Status {
                         Effect::LoseHp(X, EffectTarget::_Self),
                         Effect::Draw(X),
                     ]),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            BURST => Status { 
+            BURST => BaseBuff { 
                 name: BURST,
-                reduce_at: Event::OnCard(CardType::Skill),
-                ..Status::default()
+                reduce_at: Event::PlayCard(CardType::Skill),
+                ..BaseBuff::default()
             },
-            COLLECT => Status { 
+            COLLECT => BaseBuff { 
                 name: COLLECT,
                 effect_at: Event::TurnStart,
                 reduce_at: Event::TurnStart,
@@ -174,18 +174,18 @@ impl Status {
                     copies: Fixed(1),
                     modifier: CardModifier::Upgraded,
                 },
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            COMBUST => Status { 
+            COMBUST => BaseBuff { 
                 name: COMBUST,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            CORRUPTION => Status { 
+            CORRUPTION => BaseBuff { 
                 name: CORRUPTION,
                 is_additive: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            CREATIVE_AI => Status { 
+            CREATIVE_AI => BaseBuff { 
                 name: CREATIVE_AI,
                 effect_at: Event::TurnStart,
                 effect: Effect::AddCard{
@@ -194,110 +194,110 @@ impl Status {
                     copies: X,
                     modifier: CardModifier::None,
                 },
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            DARK_EMBRACE => Status { 
+            DARK_EMBRACE => BaseBuff { 
                 name: DARK_EMBRACE,
-                effect_at: Event::OnExhaust,
+                effect_at: Event::Exhaust,
                 effect: Effect::Draw(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            DEMON_FORM => Status { 
+            DEMON_FORM => BaseBuff { 
                 name: DEMON_FORM,
                 effect_at: Event::TurnStart,
-                effect: Effect::SetStatus(STRENGTH, X, EffectTarget::_Self),
-                ..Status::default()
+                effect: Effect::AddBuff(STRENGTH, X, EffectTarget::_Self),
+                ..BaseBuff::default()
             },
-            DEVA => Status { 
+            DEVA => BaseBuff { 
                 name: DEVA,
                 effect_at: Event::TurnStart,
                 effect: Effect::Multiple(vec![
                     Effect::AddEnergy(N),
-                    Effect::IncreaseStatusN(DEVA, X, EffectTarget::_Self),
+                    Effect::AddBuffN(DEVA, X, EffectTarget::_Self),
                 ]),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            DEVOTION => Status { 
+            DEVOTION => BaseBuff { 
                 name: DEVOTION,
                 effect_at: Event::TurnStart,
-                effect: Effect::AddMantra(X),
-                ..Status::default()
+                effect: Effect::AddBuff(MANTRA, X, EffectTarget::_Self),
+                ..BaseBuff::default()
             },
-            DOUBLE_DAMAGE => Status { 
+            DOUBLE_DAMAGE => BaseBuff { 
                 name: DOUBLE_DAMAGE,
                 reduce_at: Event::TurnEnd,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            DOUBLE_TAP => Status { 
+            DOUBLE_TAP => BaseBuff { 
                 name: DOUBLE_TAP,
-                reduce_at: Event::OnCard(CardType::Attack),
-                ..Status::default()
+                reduce_at: Event::PlayCard(CardType::Attack),
+                ..BaseBuff::default()
             },
-            DUPLICATION => Status { 
+            DUPLICATION => BaseBuff { 
                 name: DUPLICATION,
-                reduce_at: Event::OnCard(CardType::All),
-                ..Status::default()
+                reduce_at: Event::PlayCard(CardType::All),
+                ..BaseBuff::default()
             },
-            ECHO_FORM => Status { 
+            ECHO_FORM => BaseBuff { 
                 name: ECHO_FORM,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            ELECTRO => Status { 
+            ELECTRO => BaseBuff { 
                 name: ELECTRO,
                 is_additive: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            ENVENOM => Status { 
+            ENVENOM => BaseBuff { 
                 name: ENVENOM,
-                effect_at: Event::OnTargetUnblockedDamage,
-                effect: Effect::SetStatus(POISON, X, EffectTarget::TargetEnemy),
-                ..Status::default()
+                effect_at: Event::UnblockedDamage(EffectTarget::TargetEnemy),
+                effect: Effect::AddBuff(POISON, X, EffectTarget::TargetEnemy),
+                ..BaseBuff::default()
             },
-            EQUILIBRIUM => Status { 
+            EQUILIBRIUM => BaseBuff { 
                 name: EQUILIBRIUM,
                 reduce_at: Event::TurnStart,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            ESTABLISHMENT => Status { 
+            ESTABLISHMENT => BaseBuff { 
                 name: ESTABLISHMENT,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            EVOLVE => Status { 
+            EVOLVE => BaseBuff { 
                 name: EVOLVE,
-                effect_at: Event::OnDraw(CardType::Status),
+                effect_at: Event::DrawCard(CardType::Status),
                 effect: Effect::Draw(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            FEEL_NO_PAIN => Status { 
+            FEEL_NO_PAIN => BaseBuff { 
                 name: FEEL_NO_PAIN,
-                effect_at: Event::OnExhaust,
+                effect_at: Event::Exhaust,
                 effect: Effect::Block(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            FIRE_BREATHING => Status { 
+            FIRE_BREATHING => BaseBuff { 
                 name: FIRE_BREATHING,
-                effect_at: Event::Multiple(vec![Event::OnDraw(CardType::Status), Event::OnDraw(CardType::Status)]),
+                effect_at: Event::Multiple(vec![Event::DrawCard(CardType::Status), Event::DrawCard(CardType::Status)]),
                 effect: Effect::Damage(X, EffectTarget::AllEnemies),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            FORESIGHT => Status { 
+            FORESIGHT => BaseBuff { 
                 name: FORESIGHT,
                 effect_at: Event::TurnStart,
                 effect: Effect::Scry(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            FREE_ATTACK_POWER => Status { 
+            FREE_ATTACK_POWER => BaseBuff { 
                 name: FREE_ATTACK_POWER,
-                reduce_at: Event::OnCard(CardType::Attack),
-                ..Status::default()
+                reduce_at: Event::PlayCard(CardType::Attack),
+                ..BaseBuff::default()
             },
-            HEATSINK => Status { 
+            HEATSINK => BaseBuff { 
                 name: HEATSINK,
-                effect_at: Event::OnCard(CardType::Power),
+                effect_at: Event::PlayCard(CardType::Power),
                 effect: Effect::Draw(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            HELLO => Status { 
+            HELLO => BaseBuff { 
                 name: HELLO,
                 effect_at: Event::TurnStart,
                 effect: Effect::AddCard{
@@ -306,9 +306,9 @@ impl Status {
                     copies: X,
                     modifier: CardModifier::None,
                 },
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            INFINITE_BLADES => Status { 
+            INFINITE_BLADES => BaseBuff { 
                 name: INFINITE_BLADES,
                 effect_at: Event::TurnStart,
                 effect: Effect::AddCard{
@@ -317,31 +317,31 @@ impl Status {
                     copies: X,
                     modifier: CardModifier::None,
                 },
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            JUGGERNAUT => Status { 
+            JUGGERNAUT => BaseBuff { 
                 name: JUGGERNAUT,
-                effect_at: Event::OnBlock,
+                effect_at: Event::Block(EffectTarget::_Self),
                 effect: Effect::Damage(X, EffectTarget::RandomEnemy),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            LIKE_WATER => Status { 
+            LIKE_WATER => BaseBuff { 
                 name: LIKE_WATER,
                 effect_at: Event::TurnEnd,
                 effect: Effect::IfStance(Stance::Calm, vec![Effect::Block(X, EffectTarget::_Self)]),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            LOOP => Status { 
+            LOOP => BaseBuff { 
                 name: LOOP,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            MACHINE_LEARNING => Status { 
+            MACHINE_LEARNING => BaseBuff { 
                 name: MACHINE_LEARNING,
                 effect_at: Event::TurnStart,
                 effect: Effect::Draw(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            MAGNETISM => Status { 
+            MAGNETISM => BaseBuff { 
                 name: MAGNETISM,
                 effect_at: Event::TurnStart,
                 effect: Effect::AddCard{
@@ -350,134 +350,134 @@ impl Status {
                     copies: X,
                     modifier: CardModifier::None,
                 },
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            MASTER_REALITY => Status { 
+            MASTER_REALITY => BaseBuff { 
                 name: MASTER_REALITY,
                 is_additive: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            MAYHEM => Status { 
+            MAYHEM => BaseBuff { 
                 name: MAYHEM,
                 effect_at: Event::TurnStart,
                 effect: Effect::AutoPlayCard(CardLocation::DrawPile(RelativePosition::Top)),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            MENTAL_FORTRESS => Status { 
+            MENTAL_FORTRESS => BaseBuff { 
                 name: MENTAL_FORTRESS,
-                effect_at: Event::OnStanceChange(Stance::All, Stance::All),
+                effect_at: Event::StanceChange(Stance::All, Stance::All),
                 effect: Effect::Block(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            NIGHTMARE => Status { 
+            NIGHTMARE => BaseBuff { 
                 name: NIGHTMARE,
                 is_additive: false,
                 stacks: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            NIRVANA => Status { 
+            NIRVANA => BaseBuff { 
                 name: NIRVANA,
-                effect_at: Event::OnScry,
+                effect_at: Event::Scry,
                 effect: Effect::Block(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            NOXIOUS_FUMES => Status { 
+            NOXIOUS_FUMES => BaseBuff { 
                 name: NOXIOUS_FUMES,
                 effect_at: Event::TurnStart,
-                effect: Effect::SetStatus(POISON, X, EffectTarget::AllEnemies),
-                ..Status::default()
+                effect: Effect::AddBuff(POISON, X, EffectTarget::AllEnemies),
+                ..BaseBuff::default()
             },
-            OMEGA => Status { 
+            OMEGA => BaseBuff { 
                 name: OMEGA,
                 effect_at: Event::TurnEnd,
                 effect: Effect::Damage(X, EffectTarget::AllEnemies),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            PANACHE => Status { 
+            PANACHE => BaseBuff { 
                 name: PANACHE,
                 starting_n: 5,
-                effect_at: Event::OnCard(CardType::All),
+                effect_at: Event::PlayCard(CardType::All),
                 effect: Effect::Multiple(vec![
-                    Effect::IncreaseStatusN(PANACHE, Fixed(-1), EffectTarget::_Self),
-                    Effect::IfStatusN(EffectTarget::_Self, PANACHE, Fixed(0), vec![
-                        Effect::IncreaseStatusN(PANACHE, Fixed(5), EffectTarget::_Self),
+                    Effect::AddBuffN(PANACHE, Fixed(-1), EffectTarget::_Self),
+                    Effect::IfBuffN(EffectTarget::_Self, PANACHE, Fixed(0), vec![
+                        Effect::AddBuffN(PANACHE, Fixed(5), EffectTarget::_Self),
                         Effect::Damage(X, EffectTarget::AllEnemies),
                     ]),
                 ]),
 
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            PEN_NIB => Status { 
+            PEN_NIB => BaseBuff { 
                 name: PEN_NIB,
                 is_additive: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            PHANTASMAL => Status { 
+            PHANTASMAL => BaseBuff { 
                 name: PHANTASMAL,
                 reduce_at: Event::TurnStart,
                 effect_at: Event::TurnStart,
-                effect: Effect::SetStatus(DOUBLE_DAMAGE, Fixed(1), EffectTarget::_Self),
-                ..Status::default()
+                effect: Effect::AddBuff(DOUBLE_DAMAGE, Fixed(1), EffectTarget::_Self),
+                ..BaseBuff::default()
             },
-            RAGE => Status { 
+            RAGE => BaseBuff { 
                 name: RAGE,
-                effect_at: Event::OnCard(CardType::Attack),
+                effect_at: Event::PlayCard(CardType::Attack),
                 effect: Effect::Block(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            REBOUND => Status { 
+            REBOUND => BaseBuff { 
                 name: REBOUND,
-                reduce_at: Event::OnCard(CardType::All),
-                ..Status::default()
+                reduce_at: Event::PlayCard(CardType::All),
+                ..BaseBuff::default()
             },
-            REGEN => Status { 
+            REGEN => BaseBuff { 
                 name: REGEN,
                 reduce_at: Event::TurnEnd,
                 effect_at: Event::TurnEnd,
                 effect: Effect::Heal(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            RUSHDOWN => Status { 
+            RUSHDOWN => BaseBuff { 
                 name: RUSHDOWN,
-                effect_at: Event::OnStanceChange(Stance::All, Stance::Wrath),
+                effect_at: Event::StanceChange(Stance::All, Stance::Wrath),
                 effect: Effect::Draw(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            REPAIR => Status { 
+            REPAIR => BaseBuff { 
                 name: REPAIR,
-                effect_at: Event::OnCombatEnd,
+                effect_at: Event::CombatEnd,
                 effect: Effect::Heal(X),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            RUPTURE => Status { 
+            RUPTURE => BaseBuff { 
                 name: RUPTURE,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            SADISTIC => Status { 
+            SADISTIC => BaseBuff { 
                 name: SADISTIC,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            SIMMERING_RAGE => Status { 
+            SIMMERING_RAGE => BaseBuff { 
                 name: SIMMERING_RAGE,
                 is_additive: false,
                 expire_at: Event::TurnStart,
                 effect_at: Event::TurnStart,
                 effect: Effect::SetStance(Stance::Wrath),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            STATIC_DISCHARGE => Status { 
+            STATIC_DISCHARGE => BaseBuff { 
                 name: STATIC_DISCHARGE,
-                effect_at: Event::OnUnblockedDamage,
+                effect_at: Event::UnblockedDamage(EffectTarget::_Self),
                 effect: Effect::ChannelOrb(Orb::Lightning),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            STORM => Status { 
+            STORM => BaseBuff { 
                 name: STORM,
-                effect_at: Event::OnCard(CardType::Power),
+                effect_at: Event::PlayCard(CardType::Power),
                 effect: Effect::ChannelOrb(Orb::Lightning),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            STUDY => Status { 
+            STUDY => BaseBuff { 
                 name: STUDY,
                 effect_at: Event::TurnEnd,
                 effect: Effect::AddCard{
@@ -486,28 +486,28 @@ impl Status {
                     copies: X,
                     modifier: CardModifier::None,
                 },
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            SURROUNDED => Status { 
+            SURROUNDED => BaseBuff { 
                 name: SURROUNDED,
                 is_additive: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            THE_BOMB => Status { 
+            THE_BOMB => BaseBuff { 
                 name: THE_BOMB,
                 is_additive: false,
                 effect_at: Event::TurnEnd,
                 effect: Effect::Custom,
                 stacks: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            THOUSAND_CUTS => Status { 
+            THOUSAND_CUTS => BaseBuff { 
                 name: THOUSAND_CUTS,
-                effect_at: Event::OnCard(CardType::All),
+                effect_at: Event::PlayCard(CardType::All),
                 effect: Effect::Damage(X, EffectTarget::AllEnemies),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            TOOLS_OF_THE_TRADE => Status { 
+            TOOLS_OF_THE_TRADE => BaseBuff { 
                 name: TOOLS_OF_THE_TRADE,
                 effect_at: Event::TurnStart,
                 effect: Effect::Multiple(
@@ -516,140 +516,140 @@ impl Status {
                         Effect::DiscardCard(CardLocation::PlayerHand(RelativePosition::PlayerChoice(1)))
                     ]
                 ),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            WAVE_OF_THE_HAND => Status { 
+            WAVE_OF_THE_HAND => BaseBuff { 
                 name: WAVE_OF_THE_HAND,
-                effect_at: Event::OnBlock,
-                effect: Effect::SetStatus(WEAK, X, EffectTarget::AllEnemies),
-                ..Status::default()
+                effect_at: Event::Block(EffectTarget::_Self),
+                effect: Effect::AddBuff(WEAK, X, EffectTarget::AllEnemies),
+                ..BaseBuff::default()
             },
-            WELL_LAID_PLANS => Status { 
+            WELL_LAID_PLANS => BaseBuff { 
                 name: WELL_LAID_PLANS,
-                ..Status::default()
+                ..BaseBuff::default()
             },
             
-            CONFUSED => Status { 
+            CONFUSED => BaseBuff { 
                 name: CONFUSED,
                 is_additive: false,
                 is_buff: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            DEXTERITY_DOWN => Status { 
+            DEXTERITY_DOWN => BaseBuff { 
                 name: DEXTERITY_DOWN,
                 is_buff: false,
                 effect_at: Event::TurnEnd,
-                effect: Effect::SetStatus(DEXTERITY, NegX, EffectTarget::_Self),
-                ..Status::default()
+                effect: Effect::AddBuff(DEXTERITY, NegX, EffectTarget::_Self),
+                ..BaseBuff::default()
             },
-            FRAIL => Status { 
+            FRAIL => BaseBuff { 
                 name: FRAIL,
                 is_buff: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            NO_DRAW => Status { 
+            NO_DRAW => BaseBuff { 
                 name: NO_DRAW,
                 is_buff: false,
                 is_additive: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            POISON => Status { 
+            POISON => BaseBuff { 
                 name: POISON,
                 is_buff: false,
                 effect_at: Event::TurnEnd,
                 effect: Effect::LoseHp(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            SHACKLED => Status { 
+            SHACKLED => BaseBuff { 
                 name: SHACKLED,
                 is_buff: false,
                 effect_at: Event::TurnEnd,
-                effect: Effect::SetStatus(STRENGTH, X, EffectTarget::_Self),
-                ..Status::default()
+                effect: Effect::AddBuff(STRENGTH, X, EffectTarget::_Self),
+                ..BaseBuff::default()
             },
-            SLOW => Status { 
+            SLOW => BaseBuff { 
                 name: SLOW,
                 is_buff: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            STRENGTH_DOWN => Status { 
+            STRENGTH_DOWN => BaseBuff { 
                 name: STRENGTH_DOWN,
                 is_buff: false,
                 effect_at: Event::TurnEnd,
-                effect: Effect::SetStatus(STRENGTH, NegX, EffectTarget::_Self),
-                ..Status::default()
+                effect: Effect::AddBuff(STRENGTH, NegX, EffectTarget::_Self),
+                ..BaseBuff::default()
             },
-            VULNERABLE => Status { 
+            VULNERABLE => BaseBuff { 
                 name: VULNERABLE,
                 is_buff: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            WEAK => Status { 
+            WEAK => BaseBuff { 
                 name: WEAK,
                 is_buff: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            BIAS => Status { 
+            BIAS => BaseBuff { 
                 name: BIAS,
                 is_buff: false,
                 effect_at: Event::TurnStart,
-                effect: Effect::SetStatus(FOCUS, NegX, EffectTarget::_Self),
-                ..Status::default()
+                effect: Effect::AddBuff(FOCUS, NegX, EffectTarget::_Self),
+                ..BaseBuff::default()
             },
-            BLOCK_RETURN => Status { 
+            BLOCK_RETURN => BaseBuff { 
                 name: BLOCK_RETURN,
                 is_buff: false,
-                effect_at: Event::OnAttackDamage,
+                effect_at: Event::AttackDamage(EffectTarget::_Self),
                 effect: Effect::Block(X, EffectTarget::Attacker),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            CHOKED => Status { 
+            CHOKED => BaseBuff { 
                 name: CHOKED,
                 is_buff: false,
-                effect_at: Event::OnCard(CardType::All),
+                effect_at: Event::PlayCard(CardType::All),
                 effect: Effect::LoseHp(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            CONSTRICTED => Status { 
+            CONSTRICTED => BaseBuff { 
                 name: CONSTRICTED,
                 is_buff: false,
                 effect_at: Event::TurnEnd,
                 effect: Effect::Damage(X, EffectTarget::_Self),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            CORPSE_EXPLOSION => Status { 
+            CORPSE_EXPLOSION => BaseBuff { 
                 name: CORPSE_EXPLOSION,
                 is_buff: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            DRAW_REDUCTION => Status { 
+            DRAW_REDUCTION => BaseBuff { 
                 name: DRAW_REDUCTION,
                 is_buff: false,
                 expire_at: Event::TurnEnd,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            ENTANGLED => Status { 
+            ENTANGLED => BaseBuff { 
                 name: ENTANGLED,
                 is_buff: false,
                 is_additive: false,
                 expire_at: Event::TurnEnd,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            FASTING => Status { 
+            FASTING => BaseBuff { 
                 name: FASTING,
                 is_buff: false,
                 effect_at: Event::TurnStart,
                 effect: Effect::AddEnergy(NegX),
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            HEX => Status { 
+            HEX => BaseBuff { 
                 name: HEX,
                 is_buff: false,
                 effect_at: Event::Multiple(vec![
-                    Event::OnCard(CardType::Curse),
-                    Event::OnCard(CardType::Power),
-                    Event::OnCard(CardType::Skill),
-                    Event::OnCard(CardType::Status),
+                    Event::PlayCard(CardType::Curse),
+                    Event::PlayCard(CardType::Power),
+                    Event::PlayCard(CardType::Skill),
+                    Event::PlayCard(CardType::Status),
                 ]),
                 effect: Effect::AddCard{
                     card: CardReference::ByName(cards::DAZED),
@@ -657,33 +657,33 @@ impl Status {
                     copies: X,
                     modifier: CardModifier::None,
                 },
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            LOCK_ON => Status { 
+            LOCK_ON => BaseBuff { 
                 name: LOCK_ON,
                 is_buff: false,
                 reduce_at: Event::TurnStart,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            MARK => Status { 
+            MARK => BaseBuff { 
                 name: MARK,
                 is_buff: false,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            NO_BLOCK => Status { 
+            NO_BLOCK => BaseBuff { 
                 name: NO_BLOCK,
                 is_buff: false,
                 reduce_at: Event::TurnEnd,
-                ..Status::default()
+                ..BaseBuff::default()
             },
-            WRAITH_FORM => Status { 
+            WRAITH_FORM => BaseBuff { 
                 name: WRAITH_FORM,
                 is_buff: false,
                 effect_at: Event::TurnStart,
-                effect: Effect::SetStatus(DEXTERITY, NegX, EffectTarget::_Self),
-                ..Status::default()
+                effect: Effect::AddBuff(DEXTERITY, NegX, EffectTarget::_Self),
+                ..BaseBuff::default()
             },
-            _ => panic!("Unrecognized status name"),
+            _ => panic!("Unrecognized BaseBuff name"),
         }
     }
 }

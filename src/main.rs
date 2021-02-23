@@ -52,7 +52,7 @@ fn read_state() -> models::Response {
     }
 }
 
-fn fmt_opt_i(i: Option<i32>) -> String {
+fn fmt_opt_i(i: Option<u8>) -> String {
     i.map(|a| a.to_string()).unwrap_or(String::default())
 }
 

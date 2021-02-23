@@ -12,20 +12,20 @@ pub struct SpireAi {
 pub enum Choice {
     Start {
         player_class: models::PlayerClass,
-        ascension: Option<i32>,
+        ascension: Option<u8>,
     },
     Potion {
         should_use: bool,
-        slot: i32,
-        target_index: Option<i32>,
+        slot: u8,
+        target_index: Option<u8>,
     },
     Play {
-        card_index: i32,
-        target_index: Option<i32>,
+        card_index: u8,
+        target_index: Option<u8>,
     },
     End,
     Choose {
-        choice_index: i32,
+        choice_index: u8,
     },
     Proceed,
     Return,
@@ -45,7 +45,7 @@ impl SpireAi {
         let outcome = predict_outcome(state, &choice);
         self.expected_state = Some(outcome);
 
-        Status::by_name("");
+        BaseBuff::by_name("");
         BaseCard::by_name("");
         
         return choice;

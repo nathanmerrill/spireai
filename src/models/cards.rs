@@ -1,4 +1,4 @@
-use crate::models::statuses;
+use crate::models::buffs;
 use crate::models::core::*;
 use Class::*;
 use CardType::*;
@@ -13,7 +13,7 @@ use RelativePosition::*;
 pub const EXHAUST: CardEffect = OnPlay(ExhaustCard(This));
 
 impl BaseCard {
-    fn default(_class: Class, _type: CardType) -> Self {
+    fn new(_class: Class, _type: CardType) -> Self {
         let targeted: bool = &_type == &Attack;
         Self {
             name: &"",
@@ -37,28 +37,28 @@ impl BaseCard {
                 rarity: Starter,
                 effects: vec![OnPlay(Block(Fixed(5), _Self))],
                 on_upgrade: OnUpgrade::SetEffects(vec![OnPlay(Block(Fixed(8), _Self))]),
-                ..BaseCard::default(Class::All, Skill)
+                ..BaseCard::new(Class::All, Skill)
             },
             STRIKE => BaseCard { 
                 name: STRIKE, 
                 rarity: Starter,
                 effects: vec![OnPlay(AttackDamage(Fixed(6), TargetEnemy))],
                 on_upgrade: OnUpgrade::SetEffects(vec![OnPlay(AttackDamage(Fixed(9), TargetEnemy))]),
-                ..BaseCard::default(Class::All, Attack)
+                ..BaseCard::new(Class::All, Attack)
             },
             BASH => BaseCard { 
                 name: BASH, 
                 rarity: Starter,
                 effects: vec![
                     OnPlay(AttackDamage(Fixed(8), TargetEnemy)), 
-                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(2), TargetEnemy)),
+                    OnPlay(AddBuff(buffs::VULNERABLE, Fixed(2), TargetEnemy)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(AttackDamage(Fixed(10), TargetEnemy)), 
-                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(3), TargetEnemy)),
+                    OnPlay(AddBuff(buffs::VULNERABLE, Fixed(3), TargetEnemy)),
                 ]),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             ANGER => BaseCard { 
                 name: ANGER, 
@@ -81,7 +81,7 @@ impl BaseCard {
                     })
                 ]),
                 cost: 0,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             ARMAMENTS => BaseCard { 
                 name: ARMAMENTS, 
@@ -93,7 +93,7 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(8), TargetEnemy)), 
                     OnPlay(UpgradeCard(PlayerHand(RelativePosition::All))),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             BODY_SLAM => BaseCard { 
                 name: BODY_SLAM, 
@@ -101,7 +101,7 @@ impl BaseCard {
                     OnPlay(Block(Amount::Custom, _Self)),
                 ],
                 on_upgrade: OnUpgrade::ReduceCost(0),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             CLASH => BaseCard { 
                 name: CLASH, 
@@ -114,7 +114,7 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(18), TargetEnemy)), 
                 ]),
                 cost: 0,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             CLEAVE => BaseCard { 
                 name: CLEAVE, 
@@ -125,33 +125,33 @@ impl BaseCard {
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(AttackDamage(Fixed(11), AllEnemies)),
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             CLOTHESLINE => BaseCard { 
                 name: CLOTHESLINE, 
                 effects: vec![
                     OnPlay(AttackDamage(Fixed(12), TargetEnemy)),
-                    OnPlay(SetStatus(statuses::WEAK, Fixed(2), TargetEnemy)),
+                    OnPlay(AddBuff(buffs::WEAK, Fixed(2), TargetEnemy)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(AttackDamage(Fixed(14), TargetEnemy)),
-                    OnPlay(SetStatus(statuses::WEAK, Fixed(3), TargetEnemy)),
+                    OnPlay(AddBuff(buffs::WEAK, Fixed(3), TargetEnemy)),
                 ]),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             FLEX => BaseCard { 
                 name: FLEX, 
                 effects: vec![
-                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(2), _Self)),
-                    OnPlay(SetStatus(statuses::STRENGTH_DOWN, Fixed(2), _Self)),
+                    OnPlay(AddBuff(buffs::STRENGTH, Fixed(2), _Self)),
+                    OnPlay(AddBuff(buffs::STRENGTH_DOWN, Fixed(2), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(4), _Self)),
-                    OnPlay(SetStatus(statuses::STRENGTH_DOWN, Fixed(4), _Self)),
+                    OnPlay(AddBuff(buffs::STRENGTH, Fixed(4), _Self)),
+                    OnPlay(AddBuff(buffs::STRENGTH_DOWN, Fixed(4), _Self)),
                 ]),
                 cost: 0,
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             HAVOC => BaseCard { 
                 name: HAVOC, 
@@ -159,7 +159,7 @@ impl BaseCard {
                     OnPlay(AutoPlayCard(DrawPile(Top))),
                 ],
                 on_upgrade: OnUpgrade::ReduceCost(0),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             HEADBUTT => BaseCard { 
                 name: HEADBUTT, 
@@ -171,7 +171,7 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(12), TargetEnemy)),
                     OnPlay(MoveCard(DiscardPile(PlayerChoice(1)), DrawPile(Top))),
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             HEAVY_BLADE => BaseCard { 
                 name: HEAVY_BLADE, 
@@ -179,7 +179,7 @@ impl BaseCard {
                     OnPlay(AttackDamage(Amount::Custom, TargetEnemy)),
                 ],
                 cost: 2,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             IRON_WAVE => BaseCard { 
                 name: IRON_WAVE, 
@@ -191,7 +191,7 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(7), TargetEnemy)),
                     OnPlay(Block(Fixed(7), _Self)),
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             PERFECTED_STRIKE => BaseCard { 
                 name: PERFECTED_STRIKE, 
@@ -199,7 +199,7 @@ impl BaseCard {
                     OnPlay(AttackDamage(Amount::Custom, TargetEnemy)),
                 ],
                 cost: 2,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             SHRUG_IT_OFF => BaseCard { 
                 name: SHRUG_IT_OFF, 
@@ -211,7 +211,7 @@ impl BaseCard {
                     OnPlay(Block(Fixed(11), _Self)),
                     OnPlay(Draw(Fixed(1))),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             SWORD_BOOMERANG => BaseCard { 
                 name: SWORD_BOOMERANG, 
@@ -227,7 +227,7 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(3), RandomEnemy)),
                     OnPlay(AttackDamage(Fixed(3), RandomEnemy)),
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             THUNDERCLAP => BaseCard { 
                 name: THUNDERCLAP, 
@@ -235,13 +235,13 @@ impl BaseCard {
                 targeted: false,
                 effects: vec![
                     OnPlay(AttackDamage(Fixed(4), AllEnemies)),
-                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(1), AllEnemies)),
+                    OnPlay(AddBuff(buffs::VULNERABLE, Fixed(1), AllEnemies)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(AttackDamage(Fixed(7), AllEnemies)),
-                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(1), AllEnemies)),
+                    OnPlay(AddBuff(buffs::VULNERABLE, Fixed(1), AllEnemies)),
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             TRUE_GRIT => BaseCard { 
                 name: TRUE_GRIT, 
@@ -253,7 +253,7 @@ impl BaseCard {
                     OnPlay(Block(Fixed(9), _Self)),
                     OnPlay(ExhaustCard(PlayerHand(PlayerChoice(1)))),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             TWIN_STRIKE => BaseCard { 
                 name: TWIN_STRIKE, 
@@ -265,7 +265,7 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(7), TargetEnemy)),
                     OnPlay(AttackDamage(Fixed(7), TargetEnemy)),
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             WARCRY => BaseCard { 
                 name: WARCRY, 
@@ -286,7 +286,7 @@ impl BaseCard {
                     EXHAUST,
                 ]),
                 cost: 0,
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             WILD_STRIKE => BaseCard { 
                 name: WILD_STRIKE, 
@@ -308,21 +308,21 @@ impl BaseCard {
                         modifier: CardModifier::None
                     }),
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             BATTLE_TRANCE => BaseCard { 
                 name: BATTLE_TRANCE, 
                 rarity: Uncommon,
                 effects: vec![
                     OnPlay(Draw(Fixed(3))),
-                    OnPlay(SetStatus(statuses::NO_DRAW, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::NO_DRAW, Fixed(1), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(Draw(Fixed(4))),
-                    OnPlay(SetStatus(statuses::NO_DRAW, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::NO_DRAW, Fixed(1), _Self)),
                 ]),
                 cost: 0,
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             BLOOD_FOR_BLOOD => BaseCard { 
                 name: BLOOD_FOR_BLOOD, 
@@ -336,7 +336,7 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(22), TargetEnemy)),
                 ]),
                 cost: 4,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             BLOODLETTING => BaseCard { 
                 name: BLOODLETTING, 
@@ -350,7 +350,7 @@ impl BaseCard {
                     OnPlay(AddEnergy(Fixed(3))),
                 ]),
                 cost: 0,
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             BURNING_PACT => BaseCard { 
                 name: BURNING_PACT, 
@@ -363,7 +363,7 @@ impl BaseCard {
                     OnPlay(ExhaustCard(PlayerHand(PlayerChoice(1)))),
                     OnPlay(Draw(Fixed(3))),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             CARNAGE => BaseCard { 
                 name: CARNAGE, 
@@ -376,44 +376,44 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(28), TargetEnemy)),
                 ]),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             COMBUST => BaseCard { 
                 name: COMBUST, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::COMBUST, Fixed(5), _Self)),
-                    OnPlay(IncreaseStatusN(statuses::COMBUST, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::COMBUST, Fixed(5), _Self)),
+                    OnPlay(AddBuffN(buffs::COMBUST, Fixed(1), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::COMBUST, Fixed(7), _Self)),
-                    OnPlay(IncreaseStatusN(statuses::COMBUST, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::COMBUST, Fixed(7), _Self)),
+                    OnPlay(AddBuffN(buffs::COMBUST, Fixed(1), _Self)),
                 ]),
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             DARK_EMBRACE => BaseCard { 
                 name: DARK_EMBRACE, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::DARK_EMBRACE, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::DARK_EMBRACE, Fixed(1), _Self)),
                 ],
                 on_upgrade: OnUpgrade::ReduceCost(1),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             DISARM => BaseCard { 
                 name: DISARM, 
                 rarity: Uncommon,
                 targeted: true,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(-2), TargetEnemy)),
+                    OnPlay(AddBuff(buffs::STRENGTH, Fixed(-2), TargetEnemy)),
                     EXHAUST,
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(-3), TargetEnemy)),
+                    OnPlay(AddBuff(buffs::STRENGTH, Fixed(-3), TargetEnemy)),
                     EXHAUST,
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             DROPKICK => BaseCard { 
                 name: DROPKICK, 
@@ -421,19 +421,19 @@ impl BaseCard {
                 targeted: true,
                 effects: vec![
                     OnPlay(AttackDamage(Fixed(5), TargetEnemy)),
-                    OnPlay(IfStatus(TargetEnemy, statuses::VULNERABLE, vec![
+                    OnPlay(IfStatus(TargetEnemy, buffs::VULNERABLE, vec![
                         AddEnergy(Fixed(1)),
                         Draw(Fixed(1)),
                     ]))
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(AttackDamage(Fixed(8), TargetEnemy)),
-                    OnPlay(IfStatus(TargetEnemy, statuses::VULNERABLE, vec![
+                    OnPlay(IfStatus(TargetEnemy, buffs::VULNERABLE, vec![
                         AddEnergy(Fixed(1)),
                         Draw(Fixed(1)),
                     ]))
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             DUAL_WIELD => BaseCard { 
                 name: DUAL_WIELD, 
@@ -454,7 +454,7 @@ impl BaseCard {
                         modifier: CardModifier::None
                     }),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             ENTRENCH => BaseCard { 
                 name: ENTRENCH, 
@@ -464,54 +464,54 @@ impl BaseCard {
                 ],
                 on_upgrade: OnUpgrade::ReduceCost(1),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             EVOLVE => BaseCard { 
                 name: EVOLVE, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::EVOLVE, Fixed(1), _Self))
+                    OnPlay(AddBuff(buffs::EVOLVE, Fixed(1), _Self))
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::EVOLVE, Fixed(2), _Self))
+                    OnPlay(AddBuff(buffs::EVOLVE, Fixed(2), _Self))
                 ]),
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             FEEL_NO_PAIN => BaseCard { 
                 name: FEEL_NO_PAIN, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::FEEL_NO_PAIN, Fixed(3), _Self))
+                    OnPlay(AddBuff(buffs::FEEL_NO_PAIN, Fixed(3), _Self))
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::FEEL_NO_PAIN, Fixed(4), _Self))
+                    OnPlay(AddBuff(buffs::FEEL_NO_PAIN, Fixed(4), _Self))
                 ]),
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             FIRE_BREATHING => BaseCard { 
                 name: FIRE_BREATHING, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::FIRE_BREATHING, Fixed(6), _Self))
+                    OnPlay(AddBuff(buffs::FIRE_BREATHING, Fixed(6), _Self))
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::FIRE_BREATHING, Fixed(10), _Self))
+                    OnPlay(AddBuff(buffs::FIRE_BREATHING, Fixed(10), _Self))
                 ]),
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             FLAME_BARRIER => BaseCard { 
                 name: FLAME_BARRIER, 
                 rarity: Uncommon,
                 effects: vec![
                     OnPlay(Block(Fixed(12), _Self)),
-                    OnPlay(SetStatus(statuses::FLAME_BARRIER, Fixed(4), _Self))
+                    OnPlay(AddBuff(buffs::FLAME_BARRIER, Fixed(4), _Self))
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(Block(Fixed(16), _Self)),
-                    OnPlay(SetStatus(statuses::FLAME_BARRIER, Fixed(6), _Self))
+                    OnPlay(AddBuff(buffs::FLAME_BARRIER, Fixed(6), _Self))
                 ]),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             GHOSTLY_ARMOR => BaseCard { 
                 name: GHOSTLY_ARMOR, 
@@ -524,7 +524,7 @@ impl BaseCard {
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(Block(Fixed(13), _Self)),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             HEMOKINESIS => BaseCard { 
                 name: HEMOKINESIS, 
@@ -537,7 +537,7 @@ impl BaseCard {
                     OnPlay(LoseHp(Fixed(2), _Self)),
                     OnPlay(AttackDamage(Fixed(20), TargetEnemy)),
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             INFERNAL_BLADE => BaseCard { 
                 name: INFERNAL_BLADE, 
@@ -552,44 +552,44 @@ impl BaseCard {
                     EXHAUST,
                 ],
                 on_upgrade: OnUpgrade::ReduceCost(0),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             INFLAME => BaseCard { 
                 name: INFLAME, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(2), _Self)),
+                    OnPlay(AddBuff(buffs::STRENGTH, Fixed(2), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::STRENGTH, Fixed(3), _Self)),
+                    OnPlay(AddBuff(buffs::STRENGTH, Fixed(3), _Self)),
                 ]),
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             INTIMIDATE => BaseCard { 
                 name: INTIMIDATE, 
                 rarity: Uncommon,
                 _type: Power,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::WEAK, Fixed(1), AllEnemies)),
+                    OnPlay(AddBuff(buffs::WEAK, Fixed(1), AllEnemies)),
                     EXHAUST,
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::WEAK, Fixed(2), AllEnemies)),
+                    OnPlay(AddBuff(buffs::WEAK, Fixed(2), AllEnemies)),
                     EXHAUST,
                 ]),
                 cost: 0,
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             METALLICIZE => BaseCard { 
                 name: METALLICIZE, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::METALLICIZE, Fixed(3), _Self)),
+                    OnPlay(AddBuff(buffs::METALLICIZE, Fixed(3), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::METALLICIZE, Fixed(4), _Self)),
+                    OnPlay(AddBuff(buffs::METALLICIZE, Fixed(4), _Self)),
                 ]),
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             POWER_THROUGH => BaseCard { 
                 name: POWER_THROUGH, 
@@ -612,7 +612,7 @@ impl BaseCard {
                     }),
                     OnPlay(Block(Fixed(20), _Self)),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             PUMMEL => BaseCard { 
                 name: PUMMEL, 
@@ -632,19 +632,19 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(2), TargetEnemy)),
                     EXHAUST,
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             RAGE => BaseCard { 
                 name: RAGE, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::RAGE, Fixed(3), _Self)),
+                    OnPlay(AddBuff(buffs::RAGE, Fixed(3), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::RAGE, Fixed(5), _Self)),
+                    OnPlay(AddBuff(buffs::RAGE, Fixed(5), _Self)),
                 ]),
                 cost: 0,
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             RAMPAGE => BaseCard { 
                 name: RAMPAGE, 
@@ -652,7 +652,7 @@ impl BaseCard {
                 effects: vec![
                     OnPlay(AttackDamage(Amount::Custom, TargetEnemy)),
                 ],
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             RECKLESS_CHARGE => BaseCard { 
                 name: RECKLESS_CHARGE, 
@@ -675,18 +675,18 @@ impl BaseCard {
                         modifier: CardModifier::None
                     }),
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             RUPTURE => BaseCard { 
                 name: RUPTURE, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::RUPTURE, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::RUPTURE, Fixed(1), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::RUPTURE, Fixed(2), _Self)),
+                    OnPlay(AddBuff(buffs::RUPTURE, Fixed(2), _Self)),
                 ]),
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             SEARING_BLOW => BaseCard { 
                 name: SEARING_BLOW, 
@@ -696,7 +696,7 @@ impl BaseCard {
                 ],
                 on_upgrade: OnUpgrade::SearingBlow,
                 cost: 2,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             SECOND_WIND => BaseCard { 
                 name: SECOND_WIND, 
@@ -704,7 +704,7 @@ impl BaseCard {
                 effects: vec![
                     OnPlay(Effect::Custom),
                 ],
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             SEEING_RED => BaseCard { 
                 name: SEEING_RED, 
@@ -714,7 +714,7 @@ impl BaseCard {
                     EXHAUST,
                 ],
                 on_upgrade: OnUpgrade::ReduceCost(0),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             SENTINEL => BaseCard { 
                 name: SENTINEL, 
@@ -727,7 +727,7 @@ impl BaseCard {
                     OnPlay(Block(Fixed(8), _Self)),
                     OnExhaust(AddEnergy(Fixed(3))),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             SEVER_SOUL => BaseCard { 
                 name: SEVER_SOUL, 
@@ -741,23 +741,23 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(20), TargetEnemy)),
                 ]),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             SHOCKWAVE => BaseCard { 
                 name: SHOCKWAVE, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(3), AllEnemies)),
-                    OnPlay(SetStatus(statuses::WEAK, Fixed(3), AllEnemies)),
+                    OnPlay(AddBuff(buffs::VULNERABLE, Fixed(3), AllEnemies)),
+                    OnPlay(AddBuff(buffs::WEAK, Fixed(3), AllEnemies)),
                     EXHAUST,
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(5), AllEnemies)),
-                    OnPlay(SetStatus(statuses::WEAK, Fixed(5), AllEnemies)),
+                    OnPlay(AddBuff(buffs::VULNERABLE, Fixed(5), AllEnemies)),
+                    OnPlay(AddBuff(buffs::WEAK, Fixed(5), AllEnemies)),
                     EXHAUST,
                 ]),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             SPOT_WEAKNESS => BaseCard { 
                 name: SPOT_WEAKNESS, 
@@ -765,72 +765,72 @@ impl BaseCard {
                 targeted: true,
                 effects: vec![
                     OnPlay(IfAttacking(TargetEnemy, vec![
-                        SetStatus(statuses::STRENGTH, Fixed(3), _Self)
+                        AddBuff(buffs::STRENGTH, Fixed(3), _Self)
                     ])),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(IfAttacking(TargetEnemy, vec![
-                        SetStatus(statuses::STRENGTH, Fixed(4), _Self)
+                        AddBuff(buffs::STRENGTH, Fixed(4), _Self)
                     ])),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             UPPERCUT => BaseCard { 
                 name: UPPERCUT, 
                 rarity: Uncommon,
                 effects: vec![
                     OnPlay(AttackDamage(Fixed(13), TargetEnemy)),
-                    OnPlay(SetStatus(statuses::WEAK, Fixed(1), TargetEnemy)),
-                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(1), TargetEnemy)),
+                    OnPlay(AddBuff(buffs::WEAK, Fixed(1), TargetEnemy)),
+                    OnPlay(AddBuff(buffs::VULNERABLE, Fixed(1), TargetEnemy)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(AttackDamage(Fixed(13), TargetEnemy)),
-                    OnPlay(SetStatus(statuses::WEAK, Fixed(2), TargetEnemy)),
-                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(2), TargetEnemy)),
+                    OnPlay(AddBuff(buffs::WEAK, Fixed(2), TargetEnemy)),
+                    OnPlay(AddBuff(buffs::VULNERABLE, Fixed(2), TargetEnemy)),
                 ]),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             WHIRLWIND => BaseCard { 
                 name: WHIRLWIND, 
                 rarity: Uncommon,
                 targeted: false,
                 effects: vec![
-                    RepeatX(vec![
-                        AttackDamage(Fixed(5), AllEnemies)
-                    ])
+                    OnPlay(
+                        Effect::Repeat(X, Box::new(Effect::AttackDamage(Fixed(5), AllEnemies)))
+                    )
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    RepeatX(vec![
-                        AttackDamage(Fixed(8), AllEnemies)
-                    ])
+                    OnPlay(
+                        Effect::Repeat(X, Box::new(Effect::AttackDamage(Fixed(8), AllEnemies)))
+                    )
                 ]),
                 cost: -1,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             BARRICADE => BaseCard { 
                 name: BARRICADE, 
                 rarity: Rare,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::BARRICADE, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::BARRICADE, Fixed(1), _Self)),
                 ],
                 on_upgrade: OnUpgrade::ReduceCost(2),
                 cost: 3,
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             BERSERK => BaseCard { 
                 name: BERSERK, 
                 rarity: Rare,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(2), _Self)),
-                    OnPlay(SetStatus(statuses::BERSERK, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::VULNERABLE, Fixed(2), _Self)),
+                    OnPlay(AddBuff(buffs::BERSERK, Fixed(1), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::VULNERABLE, Fixed(1), _Self)),
-                    OnPlay(SetStatus(statuses::BERSERK, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::VULNERABLE, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::BERSERK, Fixed(1), _Self)),
                 ]),
                 cost: 0,
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             BLUDGEON => BaseCard { 
                 name: BLUDGEON, 
@@ -842,50 +842,50 @@ impl BaseCard {
                     OnPlay(AttackDamage(Fixed(42), TargetEnemy)),
                 ]),
                 cost: 3,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             BRUTALITY => BaseCard { 
                 name: BRUTALITY, 
                 rarity: Rare,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::BRUTALITY, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::BRUTALITY, Fixed(1), _Self)),
                 ],
                 on_upgrade: OnUpgrade::Innate,
                 cost: 0,
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             CORRUPTION => BaseCard { 
                 name: CORRUPTION, 
                 rarity: Rare,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::CORRUPTION, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::CORRUPTION, Fixed(1), _Self)),
                 ],
                 on_upgrade: OnUpgrade::ReduceCost(2),
                 cost: 3,
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             DEMON_FORM => BaseCard { 
                 name: DEMON_FORM, 
                 rarity: Rare,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::DEMON_FORM, Fixed(2), _Self)),
+                    OnPlay(AddBuff(buffs::DEMON_FORM, Fixed(2), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::DEMON_FORM, Fixed(3), _Self)),
+                    OnPlay(AddBuff(buffs::DEMON_FORM, Fixed(3), _Self)),
                 ]),
                 cost: 3,
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             DOUBLE_TAP => BaseCard { 
                 name: DOUBLE_TAP, 
                 rarity: Rare,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::DOUBLE_TAP, Fixed(1), _Self)),
+                    OnPlay(AddBuff(buffs::DOUBLE_TAP, Fixed(1), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::DOUBLE_TAP, Fixed(2), _Self)),
+                    OnPlay(AddBuff(buffs::DOUBLE_TAP, Fixed(2), _Self)),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             EXHUME => BaseCard { 
                 name: EXHUME, 
@@ -898,22 +898,22 @@ impl BaseCard {
                     EXHAUST,
                 ],
                 on_upgrade: OnUpgrade::ReduceCost(0),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             FEED => BaseCard { 
                 name: FEED, 
                 rarity: Rare,
                 effects: vec![
                     OnPlay(AttackDamage(Fixed(10), TargetEnemy)),
-                    IfFatal(vec![IncreaseMaxHp(Fixed(3))]),
+                    IfFatal(vec![AddMaxHp(Fixed(3))]),
                     EXHAUST,
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(AttackDamage(Fixed(12), TargetEnemy)),
-                    IfFatal(vec![IncreaseMaxHp(Fixed(3))]),
+                    IfFatal(vec![AddMaxHp(Fixed(3))]),
                     EXHAUST,
                 ]),
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             FIEND_FIRE => BaseCard { 
                 name: FIEND_FIRE, 
@@ -923,7 +923,7 @@ impl BaseCard {
                     EXHAUST,
                 ],
                 cost: 2,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             IMMOLATE => BaseCard { 
                 name: IMMOLATE, 
@@ -937,7 +937,7 @@ impl BaseCard {
                     }),
                 ],
                 cost: 2,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             IMPERVIOUS => BaseCard { 
                 name: IMPERVIOUS, 
@@ -951,31 +951,31 @@ impl BaseCard {
                     EXHAUST,
                 ]),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             JUGGERNAUT => BaseCard { 
                 name: JUGGERNAUT, 
                 rarity: Rare,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::JUGGERNAUT, Fixed(5), _Self)),
+                    OnPlay(AddBuff(buffs::JUGGERNAUT, Fixed(5), _Self)),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::JUGGERNAUT, Fixed(7), _Self)),
+                    OnPlay(AddBuff(buffs::JUGGERNAUT, Fixed(7), _Self)),
                 ]),
                 cost: 2,
-                ..BaseCard::default(Ironclad, Power)
+                ..BaseCard::new(Ironclad, Power)
             },
             LIMIT_BREAK => BaseCard { 
                 name: LIMIT_BREAK, 
                 rarity: Rare,
                 effects: vec![
-                    OnPlay(SetStatus(statuses::STRENGTH, Amount::Custom, _Self)),
+                    OnPlay(AddBuff(buffs::STRENGTH, Amount::Custom, _Self)),
                     EXHAUST,
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(SetStatus(statuses::STRENGTH, Amount::Custom, _Self)),
+                    OnPlay(AddBuff(buffs::STRENGTH, Amount::Custom, _Self)),
                 ]),
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             OFFERING => BaseCard { 
                 name: OFFERING, 
@@ -993,7 +993,7 @@ impl BaseCard {
                     EXHAUST,
                 ]),
                 cost: 0,
-                ..BaseCard::default(Ironclad, Skill)
+                ..BaseCard::new(Ironclad, Skill)
             },
             REAPER => BaseCard { 
                 name: REAPER, 
@@ -1003,7 +1003,7 @@ impl BaseCard {
                     EXHAUST,
                 ],
                 cost: 0,
-                ..BaseCard::default(Ironclad, Attack)
+                ..BaseCard::new(Ironclad, Attack)
             },
             _ => panic!("Unsupported card")
         }
