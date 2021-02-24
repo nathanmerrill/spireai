@@ -29,6 +29,7 @@ pub enum Amount {
     NegX,
     N,
     Custom,
+    ByAsc(i16, i16, i16),
 }
 
 #[derive(PartialEq, Clone)]
@@ -155,31 +156,66 @@ pub struct BaseRelic {
 // Monsters
 pub struct MonsterSet {
     pub act: u8,
-    pub monsters: Vec<BaseMonster>
+    pub monsters: MonsterSetVarations,
+    pub easy: bool,
+    pub asc: u8,
+    pub chance: u8,
+}
+
+pub enum MonsterSetVarations {
+    Fixed(Vec<BaseMonster>),
+    ChooseN(u8, Vec<BaseMonster>),
+    Multiple(Vec<MonsterSetVarations>),
 }
 
 pub struct BaseMonster {
     pub name: &'static str,
-    pub hp_min: u16,
-    pub hp_max: u16,
-    pub moveset: MonsterMoveSet,
-    pub buffs: Mon
+    pub hp_range: (u16, u16),
+    pub hp_range_asc: (u16, u16),
+    pub moveset: Vec<MonsterMove>,
+    pub move_order: Vec<Move>,
+    pub buffs: Vec<(&'static str, Amount)>
 }
 
-pub struct MonsterMoveSet {
-    starting_node: MonsterMoveNode,
-    event: Event
-
+pub enum Move {
+    IfAsc(u8, Vec<Move>, Vec<Move>),
+    Loop(Vec<Move>),
+    InOrder(&'static str),
+    Probability(Vec<(u8, &'static str, u8)>), // Weight, name, repeats
+    Event(Event, bool), // True if event immediately switches intent
 }
 
-pub struct MonsterMoveNode {
-    _move: MonsterMove,
-    next: Vec<(MonsterMoveNode, i8)>
+pub struct ProbabilisticMove {
+    pub chance: Amount,
+    pub move_index: u8,
+    pub max_repeats: Amount,
+    pub starter_asc: Option<u8>
 }
 
-pub enum MonsterMove {
-    Attack(i8, i8),
+pub enum Intent {
+    Attack,
+    AttackBuff,
+    AttackDebuff,
+    AttackDefend,
+    Buff,
+    Debuff,
+    StrongDebuff,
+    Debug,
+    Defend,
+    DefendDebuff,
+    DefendBuff,
+    Escape,
+    Magic,
+    None,
+    Sleep,
+    Stun,
+    Unknown,
+}
 
+pub struct MonsterMove {
+    pub name: &'static str,
+    pub effects: Vec<Effect>,
+    pub intent: Intent,
 }
 
 // Rooms
@@ -212,6 +248,7 @@ pub enum Event {
     UnblockedDamage(EffectTarget),
     HpLoss(EffectTarget),
     HpChange(EffectTarget),
+    HalfHp(EffectTarget),
     Heal(EffectTarget),
     Block(EffectTarget),
     Die(EffectTarget),
@@ -263,6 +300,7 @@ pub enum Effect {
     LoseHp(Amount, EffectTarget),
     AddBuff(&'static str, Amount, EffectTarget),
     AddBuffN(&'static str, Amount, EffectTarget),
+    RemoveDebuffs(EffectTarget),
     
     //Player
     Draw(Amount),
@@ -308,12 +346,17 @@ pub enum Effect {
     IfNoBlock(EffectTarget, Vec<Effect>),
     IfAttacking(EffectTarget, Vec<Effect>),
     IfBuffN(EffectTarget, &'static str, Amount, Vec<Effect>),
+    IfAsc(u8, Vec<Effect>),
+    IfTurn(u8, u8, Vec<Effect>),
 
     // Event-based
     Cancel,
     Multiply(Amount),
     Add(Amount),
-    
+
+    // Monster
+    Split(&'static str),
+    Spawn(&'static str),
 
     //Meta
     Multiple(Vec<Effect>),
@@ -329,6 +372,7 @@ pub enum EffectTarget {
     TargetEnemy,
     AllEnemies,
     Attacker,
+    Friendly(&'static str),
 }
 
 #[derive(PartialEq, Clone)]

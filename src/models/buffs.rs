@@ -76,6 +76,17 @@ impl BaseBuff {
                 effect: Effect::Block(X, EffectTarget::_Self),
                 ..BaseBuff::default()
             },
+            PAINFUL_STABS => BaseBuff {
+                name: PAINFUL_STABS, 
+                effect_at: Event::UnblockedDamage(EffectTarget::TargetEnemy),
+                effect: Effect::AddCard {
+                    card: CardReference::ByName(cards::WOUND), 
+                    destination: CardLocation::DiscardPile(RelativePosition::Bottom), 
+                    copies: X,
+                    modifier: CardModifier::None,
+                },
+                ..BaseBuff::default()
+            },
             PLATED_ARMOR => BaseBuff { 
                 name: PLATED_ARMOR,
                 effect_at: Event::TurnStart,
@@ -130,6 +141,12 @@ impl BaseBuff {
                 },
                 ..BaseBuff::default()
             },
+            BEAT_OF_DEATH => BaseBuff{
+                name: BEAT_OF_DEATH,
+                effect_at: Event::PlayCard(CardType::Attack),
+                effect: Effect::Damage(X, EffectTarget::_Self),
+                ..BaseBuff::default()
+            },
             BERSERK => BaseBuff { 
                 name: BERSERK,
                 effect_at: Event::TurnStart,
@@ -162,6 +179,12 @@ impl BaseBuff {
             BURST => BaseBuff { 
                 name: BURST,
                 reduce_at: Event::PlayCard(CardType::Skill),
+                ..BaseBuff::default()
+            },
+            CURIOSITY => BaseBuff {
+                name: CURIOSITY,
+                effect_at: Event::PlayCard(CardType::Power),
+                effect: Effect::AddBuff(STRENGTH, X, EffectTarget::_Self),
                 ..BaseBuff::default()
             },
             COLLECT => BaseBuff { 
@@ -274,6 +297,19 @@ impl BaseBuff {
                 effect: Effect::Block(X, EffectTarget::_Self),
                 ..BaseBuff::default()
             },
+            FLAME_BARRIER => BaseBuff {
+                name: FLAME_BARRIER,
+                effect_at: Event::AttackDamage(EffectTarget::_Self),
+                effect: Effect::Damage(X, EffectTarget::Attacker),
+                expire_at: Event::TurnStart,
+                ..BaseBuff::default()
+            },
+            FLYING => BaseBuff {
+                name: FLYING,
+                effect_at: Event::AttackDamage(EffectTarget::_Self),
+                effect: Effect::Custom,
+                ..BaseBuff::default()
+            },
             FIRE_BREATHING => BaseBuff { 
                 name: FIRE_BREATHING,
                 effect_at: Event::Multiple(vec![Event::DrawCard(CardType::Status), Event::DrawCard(CardType::Status)]),
@@ -317,6 +353,12 @@ impl BaseBuff {
                     copies: X,
                     modifier: CardModifier::None,
                 },
+                ..BaseBuff::default()
+            },
+            INVINCIBLE => BaseBuff {
+                name: INVINCIBLE,
+                effect_at: Event::HpLoss(EffectTarget::_Self),
+                effect: Effect::Custom,
                 ..BaseBuff::default()
             },
             JUGGERNAUT => BaseBuff { 
@@ -430,9 +472,15 @@ impl BaseBuff {
                 reduce_at: Event::PlayCard(CardType::All),
                 ..BaseBuff::default()
             },
-            REGEN => BaseBuff { 
-                name: REGEN,
+            REGENERATION => BaseBuff { 
+                name: REGENERATION,
                 reduce_at: Event::TurnEnd,
+                effect_at: Event::TurnEnd,
+                effect: Effect::Heal(X),
+                ..BaseBuff::default()
+            },
+            REGENERATE => BaseBuff { 
+                name: REGENERATE,
                 effect_at: Event::TurnEnd,
                 effect: Effect::Heal(X),
                 ..BaseBuff::default()
@@ -463,6 +511,13 @@ impl BaseBuff {
                 expire_at: Event::TurnStart,
                 effect_at: Event::TurnStart,
                 effect: Effect::SetStance(Stance::Wrath),
+                ..BaseBuff::default()
+            },
+            STASIS => BaseBuff {
+                name: STASIS,
+                is_additive: false,
+                effect_at: Event::Die(EffectTarget::_Self),
+                effect: Effect::Custom,
                 ..BaseBuff::default()
             },
             STATIC_DISCHARGE => BaseBuff { 
@@ -694,6 +749,7 @@ pub const AMPLIFY: &str = "Amplify";
 pub const ARTIFACT: &str = "Artifact";
 pub const BARRICADE: &str = "Barricade";
 pub const BATTLE_HYMN: &str = "Battle Hymn";
+pub const BEAT_OF_DEATH: &str = "Beat Of Death";
 pub const BIAS: &str = "Bias";
 pub const BERSERK: &str = "Berserk";
 pub const BLASPHEMER: &str = "Blasphemer";
@@ -710,6 +766,7 @@ pub const COMBUST: &str = "Combust";
 pub const CORRUPTION: &str = "Corruption";
 pub const CORPSE_EXPLOSION: &str = "Corpse Explosion";
 pub const CREATIVE_AI: &str = "Creative AI";
+pub const CURIOSITY: &str = "Curiosity";
 pub const DARK_EMBRACE: &str = "Dark Embrace";
 pub const DEMON_FORM: &str = "Demon Form";
 pub const DEVA: &str = "Deva";
@@ -733,6 +790,7 @@ pub const FASTING: &str = "Fasting";
 pub const FEEL_NO_PAIN: &str = "Feel No Pain";
 pub const FIRE_BREATHING: &str = "Fire Breathing";
 pub const FLAME_BARRIER: &str = "Flame Barrier";
+pub const FLYING: &str = "Flying";
 pub const FOCUS: &str = "Focus";
 pub const FORESIGHT: &str = "Foresight";
 pub const FRAIL: &str = "Frail";
@@ -742,6 +800,7 @@ pub const HELLO: &str = "Hello";
 pub const HEX: &str = "Hex";
 pub const INFINITE_BLADES: &str = "Infinite Blades";
 pub const INTANGIBLE: &str = "Intangible";
+pub const INVINCIBLE: &str = "Invincible";
 pub const JUGGERNAUT: &str = "Juggernaut";
 pub const LIKE_WATER: &str = "Like Water";
 pub const LOCK_ON: &str = "Lock-On";
@@ -761,6 +820,7 @@ pub const NO_BLOCK: &str = "No Block";
 pub const NO_DRAW: &str = "No Draw";
 pub const NOXIOUS_FUMES: &str = "Noxious Fumes";
 pub const OMEGA: &str = "Omega";
+pub const PAINFUL_STABS: &str = "Painful Stabs";
 pub const PANACHE: &str = "Panache";
 pub const PEN_NIB: &str = "Pen Nib";
 pub const PLATED_ARMOR: &str = "Plated Armor";
@@ -768,7 +828,8 @@ pub const PHANTASMAL: &str = "Phantasmal";
 pub const POISON: &str = "Poison";
 pub const RAGE: &str = "Rage";
 pub const REBOUND: &str = "Rebound";
-pub const REGEN: &str = "Regen";
+pub const REGENERATION: &str = "Regeneration";
+pub const REGENERATE: &str = "Regenerate";
 pub const REPAIR: &str = "Repair";
 pub const RITUAL: &str = "Ritual";
 pub const RUSHDOWN: &str = "Rushdown";
@@ -777,6 +838,7 @@ pub const SADISTIC: &str = "Sadistic";
 pub const SHACKLED: &str = "Shackled";
 pub const SIMMERING_RAGE: &str = "Simmering Rage";
 pub const SLOW: &str = "Slow";
+pub const STASIS: &str = "Stasis";
 pub const STATIC_DISCHARGE: &str = "Static Discharge";
 pub const STORM: &str = "Storm";
 pub const STRENGTH: &str = "Strength";

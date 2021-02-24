@@ -4,6 +4,7 @@ pub mod buffs;
 pub mod relics;
 pub mod core;
 pub mod state;
+pub mod monsters;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all="SCREAMING_SNAKE_CASE")]
