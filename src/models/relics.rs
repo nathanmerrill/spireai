@@ -708,7 +708,7 @@ impl BaseRelic {
                     use_when: Event::Die(EffectTarget::_Self),
                     uses: 1,
                 },
-                effect: Effect::HealPercentage(50),
+                effect: Effect::HealPercentage(50, EffectTarget::_Self),
                 ..Self::default()
             },
             MANGO => Self {
@@ -922,7 +922,7 @@ impl BaseRelic {
                 rarity: Rarity::Shop,
                 activation: Activation::Immediate,
                 effect: Effect::Multiple(vec![
-                    Effect::HealPercentage(100),
+                    Effect::HealPercentage(100, EffectTarget::_Self),
                     Effect::AddMaxHp(Fixed(7)),
                 ]),
                 ..Self::default()

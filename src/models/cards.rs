@@ -1061,7 +1061,6 @@ pub const BULLET_TIME: &str = "Bullet Time";
 pub const BULLSEYE: &str = "Bullseye";
 pub const BURN: &str = "Burn";
 pub const BURNING_PACT: &str = "Burning Pact";
-pub const BURN_PLUS: &str = "Burn+";
 pub const BURST: &str = "Burst";
 pub const CALCULATED_GAMBLE: &str = "Calculated Gamble";
 pub const CALTROPS: &str = "Caltrops";

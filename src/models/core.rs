@@ -174,7 +174,10 @@ pub struct BaseMonster {
     pub hp_range_asc: (u16, u16),
     pub moveset: Vec<MonsterMove>,
     pub move_order: Vec<Move>,
-    pub buffs: Vec<(&'static str, Amount)>
+    pub buffs: Vec<(&'static str, Amount)>,
+    pub n_range: (Amount, Amount),
+    pub x_range: (Amount, Amount),
+    pub combat_start: Effect,
 }
 
 pub enum Move {
@@ -183,6 +186,7 @@ pub enum Move {
     InOrder(&'static str),
     Probability(Vec<(u8, &'static str, u8)>), // Weight, name, repeats
     Event(Event, bool), // True if event immediately switches intent
+    IfPosition(u8, Vec<Move>),
 }
 
 pub struct ProbabilisticMove {
@@ -300,7 +304,9 @@ pub enum Effect {
     LoseHp(Amount, EffectTarget),
     AddBuff(&'static str, Amount, EffectTarget),
     AddBuffN(&'static str, Amount, EffectTarget),
+    HealPercentage(u8, EffectTarget),
     RemoveDebuffs(EffectTarget),
+    Die(EffectTarget),
     
     //Player
     Draw(Amount),
@@ -308,7 +314,6 @@ pub enum Effect {
     AddEnergy(Amount),
     AddMaxHp(Amount),
     Heal(Amount),
-    HealPercentage(u8),
     SetStance(Stance),
     ChannelOrb(Orb),
     AddGold(Amount),
@@ -347,7 +352,8 @@ pub enum Effect {
     IfAttacking(EffectTarget, Vec<Effect>),
     IfBuffN(EffectTarget, &'static str, Amount, Vec<Effect>),
     IfAsc(u8, Vec<Effect>),
-    IfTurn(u8, u8, Vec<Effect>),
+    IfAct(u8, Vec<Effect>),
+    IfDead(EffectTarget, Vec<Effect>),
 
     // Event-based
     Cancel,
@@ -356,7 +362,11 @@ pub enum Effect {
 
     // Monster
     Split(&'static str),
-    Spawn(&'static str),
+    Spawn {
+        choices: Vec<&'static str>,
+        count: Amount,
+        left: bool,
+    },
 
     //Meta
     Multiple(Vec<Effect>),
@@ -372,6 +382,7 @@ pub enum EffectTarget {
     TargetEnemy,
     AllEnemies,
     Attacker,
+    AllFriendly,
     Friendly(&'static str),
 }
 

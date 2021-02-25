@@ -143,8 +143,8 @@ impl BaseBuff {
             },
             BEAT_OF_DEATH => BaseBuff{
                 name: BEAT_OF_DEATH,
-                effect_at: Event::PlayCard(CardType::Attack),
-                effect: Effect::Damage(X, EffectTarget::_Self),
+                effect_at: Event::PlayCard(CardType::All),
+                effect: Effect::Damage(X, EffectTarget::AllEnemies),
                 ..BaseBuff::default()
             },
             BERSERK => BaseBuff { 
@@ -179,6 +179,13 @@ impl BaseBuff {
             BURST => BaseBuff { 
                 name: BURST,
                 reduce_at: Event::PlayCard(CardType::Skill),
+                ..BaseBuff::default()
+            },
+            CURL_UP => BaseBuff {
+                name: CURL_UP,
+                effect_at: Event::AttackDamage(EffectTarget::_Self),
+                expire_at: Event::AttackDamage(EffectTarget::_Self),
+                effect: Effect::Block(X, EffectTarget::_Self),
                 ..BaseBuff::default()
             },
             CURIOSITY => BaseBuff {
@@ -270,6 +277,12 @@ impl BaseBuff {
                 is_additive: false,
                 ..BaseBuff::default()
             },
+            ENRAGE => BaseBuff {
+                name: ENRAGE,
+                effect_at: Event::PlayCard(CardType::Attack),
+                effect: Effect::AddBuff(STRENGTH, X, EffectTarget::_Self),
+                ..BaseBuff::default()
+            },
             ENVENOM => BaseBuff { 
                 name: ENVENOM,
                 effect_at: Event::UnblockedDamage(EffectTarget::TargetEnemy),
@@ -289,6 +302,11 @@ impl BaseBuff {
                 name: EVOLVE,
                 effect_at: Event::DrawCard(CardType::Status),
                 effect: Effect::Draw(X),
+                ..BaseBuff::default()
+            },
+            EXPLODE => BaseBuff {
+                name: EXPLODE,
+                reduce_at: Event::AttackDamage(EffectTarget::TargetEnemy),
                 ..BaseBuff::default()
             },
             FEEL_NO_PAIN => BaseBuff { 
@@ -365,6 +383,13 @@ impl BaseBuff {
                 name: JUGGERNAUT,
                 effect_at: Event::Block(EffectTarget::_Self),
                 effect: Effect::Damage(X, EffectTarget::RandomEnemy),
+                ..BaseBuff::default()
+            },
+            LIFE_LINK => BaseBuff {
+                name: LIFE_LINK,
+                is_additive: false,
+                effect_at: Event::Die(EffectTarget::_Self),
+                effect: Effect::Custom,
                 ..BaseBuff::default()
             },
             LIKE_WATER => BaseBuff { 
@@ -543,6 +568,13 @@ impl BaseBuff {
                 },
                 ..BaseBuff::default()
             },
+            SPORE_CLOUD => BaseBuff {
+                name: SPORE_CLOUD,
+                effect_at: Event::Die(EffectTarget::_Self),
+                expire_at: Event::Die(EffectTarget::_Self),
+                effect: Effect::AddBuff(VULNERABLE, X, EffectTarget::AllEnemies),
+                ..BaseBuff::default()
+            },
             SURROUNDED => BaseBuff { 
                 name: SURROUNDED,
                 is_additive: false,
@@ -625,6 +657,8 @@ impl BaseBuff {
             SLOW => BaseBuff { 
                 name: SLOW,
                 is_buff: false,
+                effect_at: Event::PlayCard(CardType::All),
+                effect: Effect::Custom,
                 ..BaseBuff::default()
             },
             STRENGTH_DOWN => BaseBuff { 
@@ -767,6 +801,7 @@ pub const CORRUPTION: &str = "Corruption";
 pub const CORPSE_EXPLOSION: &str = "Corpse Explosion";
 pub const CREATIVE_AI: &str = "Creative AI";
 pub const CURIOSITY: &str = "Curiosity";
+pub const CURL_UP: &str = "Curl Up";
 pub const DARK_EMBRACE: &str = "Dark Embrace";
 pub const DEMON_FORM: &str = "Demon Form";
 pub const DEVA: &str = "Deva";
@@ -780,12 +815,14 @@ pub const DRAW_REDUCTION: &str = "Draw Reduction";
 pub const DUPLICATION: &str = "Duplication";
 pub const ECHO_FORM: &str = "Echo Form";
 pub const ENERGIZED: &str = "Energized";
+pub const ENRAGE: &str = "Enraged";
 pub const ELECTRO: &str = "Electro";
 pub const ENTANGLED: &str = "Entangled";
 pub const ENVENOM: &str = "Envenom";
 pub const EQUILIBRIUM: &str = "Equilibrium";
 pub const ESTABLISHMENT: &str = "Establishment";
 pub const EVOLVE: &str = "Evolve";
+pub const EXPLODE: &str = "Explode";
 pub const FASTING: &str = "Fasting";
 pub const FEEL_NO_PAIN: &str = "Feel No Pain";
 pub const FIRE_BREATHING: &str = "Fire Breathing";
@@ -802,6 +839,7 @@ pub const INFINITE_BLADES: &str = "Infinite Blades";
 pub const INTANGIBLE: &str = "Intangible";
 pub const INVINCIBLE: &str = "Invincible";
 pub const JUGGERNAUT: &str = "Juggernaut";
+pub const LIFE_LINK: &str = "Life Link";
 pub const LIKE_WATER: &str = "Like Water";
 pub const LOCK_ON: &str = "Lock-On";
 pub const LOOP: &str = "Loop";
@@ -838,6 +876,7 @@ pub const SADISTIC: &str = "Sadistic";
 pub const SHACKLED: &str = "Shackled";
 pub const SIMMERING_RAGE: &str = "Simmering Rage";
 pub const SLOW: &str = "Slow";
+pub const SPORE_CLOUD: &str = "Spore Cloud";
 pub const STASIS: &str = "Stasis";
 pub const STATIC_DISCHARGE: &str = "Static Discharge";
 pub const STORM: &str = "Storm";
