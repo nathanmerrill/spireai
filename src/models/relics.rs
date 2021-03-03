@@ -59,13 +59,13 @@ impl BaseRelic {
             AKABEKO => Self {
                 name: AKABEKO,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::VIGOR, Fixed(8), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::VIGOR, Fixed(8), Target::_Self),
                 ..Self::default()
             },
             ANCHOR => Self {
                 name: ANCHOR,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::Block(Fixed(10), EffectTarget::_Self),
+                effect: Effect::Block(Fixed(10), Target::_Self),
                 ..Self::default()
             },
             ANCIENT_TEA_SET => Self {
@@ -91,7 +91,7 @@ impl BaseRelic {
             BAG_OF_MARBLES => Self {
                 name: BAG_OF_MARBLES,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::VULNERABLE, Fixed(1), EffectTarget::AllEnemies),
+                effect: Effect::AddBuff(buffs::VULNERABLE, Fixed(1), Target::AllEnemies),
                 ..Self::default()
             },
             BAG_OF_PREPARATION => Self {
@@ -109,12 +109,12 @@ impl BaseRelic {
             BRONZE_SCALES => Self {
                 name: BRONZE_SCALES,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::THORNS, Fixed(3), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::THORNS, Fixed(3), Target::_Self),
                 ..Self::default()
             },
             CENTENNIAL_PUZZLE => Self {
                 name: CENTENNIAL_PUZZLE,
-                activation: Activation::Event(Event::HpLoss(EffectTarget::_Self)),
+                activation: Activation::Event(Event::HpLoss(Target::_Self)),
                 effect: Effect::Draw(Fixed(3)),
                 ..Self::default()
             },
@@ -179,7 +179,7 @@ impl BaseRelic {
             ODDLY_SMOOTH_STONE => Self {
                 name: ODDLY_SMOOTH_STONE,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::DEXTERITY, Fixed(1), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::DEXTERITY, Fixed(1), Target::_Self),
                 ..Self::default()
             },
             OMAMORI => Self {
@@ -194,8 +194,8 @@ impl BaseRelic {
             ORICHALCUM => Self {
                 name: ORICHALCUM,
                 activation: Activation::Event(Event::TurnEnd),
-                effect: Effect::IfNoBlock(EffectTarget::_Self, vec![
-                    Effect::Block(Fixed(6), EffectTarget::_Self)
+                effect: Effect::If(Condition::NoBlock(Target::_Self), vec![
+                    Effect::Block(Fixed(6), Target::_Self)
                 ]),
                 ..Self::default()
             },
@@ -264,7 +264,7 @@ impl BaseRelic {
             VAJRA => Self {
                 name: VAJRA,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::STRENGTH, Fixed(1), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::STRENGTH, Fixed(1), Target::_Self),
                 ..Self::default()
             },
             WAR_PAINT => Self {
@@ -283,21 +283,21 @@ impl BaseRelic {
                 name: DAMARU,
                 class: Class::Watcher,
                 activation: Activation::Event(Event::TurnStart),
-                effect: Effect::AddBuff(buffs::MANTRA, Fixed(1), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::MANTRA, Fixed(1), Target::_Self),
                 ..Self::default()
             },
             DATA_DISK => Self {
                 name: DATA_DISK,
                 class: Class::Defect,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::FOCUS, Fixed(1), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::FOCUS, Fixed(1), Target::_Self),
                 ..Self::default()
             },
             RED_SKULL => Self {
                 name: RED_SKULL,
                 class: Class::Ironclad,
-                activation: Activation::Event(Event::HpChange(EffectTarget::_Self)),
-                effect: Effect::AddBuff(buffs::STRENGTH, Amount::Custom, EffectTarget::_Self),
+                activation: Activation::Event(Event::HpChange(Target::_Self)),
+                effect: Effect::AddBuff(buffs::STRENGTH, Amount::Custom, Target::_Self),
                 ..Self::default()
             },
             SNECKO_SKULL => Self {
@@ -357,7 +357,7 @@ impl BaseRelic {
             GREMLIN_HORN => Self {
                 name: GREMLIN_HORN,
                 rarity: Rarity::Uncommon,
-                activation: Activation::Event(Event::Die(EffectTarget::AllEnemies)),
+                activation: Activation::Event(Event::Die(Target::AllEnemies)),
                 effect: Effect::Multiple(vec![
                     Effect::AddEnergy(Fixed(1)),
                     Effect::Draw(Fixed(1)),
@@ -373,7 +373,7 @@ impl BaseRelic {
                     auto_reset: false,
                     target: 2, 
                 },
-                effect: Effect::Block(Fixed(14), EffectTarget::_Self),
+                effect: Effect::Block(Fixed(14), Target::_Self),
                 ..Self::default()
             },
             INK_BOTTLE => Self {
@@ -397,7 +397,7 @@ impl BaseRelic {
                     auto_reset: true,
                     target: 3, 
                 },
-                effect: Effect::AddBuff(buffs::DEXTERITY, Fixed(1), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::DEXTERITY, Fixed(1), Target::_Self),
                 ..Self::default()
             },
             LETTER_OPENER => Self {
@@ -409,7 +409,7 @@ impl BaseRelic {
                     auto_reset: true,
                     target: 3, 
                 },
-                effect: Effect::Damage(Fixed(5), EffectTarget::AllEnemies),
+                effect: Effect::Damage(Fixed(5), Target::AllEnemies),
                 ..Self::default()
             },
             MATRYOSHKA => Self {
@@ -426,7 +426,7 @@ impl BaseRelic {
                 name: MEAT_ON_THE_BONE,
                 rarity: Rarity::Uncommon,
                 activation: Activation::Event(Event::CombatEnd),
-                effect: Effect::IfHalfHp(EffectTarget::_Self, vec![
+                effect: Effect::If(Condition::HalfHp(Target::_Self), vec![
                     Effect::Heal(Fixed(12))
                 ]),
                 ..Self::default()
@@ -435,7 +435,7 @@ impl BaseRelic {
                 name: MERCURY_HOURGLASS,
                 rarity: Rarity::Uncommon,
                 activation: Activation::Event(Event::TurnStart),
-                effect: Effect::Damage(Fixed(3), EffectTarget::AllEnemies),
+                effect: Effect::Damage(Fixed(3), Target::AllEnemies),
                 ..Self::default()
             },
             MOLTEN_EGG => Self {
@@ -461,7 +461,7 @@ impl BaseRelic {
                     auto_reset: true,
                     target: 3, 
                 },
-                effect: Effect::Block(Fixed(4), EffectTarget::_Self),
+                effect: Effect::Block(Fixed(4), Target::_Self),
                 ..Self::default()
             },
             PANTOGRAPH => Self {
@@ -494,7 +494,7 @@ impl BaseRelic {
                     auto_reset: true,
                     target: 3, 
                 },
-                effect: Effect::AddBuff(buffs::STRENGTH, Fixed(1), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::STRENGTH, Fixed(1), Target::_Self),
                 ..Self::default()
             },
             SINGING_BOWL => Self {
@@ -550,8 +550,8 @@ impl BaseRelic {
                 rarity: Rarity::Uncommon,
                 activation: Activation::Event(Event::PlayCard(CardType::Attack)),
                 effect: Effect::Multiple(vec![
-                    Effect::AddBuff(buffs::DEXTERITY, Fixed(1), EffectTarget::_Self),
-                    Effect::AddBuff(buffs::DEXTERITY_DOWN, Fixed(1), EffectTarget::_Self),
+                    Effect::AddBuff(buffs::DEXTERITY, Fixed(1), Target::_Self),
+                    Effect::AddBuff(buffs::DEXTERITY_DOWN, Fixed(1), Target::_Self),
                 ]),
                 ..Self::default()
             },
@@ -596,8 +596,8 @@ impl BaseRelic {
                 name: SELF_FORMING_CLAY,
                 class: Class::Ironclad,
                 rarity: Rarity::Uncommon,
-                activation: Activation::Event(Event::HpLoss(EffectTarget::_Self)),
-                effect: Effect::AddBuff(buffs::NEXT_TURN_BLOCK, Fixed(3), EffectTarget::_Self),
+                activation: Activation::Event(Event::HpLoss(Target::_Self)),
+                effect: Effect::AddBuff(buffs::NEXT_TURN_BLOCK, Fixed(3), Target::_Self),
                 ..Self::default()
             },
             SYMBIOTIC_VIRUS => Self {
@@ -639,7 +639,7 @@ impl BaseRelic {
                     auto_reset: false,
                     target: 3, 
                 },
-                effect: Effect::Block(Fixed(18), EffectTarget::_Self),
+                effect: Effect::Block(Fixed(18), Target::_Self),
                 ..Self::default()
             },
             DEAD_BRANCH => Self {
@@ -658,20 +658,20 @@ impl BaseRelic {
                 name: DU_VU_DOLL,
                 rarity: Rarity::Rare,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::STRENGTH, Amount::Custom, EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::STRENGTH, Amount::Custom, Target::_Self),
                 ..Self::default()
             },
             FOSSILIZED_HELIX => Self {
                 name: FOSSILIZED_HELIX,
                 rarity: Rarity::Rare,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::BUFFER, Fixed(1), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::BUFFER, Fixed(1), Target::_Self),
                 ..Self::default()
             },
             GINGER => Self {
                 name: GINGER,
                 rarity: Rarity::Rare,
-                activation: Activation::Event(Event::Buff(buffs::WEAK, EffectTarget::_Self)),
+                activation: Activation::Event(Event::Buff(buffs::WEAK, Target::_Self)),
                 effect: Effect::Custom,
                 ..Self::default()
             },
@@ -679,7 +679,7 @@ impl BaseRelic {
                 name: GIRYA,
                 rarity: Rarity::Rare,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::STRENGTH, X, EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::STRENGTH, X, Target::_Self),
                 ..Self::default()
             },
             ICE_CREAM => Self {
@@ -698,17 +698,17 @@ impl BaseRelic {
                     auto_reset: true,
                     target: 6, 
                 },
-                effect: Effect::AddBuff(buffs::INTANGIBLE, Fixed(1), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::INTANGIBLE, Fixed(1), Target::_Self),
                 ..Self::default()
             },
             LIZARD_TAIL => Self {
                 name: LIZARD_TAIL,
                 rarity: Rarity::Rare,
                 activation: Activation::Uses {
-                    use_when: Event::Die(EffectTarget::_Self),
+                    use_when: Event::Die(Target::_Self),
                     uses: 1,
                 },
-                effect: Effect::HealPercentage(50, EffectTarget::_Self),
+                effect: Effect::HealPercentage(50, Target::_Self),
                 ..Self::default()
             },
             MANGO => Self {
@@ -762,34 +762,34 @@ impl BaseRelic {
                     auto_reset: false,
                     target: 7, 
                 },
-                effect: Effect::Damage(Fixed(50), EffectTarget::AllEnemies),
+                effect: Effect::Damage(Fixed(50), Target::AllEnemies),
                 ..Self::default()
             },
             THREAD_AND_NEEDLE => Self {
                 name: THREAD_AND_NEEDLE,
                 rarity: Rarity::Rare,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::PLATED_ARMOR, Fixed(4), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::PLATED_ARMOR, Fixed(4), Target::_Self),
                 ..Self::default()
             },
             TORII => Self {
                 name: TORII,
                 rarity: Rarity::Rare,
-                activation: Activation::Event(Event::UnblockedDamage(EffectTarget::_Self)),
+                activation: Activation::Event(Event::UnblockedDamage(Target::_Self)),
                 effect: Effect::Custom,
                 ..Self::default()
             },
             TUNGSTEN_ROD => Self {
                 name: TUNGSTEN_ROD,
                 rarity: Rarity::Rare,
-                activation: Activation::Event(Event::HpLoss(EffectTarget::_Self)),
+                activation: Activation::Event(Event::HpLoss(Target::_Self)),
                 effect: Effect::Custom,
                 ..Self::default()
             },
             TURNIP => Self {
                 name: TURNIP,
                 rarity: Rarity::Rare,
-                activation: Activation::Event(Event::Buff(buffs::FRAIL, EffectTarget::_Self)),
+                activation: Activation::Event(Event::Buff(buffs::FRAIL, Target::_Self)),
                 effect: Effect::Custom,
                 ..Self::default()
             },
@@ -811,7 +811,7 @@ impl BaseRelic {
                 name: CHAMPION_BELT,
                 class: Class::Ironclad,
                 rarity: Rarity::Rare,
-                activation: Activation::Event(Event::Buff(buffs::VULNERABLE, EffectTarget::AllEnemies)),
+                activation: Activation::Event(Event::Buff(buffs::VULNERABLE, Target::AllEnemies)),
                 effect: Effect::Custom,
                 ..Self::default()
             },
@@ -820,7 +820,7 @@ impl BaseRelic {
                 class: Class::Ironclad,
                 rarity: Rarity::Rare,
                 activation: Activation::Event(Event::Exhaust),
-                effect: Effect::Damage(Fixed(3), EffectTarget::AllEnemies),
+                effect: Effect::Damage(Fixed(3), Target::AllEnemies),
                 ..Self::default()
             },
             EMOTION_CHIP => Self {
@@ -828,7 +828,7 @@ impl BaseRelic {
                 class: Class::Defect,
                 rarity: Rarity::Rare,
                 activation: Activation::WhenEnabled{
-                    enabled_at: Event::HpLoss(EffectTarget::_Self),
+                    enabled_at: Event::HpLoss(Target::_Self),
                     disabled_at: Event::TurnStart,
                     activated_at: Event::TurnStart,
                 },
@@ -847,7 +847,7 @@ impl BaseRelic {
                 name: MAGIC_FLOWER,
                 class: Class::Ironclad,
                 rarity: Rarity::Rare,
-                activation: Activation::Event(Event::Heal(EffectTarget::_Self)),
+                activation: Activation::Event(Event::Heal(Target::_Self)),
                 effect: Effect::Custom,
                 ..Self::default()
             },
@@ -855,7 +855,7 @@ impl BaseRelic {
                 name: THE_SPECIMEN,
                 class: Class::Silent,
                 rarity: Rarity::Rare,
-                activation: Activation::Event(Event::Die(EffectTarget::AllEnemies)),
+                activation: Activation::Event(Event::Die(Target::AllEnemies)),
                 effect: Effect::Custom,
                 ..Self::default()
             },
@@ -864,7 +864,7 @@ impl BaseRelic {
                 class: Class::Silent,
                 rarity: Rarity::Rare,
                 activation: Activation::Event(Event::Discard),
-                effect: Effect::Damage(Fixed(3), EffectTarget::RandomEnemy),
+                effect: Effect::Damage(Fixed(3), Target::RandomEnemy),
                 ..Self::default()
             },
             TOUGH_BANDAGES => Self {
@@ -872,7 +872,7 @@ impl BaseRelic {
                 class: Class::Silent,
                 rarity: Rarity::Rare,
                 activation: Activation::Event(Event::Discard),
-                effect: Effect::Block(Fixed(3), EffectTarget::_Self),
+                effect: Effect::Block(Fixed(3), Target::_Self),
                 ..Self::default()
             },
             CAULDRON => Self {
@@ -893,7 +893,7 @@ impl BaseRelic {
                 name: CLOCKWORK_SOUVENIR,
                 rarity: Rarity::Shop,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::ARTIFACT, Fixed(1), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::ARTIFACT, Fixed(1), Target::_Self),
                 ..Self::default()
             },
             DOLLYS_MIRROR => Self {
@@ -922,7 +922,7 @@ impl BaseRelic {
                 rarity: Rarity::Shop,
                 activation: Activation::Immediate,
                 effect: Effect::Multiple(vec![
-                    Effect::HealPercentage(100, EffectTarget::_Self),
+                    Effect::HealPercentage(100, Target::_Self),
                     Effect::AddMaxHp(Fixed(7)),
                 ]),
                 ..Self::default()
@@ -945,7 +945,7 @@ impl BaseRelic {
                 name: ORANGE_PELLETS,
                 rarity: Rarity::Shop,
                 activation: Activation::Custom,
-                effect: Effect::RemoveDebuffs(EffectTarget::_Self),
+                effect: Effect::RemoveDebuffs(Target::_Self),
                 ..Self::default()
             },
             ORRERY => Self {
@@ -966,7 +966,7 @@ impl BaseRelic {
                 name: SLING_OF_COURAGE,
                 rarity: Rarity::Shop,
                 activation: Activation::Event(Event::RoomEnter(RoomType::Elite)),
-                effect: Effect::AddBuff(buffs::STRENGTH, Fixed(2), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::STRENGTH, Fixed(2), Target::_Self),
                 ..Self::default()
             },
             STRANGE_SPOON => Self {
@@ -980,7 +980,7 @@ impl BaseRelic {
                 name: THE_ABACUS,
                 rarity: Rarity::Shop,
                 activation: Activation::Event(Event::Shuffle),
-                effect: Effect::Block(Fixed(6), EffectTarget::_Self),
+                effect: Effect::Block(Fixed(6), Target::_Self),
                 ..Self::default()
             },
             TOOLBOX => Self {
@@ -996,8 +996,8 @@ impl BaseRelic {
                 rarity: Rarity::Shop,
                 activation: Activation::Event(Event::TurnStart),
                 effect: Effect::Multiple(vec![
-                    Effect::AddBuff(buffs::STRENGTH, Fixed(2), EffectTarget::_Self),
-                    Effect::AddBuff(buffs::STRENGTH, Fixed(1), EffectTarget::AllEnemies),
+                    Effect::AddBuff(buffs::STRENGTH, Fixed(2), Target::_Self),
+                    Effect::AddBuff(buffs::STRENGTH, Fixed(1), Target::AllEnemies),
                 ]),
                 ..Self::default()
             },
@@ -1022,7 +1022,7 @@ impl BaseRelic {
                 class: Class::Defect,
                 rarity: Rarity::Shop,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::POISON, Fixed(4), EffectTarget::AllEnemies),
+                effect: Effect::AddBuff(buffs::POISON, Fixed(4), Target::AllEnemies),
                 ..Self::default()
             },
             ASTROLABE => Self {
@@ -1123,7 +1123,7 @@ impl BaseRelic {
                 name: PHILOSOPHERS_STONE,
                 rarity: Rarity::Boss,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::STRENGTH, Fixed(1), EffectTarget::AllEnemies),
+                effect: Effect::AddBuff(buffs::STRENGTH, Fixed(1), Target::AllEnemies),
                 energy_relic: true,
                 ..Self::default()
             },
@@ -1264,7 +1264,7 @@ impl BaseRelic {
                 name: RUNIC_CUBE,
                 class: Class::Ironclad,
                 rarity: Rarity::Boss,
-                activation: Activation::Event(Event::HpLoss(EffectTarget::_Self)),
+                activation: Activation::Event(Event::HpLoss(Target::_Self)),
                 effect: Effect::Draw(Fixed(1)),
                 ..Self::default()
             },
@@ -1352,21 +1352,21 @@ impl BaseRelic {
                 name: GOLDEN_IDOL,
                 rarity: Rarity::Event,
                 activation: Activation::Event(Event::GainGold),
-                effect: Effect::Multiply(Fixed(25)),
+                effect: Effect::Custom,
                 ..Self::default()
             },
             GREMLIN_VISAGE => Self {
                 name: GREMLIN_VISAGE,
                 rarity: Rarity::Event,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::WEAK, Fixed(1), EffectTarget::_Self),
+                effect: Effect::AddBuff(buffs::WEAK, Fixed(1), Target::_Self),
                 ..Self::default()
             },
             MARK_OF_THE_BLOOM => Self {
                 name: MARK_OF_THE_BLOOM,
                 rarity: Rarity::Event,
-                activation: Activation::Event(Event::Heal(EffectTarget::_Self)),
-                effect: Effect::Cancel,
+                activation: Activation::Event(Event::Heal(Target::_Self)),
+                effect: Effect::Custom,
                 ..Self::default()
             },
             MUTAGENIC_STRENGTH => Self {
@@ -1374,8 +1374,8 @@ impl BaseRelic {
                 rarity: Rarity::Event,
                 activation: Activation::Event(Event::CombatStart),
                 effect: Effect::Multiple(vec![
-                    Effect::AddBuff(buffs::STRENGTH, Fixed(3), EffectTarget::_Self),
-                    Effect::AddBuff(buffs::STRENGTH_DOWN, Fixed(3), EffectTarget::_Self),
+                    Effect::AddBuff(buffs::STRENGTH, Fixed(3), Target::_Self),
+                    Effect::AddBuff(buffs::STRENGTH_DOWN, Fixed(3), Target::_Self),
                 ]),
                 ..Self::default()
             },
@@ -1393,7 +1393,7 @@ impl BaseRelic {
                     use_when: Event::ChestOpen,
                     uses: 1,
                 },
-                effect: Effect::Cancel,
+                effect: Effect::Custom,
                 ..Self::default()
             },
             NECRONOMICON => Self {
@@ -1431,7 +1431,7 @@ impl BaseRelic {
                 name: RED_MASK,
                 rarity: Rarity::Event,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddBuff(buffs::WEAK, Fixed(1), EffectTarget::AllEnemies),
+                effect: Effect::AddBuff(buffs::WEAK, Fixed(1), Target::AllEnemies),
                 ..Self::default()
             },
             SPIRIT_POOP => Self {

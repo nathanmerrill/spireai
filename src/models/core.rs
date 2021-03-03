@@ -181,12 +181,11 @@ pub struct BaseMonster {
 }
 
 pub enum Move {
-    IfAsc(u8, Vec<Move>, Vec<Move>),
+    If(Condition, Vec<Move>, Vec<Move>),
     Loop(Vec<Move>),
     InOrder(&'static str),
     Probability(Vec<(u8, &'static str, u8)>), // Weight, name, repeats
     Event(Event, bool), // True if event immediately switches intent
-    IfPosition(u8, Vec<Move>),
 }
 
 pub struct ProbabilisticMove {
@@ -248,16 +247,17 @@ pub enum Event {
     CombatStart,
 
     // Targeted
-    AttackDamage(EffectTarget),
-    UnblockedDamage(EffectTarget),
-    HpLoss(EffectTarget),
-    HpChange(EffectTarget),
-    HalfHp(EffectTarget),
-    Heal(EffectTarget),
-    Block(EffectTarget),
-    Die(EffectTarget),
-    Buff(&'static str, EffectTarget),
-    UnBuff(&'static str, EffectTarget),
+    Damage(Target),
+    AttackDamage(Target),
+    UnblockedDamage(Target),
+    HpLoss(Target),
+    HpChange(Target),
+    HalfHp(Target),
+    Heal(Target),
+    Block(Target),
+    Die(Target),
+    Buff(&'static str, Target),
+    UnBuff(&'static str, Target),
 
     // Player
     Discard,
@@ -298,22 +298,23 @@ pub enum RelativePosition {
 pub enum Effect {
 
     //Targeted
-    Block(Amount, EffectTarget),
-    Damage(Amount, EffectTarget),
-    AttackDamage(Amount, EffectTarget),
-    LoseHp(Amount, EffectTarget),
-    AddBuff(&'static str, Amount, EffectTarget),
-    AddBuffN(&'static str, Amount, EffectTarget),
-    HealPercentage(u8, EffectTarget),
-    RemoveDebuffs(EffectTarget),
-    Die(EffectTarget),
+    Block(Amount, Target),
+    Damage(Amount, Target),
+    AttackDamage(Amount, Target),
+    LoseHp(Amount, Target),
+    Debuff(&'static str, Target),
+    AddBuff(&'static str, Amount, Target),
+    AddBuffN(&'static str, Amount, Target),
+    HealPercentage(u8, Target),
+    RemoveDebuffs(Target),
+    Die(Target),
     
     //Player
     Draw(Amount),
     Scry(Amount),
     AddEnergy(Amount),
     AddMaxHp(Amount),
-    Heal(Amount),
+    Heal(Amount, Target),
     SetStance(Stance),
     ChannelOrb(Orb),
     AddGold(Amount),
@@ -344,22 +345,6 @@ pub enum Effect {
         relics: i8,
     },
 
-    //Conditionals
-    IfStance(Stance, Vec<Effect>),
-    IfHalfHp(EffectTarget, Vec<Effect>),
-    IfStatus(EffectTarget, &'static str, Vec<Effect>),
-    IfNoBlock(EffectTarget, Vec<Effect>),
-    IfAttacking(EffectTarget, Vec<Effect>),
-    IfBuffN(EffectTarget, &'static str, Amount, Vec<Effect>),
-    IfAsc(u8, Vec<Effect>),
-    IfAct(u8, Vec<Effect>),
-    IfDead(EffectTarget, Vec<Effect>),
-
-    // Event-based
-    Cancel,
-    Multiply(Amount),
-    Add(Amount),
-
     // Monster
     Split(&'static str),
     Spawn {
@@ -369,6 +354,7 @@ pub enum Effect {
     },
 
     //Meta
+    If(Condition, Vec<Effect>),
     Multiple(Vec<Effect>),
     Repeat(Amount, Box<Effect>),
     None,
@@ -376,13 +362,28 @@ pub enum Effect {
 }
 
 #[derive(PartialEq, Clone)]
-pub enum EffectTarget {
+pub enum Condition {
+    Stance(Stance),
+    MissingHp(Amount, Target),
+    Status(Target, &'static str),
+    NoBlock(Target),
+    Attacking(Target),
+    Buff(Target, &'static str),
+    BuffN(Target, &'static str, Amount),
+    Asc(u8),
+    Act(u8),
+    Dead(Target),
+    InPosition(Target, u8),
+}
+
+#[derive(PartialEq, Clone)]
+pub enum Target {
     _Self,
     RandomEnemy,
     TargetEnemy,
     AllEnemies,
     Attacker,
-    AllFriendly,
+    AnyFriendly, // Includes self
     Friendly(&'static str),
 }
 

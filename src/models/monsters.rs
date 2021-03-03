@@ -28,7 +28,7 @@ impl BaseMonster {
                         MonsterMove {
                             name: CORROSIVE_SPIT,
                             effects: vec![
-                                Effect::Damage(ByAsc(11, 12, 12), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(11, 12, 12), Target::TargetEnemy),
                                 Effect::AddCard {
                                     card: CardReference::ByName(cards::SLIMED), 
                                     destination: CardLocation::DiscardPile(RelativePosition::Bottom), 
@@ -41,13 +41,13 @@ impl BaseMonster {
                         MonsterMove {
                             name: LICK,
                             effects: vec![
-                                Effect::AddBuff(buffs::WEAK, Fixed(2), EffectTarget::TargetEnemy)
+                                Effect::AddBuff(buffs::WEAK, Fixed(2), Target::TargetEnemy)
                             ],
                             intent: Intent::Debuff,
                         },
                         MonsterMove {
                             name: TACKLE,
-                            effects: vec![Effect::Damage(ByAsc(16, 18, 18), EffectTarget::TargetEnemy)],
+                            effects: vec![Effect::Damage(ByAsc(16, 18, 18), Target::TargetEnemy)],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
@@ -59,7 +59,7 @@ impl BaseMonster {
                         },
                     ],
                     move_order: vec![
-                        Move::IfAsc(17, 
+                        Move::If(Condition::Asc(17), 
                             vec![Move::Loop(vec![
                                 Move::Probability(vec![
                                     (40, CORROSIVE_SPIT, 2),
@@ -74,7 +74,7 @@ impl BaseMonster {
                                     (30, LICK, 2),
                             ])])],
                         ),
-                        Move::Event(Event::HalfHp(EffectTarget::_Self), true),
+                        Move::Event(Event::HalfHp(Target::_Self), true),
                         Move::InOrder(SPLIT),
                     ],
                     ..BaseMonster::default()
@@ -88,7 +88,7 @@ impl BaseMonster {
                         MonsterMove {
                             name: CORROSIVE_SPIT,
                             effects: vec![
-                                Effect::Damage(ByAsc(7, 8, 8), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(7, 8, 8), Target::TargetEnemy),
                                 Effect::AddCard {
                                     card: CardReference::ByName(cards::SLIMED), 
                                     destination: CardLocation::DiscardPile(RelativePosition::Bottom), 
@@ -101,18 +101,18 @@ impl BaseMonster {
                         MonsterMove {
                             name: LICK,
                             effects: vec![
-                                Effect::AddBuff(buffs::WEAK, Fixed(1), EffectTarget::TargetEnemy)
+                                Effect::AddBuff(buffs::WEAK, Fixed(1), Target::TargetEnemy)
                             ],
                             intent: Intent::Debuff,
                         },
                         MonsterMove {
                             name: TACKLE,
-                            effects: vec![Effect::Damage(ByAsc(10, 12, 12), EffectTarget::TargetEnemy)],
+                            effects: vec![Effect::Damage(ByAsc(10, 12, 12), Target::TargetEnemy)],
                             intent: Intent::Attack,
                         }
                     ],
                     move_order: vec![
-                        Move::IfAsc(17, 
+                        Move::If(Condition::Asc(17), 
                             vec![Move::Loop(vec![
                                 Move::Probability(vec![
                                     (40, CORROSIVE_SPIT, 2),
@@ -138,18 +138,18 @@ impl BaseMonster {
                         MonsterMove {
                             name: LICK,
                             effects: vec![
-                                Effect::AddBuff(buffs::WEAK, Fixed(1), EffectTarget::TargetEnemy)
+                                Effect::AddBuff(buffs::WEAK, Fixed(1), Target::TargetEnemy)
                             ],
                             intent: Intent::Debuff,
                         },
                         MonsterMove {
                             name: TACKLE,
-                            effects: vec![Effect::Damage(ByAsc(3, 4, 4), EffectTarget::TargetEnemy)],
+                            effects: vec![Effect::Damage(ByAsc(3, 4, 4), Target::TargetEnemy)],
                             intent: Intent::Attack,
                         }
                     ],
                     move_order: vec![
-                        Move::IfAsc(17, vec![
+                        Move::If(Condition::Asc(17), vec![
                             Move::InOrder(LICK)
                         ], vec![]),
                         Move::Loop(vec![
@@ -174,39 +174,39 @@ impl BaseMonster {
                         MonsterMove {
                             name: SLASH,
                             effects: vec![
-                                Effect::Damage(Fixed(20), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(20), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: SOUL_STRIKE,
                             effects: vec![
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: REBIRTH,
                             effects: vec![
-                                Effect::RemoveDebuffs(EffectTarget::_Self),
-                                Effect::HealPercentage(100, EffectTarget::_Self)
+                                Effect::RemoveDebuffs(Target::_Self),
+                                Effect::HealPercentage(100, Target::_Self)
                             ],
                             intent: Intent::Unknown,
                         },
                         MonsterMove {
                             name: DARK_ECHO,
                             effects: vec![
-                                Effect::Damage(Fixed(40), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(40), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: SLUDGE,
                             effects: vec![
-                                Effect::Damage(Fixed(18), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(18), Target::TargetEnemy),
                                 Effect::AddCard{
                                     card: CardReference::ByName(cards::VOID), 
                                     destination: CardLocation::DrawPile(RelativePosition::Random), 
@@ -219,9 +219,9 @@ impl BaseMonster {
                         MonsterMove {
                             name: TACKLE,
                             effects: vec![
-                                Effect::Damage(Fixed(10), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(10), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(10), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(10), Target::TargetEnemy),
+                                Effect::Damage(Fixed(10), Target::TargetEnemy),
+                                Effect::Damage(Fixed(10), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
@@ -233,7 +233,7 @@ impl BaseMonster {
                                 (75, SLASH, 2),
                                 (25, SOUL_STRIKE, 1),
                         ])]),
-                        Move::Event(Event::Die(EffectTarget::_Self), true),
+                        Move::Event(Event::Die(Target::_Self), true),
                         Move::InOrder(REBIRTH),
                         Move::InOrder(DARK_ECHO),
                         Move::Loop(vec![
@@ -252,21 +252,21 @@ impl BaseMonster {
                     moveset: vec![
                         MonsterMove {
                             name: BEAR_HUG,
-                            effects: vec![Effect::AddBuff(buffs::DEXTERITY, ByAsc(-2, -2, -4), EffectTarget::TargetEnemy)],
+                            effects: vec![Effect::AddBuff(buffs::DEXTERITY, ByAsc(-2, -2, -4), Target::TargetEnemy)],
                             intent: Intent::Debuff,
                         },
                         MonsterMove {
                             name: LUNGE,
                             effects: vec![
-                                Effect::Damage(Fixed(9), EffectTarget::TargetEnemy),
-                                Effect::Block(ByAsc(9, 10, 10), EffectTarget::_Self),
+                                Effect::Damage(Fixed(9), Target::TargetEnemy),
+                                Effect::Block(ByAsc(9, 10, 10), Target::_Self),
                             ],
                             intent: Intent::AttackDefend,
                         },
                         MonsterMove {
                             name: MAUL,
                             effects: vec![
-                                Effect::Damage(ByAsc(18, 20, 20), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(18, 20, 20), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
@@ -296,7 +296,7 @@ impl BaseMonster {
                         },
                         MonsterMove {
                             name: SINGLE_STAB,
-                            effects: vec![Effect::Damage(ByAsc(21, 24, 24), EffectTarget::TargetEnemy)],
+                            effects: vec![Effect::Damage(ByAsc(21, 24, 24), Target::TargetEnemy)],
                             intent: Intent::Attack,
                         }
                     ],
@@ -317,20 +317,20 @@ impl BaseMonster {
                     moveset: vec![
                         MonsterMove {
                             name: STAB,
-                            effects: vec![Effect::Damage(ByAsc(12, 13, 13), EffectTarget::TargetEnemy)],
+                            effects: vec![Effect::Damage(ByAsc(12, 13, 13), Target::TargetEnemy)],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: RAKE,
                             effects: vec![
-                                Effect::Damage(ByAsc(7, 8, 8), EffectTarget::TargetEnemy),
-                                Effect::AddBuff(buffs::WEAK, ByAsc(1, 1, 2), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(7, 8, 8), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::WEAK, ByAsc(1, 1, 2), Target::TargetEnemy),
                             ],
                             intent: Intent::AttackDebuff,
                         }
                     ],
                     move_order: vec![
-                        Move::IfAsc(17, 
+                        Move::If(Condition::Asc(17), 
                             vec![Move::Loop(vec![
                                 Move::Probability(vec![
                                     (60, STAB, 2),
@@ -374,23 +374,23 @@ impl BaseMonster {
                         MonsterMove {
                             name: FLAIL,
                             effects: vec![
-                                Effect::Damage(ByAsc(7, 8, 8), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(7, 8, 8), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(7, 8, 8), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(7, 8, 8), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: BOOST,
                             effects: vec![
-                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 4), EffectTarget::_Self),
-                                Effect::Block(ByAsc(9, 12, 12), EffectTarget::_Self),
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 4), Target::_Self),
+                                Effect::Block(ByAsc(9, 12, 12), Target::_Self),
                             ],
                             intent: Intent::DefendBuff,
                         },
                         MonsterMove {
                             name: HYPERBEAM,
                             effects: vec![
-                                Effect::Damage(ByAsc(45, 50, 50), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(45, 50, 50), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
@@ -408,7 +408,7 @@ impl BaseMonster {
                             Move::InOrder(FLAIL),
                             Move::InOrder(BOOST),
                             Move::InOrder(HYPERBEAM),
-                            Move::IfAsc(19, vec![
+                            Move::If(Condition::Asc(19), vec![
                                 Move::InOrder(BOOST)
                             ], vec![
                                 Move::InOrder(STUNNED)
@@ -433,14 +433,14 @@ impl BaseMonster {
                         MonsterMove {
                             name: BEAM,
                             effects: vec![
-                                Effect::Damage(Fixed(8), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(8), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: SUPPORT_BEAM,
                             effects: vec![
-                                Effect::Block(Fixed(12), EffectTarget::Friendly(BRONZE_AUTOMATON)),
+                                Effect::Block(Fixed(12), Target::Friendly(BRONZE_AUTOMATON)),
                             ],
                             intent: Intent::Defend,
                         },
@@ -452,7 +452,7 @@ impl BaseMonster {
                                 (15, BEAM, 0),
                                 (35, SUPPORT_BEAM, 0),
                         ])]),
-                        Move::Event(Event::Buff(buffs::STASIS, EffectTarget::_Self), true),
+                        Move::Event(Event::Buff(buffs::STASIS, Target::_Self), true),
                         Move::Loop(vec![
                             Move::Probability(vec![
                                 (30, BEAM, 2),
@@ -471,20 +471,20 @@ impl BaseMonster {
                         MonsterMove {
                             name: CAW,
                             effects: vec![
-                                Effect::AddBuff(buffs::STRENGTH, Fixed(1), EffectTarget::_Self),
+                                Effect::AddBuff(buffs::STRENGTH, Fixed(1), Target::_Self),
                             ],
                             intent: Intent::Buff
                         },
                         MonsterMove {
                             name: PECK,
                             effects: vec![
-                                Effect::Damage(Fixed(1), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(1), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(1), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(1), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(1), EffectTarget::TargetEnemy),
-                                Effect::IfAsc(2, vec![
-                                    Effect::Damage(Fixed(1), EffectTarget::TargetEnemy)
+                                Effect::Damage(Fixed(1), Target::TargetEnemy),
+                                Effect::Damage(Fixed(1), Target::TargetEnemy),
+                                Effect::Damage(Fixed(1), Target::TargetEnemy),
+                                Effect::Damage(Fixed(1), Target::TargetEnemy),
+                                Effect::Damage(Fixed(1), Target::TargetEnemy),
+                                Effect::If(Condition::Asc(2), vec![
+                                    Effect::Damage(Fixed(1), Target::TargetEnemy)
                                 ])
                             ],
                             intent: Intent::Attack,
@@ -492,21 +492,21 @@ impl BaseMonster {
                         MonsterMove {
                             name: SWOOP,
                             effects: vec![
-                                Effect::Damage(ByAsc(12, 14, 14), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(12, 14, 14), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: FLY,
                             effects: vec![
-                                Effect::AddBuff(buffs::FLYING, ByAsc(3, 3, 4), EffectTarget::_Self),
+                                Effect::AddBuff(buffs::FLYING, ByAsc(3, 3, 4), Target::_Self),
                             ],
                             intent: Intent::Unknown,
                         },
                         MonsterMove {
                             name: HEADBUTT,
                             effects: vec![
-                                Effect::Damage(Fixed(3), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(3), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
@@ -523,7 +523,7 @@ impl BaseMonster {
                                     (20, SWOOP, 1),
                                     (30, CAW, 1),
                             ])]),
-                            Move::Event(Event::UnBuff(buffs::FLYING, EffectTarget::_Self), true),
+                            Move::Event(Event::UnBuff(buffs::FLYING, Target::_Self), true),
                             Move::InOrder(STUNNED),
                             Move::InOrder(HEADBUTT),
                             Move::InOrder(FLY),
@@ -540,26 +540,26 @@ impl BaseMonster {
                         MonsterMove {
                             name: SLASH,
                             effects: vec![
-                                Effect::Damage(ByAsc(12, 14, 14), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(12, 14, 14), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
                         MonsterMove {
                             name: FURY,
                             effects: vec![
-                                Effect::Damage(ByAsc(6, 7, 7), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(6, 7, 7), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(6, 7, 7), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(6, 7, 7), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(6, 7, 7), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(6, 7, 7), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: DEFEND,
                             effects: vec![
-                                Effect::IfDead(EffectTarget::Friendly(MYSTIC), vec![
-                                    Effect::Block(ByAsc(15, 15, 20), EffectTarget::_Self),
+                                Effect::If(Condition::Dead(Target::Friendly(MYSTIC)), vec![
+                                    Effect::Block(ByAsc(15, 15, 20), Target::_Self),
                                 ]),
-                                Effect::Block(ByAsc(15, 15, 20), EffectTarget::Friendly(MYSTIC)),
+                                Effect::Block(ByAsc(15, 15, 20), Target::Friendly(MYSTIC)),
                             ],
                             intent: Intent::Defend,
                         },
@@ -571,7 +571,7 @@ impl BaseMonster {
                                 (35, SLASH, 0),
                             ])
                         ]),
-                        Move::Event(Event::Die(EffectTarget::Friendly(MYSTIC)), false),
+                        Move::Event(Event::Die(Target::Friendly(MYSTIC)), false),
                         Move::Loop(vec![
                             Move::Probability(vec![
                                 (65, FURY, 0),
@@ -590,44 +590,44 @@ impl BaseMonster {
                         MonsterMove {
                             name: POKE,
                             effects: vec![
-                                Effect::Damage(ByAsc(5, 6, 6), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(5, 6, 6), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(5, 6, 6), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(5, 6, 6), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
                         MonsterMove {
                             name: ZAP,
                             effects: vec![
-                                Effect::Damage(ByAsc(18, 21, 21), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(18, 21, 21), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: DEBILITATE,
                             effects: vec![
-                                Effect::Damage(ByAsc(10, 12, 12), EffectTarget::TargetEnemy),
-                                Effect::AddBuff(buffs::VULNERABLE, Fixed(2), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(10, 12, 12), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::VULNERABLE, Fixed(2), Target::TargetEnemy),
                             ],
                             intent: Intent::AttackDebuff,
                         },
                         MonsterMove {
                             name: DRAIN,
                             effects: vec![
-                                Effect::AddBuff(buffs::WEAK, Fixed(3), EffectTarget::TargetEnemy),
-                                Effect::AddBuff(buffs::STRENGTH, Fixed(3), EffectTarget::_Self),
+                                Effect::AddBuff(buffs::WEAK, Fixed(3), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::STRENGTH, Fixed(3), Target::_Self),
                             ],
                             intent: Intent::Debuff,
                         },
                         MonsterMove {
                             name: HEX,
                             effects: vec![
-                                Effect::AddBuff(buffs::HEX, Fixed(1), EffectTarget::TargetEnemy),
+                                Effect::AddBuff(buffs::HEX, Fixed(1), Target::TargetEnemy),
                             ],
                             intent: Intent::StrongDebuff,
                         },
                     ],
                     move_order: vec![
-                        Move::IfAsc(17, vec![], vec![
+                        Move::If(Condition::Asc(17), vec![], vec![
                             Move::InOrder(POKE),
                         ]),
                         Move::InOrder(HEX),
@@ -657,9 +657,9 @@ impl BaseMonster {
                         MonsterMove {
                             name: DEBILITATE,
                             effects: vec![
-                                Effect::AddBuff(buffs::VULNERABLE, Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::AddBuff(buffs::WEAK, Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::AddBuff(buffs::FRAIL, Fixed(2), EffectTarget::TargetEnemy),
+                                Effect::AddBuff(buffs::VULNERABLE, Fixed(2), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::WEAK, Fixed(2), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::FRAIL, Fixed(2), Target::TargetEnemy),
                                 Effect::AddCard{
                                     card: CardReference::ByName(cards::DAZED), 
                                     destination: CardLocation::DrawPile(RelativePosition::Random), 
@@ -696,22 +696,22 @@ impl BaseMonster {
                         MonsterMove {
                             name: BLOOD_SHOTS,
                             effects: vec![
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                Effect::IfAsc(4, vec![
-                                    Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                    Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
-                                    Effect::Damage(Fixed(2), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                Effect::If(Condition::Asc(4), vec![
+                                    Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                    Effect::Damage(Fixed(2), Target::TargetEnemy),
+                                    Effect::Damage(Fixed(2), Target::TargetEnemy),
                                 ]),
                             ],
                             intent: Intent::Attack,
@@ -719,7 +719,7 @@ impl BaseMonster {
                         MonsterMove {
                             name: ECHO,
                             effects: vec![
-                                Effect::Damage(ByAsc(40, 45, 45), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(40, 45, 45), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
@@ -756,14 +756,14 @@ impl BaseMonster {
                         MonsterMove {
                             name: INCANTATION,
                             effects: vec![
-                                Effect::AddBuff(buffs::RITUAL, ByAsc(3, 4, 5), EffectTarget::_Self)
+                                Effect::AddBuff(buffs::RITUAL, ByAsc(3, 4, 5), Target::_Self)
                             ],
                             intent: Intent::Buff
                         },
                         MonsterMove {
                             name: DARK_STRIKE,
                             effects: vec![
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
@@ -789,24 +789,24 @@ impl BaseMonster {
                         MonsterMove {
                             name: NIP,
                             effects: vec![
-                                Effect::Damage(N, EffectTarget::TargetEnemy),
+                                Effect::Damage(N, Target::TargetEnemy),
                             ],
                             intent: Intent::Buff
                         },
                         MonsterMove {
                             name: CHOMP,
                             effects: vec![
-                                Effect::Damage(ByAsc(8, 9, 9), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(8, 9, 9), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(8, 9, 9), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(8, 9, 9), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: HARDEN,
                             effects: vec![
-                                Effect::Block(Fixed(12), EffectTarget::_Self),
-                                Effect::IfAsc(17, vec![
-                                    Effect::AddBuff(buffs::STRENGTH, Fixed(2), EffectTarget::_Self)
+                                Effect::Block(Fixed(12), Target::_Self),
+                                Effect::If(Condition::Asc(17), vec![
+                                    Effect::AddBuff(buffs::STRENGTH, Fixed(2), Target::_Self)
                                 ])
                             ],
                             intent: Intent::Defend,
@@ -814,7 +814,7 @@ impl BaseMonster {
                         MonsterMove {
                             name: REINCARNATE,
                             effects: vec![
-                                Effect::HealPercentage(50, EffectTarget::_Self),
+                                Effect::HealPercentage(50, Target::_Self),
                             ],
                             intent: Intent::Buff,
                         },
@@ -830,22 +830,23 @@ impl BaseMonster {
                             (50, HARDEN, 1),
                         ]),
                         Move::Loop(vec![
-                            Move::IfPosition(1, vec![
+                            Move::If(Condition::InPosition(Target::_Self, 1), vec![
                                 Move::Loop(vec![
                                     Move::Probability(vec![
                                         (50, NIP, 2),
                                         (50, HARDEN, 1),
                                     ]),
                                 ])
-                            ]),
-                            Move::Loop(vec![
-                                Move::Probability(vec![
-                                    (30, NIP, 2),
-                                    (40, CHOMP, 1),
-                                    (30, HARDEN, 1),
+                            ], vec![
+                                Move::Loop(vec![
+                                    Move::Probability(vec![
+                                        (30, NIP, 2),
+                                        (40, CHOMP, 1),
+                                        (30, HARDEN, 1),
+                                    ]),
                                 ]),
                             ]),
-                            Move::Event(Event::Die(EffectTarget::_Self), true),
+                            Move::Event(Event::Die(Target::_Self), true),
                             Move::InOrder(REGROW),
                             Move::InOrder(REINCARNATE),
                         ])
@@ -864,11 +865,11 @@ impl BaseMonster {
                         MonsterMove {
                             name: SQUARE_OF_PROTECTION,
                             effects: vec![
-                                Effect::Block(Fixed(16), EffectTarget::_Self),
-                                Effect::Block(Fixed(16), EffectTarget::Friendly(DONU)),
-                                Effect::IfAsc(19, vec![
-                                    Effect::AddBuff(buffs::PLATED_ARMOR, Fixed(3), EffectTarget::_Self),
-                                    Effect::AddBuff(buffs::PLATED_ARMOR, Fixed(3), EffectTarget::Friendly(DONU)),
+                                Effect::Block(Fixed(16), Target::_Self),
+                                Effect::Block(Fixed(16), Target::Friendly(DONU)),
+                                Effect::If(Condition::Asc(19), vec![
+                                    Effect::AddBuff(buffs::PLATED_ARMOR, Fixed(3), Target::_Self),
+                                    Effect::AddBuff(buffs::PLATED_ARMOR, Fixed(3), Target::Friendly(DONU)),
                                 ])
                             ],
                             intent: Intent::Defend,
@@ -876,8 +877,8 @@ impl BaseMonster {
                         MonsterMove {
                             name: BEAM,
                             effects: vec![
-                                Effect::Damage(ByAsc(10, 12, 12), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(10, 12, 12), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(10, 12, 12), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(10, 12, 12), Target::TargetEnemy),
                                 Effect::AddCard{
                                     card: CardReference::ByName(cards::DAZED), 
                                     destination: CardLocation::DiscardPile(RelativePosition::Bottom), 
@@ -908,16 +909,16 @@ impl BaseMonster {
                         MonsterMove {
                             name: CIRCLE_OF_POWER,
                             effects: vec![
-                                Effect::AddBuff(buffs::STRENGTH, Fixed(3), EffectTarget::_Self),
-                                Effect::AddBuff(buffs::STRENGTH, Fixed(3), EffectTarget::Friendly(DECA)),
+                                Effect::AddBuff(buffs::STRENGTH, Fixed(3), Target::_Self),
+                                Effect::AddBuff(buffs::STRENGTH, Fixed(3), Target::Friendly(DECA)),
                             ],
                             intent: Intent::Buff
                         },
                         MonsterMove {
                             name: BEAM,
                             effects: vec![
-                                Effect::Damage(ByAsc(10, 12, 12), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(10, 12, 12), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(10, 12, 12), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(10, 12, 12), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack,
                         },
@@ -942,15 +943,15 @@ impl BaseMonster {
                         MonsterMove {
                             name: SLAM,
                             effects: vec![
-                                Effect::Damage(Fixed(9), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(9), Target::TargetEnemy),
                             ],
                             intent: Intent::Buff
                         },
                         MonsterMove {
                             name: EXPLODE,
                             effects: vec![
-                                Effect::Damage(Fixed(30), EffectTarget::TargetEnemy),
-                                Effect::Die(EffectTarget::_Self),
+                                Effect::Damage(Fixed(30), Target::TargetEnemy),
+                                Effect::Die(Target::_Self),
                             ],
                             intent: Intent::Unknown,
                         },
@@ -971,10 +972,10 @@ impl BaseMonster {
                         MonsterMove {
                             name: SMASH,
                             effects: vec![
-                                Effect::Damage(ByAsc(4, 5, 5), EffectTarget::TargetEnemy),
-                                Effect::AddBuff(buffs::WEAK, Fixed(1), EffectTarget::TargetEnemy),
-                                Effect::IfAsc(17, vec![
-                                    Effect::AddBuff(buffs::FRAIL, Fixed(1), EffectTarget::TargetEnemy)
+                                Effect::Damage(ByAsc(4, 5, 5), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::WEAK, Fixed(1), Target::TargetEnemy),
+                                Effect::If(Condition::Asc(17), vec![
+                                    Effect::AddBuff(buffs::FRAIL, Fixed(1), Target::TargetEnemy)
                                 ])
                             ],
                             intent: Intent::Attack
@@ -999,14 +1000,14 @@ impl BaseMonster {
                         MonsterMove {
                             name: BITE,
                             effects: vec![
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
                         MonsterMove {
                             name: GROW,
                             effects: vec![
-                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 5), EffectTarget::_Self),
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 5), Target::_Self),
                             ],
                             intent: Intent::Buff
                         },
@@ -1033,21 +1034,21 @@ impl BaseMonster {
                         MonsterMove {
                             name: COUNT,
                             effects: vec![
-                                Effect::Damage(Fixed(13), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(13), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
                         MonsterMove {
                             name: GLARE,
                             effects: vec![
-                                Effect::AddBuff(buffs::WEAK, Fixed(1), EffectTarget::TargetEnemy),
+                                Effect::AddBuff(buffs::WEAK, Fixed(1), Target::TargetEnemy),
                             ],
                             intent: Intent::Debuff
                         },
                         MonsterMove {
                             name: IT_IS_TIME,
                             effects: vec![
-                                Effect::Damage(Custom, EffectTarget::TargetEnemy),
+                                Effect::Damage(Custom, Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
@@ -1065,7 +1066,7 @@ impl BaseMonster {
                             (50, COUNT, 2),
                             (50, GLARE, 2),
                         ]),
-                        Move::IfAsc(18, vec![], vec![
+                        Move::If(Condition::Asc(18), vec![], vec![
                             Move::Probability(vec![
                                 (50, COUNT, 2),
                                 (50, GLARE, 2),
@@ -1091,21 +1092,21 @@ impl BaseMonster {
                         MonsterMove {
                             name: BITE,
                             effects: vec![
-                                Effect::Damage(X, EffectTarget::TargetEnemy),
+                                Effect::Damage(X, Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
                         MonsterMove {
                             name: SPIT_WEB,
                             effects: vec![
-                                Effect::AddBuff(buffs::WEAK, Fixed(2), EffectTarget::TargetEnemy),
+                                Effect::AddBuff(buffs::WEAK, Fixed(2), Target::TargetEnemy),
                             ],
                             intent: Intent::Debuff
                         },
                     ],
                     move_order: vec![
                         Move::Loop(vec![
-                            Move::IfAsc(17, vec![
+                            Move::If(Condition::Asc(17), vec![
                                 Move::Probability(vec![
                                     (25, SPIT_WEB, 1),
                                     (75, BITE, 2),
@@ -1129,10 +1130,8 @@ impl BaseMonster {
                         MonsterMove {
                             name: ENCOURAGE,
                             effects: vec![
-                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 5), EffectTarget::_Self),
-                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 5), EffectTarget::AllFriendly),
-                                Effect::Block(ByAsc(6, 6, 10), EffectTarget::_Self),
-                                Effect::Block(ByAsc(6, 6, 10), EffectTarget::AllFriendly),
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 5), Target::AllFriendly),
+                                Effect::Block(ByAsc(6, 6, 10), Target::AllFriendly),
                             ],
                             intent: Intent::DefendBuff
                         },
@@ -1156,39 +1155,33 @@ impl BaseMonster {
                         MonsterMove {
                             name: STAB,
                             effects: vec![
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
                     ],
                     move_order: vec![
                         Move::Loop(vec![
-                            Move::IfPosition(0, vec![
+                            Move::If(Condition::InPosition(Target::_Self, 0), vec![
                                 Move::Probability(vec![
                                     (75, RALLY, 1),
                                     (25, STAB, 1)
                                 ])
-                            ]),
-                            Move::IfPosition(1, vec![
-                                Move::Probability(vec![
-                                    (25, RALLY, 1),
-                                    (25, STAB, 1),
-                                    (15, ENCOURAGE, 1),
-                                ])
-                            ]),
-                            Move::IfPosition(2, vec![
-                                Move::Probability(vec![
-                                    (66, ENCOURAGE, 1),
-                                    (34, STAB, 1),
-                                ])
-                            ]),
-                            Move::IfPosition(3, vec![
-                                Move::Probability(vec![
-                                    (66, ENCOURAGE, 1),
-                                    (34, STAB, 1),
-                                ])
+                            ], vec![
+                                Move::If(Condition::InPosition(Target::_Self, 1), vec![
+                                    Move::Probability(vec![
+                                        (25, RALLY, 1),
+                                        (25, STAB, 1),
+                                        (15, ENCOURAGE, 1),
+                                    ])
+                                ], vec![ 
+                                    Move::Probability(vec![
+                                        (66, ENCOURAGE, 1),
+                                        (34, STAB, 1),
+                                    ])
+                                ]),
                             ]),
                         ]),
                     ],
@@ -1203,29 +1196,29 @@ impl BaseMonster {
                         MonsterMove {
                             name: BELLOW,
                             effects: vec![
-                                Effect::AddBuff(buffs::ENRAGE, ByAsc(2, 2, 3), EffectTarget::_Self),
+                                Effect::AddBuff(buffs::ENRAGE, ByAsc(2, 2, 3), Target::_Self),
                             ],
                             intent: Intent::Buff
                         },
                         MonsterMove {
                             name: RUSH,
                             effects: vec![
-                                Effect::Damage(ByAsc(14, 16, 16), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(14, 16, 16), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
                         MonsterMove {
                             name: SKULL_BASH,
                             effects: vec![
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
-                                Effect::AddBuff(buffs::VULNERABLE, Fixed(2), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::VULNERABLE, Fixed(2), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
                     ],
                     move_order: vec![
                         Move::InOrder(BELLOW),
-                        Move::IfAsc(18, vec![
+                        Move::If(Condition::Asc(18), vec![
                             Move::Loop(vec![
                                 Move::InOrder(SKULL_BASH),
                                 Move::InOrder(RUSH),
@@ -1257,7 +1250,7 @@ impl BaseMonster {
                         MonsterMove {
                             name: ULTIMATE_BLAST,
                             effects: vec![
-                                Effect::Damage(ByAsc(25, 30, 30), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(25, 30, 30), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
@@ -1266,7 +1259,7 @@ impl BaseMonster {
                         Move::Loop(vec![
                             Move::InOrder(CHARGING),
                             Move::InOrder(CHARGING),
-                            Move::IfAsc(17, vec![
+                            Move::If(Condition::Asc(17), vec![
                                 Move::Loop(vec![
                                     Move::InOrder(ULTIMATE_BLAST),
                                 ])
@@ -1292,24 +1285,24 @@ impl BaseMonster {
                         MonsterMove {
                             name: DIVIDER,
                             effects: vec![
-                                Effect::Damage(N, EffectTarget::TargetEnemy),
-                                Effect::Damage(N, EffectTarget::TargetEnemy),
-                                Effect::Damage(N, EffectTarget::TargetEnemy),
-                                Effect::Damage(N, EffectTarget::TargetEnemy),
-                                Effect::Damage(N, EffectTarget::TargetEnemy),
-                                Effect::Damage(N, EffectTarget::TargetEnemy),
+                                Effect::Damage(N, Target::TargetEnemy),
+                                Effect::Damage(N, Target::TargetEnemy),
+                                Effect::Damage(N, Target::TargetEnemy),
+                                Effect::Damage(N, Target::TargetEnemy),
+                                Effect::Damage(N, Target::TargetEnemy),
+                                Effect::Damage(N, Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
                         MonsterMove {
                             name: INFERNO,
                             effects: vec![
-                                Effect::Damage(ByAsc(2, 3, 3), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(2, 3, 3), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(2, 3, 3), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(2, 3, 3), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(2, 3, 3), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(2, 3, 3), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(2, 3, 3), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(2, 3, 3), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(2, 3, 3), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(2, 3, 3), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(2, 3, 3), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(2, 3, 3), Target::TargetEnemy),
                                 Effect::AddCard {
                                     card: CardReference::ByName(cards::BURN), 
                                     destination: CardLocation::DiscardPile(RelativePosition::Bottom), 
@@ -1323,7 +1316,7 @@ impl BaseMonster {
                         MonsterMove {
                             name: SEAR,
                             effects: vec![
-                                Effect::Damage(Fixed(6), EffectTarget::TargetEnemy),
+                                Effect::Damage(Fixed(6), Target::TargetEnemy),
                                 Effect::AddCard {
                                     card: CardReference::ByName(cards::BURN), 
                                     destination: CardLocation::DiscardPile(RelativePosition::Bottom), 
@@ -1336,16 +1329,16 @@ impl BaseMonster {
                         MonsterMove {
                             name: TACKLE,
                             effects: vec![
-                                Effect::Damage(ByAsc(5, 6, 6), EffectTarget::TargetEnemy),
-                                Effect::Damage(ByAsc(5, 6, 6), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(5, 6, 6), Target::TargetEnemy),
+                                Effect::Damage(ByAsc(5, 6, 6), Target::TargetEnemy),
                             ],
                             intent: Intent::AttackDebuff,
                         },
                         MonsterMove {
                             name: INFLAME,
                             effects: vec![
-                                Effect::AddBuff(buffs::STRENGTH, ByAsc(2, 2, 3), EffectTarget::_Self),
-                                Effect::Block(Fixed(12), EffectTarget::_Self),
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(2, 2, 3), Target::_Self),
+                                Effect::Block(Fixed(12), Target::_Self),
                             ],
                             intent: Intent::AttackDebuff,
                         },
@@ -1370,36 +1363,39 @@ impl BaseMonster {
                 Self {
                     hp_range: (40, 44),
                     hp_range_asc: (42, 46),
-                    combat_start: Effect::IfAct(3, vec![
-                        
+                    combat_start: Effect::If(Condition::Act(3), vec![
+                        Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 5), Target::_Self),
+                        Effect::Block(ByAsc(6, 6, 9), Target::_Self),                        
                     ]),
                     moveset: vec![
                         MonsterMove {
                             name: CHOMP,
                             effects: vec![
-                                Effect::Damage(ByAsc(11, 12, 12), EffectTarget::TargetEnemy),
+                                Effect::Damage(ByAsc(11, 12, 12), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
                         },
                         MonsterMove {
                             name: THRASH,
                             effects: vec![
-                                Effect::Damage(Fixed(7), EffectTarget::TargetEnemy),
-                                Effect::Block(Fixed(5), EffectTarget::_Self),
+                                Effect::Damage(Fixed(7), Target::TargetEnemy),
+                                Effect::Block(Fixed(5), Target::_Self),
                             ],
                             intent: Intent::AttackDefend,
                         },
                         MonsterMove {
                             name: BELLOW,
                             effects: vec![
-                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 5), EffectTarget::_Self),
-                                Effect::Block(ByAsc(6, 6, 9), EffectTarget::_Self),
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 5), Target::_Self),
+                                Effect::Block(ByAsc(6, 6, 9), Target::_Self),
                             ],
                             intent: Intent::DefendBuff,
                         },
                     ],
                     move_order: vec![
-                        Move::InOrder(CHOMP),
+                        Move::If(Condition::Act(3), vec![], vec![
+                            Move::InOrder(CHOMP),
+                        ]),
                         Move::Loop(vec![
                             Move::Probability(vec![
                                 (45, BELLOW, 1),
@@ -1407,6 +1403,252 @@ impl BaseMonster {
                                 (25, CHOMP, 1),
                             ]),
                         ]),
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            LAGAVULIN => {
+                Self {
+                    hp_range: (109, 111),
+                    hp_range_asc: (112, 115),
+                    buffs: vec![
+                        (buffs::METALLICIZE, Fixed(8)),
+                        (buffs::ASLEEP, Fixed(1))
+                    ],
+                    moveset: vec![
+                        MonsterMove {
+                            name: ATTACK,
+                            effects: vec![
+                                Effect::Debuff(buffs::METALLICIZE, Target::_Self),
+                                Effect::Debuff(buffs::ASLEEP, Target::_Self),
+                                Effect::Damage(ByAsc(18, 20, 20), Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack
+                        },
+                        MonsterMove {
+                            name: SIPHON_SOUL,
+                            effects: vec![
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(-1, -1, -2), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::DEXTERITY, ByAsc(-1, -1, -2), Target::TargetEnemy),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                        MonsterMove {
+                            name: SLEEP,
+                            effects: vec![],
+                            intent: Intent::Sleep,
+                        },
+                        MonsterMove {
+                            name: STUNNED,
+                            effects: vec![
+                                Effect::Debuff(buffs::METALLICIZE, Target::_Self),
+                                Effect::Debuff(buffs::ASLEEP, Target::_Self),
+                            ],
+                            intent: Intent::Stun,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::InOrder(SLEEP), 
+                        Move::InOrder(SLEEP),
+                        Move::InOrder(SLEEP),
+                        Move::Event(Event::UnblockedDamage(Target::_Self), true),
+                        Move::If(Condition::Buff(Target::_Self, buffs::ASLEEP), vec![], vec![
+                            Move::InOrder(STUNNED)
+                        ]),
+                        Move::Loop(vec![
+                            Move::InOrder(ATTACK),
+                            Move::InOrder(ATTACK),
+                            Move::InOrder(SIPHON_SOUL),
+                        ]),
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            LOOTER => {
+                Self {
+                    hp_range: (44, 48),
+                    hp_range_asc: (46, 50),
+                    buffs: vec![
+                        (buffs::INNATE_THIEVERY, ByAsc(15, 15, 20))
+                    ],
+                    moveset: vec![
+                        MonsterMove {
+                            name: MUG,
+                            effects: vec![
+                                Effect::Damage(ByAsc(10, 11, 11), Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack
+                        },
+                        MonsterMove {
+                            name: LUNGE,
+                            effects: vec![
+                                Effect::Damage(ByAsc(12, 14, 14), Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack
+                        },
+                        MonsterMove {
+                            name: SMOKE_BOMB,
+                            effects: vec![
+                                Effect::Block(Fixed(6), Target::_Self),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                        MonsterMove {
+                            name: ESCAPE,
+                            effects: vec![
+                                Effect::Custom,
+                            ],
+                            intent: Intent::Sleep,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::InOrder(MUG), 
+                        Move::InOrder(MUG),
+                        Move::Probability(vec![
+                            (50, LUNGE, 1),
+                            (50, SMOKE_BOMB, 1)
+                        ]),
+                        Move::Probability(vec![
+                            (0, ESCAPE, 1),
+                            (100, SMOKE_BOMB, 1),
+                        ]),
+                        Move::InOrder(ESCAPE),
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            MAD_GREMLIN => {
+                Self {
+                    hp_range: (20, 24),
+                    hp_range_asc: (21, 25),
+                    buffs: vec![
+                        (buffs::ANGRY, ByAsc(1, 1, 2))
+                    ],
+                    moveset: vec![
+                        MonsterMove {
+                            name: SCRATCH,
+                            effects: vec![
+                                Effect::Damage(ByAsc(4, 5, 5), Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack
+                        },
+                    ],
+                    move_order: vec![
+                        Move::Loop(vec![
+                            Move::InOrder(SCRATCH)
+                        ])
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            MUGGER => {
+                Self {
+                    hp_range: (48, 52),
+                    hp_range_asc: (50, 54),
+                    buffs: vec![
+                        (buffs::INNATE_THIEVERY, ByAsc(15, 15, 20))
+                    ],
+                    moveset: vec![
+                        MonsterMove {
+                            name: MUG,
+                            effects: vec![
+                                Effect::Damage(ByAsc(10, 11, 11), Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack
+                        },
+                        MonsterMove {
+                            name: LUNGE,
+                            effects: vec![
+                                Effect::Damage(ByAsc(16, 18, 18), Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack
+                        },
+                        MonsterMove {
+                            name: SMOKE_BOMB,
+                            effects: vec![
+                                Effect::Block(ByAsc(11, 11, 17), Target::_Self),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                        MonsterMove {
+                            name: ESCAPE,
+                            effects: vec![
+                                Effect::Custom,
+                            ],
+                            intent: Intent::Sleep,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::InOrder(MUG), 
+                        Move::InOrder(MUG),
+                        Move::Probability(vec![
+                            (50, LUNGE, 1),
+                            (50, SMOKE_BOMB, 1)
+                        ]),
+                        Move::Probability(vec![
+                            (100, SMOKE_BOMB, 1),
+                        ]),
+                        Move::InOrder(ESCAPE),
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            MYSTIC => {
+                Self {
+                    hp_range: (48, 56),
+                    hp_range_asc: (50, 58),
+                    moveset: vec![
+                        MonsterMove {
+                            name: HEAL,
+                            effects: vec![
+                                Effect::Heal(ByAsc(16, 16, 20), Target::AnyFriendly),
+                                Effect::Heal(ByAsc(16, 16, 20), Target::_Self),
+                            ],
+                            intent: Intent::Buff
+                        },
+                        MonsterMove {
+                            name: BUFF,
+                            effects: vec![
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(2, 3, 4), Target::AnyFriendly),
+                            ],
+                            intent: Intent::Attack
+                        },
+                        MonsterMove {
+                            name: ATTACK_DEBUFF,
+                            effects: vec![
+                                Effect::Damage(ByAsc(8, 9, 9), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::FRAIL, Fixed(2), Target::TargetEnemy),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::Loop(vec![
+                            Move::If(Condition::MissingHp(ByAsc(16, 16, 21), Target::AnyFriendly), vec![
+                                Move::If(Condition::Asc(17),vec![
+                                    Move::Probability(vec![
+                                        (100, HEAL, 2)
+                                    ])
+                                ], vec![
+                                    Move::Probability(vec![
+                                        (100, HEAL, 3)
+                                    ])
+                                ])
+                            ], vec![
+
+                            ]),
+                        ]),
+                        Move::InOrder(MUG), 
+                        Move::InOrder(MUG),
+                        Move::Probability(vec![
+                            (50, LUNGE, 1),
+                            (50, SMOKE_BOMB, 1)
+                        ]),
+                        Move::Probability(vec![
+                            (0, ESCAPE, 1),
+                            (100, SMOKE_BOMB, 1),
+                        ]),
+                        Move::InOrder(ESCAPE),
                     ],
                     ..BaseMonster::default()
                 }
@@ -1554,6 +1796,19 @@ pub const INFERNO: &str = "Inferno";
 pub const SEAR: &str = "Sear";
 pub const INFLAME: &str = "Inflame";
 pub const THRASH: &str = "Thrash";
-pub const DIVIDER: &str = "Divider";
-pub const DIVIDER: &str = "Divider";
-pub const DIVIDER: &str = "Divider";
+pub const ATTACK: &str = "Attack";
+pub const SIPHON_SOUL: &str = "Siphon Soul";
+pub const SLEEP: &str = "Sleep";
+pub const MUG: &str = "Mug";
+pub const SMOKE_BOMB: &str = "Smoke Bomb";
+pub const ESCAPE: &str = "Escape";
+pub const SCRATCH: &str = "Scratch";
+pub const HEAL: &str = "Heal";
+pub const ATTACK_DEBUFF: &str = "Attack/Debuff";
+pub const SLEEP: &str = "Sleep";
+pub const SLEEP: &str = "Sleep";
+pub const SLEEP: &str = "Sleep";
+pub const SLEEP: &str = "Sleep";
+pub const SLEEP: &str = "Sleep";
+pub const SLEEP: &str = "Sleep";
+pub const SLEEP: &str = "Sleep";

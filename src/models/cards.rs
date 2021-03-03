@@ -4,7 +4,7 @@ use Class::*;
 use CardType::*;
 use Rarity::*;
 use Effect::*;
-use EffectTarget::*;
+use Target::*;
 use CardLocation::*;
 use CardEffect::*;
 use Amount::*;
@@ -421,14 +421,14 @@ impl BaseCard {
                 targeted: true,
                 effects: vec![
                     OnPlay(AttackDamage(Fixed(5), TargetEnemy)),
-                    OnPlay(IfStatus(TargetEnemy, buffs::VULNERABLE, vec![
+                    OnPlay(If(Condition::Status(TargetEnemy, buffs::VULNERABLE), vec![
                         AddEnergy(Fixed(1)),
                         Draw(Fixed(1)),
                     ]))
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(AttackDamage(Fixed(8), TargetEnemy)),
-                    OnPlay(IfStatus(TargetEnemy, buffs::VULNERABLE, vec![
+                    OnPlay(If(Condition::Status(TargetEnemy, buffs::VULNERABLE), vec![
                         AddEnergy(Fixed(1)),
                         Draw(Fixed(1)),
                     ]))
@@ -460,7 +460,7 @@ impl BaseCard {
                 name: ENTRENCH, 
                 rarity: Uncommon,
                 effects: vec![
-                    OnPlay(Block(Amount::Custom, EffectTarget::_Self))
+                    OnPlay(Block(Amount::Custom, _Self))
                 ],
                 on_upgrade: OnUpgrade::ReduceCost(1),
                 cost: 2,
@@ -764,12 +764,12 @@ impl BaseCard {
                 rarity: Uncommon,
                 targeted: true,
                 effects: vec![
-                    OnPlay(IfAttacking(TargetEnemy, vec![
+                    OnPlay(If(Condition::Attacking(TargetEnemy), vec![
                         AddBuff(buffs::STRENGTH, Fixed(3), _Self)
                     ])),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
-                    OnPlay(IfAttacking(TargetEnemy, vec![
+                    OnPlay(If(Condition::Attacking(TargetEnemy), vec![
                         AddBuff(buffs::STRENGTH, Fixed(4), _Self)
                     ])),
                 ]),
