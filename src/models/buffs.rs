@@ -26,7 +26,7 @@ impl BaseBuff {
                 ..BaseBuff::default()
             },
             ANGRY => BaseBuff {
-                name: ANGRY
+                name: ANGRY,
                 effect_at: Event::AttackDamage(Target::_Self),
                 effect: Effect::AddBuff(STRENGTH, X, Target::_Self),
                 ..BaseBuff::default()
@@ -114,8 +114,19 @@ impl BaseBuff {
                 effect: Effect::AddBuff(STRENGTH, X, Target::_Self),
                 ..BaseBuff::default()
             },
+            SPLIT => BaseBuff {
+                name: SPLIT, 
+                is_additive: false,
+                ..BaseBuff::default()
+            },
             STRENGTH => BaseBuff { 
                 name: STRENGTH,
+                ..BaseBuff::default()
+            },
+            STRENGTH_UP => BaseBuff { 
+                name: STRENGTH_UP,
+                effect_at: Event::TurnEnd,
+                effect: Effect::AddBuff(STRENGTH, X, Target::_Self),
                 ..BaseBuff::default()
             },
             THORNS => BaseBuff { 
@@ -440,6 +451,12 @@ impl BaseBuff {
                 effect: Effect::Draw(X),
                 ..BaseBuff::default()
             },
+            MALLEABLE => BaseBuff {
+                name: MALLEABLE,
+                effect_at: Event::Custom,
+                effect: Effect::Custom,
+                ..BaseBuff::default()
+            },
             MAGNETISM => BaseBuff { 
                 name: MAGNETISM,
                 effect_at: Event::TurnStart,
@@ -533,13 +550,13 @@ impl BaseBuff {
                 name: REGENERATION,
                 reduce_at: Event::TurnEnd,
                 effect_at: Event::TurnEnd,
-                effect: Effect::Heal(X),
+                effect: Effect::Heal(X, Target::_Self),
                 ..BaseBuff::default()
             },
             REGENERATE => BaseBuff { 
                 name: REGENERATE,
                 effect_at: Event::TurnEnd,
-                effect: Effect::Heal(X),
+                effect: Effect::Heal(X, Target::_Self),
                 ..BaseBuff::default()
             },
             RUSHDOWN => BaseBuff { 
@@ -551,7 +568,7 @@ impl BaseBuff {
             REPAIR => BaseBuff { 
                 name: REPAIR,
                 effect_at: Event::CombatEnd,
-                effect: Effect::Heal(X),
+                effect: Effect::Heal(X, Target::_Self),
                 ..BaseBuff::default()
             },
             RUPTURE => BaseBuff { 
@@ -880,6 +897,7 @@ pub const LOCK_ON: &str = "Lock-On";
 pub const LOOP: &str = "Loop";
 pub const MACHINE_LEARNING: &str = "Machine Learning";
 pub const MAGNETISM: &str = "Magnetism";
+pub const MALLEABLE: &str = "Malleable";
 pub const MANTRA: &str = "Mantra";
 pub const MARK: &str = "Mark";
 pub const MASTER_REALITY: &str = "Master Reality";
@@ -912,11 +930,13 @@ pub const SHACKLED: &str = "Shackled";
 pub const SIMMERING_RAGE: &str = "Simmering Rage";
 pub const SLOW: &str = "Slow";
 pub const SPORE_CLOUD: &str = "Spore Cloud";
+pub const SPLIT: &str = "Split";
 pub const STASIS: &str = "Stasis";
 pub const STATIC_DISCHARGE: &str = "Static Discharge";
 pub const STORM: &str = "Storm";
 pub const STRENGTH: &str = "Strength";
 pub const STRENGTH_DOWN: &str = "Strength Down";
+pub const STRENGTH_UP: &str = "Strength Up";
 pub const STUDY: &str = "Study";
 pub const SURROUNDED: &str = "Surrounded";
 pub const THE_BOMB: &str = "The Bomb";

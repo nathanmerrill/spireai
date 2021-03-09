@@ -174,10 +174,9 @@ pub struct BaseMonster {
     pub hp_range_asc: (u16, u16),
     pub moveset: Vec<MonsterMove>,
     pub move_order: Vec<Move>,
-    pub buffs: Vec<(&'static str, Amount)>,
     pub n_range: (Amount, Amount),
     pub x_range: (Amount, Amount),
-    pub combat_start: Effect,
+    pub effects: Vec<(Event, Effect)>,
 }
 
 pub enum Move {
@@ -185,7 +184,8 @@ pub enum Move {
     Loop(Vec<Move>),
     InOrder(&'static str),
     Probability(Vec<(u8, &'static str, u8)>), // Weight, name, repeats
-    Event(Event, bool), // True if event immediately switches intent
+    Event(Event),
+    AfterMove(&'static str, Vec<Move>),
 }
 
 pub struct ProbabilisticMove {
@@ -259,6 +259,9 @@ pub enum Event {
     Buff(&'static str, Target),
     UnBuff(&'static str, Target),
 
+    // Monster
+    Move(&'static str),
+
     // Player
     Discard,
     Exhaust,
@@ -301,6 +304,7 @@ pub enum Effect {
     Block(Amount, Target),
     Damage(Amount, Target),
     AttackDamage(Amount, Target),
+    AttackDamageIfUnblocked(Amount, Target, Vec<Effect>), // N is set to amount unblocked
     LoseHp(Amount, Target),
     Debuff(&'static str, Target),
     AddBuff(&'static str, Amount, Target),
@@ -346,15 +350,14 @@ pub enum Effect {
     },
 
     // Monster
-    Split(&'static str),
+    Split(&'static str, &'static str),
     Spawn {
         choices: Vec<&'static str>,
         count: Amount,
-        left: bool,
     },
 
     //Meta
-    If(Condition, Vec<Effect>),
+    If(Condition, Vec<Effect>, Vec<Effect>),
     Multiple(Vec<Effect>),
     Repeat(Amount, Box<Effect>),
     None,
@@ -365,6 +368,7 @@ pub enum Effect {
 pub enum Condition {
     Stance(Stance),
     MissingHp(Amount, Target),
+    HalfHp(Target),
     Status(Target, &'static str),
     NoBlock(Target),
     Attacking(Target),
@@ -374,6 +378,8 @@ pub enum Condition {
     Act(u8),
     Dead(Target),
     InPosition(Target, u8),
+    HasFriendlies(u8),
+    HasOrbSlot,
 }
 
 #[derive(PartialEq, Clone)]
@@ -384,6 +390,7 @@ pub enum Target {
     AllEnemies,
     Attacker,
     AnyFriendly, // Includes self
+    RandomFriendly, // Self if only remaining
     Friendly(&'static str),
 }
 

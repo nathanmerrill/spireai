@@ -22,7 +22,7 @@ impl BaseRelic {
             BURNING_BLOOD => Self {
                 name: BURNING_BLOOD, 
                 activation: Activation::Event(Event::CombatEnd),
-                effect: Effect::Heal(Fixed(6)),
+                effect: Effect::Heal(Fixed(6), Target::_Self),
                 rarity: Rarity::Starter,
                 class: Class::Ironclad,
                 ..Self::default()
@@ -103,7 +103,7 @@ impl BaseRelic {
             BLOOD_VIAL => Self {
                 name: BLOOD_VIAL,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::Heal(Fixed(2)),
+                effect: Effect::Heal(Fixed(2), Target::_Self),
                 ..Self::default()
             },
             BRONZE_SCALES => Self {
@@ -162,7 +162,7 @@ impl BaseRelic {
             MEAL_TICKET => Self {
                 name: MEAL_TICKET,
                 activation: Activation::Event(Event::RoomEnter(RoomType::Shop)),
-                effect: Effect::Heal(Fixed(15)),
+                effect: Effect::Heal(Fixed(15), Target::_Self),
                 ..Self::default()
             },
             NUNCHAKU => Self {
@@ -173,7 +173,7 @@ impl BaseRelic {
                     auto_reset: true,
                     target: 10,
                 },
-                effect: Effect::Heal(Fixed(15)),
+                effect: Effect::Heal(Fixed(15), Target::_Self),
                 ..Self::default()
             },
             ODDLY_SMOOTH_STONE => Self {
@@ -225,7 +225,7 @@ impl BaseRelic {
             REGAL_PILLOW => Self {
                 name: REGAL_PILLOW,
                 activation: Activation::Event(Event::Rest),
-                effect: Effect::Heal(Fixed(15)),
+                effect: Effect::Heal(Fixed(15), Target::_Self),
                 ..Self::default()
             },
             SMILING_MASK => Self {
@@ -258,7 +258,7 @@ impl BaseRelic {
             TOY_ORNITHOPTER => Self {
                 name: TOY_ORNITHOPTER,
                 activation: Activation::Event(Event::UsePotion),
-                effect: Effect::Heal(Fixed(5)),
+                effect: Effect::Heal(Fixed(5), Target::_Self),
                 ..Self::default()
             },
             VAJRA => Self {
@@ -427,7 +427,7 @@ impl BaseRelic {
                 rarity: Rarity::Uncommon,
                 activation: Activation::Event(Event::CombatEnd),
                 effect: Effect::If(Condition::HalfHp(Target::_Self), vec![
-                    Effect::Heal(Fixed(12))
+                    Effect::Heal(Fixed(12), Target::_Self)
                 ]),
                 ..Self::default()
             },
@@ -468,7 +468,7 @@ impl BaseRelic {
                 name: PANTOGRAPH,
                 rarity: Rarity::Uncommon,
                 activation: Activation::Event(Event::RoomEnter(RoomType::Boss)),
-                effect: Effect::Heal(Fixed(25)),
+                effect: Effect::Heal(Fixed(25), Target::_Self),
                 ..Self::default()
             },
             PEAR => Self {
@@ -620,7 +620,7 @@ impl BaseRelic {
                 name: BIRD_FACED_URN,
                 rarity: Rarity::Rare,
                 activation: Activation::Event(Event::PlayCard(CardType::Power)),
-                effect: Effect::Heal(Fixed(2)),
+                effect: Effect::Heal(Fixed(2), Target::_Self),
                 ..Self::default()
             },
             CALIPERS => Self {
@@ -1209,7 +1209,7 @@ impl BaseRelic {
                 class: Class::Ironclad,
                 rarity: Rarity::Boss,
                 activation: Activation::Event(Event::CombatEnd),
-                effect: Effect::Heal(Fixed(12)),
+                effect: Effect::Heal(Fixed(12), Target::_Self),
                 replaces_starter: true,
                 ..Self::default()
             },
@@ -1321,7 +1321,7 @@ impl BaseRelic {
                 name: BLOODY_IDOL,
                 rarity: Rarity::Event,
                 activation: Activation::Event(Event::GainGold),
-                effect: Effect::Heal(Fixed(5)),
+                effect: Effect::Heal(Fixed(5), Target::_Self),
                 ..Self::default()
             },
             CULTIST_HEADPIECE => Self {
