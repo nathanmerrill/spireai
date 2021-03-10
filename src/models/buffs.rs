@@ -438,7 +438,7 @@ impl BaseBuff {
             LIKE_WATER => BaseBuff { 
                 name: LIKE_WATER,
                 effect_at: Event::TurnEnd,
-                effect: Effect::If(Condition::Stance(Stance::Calm), vec![Effect::Block(X, Target::_Self)]),
+                effect: Effect::If(Condition::Stance(Stance::Calm), vec![Effect::Block(X, Target::_Self)], vec![]),
                 ..BaseBuff::default()
             },
             LOOP => BaseBuff { 
@@ -485,6 +485,12 @@ impl BaseBuff {
                 effect: Effect::Block(X, Target::_Self),
                 ..BaseBuff::default()
             },
+            MODE_SHIFT => BaseBuff { 
+                name: MODE_SHIFT,
+                effect_at: Event::UnblockedDamage(Target::_Self),
+                effect: Effect::Custom,
+                ..BaseBuff::default()
+            },
             NIGHTMARE => BaseBuff { 
                 name: NIGHTMARE,
                 is_additive: false,
@@ -518,7 +524,7 @@ impl BaseBuff {
                     Effect::If(Condition::BuffN(Target::_Self, PANACHE, Fixed(0)), vec![
                         Effect::AddBuffN(PANACHE, Fixed(5), Target::_Self),
                         Effect::Damage(X, Target::AllEnemies),
-                    ]),
+                    ], vec![]),
                 ]),
 
                 ..BaseBuff::default()
@@ -579,6 +585,12 @@ impl BaseBuff {
                 name: SADISTIC,
                 ..BaseBuff::default()
             },
+            SHARP_HIDE => BaseBuff {
+                name: SHARP_HIDE,
+                effect_at: Event::PlayCard(CardType::Attack),
+                effect: Effect::Damage(X, Target::Attacker),
+                ..BaseBuff::default()
+            },
             SIMMERING_RAGE => BaseBuff { 
                 name: SIMMERING_RAGE,
                 is_additive: false,
@@ -627,6 +639,15 @@ impl BaseBuff {
             SURROUNDED => BaseBuff { 
                 name: SURROUNDED,
                 is_additive: false,
+                ..BaseBuff::default()
+            },
+            TIME_WARP => BaseBuff { 
+                name: TIME_WARP,
+                is_additive: false,
+                reduce_at: Event::PlayCard(CardType::All),
+                effect_at: Event::UnBuff(TIME_WARP, Target::_Self),
+                effect: Effect::Custom,
+                stacks: false,
                 ..BaseBuff::default()
             },
             THE_BOMB => BaseBuff { 
@@ -904,6 +925,7 @@ pub const MASTER_REALITY: &str = "Master Reality";
 pub const MAYHEM: &str = "Mayhem";
 pub const MENTAL_FORTRESS: &str = "Mental Fortress";
 pub const METALLICIZE: &str = "Metallicize";
+pub const MODE_SHIFT: &str = "Metallicize";
 pub const NEXT_TURN_BLOCK: &str = "Next Turn Block";
 pub const NIGHTMARE: &str = "Nightmare";
 pub const NIRVANA: &str = "Nirvana";
@@ -927,6 +949,7 @@ pub const RUSHDOWN: &str = "Rushdown";
 pub const RUPTURE: &str = "Rupture";
 pub const SADISTIC: &str = "Sadistic";
 pub const SHACKLED: &str = "Shackled";
+pub const SHARP_HIDE: &str = "Sharp Hide";
 pub const SIMMERING_RAGE: &str = "Simmering Rage";
 pub const SLOW: &str = "Slow";
 pub const SPORE_CLOUD: &str = "Spore Cloud";
@@ -939,6 +962,7 @@ pub const STRENGTH_DOWN: &str = "Strength Down";
 pub const STRENGTH_UP: &str = "Strength Up";
 pub const STUDY: &str = "Study";
 pub const SURROUNDED: &str = "Surrounded";
+pub const TIME_WARP: &str = "Time Warp";
 pub const THE_BOMB: &str = "The Bomb";
 pub const THORNS: &str = "Thorns";
 pub const THOUSAND_CUTS: &str = "Thousand Cuts";

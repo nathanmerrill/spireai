@@ -185,7 +185,7 @@ pub enum Move {
     InOrder(&'static str),
     Probability(Vec<(u8, &'static str, u8)>), // Weight, name, repeats
     Event(Event),
-    AfterMove(&'static str, Vec<Move>),
+    AfterMove(Vec<(&'static str, Move)>),
 }
 
 pub struct ProbabilisticMove {
@@ -373,6 +373,7 @@ pub enum Condition {
     NoBlock(Target),
     Attacking(Target),
     Buff(Target, &'static str),
+    BuffX(Target, &'static str, Amount),  // At least this amount
     BuffN(Target, &'static str, Amount),
     Asc(u8),
     Act(u8),

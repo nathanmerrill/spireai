@@ -424,14 +424,14 @@ impl BaseCard {
                     OnPlay(If(Condition::Status(TargetEnemy, buffs::VULNERABLE), vec![
                         AddEnergy(Fixed(1)),
                         Draw(Fixed(1)),
-                    ]))
+                    ], vec![]))
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(AttackDamage(Fixed(8), TargetEnemy)),
                     OnPlay(If(Condition::Status(TargetEnemy, buffs::VULNERABLE), vec![
                         AddEnergy(Fixed(1)),
                         Draw(Fixed(1)),
-                    ]))
+                    ], vec![]))
                 ]),
                 ..BaseCard::new(Ironclad, Attack)
             },
@@ -766,12 +766,12 @@ impl BaseCard {
                 effects: vec![
                     OnPlay(If(Condition::Attacking(TargetEnemy), vec![
                         AddBuff(buffs::STRENGTH, Fixed(3), _Self)
-                    ])),
+                    ], vec![])),
                 ],
                 on_upgrade: OnUpgrade::SetEffects(vec![
                     OnPlay(If(Condition::Attacking(TargetEnemy), vec![
                         AddBuff(buffs::STRENGTH, Fixed(4), _Self)
-                    ])),
+                    ], vec![])),
                 ]),
                 ..BaseCard::new(Ironclad, Skill)
             },

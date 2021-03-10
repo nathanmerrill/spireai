@@ -196,7 +196,7 @@ impl BaseRelic {
                 activation: Activation::Event(Event::TurnEnd),
                 effect: Effect::If(Condition::NoBlock(Target::_Self), vec![
                     Effect::Block(Fixed(6), Target::_Self)
-                ]),
+                ], vec![]),
                 ..Self::default()
             },
             PEN_NIB => Self {
@@ -428,7 +428,7 @@ impl BaseRelic {
                 activation: Activation::Event(Event::CombatEnd),
                 effect: Effect::If(Condition::HalfHp(Target::_Self), vec![
                     Effect::Heal(Fixed(12), Target::_Self)
-                ]),
+                ], vec![]),
                 ..Self::default()
             },
             MERCURY_HOURGLASS => Self {

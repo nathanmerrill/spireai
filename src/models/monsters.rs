@@ -2261,14 +2261,14 @@ impl BaseMonster {
                             ])
                         ]),
                         Move::If(Condition::Asc(17), vec![
-                            Move::AfterMove(ENFEEBLING_SPORES, vec![
-                                Move::Loop(vec![
+                            Move::AfterMove(vec![
+                                (ENFEEBLING_SPORES, Move::Loop(vec![
                                     Move::InOrder(CHOMP),
                                     Move::InOrder(CHOMP),
                                     Move::InOrder(ENFEEBLING_SPORES),
-                                ])
+                                ]))
                             ])
-                        ], vec![])
+                        ], vec![])                        
                     ],
                     ..BaseMonster::default()
                 }
@@ -2432,11 +2432,11 @@ impl BaseMonster {
                             ])
                         ], vec![
                             Move::Loop(vec![
-                                Move::AfterMove(CONSTRICT, vec![
-                                    Move::Probability(vec![
+                                Move::AfterMove(vec![
+                                    (CONSTRICT, Move::Probability(vec![
                                         (50, QUICK_TACKLE, 1),
                                         (50, SMASH, 1)
-                                    ])
+                                    ])),
                                 ]),
                                 Move::If(Condition::Buff(Target::AllEnemies, buffs::CONSTRICTED), vec![
                                     Move::Probability(vec![
@@ -2601,7 +2601,7 @@ impl BaseMonster {
                     ],
                     move_order: vec![
                         Move::Loop(vec![
-                            Move::If(Condition::BuffN(Target::_Self, buffs::THORNS, ByAsc(15, 16, 19)), vec![
+                            Move::If(Condition::BuffX(Target::_Self, buffs::THORNS, ByAsc(15, 16, 19)), vec![
                                 Move::InOrder(CUT)
                             ], vec![
                                 Move::Probability(vec![
@@ -2801,21 +2801,21 @@ impl BaseMonster {
                                 Effect::AddBuff(buffs::WEAK, Fixed(2), Target::TargetEnemy), 
                                 Effect::AddBuff(buffs::VULNERABLE, Fixed(2), Target::TargetEnemy),
                             ],
-                            intent: Intent::AttackDebuff,
+                            intent: Intent::Debuff,
                         },
                         MonsterMove {
                             name: HEAVY_SLASH,
                             effects: vec![
                                 Effect::AttackDamage(ByAsc(16, 18, 18), Target::TargetEnemy),
                             ],
-                            intent: Intent::AttackDebuff,
+                            intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: GLOAT,
                             effects: vec![
                                 Effect::AddBuff(buffs::STRENGTH, ByAsc(2, 3, 4), Target::_Self),
                             ],
-                            intent: Intent::AttackDebuff,
+                            intent: Intent::Buff,
                         },
                         MonsterMove {
                             name: EXECUTE,
@@ -2823,7 +2823,7 @@ impl BaseMonster {
                                 Effect::AttackDamage(Fixed(10), Target::TargetEnemy),
                                 Effect::AttackDamage(Fixed(10), Target::TargetEnemy),
                             ],
-                            intent: Intent::AttackDebuff,
+                            intent: Intent::Attack,
                         },
                         MonsterMove {
                             name: ANGER,
@@ -2835,42 +2835,654 @@ impl BaseMonster {
                         },
                     ],
                     move_order: vec![
-                        Move::Probability(vec![
-                            (15, DEFENSIVE_STANCE, 1),
-                            (15, GLOAT, 1),
-                            (25, FACE_SLAP, 1),
-                            (45, HEAVY_SLASH, 1),
+                        Move::If(Condition::Asc(19), vec![
+                            Move::Probability(vec![
+                                (30, DEFENSIVE_STANCE, 1),
+                                (25, FACE_SLAP, 1),
+                                (45, HEAVY_SLASH, 1),
+                            ]),
+                        ], vec![
+                            Move::Probability(vec![
+                                (15, DEFENSIVE_STANCE, 1),
+                                (15, GLOAT, 1),
+                                (25, FACE_SLAP, 1),
+                                (45, HEAVY_SLASH, 1),
+                            ]),
                         ]),
                         Move::Loop(vec![
-                            Move::AfterMove(DEFENSIVE_STANCE, vec![
-                                Move::Probability(vec![
-                                    (30, GLOAT, 1),
-                                    (25, FACE_SLAP, 1),
-                                    (45, HEAVY_SLASH, 1),
+                            Move::If(Condition::HalfHp(Target::_Self), vec![
+                                Move::InOrder(ANGER),
+                                Move::Loop(vec![
+                                    Move::InOrder(EXECUTE),
+                                    Move::If(Condition::BuffX(Target::_Self, buffs::METALLICIZE, Fixed(10)), vec![
+                                        Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ]),
+                                        Move::AfterMove(vec![
+                                            (GLOAT, Move::Probability(vec![
+                                                (55, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (FACE_SLAP, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (70, HEAVY_SLASH, 1),
+                                            ])),
+                                            (HEAVY_SLASH, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (70, FACE_SLAP, 1),
+                                            ])),
+                                        ]),
+                                    ], vec![
+                                        Move::Probability(vec![
+                                            (15, DEFENSIVE_STANCE, 1),
+                                            (15, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ]),
+                                        Move::AfterMove(vec![
+                                            (DEFENSIVE_STANCE, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (25, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (GLOAT, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (40, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (FACE_SLAP, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (15, GLOAT, 1),
+                                                (70, HEAVY_SLASH, 1),
+                                            ])),
+                                            (HEAVY_SLASH, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (15, GLOAT, 1),
+                                                (70, FACE_SLAP, 1),
+                                            ])),
+                                        ]),
+                                    ]),
+                                ]),
+                            ], vec![
+                                Move::If(Condition::BuffX(Target::_Self, buffs::METALLICIZE, Fixed(10)), vec![
+                                    Move::AfterMove(vec![
+                                        (DEFENSIVE_STANCE, Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ])),
+                                        (GLOAT, Move::Probability(vec![
+                                            (55, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ])),
+                                        (FACE_SLAP, Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (70, HEAVY_SLASH, 1),
+                                        ])),
+                                        (HEAVY_SLASH, Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (70, FACE_SLAP, 1),
+                                        ])),
+                                    ]),
+                                ], vec![
+                                    Move::AfterMove(vec![
+                                        (DEFENSIVE_STANCE, Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ])),
+                                        (GLOAT, Move::Probability(vec![
+                                            (15, DEFENSIVE_STANCE, 1),
+                                            (40, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ])),
+                                        (FACE_SLAP, Move::Probability(vec![
+                                            (15, DEFENSIVE_STANCE, 1),
+                                            (15, GLOAT, 1),
+                                            (70, HEAVY_SLASH, 1),
+                                        ])),
+                                        (HEAVY_SLASH, Move::Probability(vec![
+                                            (15, DEFENSIVE_STANCE, 1),
+                                            (15, GLOAT, 1),
+                                            (70, FACE_SLAP, 1),
+                                        ])),
+                                    ]),
+                                ]),
+                            ]),
+                            Move::If(Condition::HalfHp(Target::_Self), vec![
+                                Move::InOrder(ANGER),
+                                Move::Loop(vec![
+                                    Move::InOrder(EXECUTE),
+                                    Move::If(Condition::BuffX(Target::_Self, buffs::METALLICIZE, Fixed(10)), vec![
+                                        Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ]),
+                                        Move::AfterMove(vec![
+                                            (GLOAT, Move::Probability(vec![
+                                                (55, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (FACE_SLAP, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (70, HEAVY_SLASH, 1),
+                                            ])),
+                                            (HEAVY_SLASH, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (70, FACE_SLAP, 1),
+                                            ])),
+                                        ]),
+                                    ], vec![
+                                        Move::Probability(vec![
+                                            (15, DEFENSIVE_STANCE, 1),
+                                            (15, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ]),
+                                        Move::AfterMove(vec![
+                                            (DEFENSIVE_STANCE, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (25, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (GLOAT, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (40, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (FACE_SLAP, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (15, GLOAT, 1),
+                                                (70, HEAVY_SLASH, 1),
+                                            ])),
+                                            (HEAVY_SLASH, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (15, GLOAT, 1),
+                                                (70, FACE_SLAP, 1),
+                                            ])),
+                                        ]),
+                                    ]),
+                                ]),
+                            ], vec![
+                                Move::If(Condition::BuffX(Target::_Self, buffs::METALLICIZE, Fixed(10)), vec![
+                                    Move::AfterMove(vec![
+                                        (DEFENSIVE_STANCE, Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ])),
+                                        (GLOAT, Move::Probability(vec![
+                                            (55, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ])),
+                                        (FACE_SLAP, Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (70, HEAVY_SLASH, 1),
+                                        ])),
+                                        (HEAVY_SLASH, Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (70, FACE_SLAP, 1),
+                                        ])),
+                                    ]),
+                                ], vec![
+                                    Move::AfterMove(vec![
+                                        (DEFENSIVE_STANCE, Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ])),
+                                        (GLOAT, Move::Probability(vec![
+                                            (15, DEFENSIVE_STANCE, 1),
+                                            (40, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ])),
+                                        (FACE_SLAP, Move::Probability(vec![
+                                            (15, DEFENSIVE_STANCE, 1),
+                                            (15, GLOAT, 1),
+                                            (70, HEAVY_SLASH, 1),
+                                        ])),
+                                        (HEAVY_SLASH, Move::Probability(vec![
+                                            (15, DEFENSIVE_STANCE, 1),
+                                            (15, GLOAT, 1),
+                                            (70, FACE_SLAP, 1),
+                                        ])),
+                                    ]),
+                                ]),
+                            ]),
+                            Move::If(Condition::HalfHp(Target::_Self), vec![
+                                Move::InOrder(ANGER),
+                                Move::Loop(vec![
+                                    Move::InOrder(EXECUTE),
+                                    Move::If(Condition::BuffX(Target::_Self, buffs::METALLICIZE, Fixed(10)), vec![
+                                        Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ]),
+                                        Move::AfterMove(vec![
+                                            (GLOAT, Move::Probability(vec![
+                                                (55, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (FACE_SLAP, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (70, HEAVY_SLASH, 1),
+                                            ])),
+                                            (HEAVY_SLASH, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (70, FACE_SLAP, 1),
+                                            ])),
+                                        ]),
+                                    ], vec![
+                                        Move::Probability(vec![
+                                            (15, DEFENSIVE_STANCE, 1),
+                                            (15, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ]),
+                                        Move::AfterMove(vec![
+                                            (DEFENSIVE_STANCE, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (25, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (GLOAT, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (40, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (FACE_SLAP, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (15, GLOAT, 1),
+                                                (70, HEAVY_SLASH, 1),
+                                            ])),
+                                            (HEAVY_SLASH, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (15, GLOAT, 1),
+                                                (70, FACE_SLAP, 1),
+                                            ])),
+                                        ]),
+                                    ]),
+                                ]),
+                            ], vec![
+                                Move::InOrder(TAUNT),
+                            ]),
+                            Move::If(Condition::HalfHp(Target::_Self), vec![
+                                Move::InOrder(ANGER),
+                                Move::Loop(vec![
+                                    Move::InOrder(EXECUTE),
+                                    Move::If(Condition::BuffX(Target::_Self, buffs::METALLICIZE, Fixed(10)), vec![
+                                        Move::Probability(vec![
+                                            (30, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ]),
+                                        Move::AfterMove(vec![
+                                            (GLOAT, Move::Probability(vec![
+                                                (55, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (FACE_SLAP, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (70, HEAVY_SLASH, 1),
+                                            ])),
+                                            (HEAVY_SLASH, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (70, FACE_SLAP, 1),
+                                            ])),
+                                        ]),
+                                    ], vec![
+                                        Move::Probability(vec![
+                                            (15, DEFENSIVE_STANCE, 1),
+                                            (15, GLOAT, 1),
+                                            (25, FACE_SLAP, 1),
+                                            (45, HEAVY_SLASH, 1),
+                                        ]),
+                                        Move::AfterMove(vec![
+                                            (DEFENSIVE_STANCE, Move::Probability(vec![
+                                                (30, GLOAT, 1),
+                                                (25, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (GLOAT, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (40, FACE_SLAP, 1),
+                                                (45, HEAVY_SLASH, 1),
+                                            ])),
+                                            (FACE_SLAP, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (15, GLOAT, 1),
+                                                (70, HEAVY_SLASH, 1),
+                                            ])),
+                                            (HEAVY_SLASH, Move::Probability(vec![
+                                                (15, DEFENSIVE_STANCE, 1),
+                                                (15, GLOAT, 1),
+                                                (70, FACE_SLAP, 1),
+                                            ])),
+                                        ]),
+                                    ]),
+                                ]),
+                            ], vec![
+                                Move::If(Condition::BuffX(Target::_Self, buffs::METALLICIZE, Fixed(10)), vec![
+                                    Move::Probability(vec![
+                                        (30, GLOAT, 1),
+                                        (25, FACE_SLAP, 1),
+                                        (45, HEAVY_SLASH, 1),
+                                    ]),
+                                ], vec![
+                                    Move::Probability(vec![
+                                        (15, GLOAT, 1),
+                                        (15, DEFENSIVE_STANCE, 1),
+                                        (25, FACE_SLAP, 1),
+                                        (45, HEAVY_SLASH, 1),
+                                    ]),
+                                ]),
+                            ]),
+                        ]),
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            THE_COLLECTOR => {
+                Self {
+                    hp_range: (282, 282),
+                    hp_range_asc: (300, 300),
+                    moveset: vec![
+                        MonsterMove {
+                            name: BUFF,
+                            effects: vec![
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 4, 5), Target::AnyFriendly),
+                                Effect::Block(ByAsc(15, 18, 23), Target::_Self),
+                            ],
+                            intent: Intent::DefendBuff,
+                        },
+                        MonsterMove {
+                            name: FIREBALL,
+                            effects: vec![
+                                Effect::AttackDamage(ByAsc(18, 21, 21), Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack,
+                        },
+                        MonsterMove {
+                            name: MEGA_DEBUFF,
+                            effects: vec![
+                                Effect::AddBuff(buffs::WEAK, ByAsc(3, 3, 5), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::VULNERABLE, ByAsc(3, 3, 5), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::FRAIL, ByAsc(3, 3, 5), Target::TargetEnemy),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                        MonsterMove {
+                            name: SPAWN,
+                            effects: vec![
+                                Effect::If(Condition::HasFriendlies(1), vec![
+                                    Effect::Spawn {
+                                        choices: vec![TORCH_HEAD],
+                                        count: Fixed(1),
+                                    },
+                                ], vec![
+                                    Effect::Spawn {
+                                        choices: vec![TORCH_HEAD],
+                                        count: Fixed(2),
+                                    },
                                 ])
-                            ]), 
-                            Move::AfterMove(GLOAT, vec![
+                            ],
+                            intent: Intent::Unknown,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::Loop(vec![
+                            Move::InOrder(SPAWN),
+                            Move::Probability(vec![
+                                (70, FIREBALL, 1),
+                                (30, BUFF, 1)
+                            ]),
+                            Move::If(Condition::HasFriendlies(2), vec![
                                 Move::Probability(vec![
-                                    (15, DEFENSIVE_STANCE, 1),
-                                    (40, FACE_SLAP, 1),
-                                    (45, HEAVY_SLASH, 1),
-                                ])
-                            ]), 
-                            Move::AfterMove(FACE_SLAP, vec![
+                                    (70, FIREBALL, 0),
+                                    (30, BUFF, 0)
+                                ]), 
+                            ], vec![
                                 Move::Probability(vec![
-                                    (15, DEFENSIVE_STANCE, 1),
-                                    (15, GLOAT, 1),
-                                    (70, HEAVY_SLASH, 1),
-                                ])
-                            ]), 
-                            Move::AfterMove(HEAVY_SLASH, vec![
-                                Move::Probability(vec![
-                                    (15, DEFENSIVE_STANCE, 1),
-                                    (15, GLOAT, 1),
-                                    (70, FACE_SLAP, 1),
-                                ])
-                            ]),               
+                                    (25, SPAWN, 0),
+                                    (45, FIREBALL, 2),
+                                    (30, BUFF, 1)
+                                ]),
+                            ]),
+                            Move::InOrder(MEGA_DEBUFF),
+                            Move::Loop(vec![
+                                Move::If(Condition::HasFriendlies(2), vec![
+                                    Move::Probability(vec![
+                                        (70, FIREBALL, 2),
+                                        (30, BUFF, 1)
+                                    ]), 
+                                ], vec![
+                                    Move::Probability(vec![
+                                        (25, SPAWN, 0),
+                                        (45, FIREBALL, 2),
+                                        (30, BUFF, 1)
+                                    ]),
+                                ]),
+                            ])
                         ])
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            THE_GUARDIAN => {
+                Self {
+                    hp_range: (240, 240),
+                    hp_range_asc: (250, 250),
+                    effects: vec![
+                        (Event::CombatStart, Effect::AddBuff(buffs::MODE_SHIFT, ByAsc(30, 35, 40), Target::_Self))
+                    ],
+                    moveset: vec![
+                        MonsterMove {
+                            name: CHARGING_UP,
+                            effects: vec![
+                                Effect::Block(Fixed(9), Target::_Self),
+                            ],
+                            intent: Intent::Defend,
+                        },
+                        MonsterMove {
+                            name: FIERCE_BASH,
+                            effects: vec![
+                                Effect::AttackDamage(ByAsc(32, 36, 36), Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack,
+                        },
+                        MonsterMove {
+                            name: VENT_STEAM,
+                            effects: vec![
+                                Effect::AddBuff(buffs::WEAK, Fixed(2), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::VULNERABLE, Fixed(2), Target::TargetEnemy),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                        MonsterMove {
+                            name: WHIRLWIND,
+                            effects: vec![
+                                Effect::AttackDamage(Fixed(5), Target::TargetEnemy),
+                                Effect::AttackDamage(Fixed(5), Target::TargetEnemy),
+                                Effect::AttackDamage(Fixed(5), Target::TargetEnemy),
+                                Effect::AttackDamage(Fixed(5), Target::TargetEnemy),
+                            ],
+                            intent: Intent::AttackDebuff,
+                        },
+                        MonsterMove {
+                            name: DEFENSIVE_MODE,
+                            effects: vec![
+                                Effect::AddBuff(buffs::SHARP_HIDE, ByAsc(3, 3, 4), Target::TargetEnemy),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                        MonsterMove {
+                            name: ROLL_ATTACK,
+                            effects: vec![
+                                Effect::AttackDamage(ByAsc(9, 10, 10), Target::TargetEnemy),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                        MonsterMove {
+                            name: TWIN_SLAM,
+                            effects: vec![
+                                Effect::AttackDamage(Fixed(8), Target::TargetEnemy),
+                                Effect::AttackDamage(Fixed(8), Target::TargetEnemy),
+                                Effect::Debuff(buffs::SHARP_HIDE, Target::_Self),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::Loop(vec![
+                            Move::InOrder(CHARGING_UP),
+                            Move::InOrder(FIERCE_BASH),
+                            Move::InOrder(VENT_STEAM),
+                            Move::InOrder(WHIRLWIND),
+                        ]),
+                        Move::Event(Event::UnBuff(buffs::MODE_SHIFT, Target::_Self)),
+                        Move::InOrder(DEFENSIVE_MODE),
+                        Move::InOrder(ROLL_ATTACK),
+                        Move::InOrder(TWIN_SLAM),
+                        Move::Loop(vec![
+                            Move::InOrder(CHARGING_UP),
+                            Move::InOrder(FIERCE_BASH),
+                            Move::InOrder(VENT_STEAM),
+                            Move::InOrder(WHIRLWIND),
+                        ]),
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            THE_MAW => {
+                Self {
+                    hp_range: (300, 300),
+                    hp_range_asc: (300, 300),
+                    moveset: vec![
+                        MonsterMove {
+                            name: ROAR,
+                            effects: vec![
+                                Effect::AddBuff(buffs::WEAK, ByAsc(3, 3, 5), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::FRAIL, ByAsc(3, 3, 5), Target::TargetEnemy),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                        MonsterMove {
+                            name: DROOL,
+                            effects: vec![
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(3, 3, 5), Target::_Self),
+                            ],
+                            intent: Intent::Attack,
+                        },
+                        MonsterMove {
+                            name: SLAM,
+                            effects: vec![
+                                Effect::AttackDamage(ByAsc(25, 30, 30), Target::TargetEnemy),
+                            ],
+                            intent: Intent::StrongDebuff,
+                        },
+                        MonsterMove {
+                            name: NOM,
+                            effects: vec![
+                                Effect::AttackDamage(Custom, Target::TargetEnemy),
+                            ],
+                            intent: Intent::AttackDebuff,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::InOrder(ROAR),
+                        Move::Loop(vec![
+                            Move::AfterMove(vec![
+                                (NOM, Move::InOrder(DROOL))
+                            ]),
+                            Move::Probability(vec![
+                                (33, DROOL, 1),
+                                (33, SLAM, 1),
+                                (33, NOM, 1),
+                            ]),
+                        ])
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            TIME_EATER => {
+                Self {
+                    hp_range: (456, 456),
+                    hp_range_asc: (480, 480),
+                    effects: vec![
+                        (Event::CombatStart, Effect::AddBuff(buffs::TIME_WARP, Fixed(12), Target::_Self)),
+                    ],
+                    moveset: vec![
+                        MonsterMove {
+                            name: REVERBERATE,
+                            effects: vec![
+                                Effect::AttackDamage(ByAsc(7, 8, 8), Target::TargetEnemy),
+                                Effect::AttackDamage(ByAsc(7, 8, 8), Target::TargetEnemy),
+                                Effect::AttackDamage(ByAsc(7, 8, 8), Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack,
+                        },
+                        MonsterMove {
+                            name: HEAD_SLAM,
+                            effects: vec![
+                                Effect::AttackDamage(ByAsc(26, 32, 32), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::DRAW_REDUCTION, Fixed(2), Target::TargetEnemy),
+                                Effect::If(Condition::Asc(19), vec![
+                                    Effect::AddCard {
+                                        card: CardReference::ByName(cards::SLIMED), 
+                                        destination: CardLocation::DiscardPile(RelativePosition::Bottom), 
+                                        copies: Fixed(2),
+                                        modifier: CardModifier::None,
+                                    }
+                                ], vec![])    
+                            ],
+                            intent: Intent::Attack,
+                        },
+                        MonsterMove {
+                            name: RIPPLE,
+                            effects: vec![
+                                Effect::Block(Fixed(20), Target::_Self),
+                                Effect::AddBuff(buffs::WEAK, Fixed(1), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::VULNERABLE, Fixed(1), Target::TargetEnemy),
+                                Effect::If(Condition::Asc(19), vec![
+                                    Effect::AddBuff(buffs::FRAIL, Fixed(1), Target::TargetEnemy),
+                                ], vec![])
+                            ],
+                            intent: Intent::Defend,
+                        },
+                        MonsterMove {
+                            name: HASTE,
+                            effects: vec![
+                                Effect::Heal(Amount::Custom, Target::_Self),
+                                Effect::If(Condition::Asc(19), vec![
+                                    Effect::Block(Fixed(32), Target::_Self),
+                                ], vec![]),
+                                Effect::RemoveDebuffs(Target::_Self),
+                            ],
+                            intent: Intent::Buff,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::Loop(vec![
+                            Move::Probability(vec![
+                                (20, RIPPLE, 1),
+                                (45, REVERBERATE, 2),
+                                (35, HEAD_SLAM, 1),
+                            ]),
+                            Move::If(Condition::HalfHp(Target::_Self), vec![
+                                Move::InOrder(HASTE),
+                                Move::Loop(vec![
+                                    Move::Probability(vec![
+                                        (20, RIPPLE, 1),
+                                        (45, REVERBERATE, 2),
+                                        (35, HEAD_SLAM, 1),
+                                    ]),                                    
+                                ])
+                            ], vec![])
+                        ]),
                     ],
                     ..BaseMonster::default()
                 }
@@ -3071,4 +3683,24 @@ pub const HEAVY_SLASH: &str = "Heavy Slash";
 pub const GLOAT: &str = "Gloat";
 pub const EXECUTE: &str = "Execute";
 pub const ANGER: &str = "Anger";
-pub const CUT: &str = "Cut";
+pub const FIREBALL: &str = "Fireball";
+pub const MEGA_DEBUFF: &str = "Mega Debuff";
+pub const SPAWN: &str = "Spawn";
+pub const CHARGING_UP: &str = "Charging Up";
+pub const FIERCE_BASH: &str = "Firece Bash";
+pub const VENT_STEAM: &str = "Vent Steam";
+pub const WHIRLWIND: &str = "Whirlwind";
+pub const DEFENSIVE_MODE: &str = "Defensive Mode";
+pub const ROLL_ATTACK: &str = "Roll Attack";
+pub const TWIN_SLAM: &str = "Twin Slam";
+pub const ROAR: &str = "Roar";
+pub const DROOL: &str = "Drool";
+pub const NOM: &str = "Nom";
+pub const REVERBERATE: &str = "Reverberate";
+pub const HEAD_SLAM: &str = "Head Slam";
+pub const RIPPLE: &str = "Ripple";
+pub const HASTE: &str = "Haste";
+pub const NOM: &str = "Nom";
+pub const NOM: &str = "Nom";
+pub const NOM: &str = "Nom";
+pub const NOM: &str = "Nom";
