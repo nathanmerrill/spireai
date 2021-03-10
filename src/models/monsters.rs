@@ -2716,7 +2716,7 @@ impl BaseMonster {
                         MonsterMove {
                             name: PIERCER,
                             effects: vec![
-                                Effect::AddBuff(buffs::STRENGTH, Fixed(2), Target::_Self),
+                                Effect::AddBuff(buffs::STRENGTH, Fixed(2), Target::AnyFriendly),
                             ],
                             intent: Intent::Buff,
                         },
@@ -2733,6 +2733,143 @@ impl BaseMonster {
                                 (50, BURN_STRIKE, 1),
                                 (50, PIERCER, 1),
                             ]),                            
+                        ])
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            TASKMASTER => {
+                Self {
+                    hp_range: (54, 60),
+                    hp_range_asc: (57, 64),
+                    moveset: vec![
+                        MonsterMove {
+                            name: SCOURING_WHIP,
+                            effects: vec![
+                                Effect::AttackDamage(Fixed(7), Target::TargetEnemy),
+                                Effect::If(Condition::Asc(18), vec![ 
+                                    Effect::AddBuff(buffs::STRENGTH, Fixed(1), Target::_Self)
+                                ], vec![]),
+                                Effect::AddCard{
+                                    card: CardReference::ByName(cards::WOUND), 
+                                    destination: CardLocation::DiscardPile(RelativePosition::Bottom), 
+                                    copies: ByAsc(1, 2, 3),
+                                    modifier: CardModifier::None
+                                }
+                            ],
+                            intent: Intent::AttackDebuff,
+                        }
+                    ],
+                    move_order: vec![
+                        Move::Loop(vec![
+                            Move::InOrder(TASKMASTER),                  
+                        ])
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            THE_CHAMP => {
+                Self {
+                    hp_range: (420, 420),
+                    hp_range_asc: (440, 440),
+                    moveset: vec![
+                        MonsterMove {
+                            name: DEFENSIVE_STANCE,
+                            effects: vec![
+                                Effect::If(Condition::Asc(9), vec![
+                                    Effect::Block(ByAsc(15, 18, 20), Target::_Self),
+                                    Effect::AddBuff(buffs::METALLICIZE, ByAsc(5, 6, 7), Target::_Self),   
+                                ], vec![
+                                    Effect::Block(ByAsc(15, 15, 20), Target::_Self),
+                                    Effect::AddBuff(buffs::METALLICIZE, ByAsc(5, 5, 7), Target::_Self),   
+                                ])                         
+                            ],
+                            intent: Intent::AttackDebuff,
+                        },
+                        MonsterMove {
+                            name: FACE_SLAP,
+                            effects: vec![
+                                Effect::AttackDamage(ByAsc(12, 14, 14), Target::TargetEnemy),
+                                Effect::AddBuff(buffs::FRAIL, Fixed(2), Target::TargetEnemy), 
+                                Effect::AddBuff(buffs::VULNERABLE, Fixed(2), Target::TargetEnemy),  
+                            ],
+                            intent: Intent::AttackDebuff,
+                        },
+                        MonsterMove {
+                            name: TAUNT,
+                            effects: vec![
+                                Effect::AddBuff(buffs::WEAK, Fixed(2), Target::TargetEnemy), 
+                                Effect::AddBuff(buffs::VULNERABLE, Fixed(2), Target::TargetEnemy),
+                            ],
+                            intent: Intent::AttackDebuff,
+                        },
+                        MonsterMove {
+                            name: HEAVY_SLASH,
+                            effects: vec![
+                                Effect::AttackDamage(ByAsc(16, 18, 18), Target::TargetEnemy),
+                            ],
+                            intent: Intent::AttackDebuff,
+                        },
+                        MonsterMove {
+                            name: GLOAT,
+                            effects: vec![
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(2, 3, 4), Target::_Self),
+                            ],
+                            intent: Intent::AttackDebuff,
+                        },
+                        MonsterMove {
+                            name: EXECUTE,
+                            effects: vec![
+                                Effect::AttackDamage(Fixed(10), Target::TargetEnemy),
+                                Effect::AttackDamage(Fixed(10), Target::TargetEnemy),
+                            ],
+                            intent: Intent::AttackDebuff,
+                        },
+                        MonsterMove {
+                            name: ANGER,
+                            effects: vec![
+                                Effect::RemoveDebuffs(Target::_Self),
+                                Effect::AddBuff(buffs::STRENGTH, ByAsc(6, 9, 12), Target::_Self),
+                            ],
+                            intent: Intent::AttackDebuff,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::Probability(vec![
+                            (15, DEFENSIVE_STANCE, 1),
+                            (15, GLOAT, 1),
+                            (25, FACE_SLAP, 1),
+                            (45, HEAVY_SLASH, 1),
+                        ]),
+                        Move::Loop(vec![
+                            Move::AfterMove(DEFENSIVE_STANCE, vec![
+                                Move::Probability(vec![
+                                    (30, GLOAT, 1),
+                                    (25, FACE_SLAP, 1),
+                                    (45, HEAVY_SLASH, 1),
+                                ])
+                            ]), 
+                            Move::AfterMove(GLOAT, vec![
+                                Move::Probability(vec![
+                                    (15, DEFENSIVE_STANCE, 1),
+                                    (40, FACE_SLAP, 1),
+                                    (45, HEAVY_SLASH, 1),
+                                ])
+                            ]), 
+                            Move::AfterMove(FACE_SLAP, vec![
+                                Move::Probability(vec![
+                                    (15, DEFENSIVE_STANCE, 1),
+                                    (15, GLOAT, 1),
+                                    (70, HEAVY_SLASH, 1),
+                                ])
+                            ]), 
+                            Move::AfterMove(HEAVY_SLASH, vec![
+                                Move::Probability(vec![
+                                    (15, DEFENSIVE_STANCE, 1),
+                                    (15, GLOAT, 1),
+                                    (70, FACE_SLAP, 1),
+                                ])
+                            ]),               
                         ])
                     ],
                     ..BaseMonster::default()
@@ -2926,12 +3063,12 @@ pub const FORTIFY: &str = "Fortify";
 pub const BURN_STRIKE: &str = "Burn Strike";
 pub const PIERCER: &str = "Piercer";
 pub const SKEWER: &str = "Skewer";
-pub const CUT: &str = "Cut";
-pub const CUT: &str = "Cut";
-pub const CUT: &str = "Cut";
-pub const CUT: &str = "Cut";
-pub const CUT: &str = "Cut";
-pub const CUT: &str = "Cut";
-pub const CUT: &str = "Cut";
-pub const CUT: &str = "Cut";
+pub const SCOURING_WHIP: &str = "Scouring Whip";
+pub const DEFENSIVE_STANCE: &str = "Defensive Stance";
+pub const FACE_SLAP: &str = "Face Slap";
+pub const TAUNT: &str = "Taunt";
+pub const HEAVY_SLASH: &str = "Heavy Slash";
+pub const GLOAT: &str = "Gloat";
+pub const EXECUTE: &str = "Execute";
+pub const ANGER: &str = "Anger";
 pub const CUT: &str = "Cut";
