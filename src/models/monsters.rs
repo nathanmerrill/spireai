@@ -3487,7 +3487,126 @@ impl BaseMonster {
                     ..BaseMonster::default()
                 }
             },
-            
+            TORCH_HEAD => {
+                Self {
+                    hp_range: (38, 40),
+                    hp_range_asc: (40, 45),
+                    moveset: vec![
+                        MonsterMove {
+                            name: TACKLE,
+                            effects: vec![
+                                Effect::AttackDamage(Fixed(7), Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::Loop(vec![
+                            Move::InOrder(TACKLE)
+                        ]),
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            TRANSIENT => {
+                Self {
+                    hp_range: (999, 999),
+                    hp_range_asc: (999, 999),
+                    effects: vec![
+                        (Event::CombatStart, Effect::AddBuff(buffs::FADING, ByAsc(5, 5, 6), Target::_Self)),
+                        (Event::CombatStart, Effect::AddBuff(buffs::SHIFTING, Fixed(1), Target::_Self)),
+                    ],
+                    moveset: vec![
+                        MonsterMove {
+                            name: ATTACK,
+                            effects: vec![
+                                Effect::AttackDamage(Custom, Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::Loop(vec![
+                            Move::InOrder(ATTACK)
+                        ]),
+                    ],
+                    ..BaseMonster::default()
+                }
+            },
+            WRITHING_MASS => {
+                Self {
+                    hp_range: (160, 160),
+                    hp_range_asc: (175, 175),
+                    effects: vec![
+                        (Event::CombatStart, Effect::AddBuff(buffs::MALLEABLE, Fixed(3), Target::_Self)),
+                        (Event::CombatStart, Effect::AddBuff(buffs::REACTIVE, Fixed(1), Target::_Self)),
+                    ],
+                    moveset: vec![
+                        MonsterMove {
+                            name: IMPLANT,
+                            effects: vec![
+                                Effect::AddCard {
+                                    card: CardReference::ByName(cards::PARASITE), 
+                                    destination: CardLocation::DeckPile(RelativePosition::Bottom), 
+                                    copies: Fixed(1),
+                                    modifier: CardModifier::None
+                                }
+                            ],
+                            intent: Intent::Attack,
+                        },
+                        MonsterMove {
+                            name: FLAIL,
+                            effects: vec![
+                                Effect::AttackDamage(Custom, Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack,
+                        },
+                        MonsterMove {
+                            name: WITHER,
+                            effects: vec![
+                                Effect::AttackDamage(Custom, Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack,
+                        },
+                        MonsterMove {
+                            name: MULTISTRIKE,
+                            effects: vec![
+                                Effect::AttackDamage(Custom, Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack,
+                        },
+                        MonsterMove {
+                            name: STRONG_STRIKE,
+                            effects: vec![
+                                Effect::AttackDamage(Custom, Target::TargetEnemy),
+                            ],
+                            intent: Intent::Attack,
+                        },
+                    ],
+                    move_order: vec![
+                        Move::Loop(vec![
+                            Move::Probability(vec![
+                                (10, IMPLANT, 1),
+                                (30, FLAIL, 1),
+                                (20, WITHER, 1),
+                                (30, MULTISTRIKE, 1),
+                                (10, STRONG_STRIKE, 1),
+                            ]),
+                            Move::AfterMove(vec![
+                                (IMPLANT, Move::Loop(vec![
+                                    Move::Probability(vec![
+                                        (30, FLAIL, 1),
+                                        (20, WITHER, 1),
+                                        (30, MULTISTRIKE, 1),
+                                        (10, STRONG_STRIKE, 1),
+                                    ])
+                                ]))
+                            ])
+                        ]),
+                    ],
+                    ..BaseMonster::default()
+                }
+            },            
             _ => panic!("Unrecognized monster")
         }
     }
@@ -3700,7 +3819,7 @@ pub const REVERBERATE: &str = "Reverberate";
 pub const HEAD_SLAM: &str = "Head Slam";
 pub const RIPPLE: &str = "Ripple";
 pub const HASTE: &str = "Haste";
-pub const NOM: &str = "Nom";
-pub const NOM: &str = "Nom";
-pub const NOM: &str = "Nom";
-pub const NOM: &str = "Nom";
+pub const IMPLANT: &str = "Implant";
+pub const WITHER: &str = "Wither";
+pub const MULTISTRIKE: &str = "Multi-Strike";
+pub const STRONG_STRIKE: &str = "Strong Strike";

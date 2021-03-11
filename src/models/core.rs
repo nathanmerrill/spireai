@@ -241,8 +241,10 @@ pub enum RoomType {
 #[derive(PartialEq, Clone)]
 pub enum Event {
     // Time-based
-    TurnStart,
-    TurnEnd,
+    BeforeHandDraw,
+    //AfterHandDraw,
+    BeforeEnemyMove, // After discarding cards
+    AfterEnemyMove,
     CombatEnd,
     CombatStart,
 

@@ -33,7 +33,7 @@ impl BaseBuff {
             },
             BARRICADE => BaseBuff { 
                 name: BARRICADE,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::Custom,
                 is_additive: false,
                 ..BaseBuff::default()
@@ -50,15 +50,15 @@ impl BaseBuff {
             },
             DRAW_CARD => BaseBuff { 
                 name: DRAW_CARD,
-                effect_at: Event::TurnStart,
-                expire_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
+                expire_at: Event::BeforeHandDraw,
                 effect: Effect::Draw(X),
                 ..BaseBuff::default()
             },
             ENERGIZED => BaseBuff { 
                 name: ENERGIZED,
-                effect_at: Event::TurnStart,
-                expire_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
+                expire_at: Event::BeforeHandDraw,
                 effect: Effect::AddEnergy(X),
                 ..BaseBuff::default()
             },
@@ -70,7 +70,7 @@ impl BaseBuff {
                 name: INTANGIBLE,
                 effect_at: Event::Damage(Target::_Self),
                 effect: Effect::Custom,
-                reduce_at: Event::TurnStart,
+                reduce_at: Event::BeforeHandDraw,
                 ..BaseBuff::default()
             },
             MANTRA => BaseBuff { 
@@ -79,14 +79,14 @@ impl BaseBuff {
             },
             METALLICIZE => BaseBuff { 
                 name: METALLICIZE,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::Block(X, Target::_Self),
                 ..BaseBuff::default()
             },
             NEXT_TURN_BLOCK => BaseBuff { 
                 name: NEXT_TURN_BLOCK,
-                effect_at: Event::TurnStart,
-                expire_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
+                expire_at: Event::BeforeHandDraw,
                 effect: Effect::Block(X, Target::_Self),
                 ..BaseBuff::default()
             },
@@ -103,14 +103,14 @@ impl BaseBuff {
             },
             PLATED_ARMOR => BaseBuff { 
                 name: PLATED_ARMOR,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 reduce_at: Event::UnblockedDamage(Target::_Self),
                 effect: Effect::Block(X, Target::_Self),
                 ..BaseBuff::default()
             },
             RITUAL => BaseBuff { 
                 name: RITUAL,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::AddBuff(STRENGTH, X, Target::_Self),
                 ..BaseBuff::default()
             },
@@ -125,7 +125,7 @@ impl BaseBuff {
             },
             STRENGTH_UP => BaseBuff { 
                 name: STRENGTH_UP,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::AddBuff(STRENGTH, X, Target::_Self),
                 ..BaseBuff::default()
             },
@@ -158,7 +158,7 @@ impl BaseBuff {
                 name: AMPLIFY,
                 effect_at: Event::PlayCard(CardType::Power),
                 effect: Effect::Custom,
-                expire_at: Event::TurnEnd,
+                expire_at: Event::BeforeEnemyMove,
                 reduce_at: Event::PlayCard(CardType::Power),
                 ..BaseBuff::default()
             },
@@ -169,7 +169,7 @@ impl BaseBuff {
             },
             BATTLE_HYMN => BaseBuff { 
                 name: BATTLE_HYMN,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddCard{
                     card: CardReference::ByName(cards::SMITE),
                     destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
@@ -186,26 +186,26 @@ impl BaseBuff {
             },
             BERSERK => BaseBuff { 
                 name: BERSERK,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddEnergy(X),
                 ..BaseBuff::default()
             },
             BLASPHEMER => BaseBuff { 
                 name: BLASPHEMER,
                 is_additive: false,
-                effect_at: Event::TurnStart,
-                expire_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
+                expire_at: Event::BeforeHandDraw,
                 effect: Effect::Damage(Fixed(9999), Target::_Self),
                 ..BaseBuff::default()
             },
             BLUR => BaseBuff { 
                 name: BLUR,
-                reduce_at: Event::TurnStart,
+                reduce_at: Event::BeforeHandDraw,
                 ..BaseBuff::default()
             },
             BRUTALITY => BaseBuff { 
                 name: BRUTALITY,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::Multiple(
                     vec![
                         Effect::LoseHp(X, Target::_Self),
@@ -233,8 +233,8 @@ impl BaseBuff {
             },
             COLLECT => BaseBuff { 
                 name: COLLECT,
-                effect_at: Event::TurnStart,
-                reduce_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
+                reduce_at: Event::BeforeHandDraw,
                 effect: Effect::AddCard{
                     card: CardReference::ByName(cards::COLLECT),
                     destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
@@ -254,7 +254,7 @@ impl BaseBuff {
             },
             CREATIVE_AI => BaseBuff { 
                 name: CREATIVE_AI,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddCard{
                     card: CardReference::RandomType(CardType::Power),
                     destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
@@ -271,13 +271,13 @@ impl BaseBuff {
             },
             DEMON_FORM => BaseBuff { 
                 name: DEMON_FORM,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddBuff(STRENGTH, X, Target::_Self),
                 ..BaseBuff::default()
             },
             DEVA => BaseBuff { 
                 name: DEVA,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::Multiple(vec![
                     Effect::AddEnergy(N),
                     Effect::AddBuffN(DEVA, X, Target::_Self),
@@ -286,13 +286,13 @@ impl BaseBuff {
             },
             DEVOTION => BaseBuff { 
                 name: DEVOTION,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddBuff(MANTRA, X, Target::_Self),
                 ..BaseBuff::default()
             },
             DOUBLE_DAMAGE => BaseBuff { 
                 name: DOUBLE_DAMAGE,
-                reduce_at: Event::TurnEnd,
+                reduce_at: Event::BeforeEnemyMove,
                 ..BaseBuff::default()
             },
             DOUBLE_TAP => BaseBuff { 
@@ -328,7 +328,7 @@ impl BaseBuff {
             },
             EQUILIBRIUM => BaseBuff { 
                 name: EQUILIBRIUM,
-                reduce_at: Event::TurnStart,
+                reduce_at: Event::BeforeHandDraw,
                 ..BaseBuff::default()
             },
             ESTABLISHMENT => BaseBuff { 
@@ -346,6 +346,13 @@ impl BaseBuff {
                 reduce_at: Event::AttackDamage(Target::TargetEnemy),
                 ..BaseBuff::default()
             },
+            FADING => BaseBuff { 
+                name: FADING,
+                reduce_at: Event::AfterEnemyMove,
+                effect_at: Event::UnBuff(FADING, Target::_Self),
+                effect: Effect::Die(Target::_Self),
+                ..BaseBuff::default()
+            },
             FEEL_NO_PAIN => BaseBuff { 
                 name: FEEL_NO_PAIN,
                 effect_at: Event::Exhaust,
@@ -356,7 +363,7 @@ impl BaseBuff {
                 name: FLAME_BARRIER,
                 effect_at: Event::AttackDamage(Target::_Self),
                 effect: Effect::Damage(X, Target::Attacker),
-                expire_at: Event::TurnStart,
+                expire_at: Event::BeforeHandDraw,
                 ..BaseBuff::default()
             },
             FLYING => BaseBuff {
@@ -373,7 +380,7 @@ impl BaseBuff {
             },
             FORESIGHT => BaseBuff { 
                 name: FORESIGHT,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::Scry(X),
                 ..BaseBuff::default()
             },
@@ -390,7 +397,7 @@ impl BaseBuff {
             },
             HELLO => BaseBuff { 
                 name: HELLO,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddCard{
                     card: CardReference::RandomRarity(Rarity::Common),
                     destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
@@ -401,7 +408,7 @@ impl BaseBuff {
             },
             INFINITE_BLADES => BaseBuff { 
                 name: INFINITE_BLADES,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddCard{
                     card: CardReference::ByName(cards::SHIV),
                     destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
@@ -437,7 +444,7 @@ impl BaseBuff {
             },
             LIKE_WATER => BaseBuff { 
                 name: LIKE_WATER,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::If(Condition::Stance(Stance::Calm), vec![Effect::Block(X, Target::_Self)], vec![]),
                 ..BaseBuff::default()
             },
@@ -447,7 +454,7 @@ impl BaseBuff {
             },
             MACHINE_LEARNING => BaseBuff { 
                 name: MACHINE_LEARNING,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::Draw(X),
                 ..BaseBuff::default()
             },
@@ -459,7 +466,7 @@ impl BaseBuff {
             },
             MAGNETISM => BaseBuff { 
                 name: MAGNETISM,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddCard{
                     card: CardReference::RandomClass(Class::None),
                     destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
@@ -475,7 +482,7 @@ impl BaseBuff {
             },
             MAYHEM => BaseBuff { 
                 name: MAYHEM,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AutoPlayCard(CardLocation::DrawPile(RelativePosition::Top)),
                 ..BaseBuff::default()
             },
@@ -505,13 +512,13 @@ impl BaseBuff {
             },
             NOXIOUS_FUMES => BaseBuff { 
                 name: NOXIOUS_FUMES,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddBuff(POISON, X, Target::AllEnemies),
                 ..BaseBuff::default()
             },
             OMEGA => BaseBuff { 
                 name: OMEGA,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::Damage(X, Target::AllEnemies),
                 ..BaseBuff::default()
             },
@@ -536,8 +543,8 @@ impl BaseBuff {
             },
             PHANTASMAL => BaseBuff { 
                 name: PHANTASMAL,
-                reduce_at: Event::TurnStart,
-                effect_at: Event::TurnStart,
+                reduce_at: Event::BeforeHandDraw,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddBuff(DOUBLE_DAMAGE, Fixed(1), Target::_Self),
                 ..BaseBuff::default()
             },
@@ -547,6 +554,12 @@ impl BaseBuff {
                 effect: Effect::Block(X, Target::_Self),
                 ..BaseBuff::default()
             },
+            REACTIVE => BaseBuff {
+                name: REACTIVE,
+                effect_at: Event::UnblockedDamage(Target::_Self),
+                effect: Effect::Custom,
+                ..BaseBuff::default()
+            },
             REBOUND => BaseBuff { 
                 name: REBOUND,
                 reduce_at: Event::PlayCard(CardType::All),
@@ -554,14 +567,14 @@ impl BaseBuff {
             },
             REGENERATION => BaseBuff { 
                 name: REGENERATION,
-                reduce_at: Event::TurnEnd,
-                effect_at: Event::TurnEnd,
+                reduce_at: Event::BeforeEnemyMove,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::Heal(X, Target::_Self),
                 ..BaseBuff::default()
             },
             REGENERATE => BaseBuff { 
                 name: REGENERATE,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::Heal(X, Target::_Self),
                 ..BaseBuff::default()
             },
@@ -587,6 +600,12 @@ impl BaseBuff {
             },
             SHARP_HIDE => BaseBuff {
                 name: SHARP_HIDE,
+                effect_at: Event::Custom,
+                effect: Effect::Custom,
+                ..BaseBuff::default()
+            },
+            SHIFTING => BaseBuff {
+                name: SHIFTING,
                 effect_at: Event::PlayCard(CardType::Attack),
                 effect: Effect::Damage(X, Target::Attacker),
                 ..BaseBuff::default()
@@ -594,8 +613,8 @@ impl BaseBuff {
             SIMMERING_RAGE => BaseBuff { 
                 name: SIMMERING_RAGE,
                 is_additive: false,
-                expire_at: Event::TurnStart,
-                effect_at: Event::TurnStart,
+                expire_at: Event::BeforeHandDraw,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::SetStance(Stance::Wrath),
                 ..BaseBuff::default()
             },
@@ -620,7 +639,7 @@ impl BaseBuff {
             },
             STUDY => BaseBuff { 
                 name: STUDY,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::AddCard{
                     card: CardReference::ByName(cards::INSIGHT),
                     destination: CardLocation::DrawPile(RelativePosition::Random), 
@@ -653,7 +672,7 @@ impl BaseBuff {
             THE_BOMB => BaseBuff { 
                 name: THE_BOMB,
                 is_additive: false,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::Custom,
                 stacks: false,
                 ..BaseBuff::default()
@@ -666,7 +685,7 @@ impl BaseBuff {
             },
             TOOLS_OF_THE_TRADE => BaseBuff { 
                 name: TOOLS_OF_THE_TRADE,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::Multiple(
                     vec![
                         Effect::Draw(X),
@@ -695,7 +714,7 @@ impl BaseBuff {
             DEXTERITY_DOWN => BaseBuff { 
                 name: DEXTERITY_DOWN,
                 is_buff: false,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::AddBuff(DEXTERITY, NegX, Target::_Self),
                 ..BaseBuff::default()
             },
@@ -713,14 +732,14 @@ impl BaseBuff {
             POISON => BaseBuff { 
                 name: POISON,
                 is_buff: false,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::LoseHp(X, Target::_Self),
                 ..BaseBuff::default()
             },
             SHACKLED => BaseBuff { 
                 name: SHACKLED,
                 is_buff: false,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::AddBuff(STRENGTH, X, Target::_Self),
                 ..BaseBuff::default()
             },
@@ -734,7 +753,7 @@ impl BaseBuff {
             STRENGTH_DOWN => BaseBuff { 
                 name: STRENGTH_DOWN,
                 is_buff: false,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::AddBuff(STRENGTH, NegX, Target::_Self),
                 ..BaseBuff::default()
             },
@@ -751,7 +770,7 @@ impl BaseBuff {
             BIAS => BaseBuff { 
                 name: BIAS,
                 is_buff: false,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddBuff(FOCUS, NegX, Target::_Self),
                 ..BaseBuff::default()
             },
@@ -772,7 +791,7 @@ impl BaseBuff {
             CONSTRICTED => BaseBuff { 
                 name: CONSTRICTED,
                 is_buff: false,
-                effect_at: Event::TurnEnd,
+                effect_at: Event::BeforeEnemyMove,
                 effect: Effect::Damage(X, Target::_Self),
                 ..BaseBuff::default()
             },
@@ -784,20 +803,20 @@ impl BaseBuff {
             DRAW_REDUCTION => BaseBuff { 
                 name: DRAW_REDUCTION,
                 is_buff: false,
-                expire_at: Event::TurnEnd,
+                expire_at: Event::BeforeEnemyMove,
                 ..BaseBuff::default()
             },
             ENTANGLED => BaseBuff { 
                 name: ENTANGLED,
                 is_buff: false,
                 is_additive: false,
-                expire_at: Event::TurnEnd,
+                expire_at: Event::BeforeEnemyMove,
                 ..BaseBuff::default()
             },
             FASTING => BaseBuff { 
                 name: FASTING,
                 is_buff: false,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddEnergy(NegX),
                 ..BaseBuff::default()
             },
@@ -821,7 +840,7 @@ impl BaseBuff {
             LOCK_ON => BaseBuff { 
                 name: LOCK_ON,
                 is_buff: false,
-                reduce_at: Event::TurnStart,
+                reduce_at: Event::BeforeHandDraw,
                 ..BaseBuff::default()
             },
             MARK => BaseBuff { 
@@ -832,13 +851,13 @@ impl BaseBuff {
             NO_BLOCK => BaseBuff { 
                 name: NO_BLOCK,
                 is_buff: false,
-                reduce_at: Event::TurnEnd,
+                reduce_at: Event::BeforeEnemyMove,
                 ..BaseBuff::default()
             },
             WRAITH_FORM => BaseBuff { 
                 name: WRAITH_FORM,
                 is_buff: false,
-                effect_at: Event::TurnStart,
+                effect_at: Event::BeforeHandDraw,
                 effect: Effect::AddBuff(DEXTERITY, NegX, Target::_Self),
                 ..BaseBuff::default()
             },
@@ -895,6 +914,7 @@ pub const EQUILIBRIUM: &str = "Equilibrium";
 pub const ESTABLISHMENT: &str = "Establishment";
 pub const EVOLVE: &str = "Evolve";
 pub const EXPLODE: &str = "Explode";
+pub const FADING: &str = "Fading";
 pub const FASTING: &str = "Fasting";
 pub const FEEL_NO_PAIN: &str = "Feel No Pain";
 pub const FIRE_BREATHING: &str = "Fire Breathing";
@@ -940,6 +960,7 @@ pub const PLATED_ARMOR: &str = "Plated Armor";
 pub const PHANTASMAL: &str = "Phantasmal";
 pub const POISON: &str = "Poison";
 pub const RAGE: &str = "Rage";
+pub const REACTIVE: &str = "Reactive";
 pub const REBOUND: &str = "Rebound";
 pub const REGENERATION: &str = "Regeneration";
 pub const REGENERATE: &str = "Regenerate";
@@ -950,6 +971,7 @@ pub const RUPTURE: &str = "Rupture";
 pub const SADISTIC: &str = "Sadistic";
 pub const SHACKLED: &str = "Shackled";
 pub const SHARP_HIDE: &str = "Sharp Hide";
+pub const SHIFTING: &str = "Shifting";
 pub const SIMMERING_RAGE: &str = "Simmering Rage";
 pub const SLOW: &str = "Slow";
 pub const SPORE_CLOUD: &str = "Spore Cloud";

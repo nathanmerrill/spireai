@@ -133,7 +133,7 @@ impl BaseRelic {
             HAPPY_FLOWER => Self {
                 name: HAPPY_FLOWER,
                 activation: Activation::Counter {
-                    increment: Event::TurnStart,
+                    increment: Event::BeforeHandDraw,
                     reset: Event::Never,
                     auto_reset: true,
                     target: 3,
@@ -193,7 +193,7 @@ impl BaseRelic {
             },
             ORICHALCUM => Self {
                 name: ORICHALCUM,
-                activation: Activation::Event(Event::TurnEnd),
+                activation: Activation::Event(Event::BeforeEnemyMove),
                 effect: Effect::If(Condition::NoBlock(Target::_Self), vec![
                     Effect::Block(Fixed(6), Target::_Self)
                 ], vec![]),
@@ -282,7 +282,7 @@ impl BaseRelic {
             DAMARU => Self {
                 name: DAMARU,
                 class: Class::Watcher,
-                activation: Activation::Event(Event::TurnStart),
+                activation: Activation::Event(Event::BeforeHandDraw),
                 effect: Effect::AddBuff(buffs::MANTRA, Fixed(1), Target::_Self),
                 ..Self::default()
             },
@@ -368,7 +368,7 @@ impl BaseRelic {
                 name: HORN_CLEAT,
                 rarity: Rarity::Uncommon,
                 activation: Activation::Counter {
-                    increment: Event::TurnStart,
+                    increment: Event::BeforeEnemyMove,
                     reset: Event::CombatStart,
                     auto_reset: false,
                     target: 2, 
@@ -393,7 +393,7 @@ impl BaseRelic {
                 rarity: Rarity::Uncommon,
                 activation: Activation::Counter {
                     increment: Event::PlayCard(CardType::Attack),
-                    reset: Event::TurnStart,
+                    reset: Event::BeforeHandDraw,
                     auto_reset: true,
                     target: 3, 
                 },
@@ -405,7 +405,7 @@ impl BaseRelic {
                 rarity: Rarity::Uncommon,
                 activation: Activation::Counter {
                     increment: Event::PlayCard(CardType::Skill),
-                    reset: Event::TurnStart,
+                    reset: Event::BeforeHandDraw,
                     auto_reset: true,
                     target: 3, 
                 },
@@ -434,7 +434,7 @@ impl BaseRelic {
             MERCURY_HOURGLASS => Self {
                 name: MERCURY_HOURGLASS,
                 rarity: Rarity::Uncommon,
-                activation: Activation::Event(Event::TurnStart),
+                activation: Activation::Event(Event::BeforeHandDraw),
                 effect: Effect::Damage(Fixed(3), Target::AllEnemies),
                 ..Self::default()
             },
@@ -457,7 +457,7 @@ impl BaseRelic {
                 rarity: Rarity::Uncommon,
                 activation: Activation::Counter {
                     increment: Event::PlayCard(CardType::Attack),
-                    reset: Event::TurnStart,
+                    reset: Event::BeforeHandDraw,
                     auto_reset: true,
                     target: 3, 
                 },
@@ -490,7 +490,7 @@ impl BaseRelic {
                 rarity: Rarity::Uncommon,
                 activation: Activation::Counter {
                     increment: Event::PlayCard(CardType::Attack),
-                    reset: Event::TurnStart,
+                    reset: Event::BeforeHandDraw,
                     auto_reset: true,
                     target: 3, 
                 },
@@ -634,7 +634,7 @@ impl BaseRelic {
                 name: CAPTAINS_WHEEL,
                 rarity: Rarity::Uncommon,
                 activation: Activation::Counter {
-                    increment: Event::TurnStart,
+                    increment: Event::BeforeEnemyMove,
                     reset: Event::CombatStart,
                     auto_reset: false,
                     target: 3, 
@@ -693,7 +693,7 @@ impl BaseRelic {
                 name: INCENSE_BURNER,
                 rarity: Rarity::Rare,
                 activation: Activation::Counter {
-                    increment: Event::TurnStart,
+                    increment: Event::BeforeHandDraw,
                     reset: Event::Never,
                     auto_reset: true,
                     target: 6, 
@@ -757,7 +757,7 @@ impl BaseRelic {
                 name: STONE_CALENDAR,
                 rarity: Rarity::Rare,
                 activation: Activation::Counter {
-                    increment: Event::TurnEnd,
+                    increment: Event::BeforeEnemyMove,
                     reset: Event::CombatStart,
                     auto_reset: false,
                     target: 7, 
@@ -829,8 +829,8 @@ impl BaseRelic {
                 rarity: Rarity::Rare,
                 activation: Activation::WhenEnabled{
                     enabled_at: Event::HpLoss(Target::_Self),
-                    disabled_at: Event::TurnStart,
-                    activated_at: Event::TurnStart,
+                    disabled_at: Event::BeforeHandDraw,
+                    activated_at: Event::BeforeHandDraw,
                 },
                 effect: Effect::Custom,
                 ..Self::default()
@@ -994,7 +994,7 @@ impl BaseRelic {
                 name: BRIMSTONE,
                 class: Class::Ironclad,
                 rarity: Rarity::Shop,
-                activation: Activation::Event(Event::TurnStart),
+                activation: Activation::Event(Event::BeforeHandDraw),
                 effect: Effect::Multiple(vec![
                     Effect::AddBuff(buffs::STRENGTH, Fixed(2), Target::_Self),
                     Effect::AddBuff(buffs::STRENGTH, Fixed(1), Target::AllEnemies),
@@ -1196,7 +1196,7 @@ impl BaseRelic {
                 rarity: Rarity::Boss,
                 activation: Activation::Counter {
                     increment: Event::PlayCard(CardType::All),
-                    reset: Event::TurnStart,
+                    reset: Event::BeforeHandDraw,
                     auto_reset: false,
                     target: 6,
                 },
@@ -1217,7 +1217,7 @@ impl BaseRelic {
                 name: RING_OF_THE_SERPENT,
                 class: Class::Silent,
                 rarity: Rarity::Boss,
-                activation: Activation::Event(Event::TurnStart),
+                activation: Activation::Event(Event::BeforeHandDraw),
                 effect: Effect::Draw(Fixed(1)),
                 replaces_starter: true,
                 ..Self::default()
@@ -1226,7 +1226,7 @@ impl BaseRelic {
                 name: FROZEN_CORE,
                 class: Class::Defect,
                 rarity: Rarity::Boss,
-                activation: Activation::Event(Event::TurnEnd),
+                activation: Activation::Event(Event::BeforeEnemyMove),
                 effect: Effect::Custom,
                 replaces_starter: true,
                 ..Self::default()
@@ -1282,7 +1282,7 @@ impl BaseRelic {
                 rarity: Rarity::Boss,
                 activation: Activation::WhenEnabled{
                     activated_at: Event::Discard,
-                    enabled_at: Event::TurnStart,
+                    enabled_at: Event::BeforeHandDraw,
                     disabled_at: Event::Discard,
                 },
                 effect: Effect::AddEnergy(Fixed(1)),
@@ -1293,7 +1293,7 @@ impl BaseRelic {
                 class: Class::Defect,
                 rarity: Rarity::Boss,
                 activation: Activation::Counter{
-                    increment: Event::TurnStart,
+                    increment: Event::BeforeHandDraw,
                     reset: Event::Never,
                     auto_reset: true,
                     target: 2,
@@ -1416,7 +1416,7 @@ impl BaseRelic {
             NILRYS_CODEX => Self {
                 name: NILRYS_CODEX,
                 rarity: Rarity::Event,
-                activation: Activation::Event(Event::TurnEnd),
+                activation: Activation::Event(Event::BeforeEnemyMove),
                 effect: Effect::Custom,
                 ..Self::default()
             },
@@ -1449,7 +1449,7 @@ impl BaseRelic {
             WARPED_TONGS => Self {
                 name: WARPED_TONGS,
                 rarity: Rarity::Event,
-                activation: Activation::Event(Event::TurnStart),
+                activation: Activation::Event(Event::BeforeHandDraw),
                 effect: Effect::UpgradeCard(CardLocation::PlayerHand(RelativePosition::Random)),
                 ..Self::default()
             },
