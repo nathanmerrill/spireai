@@ -41,7 +41,8 @@ pub enum Orb {
     Lightning,
     Dark,
     Frost,
-    Plasma
+    Plasma,
+    Any,
 }
 
 #[derive(PartialEq, Clone)]
@@ -82,6 +83,15 @@ pub struct BaseCard {
     pub name: &'static str,   
     pub innate: Condition,
     pub ethereal: Condition,
+    pub upgradeable: Upgradeable ,
+}
+
+#[derive(PartialEq, Clone)]
+pub enum Upgradeable{
+    Never,
+    Once,
+    Infinite,
+    Burn
 }
 
 #[derive(PartialEq, Clone)]
@@ -268,6 +278,7 @@ pub enum Event {
     Die(Target),
     Buff(&'static str, Target),
     UnBuff(&'static str, Target),
+    Channel(Orb),
 
     // Monster
     Move(&'static str),
@@ -343,6 +354,7 @@ pub enum Effect {
     // Card Manipulation
     ExhaustCard(CardLocation),
     DiscardCard(CardLocation),
+    Shuffle,
     MoveCard(CardLocation, CardLocation, CardModifier),
     SetCardModifier(CardLocation, CardModifier),
     AddCard{
@@ -389,7 +401,7 @@ pub enum Condition {
     Attacking(Target),
     Buff(Target, &'static str),
     BuffX(Target, &'static str, Amount),  // At least this amount
-    NEquals(Amount),
+    Equals(Amount, Amount),
     Asc(u8),
     Act(u8),
     Dead(Target),

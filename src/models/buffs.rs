@@ -534,7 +534,7 @@ impl BaseBuff {
                 effect_at: Event::PlayCard(CardType::All),
                 effect: Effect::Multiple(vec![
                     Effect::AddN(Fixed(-1)),
-                    Effect::If(Condition::NEquals(Fixed(0)), vec![
+                    Effect::If(Condition::Equals(N, Fixed(0)), vec![
                         Effect::ResetN,
                         Effect::Damage(X, Target::AllEnemies),
                     ], vec![]),
