@@ -30,6 +30,7 @@ pub enum Amount {
     N,
     Custom,
     ByAsc(i16, i16, i16),
+    Upgradable(i16, i16),
 }
 
 #[derive(PartialEq, Clone)]
@@ -63,17 +64,20 @@ pub enum CardType {
 
 #[derive(PartialEq, Clone)]
 pub struct BaseCard {
-    pub cost: i8, //-1 means X
+    pub cost: Amount,
     pub rarity: Rarity,
     pub _type: CardType,
     pub _class: Class,
     pub targeted: bool,
-    pub effects: Vec<CardEffect>,
-    pub on_upgrade: OnUpgrade,
+    pub playable_if: Condition,
+    pub effects: Vec<(Event, Effect)>,
+    pub on_play: Vec<Effect>,
+    pub on_discard: Vec<Effect>,
+    pub on_draw: Vec<Effect>,
+    pub on_exhaust: Vec<Effect>,
     pub name: &'static str,   
-    pub innate: bool,
-    pub ethereal: bool,
-    pub starting_n: u8,
+    pub innate: Condition,
+    pub ethereal: Condition,
 }
 
 #[derive(PartialEq, Clone)]
@@ -112,7 +116,7 @@ pub struct BaseBuff {
     pub stacks: bool,
     pub is_additive: bool,
     pub is_buff: bool,
-    pub starting_n: u8,
+    pub on_add: Effect,
     pub reduce_at: Event,
     pub expire_at: Event,
     pub effect_at: Event,
@@ -294,7 +298,7 @@ pub enum RelativePosition {
     Bottom,
     Top,
     Random,
-    PlayerChoice(u8),
+    PlayerChoice(Amount),
     All,
 }
 
@@ -307,13 +311,17 @@ pub enum Effect {
     Damage(Amount, Target),
     AttackDamage(Amount, Target),
     AttackDamageIfUnblocked(Amount, Target, Vec<Effect>), // N is set to amount unblocked
+    AttackDamageIfFatal(Amount, Target, Vec<Effect>),
     LoseHp(Amount, Target),
-    Debuff(&'static str, Target),
+    Unbuff(&'static str, Target),
     AddBuff(&'static str, Amount, Target),
-    AddBuffN(&'static str, Amount, Target),
     HealPercentage(u8, Target),
     RemoveDebuffs(Target),
     Die(Target),
+
+    SetN(Amount),
+    AddN(Amount),
+    ResetN,
     
     //Player
     Draw(Amount),
@@ -330,7 +338,7 @@ pub enum Effect {
     // Card Manipulation
     ExhaustCard(CardLocation),
     DiscardCard(CardLocation),
-    MoveCard(CardLocation, CardLocation),
+    MoveCard(CardLocation, CardLocation, CardModifier),
     SetCardModifier(CardLocation, CardModifier),
     AddCard{
         card: CardReference, 
@@ -376,13 +384,19 @@ pub enum Condition {
     Attacking(Target),
     Buff(Target, &'static str),
     BuffX(Target, &'static str, Amount),  // At least this amount
-    BuffN(Target, &'static str, Amount),
+    NEquals(Amount),
     Asc(u8),
     Act(u8),
     Dead(Target),
     InPosition(Target, u8),
     HasFriendlies(u8),
+    Not(Box<Condition>),
+    Upgraded,
     HasOrbSlot,
+    HasDiscarded,
+    Always,
+    Never,
+    Custom,
 }
 
 #[derive(PartialEq, Clone)]
@@ -395,29 +409,4 @@ pub enum Target {
     AnyFriendly, // Includes self
     RandomFriendly, // Self if only remaining
     Friendly(&'static str),
-}
-
-#[derive(PartialEq, Clone)]
-pub enum OnUpgrade {
-    SetEffects(Vec<CardEffect>),
-    ReduceCost(u8),
-    SearingBlow,
-    Custom,
-    Burn,
-    Unupgradable,
-    Innate,
-    RemoveEthereal,
-    None
-}
-
-#[derive(PartialEq, Clone)]
-pub enum CardEffect {
-    OnPlay(Effect),
-    OnDraw(Effect),
-    OnDiscard(Effect),
-    OnExhaust(Effect),
-    
-    CustomCardCost,
-    CustomPlayable,
-    IfFatal(Vec<Effect>),
 }

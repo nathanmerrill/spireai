@@ -9,7 +9,7 @@ impl BaseBuff {
             is_additive: true,
             stacks: true,
             is_buff: true,
-            starting_n: 0,
+            on_add: Effect::None,
             reduce_at: Event::Never,
             expire_at: Event::Never,
             effect_at: Event::Never,
@@ -245,6 +245,12 @@ impl BaseBuff {
             },
             COMBUST => BaseBuff { 
                 name: COMBUST,
+                on_add: Effect::AddN(Fixed(1)),
+                effect_at: Event::BeforeEnemyMove,
+                effect: Effect::Multiple(vec![
+                    Effect::LoseHp(Amount::N, Target::_Self),
+                    Effect::Damage(Amount::X, Target::AllEnemies),
+                ]),
                 ..BaseBuff::default()
             },
             CORRUPTION => BaseBuff { 
@@ -279,8 +285,8 @@ impl BaseBuff {
                 name: DEVA,
                 effect_at: Event::BeforeHandDraw,
                 effect: Effect::Multiple(vec![
+                    Effect::AddN(X),
                     Effect::AddEnergy(N),
-                    Effect::AddBuffN(DEVA, X, Target::_Self),
                 ]),
                 ..BaseBuff::default()
             },
@@ -524,12 +530,12 @@ impl BaseBuff {
             },
             PANACHE => BaseBuff { 
                 name: PANACHE,
-                starting_n: 5,
+                on_add: Effect::SetN(Fixed(5)),
                 effect_at: Event::PlayCard(CardType::All),
                 effect: Effect::Multiple(vec![
-                    Effect::AddBuffN(PANACHE, Fixed(-1), Target::_Self),
-                    Effect::If(Condition::BuffN(Target::_Self, PANACHE, Fixed(0)), vec![
-                        Effect::AddBuffN(PANACHE, Fixed(5), Target::_Self),
+                    Effect::AddN(Fixed(-1)),
+                    Effect::If(Condition::NEquals(Fixed(0)), vec![
+                        Effect::ResetN,
                         Effect::Damage(X, Target::AllEnemies),
                     ], vec![]),
                 ]),
@@ -689,7 +695,7 @@ impl BaseBuff {
                 effect: Effect::Multiple(
                     vec![
                         Effect::Draw(X),
-                        Effect::DiscardCard(CardLocation::PlayerHand(RelativePosition::PlayerChoice(1)))
+                        Effect::DiscardCard(CardLocation::PlayerHand(RelativePosition::PlayerChoice(Fixed(1))))
                     ]
                 ),
                 ..BaseBuff::default()

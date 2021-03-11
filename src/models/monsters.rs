@@ -1455,8 +1455,8 @@ impl BaseMonster {
                         MonsterMove {
                             name: ATTACK,
                             effects: vec![
-                                Effect::Debuff(buffs::METALLICIZE, Target::_Self),
-                                Effect::Debuff(buffs::ASLEEP, Target::_Self),
+                                Effect::Unbuff(buffs::METALLICIZE, Target::_Self),
+                                Effect::Unbuff(buffs::ASLEEP, Target::_Self),
                                 Effect::AttackDamage(ByAsc(18, 20, 20), Target::TargetEnemy),
                             ],
                             intent: Intent::Attack
@@ -1477,8 +1477,8 @@ impl BaseMonster {
                         MonsterMove {
                             name: STUNNED,
                             effects: vec![
-                                Effect::Debuff(buffs::METALLICIZE, Target::_Self),
-                                Effect::Debuff(buffs::ASLEEP, Target::_Self),
+                                Effect::Unbuff(buffs::METALLICIZE, Target::_Self),
+                                Effect::Unbuff(buffs::ASLEEP, Target::_Self),
                             ],
                             intent: Intent::Stun,
                         },
@@ -3331,7 +3331,7 @@ impl BaseMonster {
                             effects: vec![
                                 Effect::AttackDamage(Fixed(8), Target::TargetEnemy),
                                 Effect::AttackDamage(Fixed(8), Target::TargetEnemy),
-                                Effect::Debuff(buffs::SHARP_HIDE, Target::_Self),
+                                Effect::Unbuff(buffs::SHARP_HIDE, Target::_Self),
                             ],
                             intent: Intent::StrongDebuff,
                         },
