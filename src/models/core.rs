@@ -28,9 +28,12 @@ pub enum Amount {
     X,
     NegX,
     N,
+    OrbCount,
     Custom,
     ByAsc(i16, i16, i16),
     Upgradable(i16, i16),
+    Sum(Vec<Amount>),
+    Mult(Vec<Amount>),
 }
 
 #[derive(PartialEq, Clone)]
@@ -58,7 +61,8 @@ pub enum CardType {
     Skill, 
     Power, 
     Status, 
-    Curse, 
+    Curse,
+    ByName(&'static str),
     All
 }
 
@@ -334,6 +338,7 @@ pub enum Effect {
     AddGold(Amount),
     AddPotionSlot(Amount),
     AddOrbSlot(Amount),
+    EvokeOrb(Amount),
 
     // Card Manipulation
     ExhaustCard(CardLocation),

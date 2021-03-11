@@ -1375,12 +1375,8 @@ impl BaseCard {
                 name: DOPPELGANGER, 
                 rarity: Rare,
                 on_play: vec![
-                    AddBuff(buffs::DRAW_CARD, X, Target::_Self),
-                    AddBuff(buffs::ENERGIZED, X, Target::_Self),
-                    If(Condition::Upgraded, vec![
-                        AddBuff(buffs::DRAW_CARD, Fixed(1), Target::_Self),
-                        AddBuff(buffs::ENERGIZED, Fixed(1), Target::_Self),
-                    ], vec![])
+                    AddBuff(buffs::DRAW_CARD, Sum(vec![X, Upgradable(0, 1)]), Target::_Self),
+                    AddBuff(buffs::ENERGIZED, Sum(vec![X, Upgradable(0, 1)]), Target::_Self),
                 ],
                 cost: X,
                 ..BaseCard::new(Silent, Skill)
@@ -1411,10 +1407,234 @@ impl BaseCard {
                 name: GRAND_FINALE, 
                 rarity: Rare,
                 playable_if: Condition::Custom,
+                targeted: false,
                 on_play: vec![
                     AttackDamage(Upgradable(50, 60), AllEnemies),
                 ],
+                cost: Fixed(0),
                 ..BaseCard::new(Silent, Attack)
+            },
+            MALAISE => BaseCard { 
+                name: MALAISE, 
+                rarity: Rare,
+                targeted: true,
+                on_play: vec![
+                    AddBuff(buffs::STRENGTH, Sum(vec![NegX, Upgradable(0, -1)]), TargetEnemy),
+                    AddBuff(buffs::WEAK, Sum(vec![X, Upgradable(0, 1)]), TargetEnemy),
+                    EXHAUST,
+                ],
+                cost: X,
+                ..BaseCard::new(Silent, Skill)
+            },
+            NIGHTMARE => BaseCard { 
+                name: NIGHTMARE, 
+                rarity: Rare,
+                on_play: vec![
+                    Effect::Custom,
+                    EXHAUST,
+                ],
+                cost: Upgradable(3, 2),
+                ..BaseCard::new(Silent, Skill)
+            },
+            PHANTASMAL_KILLER => BaseCard { 
+                name: PHANTASMAL_KILLER, 
+                rarity: Rare,
+                on_play: vec![
+                    AddBuff(buffs::PHANTASMAL, Fixed(1), _Self),
+                    EXHAUST,
+                ],
+                cost: Upgradable(1, 0),
+                ..BaseCard::new(Silent, Skill)
+            },
+            STORM_OF_STEEL => BaseCard { 
+                name: STORM_OF_STEEL, 
+                rarity: Rare,
+                on_play: vec![
+                    Effect::Custom,
+                ],
+                cost: Fixed(1),
+                ..BaseCard::new(Silent, Skill)
+            },
+            TOOLS_OF_THE_TRADE => BaseCard { 
+                name: TOOLS_OF_THE_TRADE, 
+                rarity: Rare,
+                on_play: vec![
+                    AddBuff(buffs::TOOLS_OF_THE_TRADE, Fixed(1), _Self),
+                ],
+                cost: Upgradable(1, 0),
+                ..BaseCard::new(Silent, Power)
+            },
+            UNLOAD => BaseCard { 
+                name: UNLOAD, 
+                rarity: Rare,
+                on_play: vec![
+                    AttackDamage(Upgradable(14, 18), TargetEnemy),
+                    Effect::Custom,
+                ],
+                cost: Fixed(1),
+                ..BaseCard::new(Silent, Attack)
+            },
+            WRAITH_FORM => BaseCard { 
+                name: WRAITH_FORM, 
+                rarity: Rare,
+                on_play: vec![
+                    AddBuff(buffs::INTANGIBLE, Upgradable(2, 3), _Self),
+                    AddBuff(buffs::WRAITH_FORM, Fixed(1), _Self),
+                ],
+                cost: Fixed(1),
+                ..BaseCard::new(Silent, Power)
+            },
+            DUALCAST => BaseCard { 
+                name: DUALCAST, 
+                rarity: Starter,
+                on_play: vec![
+                    EvokeOrb(Fixed(2)),
+                ],
+                cost: Upgradable(1, 0),
+                ..BaseCard::new(Defect, Skill)
+            },
+            ZAP => BaseCard {
+                name: ZAP, 
+                rarity: Starter,
+                on_play: vec![
+                    ChannelOrb(Orb::Lightning),
+                ],
+                cost: Upgradable(1, 0),
+                ..BaseCard::new(Defect, Skill)                
+            },
+            BALL_LIGHTNING => BaseCard {
+                name: BALL_LIGHTNING,
+                on_play: vec![
+                    AttackDamage(Upgradable(7, 10), TargetEnemy),
+                    ChannelOrb(Orb::Lightning),
+                ],
+                cost: Upgradable(1, 0),
+                ..BaseCard::new(Defect, Attack)                
+            },
+            BARRAGE => BaseCard {
+                name: BARRAGE,
+                on_play: vec![
+                    Repeat(OrbCount, Box::new(AttackDamage(Upgradable(4, 6), TargetEnemy)))
+                ],
+                ..BaseCard::new(Defect, Attack)                
+            },
+            BEAM_CELL => BaseCard {
+                name: BEAM_CELL,
+                on_play: vec![
+                    AttackDamage(Upgradable(3, 4), TargetEnemy),
+                    AddBuff(buffs::VULNERABLE, Upgradable(1, 2), TargetEnemy),
+                ],
+                cost: Fixed(0),
+                ..BaseCard::new(Defect, Attack)                
+            },
+            CHARGE_BATTERY => BaseCard {
+                name: CHARGE_BATTERY,
+                on_play: vec![
+                    Block(Upgradable(7, 10), _Self),
+                    AddBuff(buffs::ENERGIZED, Fixed(1), _Self),
+                ],
+                ..BaseCard::new(Defect, Skill)                
+            },
+            CLAW => BaseCard {
+                name: CLAW,
+                effects: vec![
+                    (Event::CombatStart, SetN(Fixed(0))),
+                    (Event::PlayCard(CardType::ByName(CLAW)), AddN(Fixed(2)))
+                ],
+                on_play: vec![
+                    AttackDamage(Sum(vec![N, Upgradable(3, 5)]), TargetEnemy),
+                ],
+                cost: Fixed(0),
+                ..BaseCard::new(Defect, Attack)                
+            },
+            COLD_SNAP => BaseCard {
+                name: COLD_SNAP,
+                on_play: vec![
+                    AttackDamage(Upgradable(6, 9), TargetEnemy),
+                    ChannelOrb(Orb::Frost),
+                ],
+                ..BaseCard::new(Defect, Attack)                
+            },
+            COMPILE_DRIVER => BaseCard {
+                name: COMPILE_DRIVER,
+                on_play: vec![
+                    AttackDamage(Upgradable(7, 10), TargetEnemy),
+                    Draw(OrbCount),
+                ],
+                ..BaseCard::new(Defect, Attack)                
+            },
+            COOLHEADED => BaseCard {
+                name: COOLHEADED,
+                on_play: vec![
+                    ChannelOrb(Orb::Frost),
+                    Draw(Upgradable(1, 2)),
+                ],
+                ..BaseCard::new(Defect, Skill)                
+            },
+            GO_FOR_THE_EYES => BaseCard {
+                name: GO_FOR_THE_EYES,
+                on_play: vec![
+                    AttackDamage(Upgradable(3, 4), TargetEnemy),
+                    AddBuff(buffs::WEAK, Upgradable(1, 2), TargetEnemy),
+                ],
+                cost: Fixed(0),
+                ..BaseCard::new(Defect, Attack)                
+            },
+            HOLOGRAM => BaseCard {
+                name: HOLOGRAM,
+                on_play: vec![
+                    Block(Upgradable(3, 5), _Self),
+                    MoveCard(
+                        CardLocation::DiscardPile(RelativePosition::PlayerChoice(Fixed(1))), 
+                        CardLocation::PlayerHand(RelativePosition::Bottom), 
+                        CardModifier::None
+                    ),
+                    If(Condition::Upgraded, vec![], vec![
+                        EXHAUST
+                    ]),
+                ],
+                ..BaseCard::new(Defect, Skill)                
+            },
+            LEAP => BaseCard {
+                name: LEAP,
+                on_play: vec![
+                    Block(Upgradable(9, 12), _Self),
+                ],
+                ..BaseCard::new(Defect, Skill)                
+            },
+            REBOUND => BaseCard {
+                name: REBOUND,
+                on_play: vec![
+                    AttackDamage(Upgradable(9, 12), TargetEnemy),
+                    AddBuff(buffs::REBOUND, Fixed(1), _Self),
+                ],
+                ..BaseCard::new(Defect, Attack)                
+            },
+            RECURSION => BaseCard {
+                name: RECURSION,
+                on_play: vec![
+                    Effect::Custom,
+                ],
+                cost: Upgradable(1, 0),
+                ..BaseCard::new(Defect, Skill)                
+            },
+            STACK => BaseCard {
+                name: STACK,
+                on_play: vec![
+                    Block(Sum(vec![Amount::Custom, Upgradable(0, 3)]), _Self),
+                ],
+                ..BaseCard::new(Defect, Skill)                
+            },
+            STEAM_BARRIER => BaseCard {
+                name: STEAM_BARRIER,
+                effects: vec![
+                    (Event::CombatStart, SetN(Upgradable(6, 8)))
+                ],
+                on_play: vec![
+                    Block(N, _Self),
+                    AddN(Fixed(-1)),
+                ],
+                ..BaseCard::new(Defect, Skill)                
             },
             _ => panic!("Unsupported card")
         }

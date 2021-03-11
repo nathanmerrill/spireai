@@ -733,6 +733,7 @@ impl BaseBuff {
                 name: NO_DRAW,
                 is_buff: false,
                 is_additive: false,
+                expire_at: Event::BeforeEnemyMove,
                 ..BaseBuff::default()
             },
             POISON => BaseBuff { 
@@ -766,11 +767,13 @@ impl BaseBuff {
             VULNERABLE => BaseBuff { 
                 name: VULNERABLE,
                 is_buff: false,
+                reduce_at: Event::BeforeHandDraw,
                 ..BaseBuff::default()
             },
             WEAK => BaseBuff { 
                 name: WEAK,
                 is_buff: false,
+                reduce_at: Event::BeforeHandDraw,
                 ..BaseBuff::default()
             },
             BIAS => BaseBuff { 
@@ -790,6 +793,7 @@ impl BaseBuff {
             CHOKED => BaseBuff { 
                 name: CHOKED,
                 is_buff: false,
+                expire_at: Event::BeforeHandDraw,
                 effect_at: Event::PlayCard(CardType::All),
                 effect: Effect::LoseHp(X, Target::_Self),
                 ..BaseBuff::default()
