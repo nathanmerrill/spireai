@@ -11,13 +11,11 @@ use Target::*;
 
 impl BaseCard {
     fn new(_class: Class, _type: CardType) -> Self {
-        let targeted: bool = &_type == &Attack;
         Self {
             name: &"",
             rarity: Rarity::Common,
             _type: _type,
             _class: _class,
-            targeted: targeted,
             effects: vec![],
             on_play: vec![],
             on_discard: vec![],
@@ -98,7 +96,7 @@ impl BaseCard {
             },
             CLEAVE => BaseCard {
                 name: CLEAVE,
-                targeted: false,
+
                 on_play: vec![AttackDamage(Upgradable(8, 11), AllEnemies)],
                 ..BaseCard::new(Ironclad, Attack)
             },
@@ -165,7 +163,7 @@ impl BaseCard {
             },
             SWORD_BOOMERANG => BaseCard {
                 name: SWORD_BOOMERANG,
-                targeted: false,
+
                 on_play: vec![
                     AttackDamage(Fixed(3), RandomEnemy),
                     AttackDamage(Fixed(3), RandomEnemy),
@@ -181,7 +179,7 @@ impl BaseCard {
             THUNDERCLAP => BaseCard {
                 name: THUNDERCLAP,
                 _type: Attack,
-                targeted: false,
+
                 on_play: vec![
                     AttackDamage(Upgradable(4, 7), AllEnemies),
                     AddBuff(buffs::VULNERABLE, Fixed(1), AllEnemies),
@@ -292,7 +290,7 @@ impl BaseCard {
             DISARM => BaseCard {
                 name: DISARM,
                 rarity: Uncommon,
-                targeted: true,
+
                 on_play: vec![
                     AddBuff(buffs::STRENGTH, Upgradable(-2, -3), TargetEnemy),
                     ExhaustCard(This),
@@ -302,7 +300,6 @@ impl BaseCard {
             DROPKICK => BaseCard {
                 name: DROPKICK,
                 rarity: Uncommon,
-                targeted: true,
                 on_play: vec![
                     AttackDamage(Upgradable(5, 8), TargetEnemy),
                     If(
@@ -528,7 +525,7 @@ impl BaseCard {
             SPOT_WEAKNESS => BaseCard {
                 name: SPOT_WEAKNESS,
                 rarity: Uncommon,
-                targeted: true,
+
                 on_play: vec![If(
                     Condition::Attacking(TargetEnemy),
                     vec![AddBuff(buffs::STRENGTH, Upgradable(3, 4), _Self)],
@@ -550,7 +547,7 @@ impl BaseCard {
             WHIRLWIND => BaseCard {
                 name: WHIRLWIND,
                 rarity: Uncommon,
-                targeted: false,
+
                 on_play: vec![Effect::Repeat(
                     X,
                     Box::new(Effect::AttackDamage(Upgradable(5, 8), AllEnemies)),
@@ -784,7 +781,7 @@ impl BaseCard {
             },
             DEADLY_POISON => BaseCard {
                 name: DEADLY_POISON,
-                targeted: true,
+
                 on_play: vec![AddBuff(buffs::POISON, Upgradable(5, 7), TargetEnemy)],
                 ..BaseCard::new(Silent, Skill)
             },
@@ -818,8 +815,7 @@ impl BaseCard {
             PIERCING_WAIL => BaseCard {
                 name: PIERCING_WAIL,
                 on_play: vec![
-                    AddBuff(buffs::STRENGTH, Upgradable(-6, -8), AllEnemies),
-                    AddBuff(buffs::STRENGTH_UP, Upgradable(6, 8), AllEnemies),
+                    LoseStr(Upgradable(6, 8), AllEnemies),
                     ExhaustCard(This),
                 ],
                 ..BaseCard::new(Silent, Skill)
@@ -878,7 +874,7 @@ impl BaseCard {
             ALL_OUT_ATTACK => BaseCard {
                 name: ALL_OUT_ATTACK,
                 rarity: Uncommon,
-                targeted: false,
+
                 on_play: vec![
                     AttackDamage(Upgradable(10, 14), AllEnemies),
                     DiscardCard(PlayerHand(Random)),
@@ -937,7 +933,7 @@ impl BaseCard {
             CATALYST => BaseCard {
                 name: CATALYST,
                 rarity: Uncommon,
-                targeted: true,
+
                 on_play: vec![
                     AddBuff(buffs::POISON, Amount::Custom, TargetEnemy),
                     ExhaustCard(This),
@@ -947,7 +943,7 @@ impl BaseCard {
             CHOKE => BaseCard {
                 name: CHOKE,
                 rarity: Uncommon,
-                targeted: true,
+
                 on_play: vec![
                     AttackDamage(Fixed(12), TargetEnemy),
                     AddBuff(buffs::CHOKED, Upgradable(3, 5), TargetEnemy),
@@ -1079,7 +1075,7 @@ impl BaseCard {
             LEG_SWEEP => BaseCard {
                 name: LEG_SWEEP,
                 rarity: Uncommon,
-                targeted: true,
+
                 on_play: vec![
                     AddBuff(buffs::WEAK, Upgradable(2, 3), TargetEnemy),
                     Block(Upgradable(11, 14), _Self),
@@ -1163,7 +1159,7 @@ impl BaseCard {
             TERROR => BaseCard {
                 name: TERROR,
                 rarity: Uncommon,
-                targeted: true,
+
                 on_play: vec![
                     AddBuff(buffs::VULNERABLE, Fixed(99), TargetEnemy),
                     ExhaustCard(This),
@@ -1228,7 +1224,7 @@ impl BaseCard {
             CORPSE_EXPLOSION => BaseCard {
                 name: CORPSE_EXPLOSION,
                 rarity: Rare,
-                targeted: true,
+
                 on_play: vec![
                     AddBuff(buffs::POISON, Upgradable(6, 9), TargetEnemy),
                     AddBuff(buffs::CORPSE_EXPLOSION, Fixed(1), TargetEnemy),
@@ -1239,7 +1235,7 @@ impl BaseCard {
             DIE_DIE_DIE => BaseCard {
                 name: DIE_DIE_DIE,
                 rarity: Rare,
-                targeted: false,
+
                 on_play: vec![AttackDamage(Upgradable(13, 17), AllEnemies)],
                 ..BaseCard::new(Silent, Attack)
             },
@@ -1286,7 +1282,7 @@ impl BaseCard {
                 name: GRAND_FINALE,
                 rarity: Rare,
                 playable_if: Condition::Custom,
-                targeted: false,
+
                 on_play: vec![AttackDamage(Upgradable(50, 60), AllEnemies)],
                 cost: Fixed(0),
                 ..BaseCard::new(Silent, Attack)
@@ -1294,7 +1290,7 @@ impl BaseCard {
             MALAISE => BaseCard {
                 name: MALAISE,
                 rarity: Rare,
-                targeted: true,
+
                 on_play: vec![
                     AddBuff(
                         buffs::STRENGTH,
@@ -1538,7 +1534,7 @@ impl BaseCard {
             BLIZZARD => BaseCard {
                 name: AUTO_SHIELDS,
                 rarity: Uncommon,
-                targeted: false,
+
                 effects: vec![
                     (Event::CombatStart, SetN(Fixed(0))),
                     (Event::Channel(Orb::Frost), AddN(Upgradable(2, 3))),
@@ -1616,7 +1612,7 @@ impl BaseCard {
             DOOM_AND_GLOOM => BaseCard {
                 name: DOOM_AND_GLOOM,
                 rarity: Uncommon,
-                targeted: false,
+
                 on_play: vec![
                     AttackDamage(Upgradable(10, 14), AllEnemies),
                     ChannelOrb(Orb::Dark),
@@ -1760,7 +1756,7 @@ impl BaseCard {
             RIP_AND_TEAR => BaseCard {
                 name: RIP_AND_TEAR,
                 rarity: Uncommon,
-                targeted: false,
+
                 on_play: vec![
                     AttackDamage(Upgradable(7, 9), RandomEnemy),
                     AttackDamage(Upgradable(7, 9), RandomEnemy),
@@ -1910,7 +1906,7 @@ impl BaseCard {
             HYPERBEAM => BaseCard {
                 name: HYPERBEAM,
                 rarity: Rare,
-                targeted: false,
+
                 on_play: vec![
                     AttackDamage(Upgradable(26, 34), AllEnemies),
                     AddBuff(buffs::FOCUS, Fixed(-3), _Self),
@@ -2032,17 +2028,14 @@ impl BaseCard {
             },
             CONSECRATE => BaseCard {
                 name: CONSECRATE,
-                targeted: false,
+
                 on_play: vec![AttackDamage(Upgradable(5, 8), AllEnemies)],
                 ..BaseCard::new(Watcher, Attack)
             },
             CRESCENDO => BaseCard {
                 name: CRESCENDO,
                 retain: Condition::Always,
-                on_play: vec![
-                    SetStance(Stance::Wrath),
-                    ExhaustCard(This),
-                ],
+                on_play: vec![SetStance(Stance::Wrath), ExhaustCard(This)],
                 cost: Upgradable(1, 0),
                 ..BaseCard::new(Watcher, Attack)
             },
@@ -2179,9 +2172,7 @@ impl BaseCard {
             PROTECT => BaseCard {
                 name: PROTECT,
                 retain: Condition::Always,
-                on_play: vec![
-                    Block(Upgradable(12, 16), _Self),
-                ],
+                on_play: vec![Block(Upgradable(12, 16), _Self)],
                 cost: Fixed(2),
                 ..BaseCard::new(Watcher, Skill)
             },
@@ -2199,19 +2190,13 @@ impl BaseCard {
             },
             THIRD_EYE => BaseCard {
                 name: THIRD_EYE,
-                on_play: vec![
-                    Block(Upgradable(7, 9), _Self),
-                    Scry(Upgradable(3, 5)),               
-                ],
+                on_play: vec![Block(Upgradable(7, 9), _Self), Scry(Upgradable(3, 5))],
                 ..BaseCard::new(Watcher, Skill)
             },
             TRANQUILITY => BaseCard {
                 name: TRANQUILITY,
                 retain: Condition::Always,
-                on_play: vec![
-                    SetStance(Stance::Calm),
-                    ExhaustCard(This),                    
-                ],
+                on_play: vec![SetStance(Stance::Calm), ExhaustCard(This)],
                 cost: Upgradable(1, 0),
                 ..BaseCard::new(Watcher, Skill)
             },
@@ -2219,9 +2204,7 @@ impl BaseCard {
                 name: BATTLE_HYMN,
                 rarity: Uncommon,
                 innate: Condition::Upgraded,
-                on_play: vec![
-                    AddBuff(buffs::BATTLE_HYMN, Fixed(1), _Self),
-                ],
+                on_play: vec![AddBuff(buffs::BATTLE_HYMN, Fixed(1), _Self)],
                 ..BaseCard::new(Watcher, Power)
             },
             CARVE_REALITY => BaseCard {
@@ -2241,21 +2224,15 @@ impl BaseCard {
             COLLECT => BaseCard {
                 name: COLLECT,
                 rarity: Uncommon,
-                on_play: vec![
-                    AddBuff(buffs::COLLECT, X, _Self),
-                    ExhaustCard(This),
-                ],
+                on_play: vec![AddBuff(buffs::COLLECT, X, _Self), ExhaustCard(This)],
                 cost: X,
                 ..BaseCard::new(Watcher, Skill)
             },
             CONCLUDE => BaseCard {
                 name: CONCLUDE,
                 rarity: Uncommon,
-                targeted: false,
-                on_play: vec![
-                    Damage(Upgradable(12, 16), AllEnemies),
-                    EndTurn,
-                ],
+
+                on_play: vec![Damage(Upgradable(12, 16), AllEnemies), EndTurn],
                 ..BaseCard::new(Watcher, Attack)
             },
             DECEIVE_REALITY => BaseCard {
@@ -2275,10 +2252,7 @@ impl BaseCard {
             EMPTY_MIND => BaseCard {
                 name: EMPTY_MIND,
                 rarity: Uncommon,
-                on_play: vec![
-                    Draw(Upgradable(2, 3)),
-                    SetStance(Stance::None),
-                ],
+                on_play: vec![Draw(Upgradable(2, 3)), SetStance(Stance::None)],
                 ..BaseCard::new(Watcher, Skill)
             },
             FASTING => BaseCard {
@@ -2298,10 +2272,9 @@ impl BaseCard {
                     Damage(Upgradable(8, 9), TargetEnemy),
                     If(
                         Condition::Attacking(TargetEnemy),
-                        vec![
-                            SetStance(Stance::Calm)
-                        ], vec![]
-                    )
+                        vec![SetStance(Stance::Calm)],
+                        vec![],
+                    ),
                 ],
                 ..BaseCard::new(Watcher, Attack)
             },
@@ -2311,21 +2284,18 @@ impl BaseCard {
                 on_play: vec![
                     If(
                         Condition::Upgraded,
-                        vec![
-                            AddCard {
-                                card: CardReference::RandomClass(Class::All),
-                                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                                copies: Fixed(1),
-                                modifier: CardModifier::None,
-                            }
-                        ], vec![
-                            AddCard {
-                                card: CardReference::RandomClass(Class::All),
-                                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                                copies: Fixed(1),
-                                modifier: CardModifier::SetZeroTurnCost,
-                            }
-                        ]
+                        vec![AddCard {
+                            card: CardReference::RandomClass(Class::All),
+                            destination: CardLocation::PlayerHand(RelativePosition::Bottom),
+                            copies: Fixed(1),
+                            modifier: CardModifier::None,
+                        }],
+                        vec![AddCard {
+                            card: CardReference::RandomClass(Class::All),
+                            destination: CardLocation::PlayerHand(RelativePosition::Bottom),
+                            copies: Fixed(1),
+                            modifier: CardModifier::SetZeroTurnCost,
+                        }],
                     ),
                     ExhaustCard(This),
                 ],
@@ -2335,86 +2305,64 @@ impl BaseCard {
             FORESIGHT => BaseCard {
                 name: FORESIGHT,
                 rarity: Uncommon,
-                on_play: vec![
-                    AddBuff(buffs::FORESIGHT, Upgradable(3, 4), _Self),
-                ],
+                on_play: vec![AddBuff(buffs::FORESIGHT, Upgradable(3, 4), _Self)],
                 ..BaseCard::new(Watcher, Power)
             },
             INDIGNATION => BaseCard {
                 name: INDIGNATION,
                 rarity: Uncommon,
-                on_play: vec![
-                    If(
-                        Condition::Stance(Stance::Wrath),
-                        vec![
-                            AddBuff(buffs::VULNERABLE, Upgradable(3, 5), AllEnemies),
-                        ], vec![
-                            SetStance(Stance::Wrath)
-                        ]
-                    ),
-                ],
+                on_play: vec![If(
+                    Condition::Stance(Stance::Wrath),
+                    vec![AddBuff(buffs::VULNERABLE, Upgradable(3, 5), AllEnemies)],
+                    vec![SetStance(Stance::Wrath)],
+                )],
                 ..BaseCard::new(Watcher, Skill)
             },
             INNER_PEACE => BaseCard {
                 name: INNER_PEACE,
                 rarity: Uncommon,
-                on_play: vec![
-                    If(
-                        Condition::Stance(Stance::Calm),
-                        vec![
-                            Draw(Upgradable(3, 4)),
-                        ], vec![
-                            SetStance(Stance::Calm)
-                        ]
-                    ),
-                ],
+                on_play: vec![If(
+                    Condition::Stance(Stance::Calm),
+                    vec![Draw(Upgradable(3, 4))],
+                    vec![SetStance(Stance::Calm)],
+                )],
                 ..BaseCard::new(Watcher, Skill)
             },
             LIKE_WATER => BaseCard {
                 name: LIKE_WATER,
                 rarity: Uncommon,
-                on_play: vec![
-                    AddBuff(buffs::LIKE_WATER, Upgradable(5, 7), _Self)
-                ],
+                on_play: vec![AddBuff(buffs::LIKE_WATER, Upgradable(5, 7), _Self)],
                 ..BaseCard::new(Watcher, Power)
             },
             MEDITATE => BaseCard {
                 name: MEDITATE,
                 rarity: Uncommon,
-                on_play: vec![
-                    Effect::Custom,
-                ],
+                on_play: vec![Effect::Custom],
                 ..BaseCard::new(Watcher, Power)
             },
             MENTAL_FORTRESS => BaseCard {
                 name: MENTAL_FORTRESS,
                 rarity: Uncommon,
-                on_play: vec![
-                    Effect::AddBuff(buffs::MENTAL_FORTRESS, Upgradable(4, 6), _Self)
-                ],
+                on_play: vec![Effect::AddBuff(
+                    buffs::MENTAL_FORTRESS,
+                    Upgradable(4, 6),
+                    _Self,
+                )],
                 ..BaseCard::new(Watcher, Power)
             },
             NIRVANA => BaseCard {
                 name: NIRVANA,
                 rarity: Uncommon,
-                on_play: vec![
-                    Effect::AddBuff(buffs::NIRVANA, Upgradable(3, 4), _Self)
-                ],
+                on_play: vec![Effect::AddBuff(buffs::NIRVANA, Upgradable(3, 4), _Self)],
                 ..BaseCard::new(Watcher, Power)
             },
             PERSEVERANCE => BaseCard {
                 name: PERSEVERANCE,
                 rarity: Uncommon,
                 retain: Condition::Always,
-                effects: vec![
-                    (Event::CombatStart, SetN(Fixed(0))),                    
-                ],
-                on_retain: vec![
-                    AddN(Upgradable(2, 3))
-                ],
-                on_play: vec![
-                    Effect::Block(Sum(vec![N, Upgradable(5, 7)]), _Self)
-                ],
+                effects: vec![(Event::CombatStart, SetN(Fixed(0)))],
+                on_retain: vec![AddN(Upgradable(2, 3))],
+                on_play: vec![Effect::Block(Sum(vec![N, Upgradable(5, 7)]), _Self)],
                 ..BaseCard::new(Watcher, Skill)
             },
             PRAY => BaseCard {
@@ -2427,7 +2375,7 @@ impl BaseCard {
                         destination: CardLocation::DrawPile(RelativePosition::Random),
                         copies: Fixed(1),
                         modifier: CardModifier::None,
-                    }
+                    },
                 ],
                 ..BaseCard::new(Watcher, Skill)
             },
@@ -2441,7 +2389,7 @@ impl BaseCard {
                         destination: CardLocation::DrawPile(RelativePosition::Random),
                         copies: Fixed(1),
                         modifier: CardModifier::None,
-                    }
+                    },
                 ],
                 cost: Fixed(2),
                 ..BaseCard::new(Watcher, Attack)
@@ -2449,9 +2397,7 @@ impl BaseCard {
             RUSHDOWN => BaseCard {
                 name: RUSHDOWN,
                 rarity: Uncommon,
-                on_play: vec![
-                    AddBuff(buffs::RUSHDOWN, Fixed(2), _Self)
-                ],
+                on_play: vec![AddBuff(buffs::RUSHDOWN, Fixed(2), _Self)],
                 cost: Upgradable(1, 0),
                 ..BaseCard::new(Watcher, Power)
             },
@@ -2460,11 +2406,7 @@ impl BaseCard {
                 rarity: Uncommon,
                 on_play: vec![
                     Block(Upgradable(6, 9), _Self),
-                    If(
-                        Condition::LastCard(Skill),
-                        vec![Draw(Fixed(2))],
-                        vec![],
-                    ),                    
+                    If(Condition::LastCard(Skill), vec![Draw(Fixed(2))], vec![]),
                 ],
                 cost: Upgradable(1, 0),
                 ..BaseCard::new(Watcher, Skill)
@@ -2473,12 +2415,8 @@ impl BaseCard {
                 name: SANDS_OF_TIME,
                 rarity: Uncommon,
                 retain: Condition::Always,
-                on_retain: vec![
-                    SetCardCost(This, Sum(vec![X, Fixed(-1)])),
-                ],
-                on_play: vec![
-                    AttackDamage(Upgradable(20, 26), TargetEnemy)             
-                ],
+                on_retain: vec![SetCardCost(This, Sum(vec![X, Fixed(-1)]))],
+                on_play: vec![AttackDamage(Upgradable(20, 26), TargetEnemy)],
                 cost: Fixed(4),
                 ..BaseCard::new(Watcher, Attack)
             },
@@ -2486,35 +2424,26 @@ impl BaseCard {
                 name: SIGNATURE_MOVE,
                 rarity: Uncommon,
                 playable_if: Condition::Custom,
-                on_play: vec![
-                    AttackDamage(Upgradable(30, 40), TargetEnemy)             
-                ],
+                on_play: vec![AttackDamage(Upgradable(30, 40), TargetEnemy)],
                 cost: Fixed(2),
                 ..BaseCard::new(Watcher, Attack)
             },
             SIMMERING_FURY => BaseCard {
                 name: SIMMERING_FURY,
                 rarity: Uncommon,
-                on_play: vec![
-                    AddBuff(buffs::SIMMERING_RAGE, Upgradable(2, 3), _Self),   
-                ],
+                on_play: vec![AddBuff(buffs::SIMMERING_RAGE, Upgradable(2, 3), _Self)],
                 ..BaseCard::new(Watcher, Skill)
             },
             STUDY => BaseCard {
                 name: STUDY,
                 rarity: Uncommon,
-                on_play: vec![
-                    AddBuff(buffs::STUDY, Upgradable(2, 1), _Self),   
-                ],
+                on_play: vec![AddBuff(buffs::STUDY, Upgradable(2, 1), _Self)],
                 ..BaseCard::new(Watcher, Power)
             },
             SWIVEL => BaseCard {
                 name: SWIVEL,
                 rarity: Uncommon,
-                on_play: vec![
-                    Block(Upgradable(8, 11), _Self),
-                    Effect::Custom,
-                ],
+                on_play: vec![Block(Upgradable(8, 11), _Self), Effect::Custom],
                 ..BaseCard::new(Watcher, Skill)
             },
             TALK_TO_THE_HAND => BaseCard {
@@ -2531,10 +2460,264 @@ impl BaseCard {
                 name: TANTRUM,
                 rarity: Uncommon,
                 on_play: vec![
-                    Repeat(Upgradable(3, 4), Box::new(SetStance(Stance::Wrath))),
+                    Repeat(
+                        Upgradable(3, 4),
+                        Box::new(AttackDamage(Fixed(3), TargetEnemy)),
+                    ),
                     MoveCard(This, DrawPile(RelativePosition::Random), CardModifier::None),
+                    SetStance(Stance::Wrath),
                 ],
                 ..BaseCard::new(Watcher, Attack)
+            },
+            WALLOP => BaseCard {
+                name: WALLOP,
+                rarity: Uncommon,
+                on_play: vec![AttackDamageIfUnblocked(
+                    Upgradable(9, 12),
+                    TargetEnemy,
+                    vec![Block(N, _Self)],
+                )],
+                cost: Fixed(2),
+                ..BaseCard::new(Watcher, Attack)
+            },
+            WAVE_OF_THE_HAND => BaseCard {
+                name: WAVE_OF_THE_HAND,
+                rarity: Uncommon,
+
+                on_play: vec![AddBuff(
+                    buffs::WAVE_OF_THE_HAND,
+                    Upgradable(1, 2),
+                    TargetEnemy,
+                )],
+                ..BaseCard::new(Watcher, Skill)
+            },
+            WHEEL_KICK => BaseCard {
+                name: WHEEL_KICK,
+                rarity: Uncommon,
+                on_play: vec![
+                    AttackDamage(Upgradable(15, 20), TargetEnemy),
+                    Draw(Fixed(2)),
+                ],
+                cost: Fixed(2),
+                ..BaseCard::new(Watcher, Attack)
+            },
+            WINDMILL_STRIKE => BaseCard {
+                name: WINDMILL_STRIKE,
+                rarity: Uncommon,
+                retain: Condition::Always,
+                effects: vec![(Event::CombatStart, SetN(Fixed(0)))],
+                on_retain: vec![AddN(Upgradable(4, 5))],
+                on_play: vec![AttackDamage(Sum(vec![N, Upgradable(7, 10)]), TargetEnemy)],
+                cost: Fixed(2),
+                ..BaseCard::new(Watcher, Attack)
+            },
+            WORSHIP => BaseCard {
+                name: WORSHIP,
+                rarity: Uncommon,
+                retain: Condition::Upgraded,
+                on_play: vec![AddBuff(buffs::MANTRA, Fixed(5), _Self)],
+                cost: Fixed(2),
+                ..BaseCard::new(Watcher, Skill)
+            },
+            WREATH_OF_FLAME => BaseCard {
+                name: WREATH_OF_FLAME,
+                rarity: Uncommon,
+                on_play: vec![AddBuff(buffs::VIGOR, Upgradable(5, 8), _Self)],
+                ..BaseCard::new(Watcher, Skill)
+            },
+            ALPHA => BaseCard {
+                name: ALPHA,
+                rarity: Rare,
+                innate: Condition::Upgraded,
+                on_play: vec![AddCard {
+                    card: CardReference::ByName(BETA),
+                    destination: CardLocation::DrawPile(RelativePosition::Random),
+                    copies: Fixed(1),
+                    modifier: CardModifier::None,
+                }],
+                ..BaseCard::new(Watcher, Skill)
+            },
+            BLASPHEMY => BaseCard {
+                name: BLASPHEMY,
+                rarity: Rare,
+                retain: Condition::Upgraded,
+                on_play: vec![
+                    SetStance(Stance::Divinity),
+                    AddBuff(buffs::BLASPHEMER, Fixed(1), _Self),
+                    ExhaustCard(This),
+                ],
+                ..BaseCard::new(Watcher, Skill)
+            },
+            BRILLIANCE => BaseCard {
+                name: BRILLIANCE,
+                rarity: Rare,
+                on_play: vec![AttackDamage(
+                    Sum(vec![Upgradable(12, 16), Amount::Custom]),
+                    TargetEnemy,
+                )],
+                ..BaseCard::new(Watcher, Attack)
+            },
+            CONJURE_BLADE => BaseCard {
+                name: CONJURE_BLADE,
+                rarity: Rare,
+                on_play: vec![Effect::Custom],
+                cost: X,
+                ..BaseCard::new(Watcher, Skill)
+            },
+            DEUS_EX_MACHINA => BaseCard {
+                name: DEUS_EX_MACHINA,
+                rarity: Rare,
+                playable_if: Condition::Never,
+                on_draw: vec![
+                    AddCard {
+                        card: CardReference::ByName(MIRACLE),
+                        destination: CardLocation::PlayerHand(RelativePosition::Bottom),
+                        copies: Upgradable(2, 3),
+                        modifier: CardModifier::None,
+                    },
+                    ExhaustCard(This),
+                ],
+                cost: Fixed(0),
+                ..BaseCard::new(Watcher, Skill)
+            },
+            DEVA_FORM => BaseCard {
+                name: DEVA_FORM,
+                rarity: Rare,
+                ethereal: Condition::Not(Box::new(Condition::Upgraded)),
+                on_play: vec![AddBuff(buffs::DEVA, Fixed(1), _Self)],
+                cost: Fixed(3),
+                ..BaseCard::new(Watcher, Power)
+            },
+            DEVOTION => BaseCard {
+                name: DEVOTION,
+                rarity: Rare,
+                on_play: vec![AddBuff(buffs::DEVOTION, Upgradable(2, 3), _Self)],
+                ..BaseCard::new(Watcher, Power)
+            },
+            ESTABLISHMENT => BaseCard {
+                name: ESTABLISHMENT,
+                rarity: Rare,
+                innate: Condition::Upgraded,
+                on_play: vec![AddBuff(buffs::ESTABLISHMENT, Fixed(1), _Self)],
+                ..BaseCard::new(Watcher, Power)
+            },
+            JUDGMENT => BaseCard {
+                name: JUDGMENT,
+                rarity: Rare,
+                innate: Condition::Upgraded,
+                on_play: vec![If(
+                    Condition::RemainingHp(Upgradable(31, 41), TargetEnemy),
+                    vec![],
+                    vec![Die(TargetEnemy)],
+                )],
+                ..BaseCard::new(Watcher, Skill)
+            },
+            LESSON_LEARNED => BaseCard {
+                name: LESSON_LEARNED,
+                rarity: Rare,
+                on_play: vec![
+                    AttackDamageIfFatal(
+                        Upgradable(10, 12),
+                        TargetEnemy,
+                        vec![UpgradeCard(DeckPile(Random))],
+                    ),
+                    ExhaustCard(This),
+                ],
+                cost: Fixed(2),
+                ..BaseCard::new(Watcher, Attack)
+            },
+            MASTER_REALITY => BaseCard {
+                name: MASTER_REALITY,
+                rarity: Rare,
+                on_play: vec![AddBuff(buffs::MASTER_REALITY, Fixed(1), _Self)],
+                cost: Upgradable(1, 0),
+                ..BaseCard::new(Watcher, Power)
+            },
+            OMNISCIENCE => BaseCard {
+                name: OMNISCIENCE,
+                rarity: Rare,
+                on_play: vec![Effect::Custom, ExhaustCard(This)],
+                cost: Upgradable(4, 3),
+                ..BaseCard::new(Watcher, Skill)
+            },
+            RAGNAROK => BaseCard {
+                name: RAGNAROK,
+                rarity: Rare,
+                on_play: vec![Repeat(
+                    Upgradable(5, 6),
+                    Box::new(AttackDamage(Upgradable(5, 6), TargetEnemy)),
+                )],
+                cost: Fixed(3),
+                ..BaseCard::new(Watcher, Attack)
+            },
+            SCRAWL => BaseCard {
+                name: SCRAWL,
+                rarity: Rare,
+                on_play: vec![Draw(Amount::Custom), ExhaustCard(This)],
+                cost: Fixed(3),
+                ..BaseCard::new(Watcher, Skill)
+            },
+            SPIRIT_SHIELD => BaseCard {
+                name: SPIRIT_SHIELD,
+                rarity: Rare,
+                on_play: vec![Block(
+                    Amount::Mult(vec![Amount::Custom, Upgradable(3, 4)]),
+                    _Self,
+                )],
+                cost: Fixed(2),
+                ..BaseCard::new(Watcher, Skill)
+            },
+            VAULT => BaseCard {
+                name: VAULT,
+                rarity: Rare,
+                on_play: vec![Effect::Custom, ExhaustCard(This)],
+                cost: Upgradable(3, 2),
+                ..BaseCard::new(Watcher, Skill)
+            },
+            WISH => BaseCard {
+                name: WISH,
+                rarity: Rare,
+                on_play: vec![Effect::Custom],
+                cost: Fixed(3),
+                ..BaseCard::new(Watcher, Skill)
+            },
+            BANDAGE_UP => BaseCard {
+                name: BANDAGE_UP,
+                rarity: Uncommon,
+                on_play: vec![Heal(Upgradable(4, 6), _Self), ExhaustCard(This)],
+                cost: Fixed(0),
+                ..BaseCard::new(Class::None, Skill)
+            },
+            BLIND => BaseCard {
+                name: BLIND,
+                rarity: Uncommon,
+                on_play: vec![If(
+                    Condition::Upgraded,
+                    vec![AddBuff(buffs::WEAK, Fixed(2), AllEnemies)],
+                    vec![AddBuff(buffs::WEAK, Fixed(2), TargetEnemy)],
+                )],
+                cost: Fixed(0),
+                ..BaseCard::new(Class::None, Skill)
+            },
+            DARK_SHACKLES => BaseCard {
+                name: DARK_SHACKLES,
+                rarity: Uncommon,
+                on_play: vec![
+                    LoseStr(Upgradable(9, 15), TargetEnemy),
+                    ExhaustCard(This),
+                ],
+                cost: Fixed(0),
+                ..BaseCard::new(Class::None, Skill)
+            },
+            DEEP_BREATH => BaseCard {
+                name: DEEP_BREATH,
+                rarity: Uncommon,
+                on_play: vec![
+                    MoveCard(DiscardPile(RelativePosition::All), DrawPile(RelativePosition::All), CardModifier::None),
+                    Draw(Upgradable(1, 2))
+                ],
+                cost: Fixed(0),
+                ..BaseCard::new(Class::None, Skill)
             },
             _ => panic!("Unsupported card"),
         }

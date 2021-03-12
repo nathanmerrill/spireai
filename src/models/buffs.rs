@@ -68,6 +68,14 @@ impl BaseBuff {
             },
             MANTRA => BaseBuff {
                 name: MANTRA,
+                on_add: Effect::If(
+                    Condition::LessThan(Fixed(10), X),
+                    vec![
+                        Effect::AddX(Fixed(-10)),
+                        Effect::SetStance(Stance::Divinity),
+                    ],
+                    vec![],
+                ),
                 ..BaseBuff::default()
             },
             METALLICIZE => BaseBuff {
@@ -919,9 +927,10 @@ impl BaseBuff {
             },
             MARK => BaseBuff {
                 name: MARK,
-                effects: vec![
-                    (Event::Buff(MARK, Target::AnyFriendly), Effect::LoseHp(X, Target::_Self))
-                ],
+                effects: vec![(
+                    Event::Buff(MARK, Target::AnyFriendly),
+                    Effect::LoseHp(X, Target::_Self),
+                )],
                 is_buff: false,
                 ..BaseBuff::default()
             },

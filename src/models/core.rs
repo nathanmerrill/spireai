@@ -74,7 +74,6 @@ pub struct BaseCard {
     pub rarity: Rarity,
     pub _type: CardType,
     pub _class: Class,
-    pub targeted: bool,
     pub playable_if: Condition,
     pub effects: Vec<(Event, Effect)>,
     pub on_play: Vec<Effect>,
@@ -332,10 +331,13 @@ pub enum Effect {
     LoseHp(Amount, Target),
     Unbuff(&'static str, Target),
     AddBuff(&'static str, Amount, Target),
+    LoseStr(Amount, Target),
     HealPercentage(u8, Target),
     RemoveDebuffs(Target),
     Die(Target),
     EndTurn,
+
+    AddX(Amount),
 
     SetN(Amount),
     AddN(Amount),
@@ -399,6 +401,7 @@ pub enum Effect {
 pub enum Condition {
     Stance(Stance),
     MissingHp(Amount, Target),
+    RemainingHp(Amount, Target),
     HalfHp(Target),
     Status(Target, &'static str),
     NoBlock(Target),
@@ -406,6 +409,7 @@ pub enum Condition {
     Buff(Target, &'static str),
     BuffX(Target, &'static str, Amount), // At least this amount
     Equals(Amount, Amount),
+    LessThan(Amount, Amount),
     Asc(u8),
     Act(u8),
     Dead(Target),
