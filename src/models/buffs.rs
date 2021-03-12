@@ -80,7 +80,7 @@ impl BaseBuff {
             },
             METALLICIZE => BaseBuff {
                 name: METALLICIZE,
-                effects: vec![(Event::BeforeHandDraw, Effect::Block(X, Target::_Self))],
+                effects: vec![(Event::BeforeHandDiscard, Effect::Block(X, Target::_Self))],
                 ..BaseBuff::default()
             },
             NEXT_TURN_BLOCK => BaseBuff {
@@ -104,7 +104,7 @@ impl BaseBuff {
             },
             PLATED_ARMOR => BaseBuff {
                 name: PLATED_ARMOR,
-                effects: vec![(Event::BeforeEnemyMove, Effect::Block(X, Target::_Self))],
+                effects: vec![(Event::BeforeHandDiscard, Effect::Block(X, Target::_Self))],
                 reduce_at: Event::UnblockedDamage(Target::_Self),
                 ..BaseBuff::default()
             },
@@ -530,7 +530,7 @@ impl BaseBuff {
             MAYHEM => BaseBuff {
                 name: MAYHEM,
                 effects: vec![(
-                    Event::BeforeHandDraw,
+                    Event::AfterHandDraw,
                     Effect::AutoPlayCard(CardLocation::DrawPile(RelativePosition::Top)),
                 )],
                 ..BaseBuff::default()

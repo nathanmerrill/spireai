@@ -31,6 +31,7 @@ pub enum Amount {
     OrbCount,
     Custom,
     EnemyCount,
+    Any,
     ByAsc(i16, i16, i16),
     Upgradable(i16, i16),
     Sum(Vec<Amount>),
@@ -81,15 +82,16 @@ pub struct BaseCard {
     pub on_draw: Vec<Effect>,
     pub on_exhaust: Vec<Effect>,
     pub on_retain: Vec<Effect>,
+    pub on_turn_end: Vec<Effect>, //Happens if card is in hand, before cards are discarded
     pub name: &'static str,
     pub innate: Condition,
-    pub ethereal: Condition,
-    pub upgradeable: Upgradeable,
+    pub upgradeable: Upgradable,
     pub retain: Condition,
+    pub removable: bool,
 }
 
 #[derive(PartialEq, Clone)]
-pub enum Upgradeable {
+pub enum Upgradable {
     Never,
     Once,
     Infinite,
@@ -262,6 +264,7 @@ pub enum Event {
     // Time-based
     BeforeHandDraw,
     AfterHandDraw,
+    BeforeHandDiscard,
     BeforeEnemyMove, // After discarding cards
     AfterEnemyMove,
     TurnEnd, // Target-specific
@@ -316,7 +319,7 @@ pub enum RelativePosition {
     Top,
     Random,
     PlayerChoice(Amount),
-    All,
+    All, // If in a card effect, does not include the card
 }
 
 // Effects
@@ -417,6 +420,7 @@ pub enum Condition {
     HasFriendlies(u8),
     Not(Box<Condition>),
     LastCard(CardType),
+    HasCard(CardLocation, CardType),
     Upgraded,
     HasOrbSlot,
     HasDiscarded,
