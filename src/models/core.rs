@@ -1,12 +1,12 @@
 #[derive(PartialEq, Clone)]
 pub enum Rarity {
-    Starter, 
-    Common, 
-    Uncommon, 
-    Rare, 
+    Starter,
+    Common,
+    Uncommon,
+    Rare,
     Special,
     Event,
-    Status, 
+    Status,
     Curse,
     Shop,
     Boss,
@@ -30,6 +30,7 @@ pub enum Amount {
     N,
     OrbCount,
     Custom,
+    EnemyCount,
     ByAsc(i16, i16, i16),
     Upgradable(i16, i16),
     Sum(Vec<Amount>),
@@ -51,20 +52,20 @@ pub enum Stance {
     Wrath,
     Divinity,
     None,
-    All
+    All,
 }
 
 // Cards
 
 #[derive(PartialEq, Clone)]
 pub enum CardType {
-    Attack, 
-    Skill, 
-    Power, 
-    Status, 
+    Attack,
+    Skill,
+    Power,
+    Status,
     Curse,
     ByName(&'static str),
-    All
+    All,
 }
 
 #[derive(PartialEq, Clone)]
@@ -80,18 +81,20 @@ pub struct BaseCard {
     pub on_discard: Vec<Effect>,
     pub on_draw: Vec<Effect>,
     pub on_exhaust: Vec<Effect>,
-    pub name: &'static str,   
+    pub on_retain: Vec<Effect>,
+    pub name: &'static str,
     pub innate: Condition,
     pub ethereal: Condition,
-    pub upgradeable: Upgradeable ,
+    pub upgradeable: Upgradeable,
+    pub retain: Condition,
 }
 
 #[derive(PartialEq, Clone)]
-pub enum Upgradeable{
+pub enum Upgradeable {
     Never,
     Once,
     Infinite,
-    Burn
+    Burn,
 }
 
 #[derive(PartialEq, Clone)]
@@ -133,14 +136,13 @@ pub struct BaseBuff {
     pub on_add: Effect,
     pub reduce_at: Event,
     pub expire_at: Event,
-    pub effect_at: Event,
-    pub effect: Effect,
+    pub effects: vec![(Event, Effect)],
 }
 
 pub enum Activation {
     Immediate,
     Event(Event),
-    Counter{
+    Counter {
         increment: Event,
         reset: Event,
         auto_reset: bool,
@@ -156,7 +158,7 @@ pub enum Activation {
         enabled_at: Event,
         disabled_at: Event,
     },
-    Custom
+    Custom,
 }
 
 // Relics
@@ -210,7 +212,7 @@ pub struct ProbabilisticMove {
     pub chance: Amount,
     pub move_index: u8,
     pub max_repeats: Amount,
-    pub starter_asc: Option<u8>
+    pub starter_asc: Option<u8>,
 }
 
 pub enum Intent {
@@ -260,9 +262,10 @@ pub enum RoomType {
 pub enum Event {
     // Time-based
     BeforeHandDraw,
-    //AfterHandDraw,
+    AfterHandDraw,
     BeforeEnemyMove, // After discarding cards
     AfterEnemyMove,
+    TurnEnd, // Target-specific
     CombatEnd,
     CombatStart,
 
@@ -301,7 +304,7 @@ pub enum Event {
     SpendGold,
     GainGold,
     UsePotion,
-    
+
     // Meta
     Never,
     Multiple(Vec<Event>),
@@ -320,7 +323,6 @@ pub enum RelativePosition {
 // Effects
 #[derive(PartialEq, Clone)]
 pub enum Effect {
-
     //Targeted
     Block(Amount, Target),
     Damage(Amount, Target),
@@ -333,11 +335,12 @@ pub enum Effect {
     HealPercentage(u8, Target),
     RemoveDebuffs(Target),
     Die(Target),
+    EndTurn,
 
     SetN(Amount),
     AddN(Amount),
     ResetN,
-    
+
     //Player
     Draw(Amount),
     Scry(Amount),
@@ -357,14 +360,15 @@ pub enum Effect {
     Shuffle,
     MoveCard(CardLocation, CardLocation, CardModifier),
     SetCardModifier(CardLocation, CardModifier),
-    AddCard{
-        card: CardReference, 
-        destination: CardLocation, 
+    AddCard {
+        card: CardReference,
+        destination: CardLocation,
         copies: Amount,
-        modifier: CardModifier
+        modifier: CardModifier,
     },
     UpgradeCard(CardLocation),
     AutoPlayCard(CardLocation),
+    SetCardCost(CardLocation, Amount),
 
     // Meta-scaling
     CardReward,
@@ -372,7 +376,7 @@ pub enum Effect {
     ShowReward {
         potions: i8,
         cards: i8,
-        gold: i8,  
+        gold: i8,
         relics: i8,
     },
 
@@ -400,7 +404,7 @@ pub enum Condition {
     NoBlock(Target),
     Attacking(Target),
     Buff(Target, &'static str),
-    BuffX(Target, &'static str, Amount),  // At least this amount
+    BuffX(Target, &'static str, Amount), // At least this amount
     Equals(Amount, Amount),
     Asc(u8),
     Act(u8),
@@ -408,6 +412,7 @@ pub enum Condition {
     InPosition(Target, u8),
     HasFriendlies(u8),
     Not(Box<Condition>),
+    LastCard(CardType),
     Upgraded,
     HasOrbSlot,
     HasDiscarded,
@@ -423,7 +428,7 @@ pub enum Target {
     TargetEnemy,
     AllEnemies,
     Attacker,
-    AnyFriendly, // Includes self
+    AnyFriendly,    // Includes self
     RandomFriendly, // Self if only remaining
     Friendly(&'static str),
 }

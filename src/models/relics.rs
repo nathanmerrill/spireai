@@ -1,6 +1,6 @@
-use crate::models::core::*;
-use crate::models::cards;
 use crate::models::buffs;
+use crate::models::cards;
+use crate::models::core::*;
 use Amount::*;
 
 impl BaseRelic {
@@ -16,11 +16,11 @@ impl BaseRelic {
             replaces_starter: false,
         }
     }
-    
+
     pub fn by_name(name: &str) -> Self {
         match name {
             BURNING_BLOOD => Self {
-                name: BURNING_BLOOD, 
+                name: BURNING_BLOOD,
                 activation: Activation::Event(Event::CombatEnd),
                 effect: Effect::Heal(Fixed(6), Target::_Self),
                 rarity: Rarity::Starter,
@@ -28,7 +28,7 @@ impl BaseRelic {
                 ..Self::default()
             },
             RING_OF_THE_SNAKE => Self {
-                name: RING_OF_THE_SNAKE, 
+                name: RING_OF_THE_SNAKE,
                 activation: Activation::Event(Event::CombatStart),
                 effect: Effect::Draw(Fixed(2)),
                 rarity: Rarity::Starter,
@@ -36,7 +36,7 @@ impl BaseRelic {
                 ..Self::default()
             },
             CRACKED_CORE => Self {
-                name: CRACKED_CORE, 
+                name: CRACKED_CORE,
                 activation: Activation::Event(Event::CombatStart),
                 effect: Effect::ChannelOrb(Orb::Lightning),
                 rarity: Rarity::Starter,
@@ -44,11 +44,11 @@ impl BaseRelic {
                 ..Self::default()
             },
             PURE_WATER => Self {
-                name: PURE_WATER, 
+                name: PURE_WATER,
                 activation: Activation::Event(Event::CombatStart),
-                effect: Effect::AddCard{
+                effect: Effect::AddCard {
                     card: CardReference::ByName(cards::MIRACLE),
-                    destination: CardLocation::PlayerHand(RelativePosition::Top), 
+                    destination: CardLocation::PlayerHand(RelativePosition::Top),
                     copies: Fixed(1),
                     modifier: CardModifier::None,
                 },
@@ -70,7 +70,7 @@ impl BaseRelic {
             },
             ANCIENT_TEA_SET => Self {
                 name: ANCIENT_TEA_SET,
-                activation: Activation::WhenEnabled{
+                activation: Activation::WhenEnabled {
                     enabled_at: Event::RoomEnter(RoomType::Battle),
                     disabled_at: Event::CombatStart,
                     activated_at: Event::CombatStart,
@@ -80,7 +80,7 @@ impl BaseRelic {
             },
             ART_OF_WAR => Self {
                 name: ART_OF_WAR,
-                activation: Activation::WhenEnabled{
+                activation: Activation::WhenEnabled {
                     enabled_at: Event::CombatStart,
                     disabled_at: Event::PlayCard(CardType::Attack),
                     activated_at: Event::CombatStart,
@@ -194,9 +194,11 @@ impl BaseRelic {
             ORICHALCUM => Self {
                 name: ORICHALCUM,
                 activation: Activation::Event(Event::BeforeEnemyMove),
-                effect: Effect::If(Condition::NoBlock(Target::_Self), vec![
-                    Effect::Block(Fixed(6), Target::_Self)
-                ], vec![]),
+                effect: Effect::If(
+                    Condition::NoBlock(Target::_Self),
+                    vec![Effect::Block(Fixed(6), Target::_Self)],
+                    vec![],
+                ),
                 ..Self::default()
             },
             PEN_NIB => Self {
@@ -358,10 +360,7 @@ impl BaseRelic {
                 name: GREMLIN_HORN,
                 rarity: Rarity::Uncommon,
                 activation: Activation::Event(Event::Die(Target::AllEnemies)),
-                effect: Effect::Multiple(vec![
-                    Effect::AddEnergy(Fixed(1)),
-                    Effect::Draw(Fixed(1)),
-                ]),
+                effect: Effect::Multiple(vec![Effect::AddEnergy(Fixed(1)), Effect::Draw(Fixed(1))]),
                 ..Self::default()
             },
             HORN_CLEAT => Self {
@@ -371,7 +370,7 @@ impl BaseRelic {
                     increment: Event::BeforeEnemyMove,
                     reset: Event::CombatStart,
                     auto_reset: false,
-                    target: 2, 
+                    target: 2,
                 },
                 effect: Effect::Block(Fixed(14), Target::_Self),
                 ..Self::default()
@@ -383,7 +382,7 @@ impl BaseRelic {
                     increment: Event::PlayCard(CardType::All),
                     reset: Event::Never,
                     auto_reset: true,
-                    target: 10, 
+                    target: 10,
                 },
                 effect: Effect::Draw(Fixed(1)),
                 ..Self::default()
@@ -395,7 +394,7 @@ impl BaseRelic {
                     increment: Event::PlayCard(CardType::Attack),
                     reset: Event::BeforeHandDraw,
                     auto_reset: true,
-                    target: 3, 
+                    target: 3,
                 },
                 effect: Effect::AddBuff(buffs::DEXTERITY, Fixed(1), Target::_Self),
                 ..Self::default()
@@ -407,7 +406,7 @@ impl BaseRelic {
                     increment: Event::PlayCard(CardType::Skill),
                     reset: Event::BeforeHandDraw,
                     auto_reset: true,
-                    target: 3, 
+                    target: 3,
                 },
                 effect: Effect::Damage(Fixed(5), Target::AllEnemies),
                 ..Self::default()
@@ -426,9 +425,11 @@ impl BaseRelic {
                 name: MEAT_ON_THE_BONE,
                 rarity: Rarity::Uncommon,
                 activation: Activation::Event(Event::CombatEnd),
-                effect: Effect::If(Condition::HalfHp(Target::_Self), vec![
-                    Effect::Heal(Fixed(12), Target::_Self)
-                ], vec![]),
+                effect: Effect::If(
+                    Condition::HalfHp(Target::_Self),
+                    vec![Effect::Heal(Fixed(12), Target::_Self)],
+                    vec![],
+                ),
                 ..Self::default()
             },
             MERCURY_HOURGLASS => Self {
@@ -449,7 +450,10 @@ impl BaseRelic {
                 name: MUMMIFIED_HAND,
                 rarity: Rarity::Uncommon,
                 activation: Activation::Event(Event::PlayCard(CardType::Power)),
-                effect: Effect::SetCardModifier(CardLocation::PlayerHand(RelativePosition::Random), CardModifier::SetZeroTurnCost),
+                effect: Effect::SetCardModifier(
+                    CardLocation::PlayerHand(RelativePosition::Random),
+                    CardModifier::SetZeroTurnCost,
+                ),
                 ..Self::default()
             },
             ORNAMENTAL_FAN => Self {
@@ -459,7 +463,7 @@ impl BaseRelic {
                     increment: Event::PlayCard(CardType::Attack),
                     reset: Event::BeforeHandDraw,
                     auto_reset: true,
-                    target: 3, 
+                    target: 3,
                 },
                 effect: Effect::Block(Fixed(4), Target::_Self),
                 ..Self::default()
@@ -492,7 +496,7 @@ impl BaseRelic {
                     increment: Event::PlayCard(CardType::Attack),
                     reset: Event::BeforeHandDraw,
                     auto_reset: true,
-                    target: 3, 
+                    target: 3,
                 },
                 effect: Effect::AddBuff(buffs::STRENGTH, Fixed(1), Target::_Self),
                 ..Self::default()
@@ -518,7 +522,7 @@ impl BaseRelic {
                     increment: Event::Shuffle,
                     reset: Event::Never,
                     auto_reset: true,
-                    target: 3, 
+                    target: 3,
                 },
                 effect: Effect::AddEnergy(Fixed(2)),
                 ..Self::default()
@@ -569,8 +573,8 @@ impl BaseRelic {
                 rarity: Rarity::Uncommon,
                 activation: Activation::Event(Event::CombatStart),
                 effect: Effect::AddCard {
-                    card: CardReference::ByName(cards::SHIV), 
-                    destination: CardLocation::PlayerHand(RelativePosition::Top), 
+                    card: CardReference::ByName(cards::SHIV),
+                    destination: CardLocation::PlayerHand(RelativePosition::Top),
                     copies: Fixed(3),
                     modifier: CardModifier::None,
                 },
@@ -637,7 +641,7 @@ impl BaseRelic {
                     increment: Event::BeforeEnemyMove,
                     reset: Event::CombatStart,
                     auto_reset: false,
-                    target: 3, 
+                    target: 3,
                 },
                 effect: Effect::Block(Fixed(18), Target::_Self),
                 ..Self::default()
@@ -647,8 +651,8 @@ impl BaseRelic {
                 rarity: Rarity::Rare,
                 activation: Activation::Event(Event::Exhaust),
                 effect: Effect::AddCard {
-                    card: CardReference::RandomType(CardType::All), 
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
+                    card: CardReference::RandomType(CardType::All),
+                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
                     copies: Fixed(1),
                     modifier: CardModifier::None,
                 },
@@ -696,7 +700,7 @@ impl BaseRelic {
                     increment: Event::BeforeHandDraw,
                     reset: Event::Never,
                     auto_reset: true,
-                    target: 6, 
+                    target: 6,
                 },
                 effect: Effect::AddBuff(buffs::INTANGIBLE, Fixed(1), Target::_Self),
                 ..Self::default()
@@ -760,7 +764,7 @@ impl BaseRelic {
                     increment: Event::BeforeEnemyMove,
                     reset: Event::CombatStart,
                     auto_reset: false,
-                    target: 7, 
+                    target: 7,
                 },
                 effect: Effect::Damage(Fixed(50), Target::AllEnemies),
                 ..Self::default()
@@ -827,7 +831,7 @@ impl BaseRelic {
                 name: EMOTION_CHIP,
                 class: Class::Defect,
                 rarity: Rarity::Rare,
-                activation: Activation::WhenEnabled{
+                activation: Activation::WhenEnabled {
                     enabled_at: Event::HpLoss(Target::_Self),
                     disabled_at: Event::BeforeHandDraw,
                     activated_at: Event::BeforeHandDraw,
@@ -1052,9 +1056,9 @@ impl BaseRelic {
                 rarity: Rarity::Boss,
                 activation: Activation::Immediate,
                 effect: Effect::Multiple(vec![
-                    Effect::AddCard{
+                    Effect::AddCard {
                         card: CardReference::ByName(cards::CURSE_OF_THE_BELL),
-                        destination: CardLocation::DeckPile(RelativePosition::Bottom), 
+                        destination: CardLocation::DeckPile(RelativePosition::Bottom),
                         copies: Fixed(1),
                         modifier: CardModifier::None,
                     },
@@ -1063,7 +1067,6 @@ impl BaseRelic {
                         potions: 0,
                         relics: 3,
                         gold: 0,
-
                     },
                 ]),
                 ..Self::default()
@@ -1080,9 +1083,9 @@ impl BaseRelic {
                 name: CURSED_KEY,
                 rarity: Rarity::Boss,
                 activation: Activation::Event(Event::ChestOpen),
-                effect: Effect::AddCard{
+                effect: Effect::AddCard {
                     card: CardReference::RandomType(CardType::Curse),
-                    destination: CardLocation::DeckPile(RelativePosition::Bottom), 
+                    destination: CardLocation::DeckPile(RelativePosition::Bottom),
                     copies: Fixed(1),
                     modifier: CardModifier::None,
                 },
@@ -1152,11 +1155,10 @@ impl BaseRelic {
             SLAVERS_COLLAR => Self {
                 name: SLAVERS_COLLAR,
                 rarity: Rarity::Boss,
-                activation: Activation::Event(
-                    Event::Multiple(vec![
-                        Event::RoomEnter(RoomType::Boss),
-                        Event::RoomEnter(RoomType::Elite),
-                    ])),
+                activation: Activation::Event(Event::Multiple(vec![
+                    Event::RoomEnter(RoomType::Boss),
+                    Event::RoomEnter(RoomType::Elite),
+                ])),
                 effect: Effect::Custom,
                 ..Self::default()
             },
@@ -1237,11 +1239,10 @@ impl BaseRelic {
                 rarity: Rarity::Boss,
                 activation: Activation::Event(Event::CombatStart),
                 effect: Effect::AddCard {
-                    card: CardReference::ByName(cards::MIRACLE), 
-                    destination: CardLocation::PlayerHand(RelativePosition::Top), 
+                    card: CardReference::ByName(cards::MIRACLE),
+                    destination: CardLocation::PlayerHand(RelativePosition::Top),
                     copies: Fixed(3),
                     modifier: CardModifier::None,
-
                 },
                 replaces_starter: true,
                 ..Self::default()
@@ -1252,8 +1253,8 @@ impl BaseRelic {
                 rarity: Rarity::Boss,
                 activation: Activation::Event(Event::CombatStart),
                 effect: Effect::AddCard {
-                    card: CardReference::ByName(cards::WOUND), 
-                    destination: CardLocation::DeckPile(RelativePosition::Random), 
+                    card: CardReference::ByName(cards::WOUND),
+                    destination: CardLocation::DeckPile(RelativePosition::Random),
                     copies: Fixed(2),
                     modifier: CardModifier::None,
                 },
@@ -1280,7 +1281,7 @@ impl BaseRelic {
                 name: HOVERING_KITE,
                 class: Class::Silent,
                 rarity: Rarity::Boss,
-                activation: Activation::WhenEnabled{
+                activation: Activation::WhenEnabled {
                     activated_at: Event::Discard,
                     enabled_at: Event::BeforeHandDraw,
                     disabled_at: Event::Discard,
@@ -1292,7 +1293,7 @@ impl BaseRelic {
                 name: INSERTER,
                 class: Class::Defect,
                 rarity: Rarity::Boss,
-                activation: Activation::Counter{
+                activation: Activation::Counter {
                     increment: Event::BeforeHandDraw,
                     reset: Event::Never,
                     auto_reset: true,
@@ -1334,8 +1335,8 @@ impl BaseRelic {
                 rarity: Rarity::Event,
                 activation: Activation::Event(Event::CombatStart),
                 effect: Effect::AddCard {
-                    card: CardReference::RandomType(CardType::Power), 
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom), 
+                    card: CardReference::RandomType(CardType::Power),
+                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
                     copies: Fixed(1),
                     modifier: CardModifier::SetZeroTurnCost,
                 },

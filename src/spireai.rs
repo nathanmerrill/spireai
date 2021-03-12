@@ -1,11 +1,11 @@
 use crate::models;
 
 use crate::models::core::*;
-use models::GameState;
 use crate::models::state::*;
+use models::GameState;
 
 pub struct SpireAi {
-    expected_state: Option<GamePossibilitySet>
+    expected_state: Option<GamePossibilitySet>,
 }
 
 #[allow(dead_code)]
@@ -29,7 +29,7 @@ pub enum Choice {
     },
     Proceed,
     Return,
-    State
+    State,
 }
 
 impl SpireAi {
@@ -47,10 +47,9 @@ impl SpireAi {
 
         BaseBuff::by_name("");
         BaseCard::by_name("");
-        
+
         return choice;
     }
-
 
     fn verify_state(&mut self, new_state: &GameState) {
         panic!("Not implemented");
@@ -85,7 +84,6 @@ impl SpireAi {
         }
     }
     */
-    
 }
 
 fn make_choice(state: &GameState) -> Choice {
@@ -98,7 +96,7 @@ fn make_choice(state: &GameState) -> Choice {
         models::RoomPhase::Complete => {
 
         }
-        
+
     }
 
     return match state {
@@ -112,7 +110,6 @@ fn make_choice(state: &GameState) -> Choice {
 
 fn handle_combat(state: &GameState) -> Choice {
     panic!("Not implemented")
-
 }
 
 fn predict_outcome(state: &GameState, choice: &Choice) -> GamePossibilitySet {

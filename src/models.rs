@@ -1,23 +1,23 @@
-use serde::{Deserialize};
-pub mod cards;
+use serde::Deserialize;
 pub mod buffs;
-pub mod relics;
+pub mod cards;
 pub mod core;
-pub mod state;
 pub mod monsters;
+pub mod relics;
+pub mod state;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all="SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum PlayerClass {
     Ironclad,
     Silent,
     Defect,
     Watcher,
-    Other
+    Other,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all="SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum CardType {
     Attack,
     Skill,
@@ -27,7 +27,7 @@ pub enum CardType {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all="SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum CardRarity {
     Basic,
     Common,
@@ -38,7 +38,7 @@ pub enum CardRarity {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all="SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RoomPhase {
     Combat,
     Event,
@@ -125,7 +125,11 @@ pub struct GameOver {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(tag = "screen_type", content = "screen_state", rename_all="SCREAMING_SNAKE_CASE")]
+#[serde(
+    tag = "screen_type",
+    content = "screen_state",
+    rename_all = "SCREAMING_SNAKE_CASE"
+)]
 pub enum ScreenState {
     None,
     Event(Event),
@@ -144,7 +148,7 @@ pub enum ScreenState {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all="SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ChestType {
     Small,
     Medium,
@@ -154,29 +158,19 @@ pub enum ChestType {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(tag = "type", rename_all="SCREAMING_SNAKE_CASE")]
+#[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RewardType {
     Card,
-    Gold {
-        gold: i32,
-    },
-    Relic {
-        relic: Relic,
-    },
-    Potion {
-        potion: Potion,
-    },
-    StolenGold {
-        gold: i32,
-    },
+    Gold { gold: i32 },
+    Relic { relic: Relic },
+    Potion { potion: Potion },
+    StolenGold { gold: i32 },
     EmeraldKey,
-    SapphireKey {
-        link: Relic,
-    }
+    SapphireKey { link: Relic },
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all="SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RestOption {
     Dig,
     Lift,
@@ -239,7 +233,7 @@ pub struct CombatState {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(rename_all="SCREAMING_SNAKE_CASE")]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Intent {
     Attack,
     AttackBuff,
@@ -248,7 +242,9 @@ pub enum Intent {
     Buff,
     Debuff,
     StrongDebuff,
-    Debug, Clone, PartialEq,
+    Debug,
+    Clone,
+    PartialEq,
     Defend,
     DefendDebuff,
     DefendBuff,
@@ -289,7 +285,7 @@ pub struct Player {
     pub block: i32,
     pub powers: Vec<Power>,
     pub energy: i32,
-    pub orbs: Vec<Orb>
+    pub orbs: Vec<Orb>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]

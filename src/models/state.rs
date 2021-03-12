@@ -1,7 +1,7 @@
-use im::Vector;
-use std::rc::Rc;
-use std::cell::RefCell;
 use crate::models::core::*;
+use im::Vector;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(PartialEq, Clone)]
 pub struct GameState {
@@ -20,7 +20,7 @@ pub struct Monster {
 
 #[derive(PartialEq, Clone)]
 pub enum ScreenState {
-    Battle(BattleState) 
+    Battle(BattleState),
 }
 
 #[derive(PartialEq, Clone)]
@@ -29,18 +29,13 @@ pub struct BattleState {
     pub discard: Vector<Rc<RefCell<Card>>>,
     pub exhaust: Vector<Rc<RefCell<Card>>>,
     pub hand: Vector<Rc<RefCell<Card>>>,
-    
 }
 
 #[derive(PartialEq)]
-pub struct Relic {
-
-}
+pub struct Relic {}
 
 #[derive(PartialEq)]
-pub struct Buff {
-
-}
+pub struct Buff {}
 
 #[derive(PartialEq, Clone)]
 pub struct Card {
@@ -50,19 +45,17 @@ pub struct Card {
 #[derive(PartialEq, Clone)]
 pub struct GamePossibility {
     pub probability: f64,
-    pub state: GameState
+    pub state: GameState,
 }
-
 
 pub struct GameAction {
     pub card: Card,
-    pub target: Option<u8>
+    pub target: Option<u8>,
 }
 
 pub struct GamePossibilitySet {
-    pub states: Vector<Rc<RefCell<GamePossibility>>>
+    pub states: Vector<Rc<RefCell<GamePossibility>>>,
 }
-
 
 impl GamePossibilitySet {
     /*
