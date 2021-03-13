@@ -673,7 +673,7 @@ fn all_relics() -> Vec<BaseRelic> {
             rarity: Rarity::Rare,
             activation: Activation::Event(Event::Exhaust),
             effect: Effect::AddCard {
-                card: CardReference::RandomType(CardType::All),
+                card: CardReference::RandomType(CardType::All, Fixed(1)),
                 destination: CardLocation::PlayerHand(RelativePosition::Bottom),
                 copies: Fixed(1),
                 modifier: CardModifier::None,
@@ -745,7 +745,7 @@ fn all_relics() -> Vec<BaseRelic> {
                 use_when: Event::Die(Target::_Self),
                 uses: 1,
             },
-            effect: Effect::HealPercentage(50, Target::_Self),
+            effect: Effect::HealPercentage(Fixed(50), Target::_Self),
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -967,7 +967,7 @@ fn all_relics() -> Vec<BaseRelic> {
             rarity: Rarity::Shop,
             activation: Activation::Immediate,
             effect: Effect::Multiple(vec![
-                Effect::HealPercentage(100, Target::_Self),
+                Effect::HealPercentage(Fixed(100), Target::_Self),
                 Effect::AddMaxHp(Fixed(7)),
             ]),
             ..BaseRelic::default()
@@ -1125,7 +1125,7 @@ fn all_relics() -> Vec<BaseRelic> {
             rarity: Rarity::Boss,
             activation: Activation::Event(Event::ChestOpen),
             effect: Effect::AddCard {
-                card: CardReference::RandomType(CardType::Curse),
+                card: CardReference::RandomType(CardType::Curse, Fixed(1)),
                 destination: CardLocation::DeckPile(RelativePosition::Bottom),
                 copies: Fixed(1),
                 modifier: CardModifier::None,
@@ -1376,7 +1376,7 @@ fn all_relics() -> Vec<BaseRelic> {
             rarity: Rarity::Event,
             activation: Activation::Event(Event::CombatStart),
             effect: Effect::AddCard {
-                card: CardReference::RandomType(CardType::Power),
+                card: CardReference::RandomType(CardType::Power, Fixed(1)),
                 destination: CardLocation::PlayerHand(RelativePosition::Bottom),
                 copies: Fixed(1),
                 modifier: CardModifier::SetZeroTurnCost,

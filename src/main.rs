@@ -23,7 +23,7 @@ fn main() {
     loop {
         let response: serialization::Response = read_state();
         let choice = match response.game_state {
-            Some(state) => ai.choose(&serialization::ToModel(&state)),
+            Some(state) => ai.choose(&serialization::to_model(&state)),
             None => {
                 if response.available_commands.contains(&String::from("start")) {
                     spireai::Choice::Start {
@@ -92,7 +92,7 @@ fn serialize_choice(choice: spireai::Choice) -> String {
         spireai::Choice::End => {
             format!("END")
         }
-        spireai::Choice::Choose { choice_index } => {
+        spireai::Choice::Choose(choice_index) => {
             format!("CHOOSE {}", choice_index)
         }
         spireai::Choice::Proceed => {

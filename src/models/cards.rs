@@ -115,7 +115,6 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: CLEAVE,
-
             on_play: vec![AttackDamage(Upgradable(8, 11), AllEnemies)],
             ..BaseCard::new(Ironclad, Attack)
         },
@@ -173,6 +172,14 @@ fn all_cards() -> Vec<BaseCard> {
             name: PERFECTED_STRIKE,
             on_play: vec![AttackDamage(Amount::Custom, TargetEnemy)],
             cost: Fixed(2),
+            ..BaseCard::new(Ironclad, Attack)
+        },
+        BaseCard {
+            name: POMMEL_STRIKE,
+            on_play: vec![
+                AttackDamage(Upgradable(9, 10), TargetEnemy),
+                Draw(Upgradable(1, 2)),
+            ],
             ..BaseCard::new(Ironclad, Attack)
         },
         BaseCard {
@@ -396,7 +403,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 AddCard {
-                    card: CardReference::RandomType(Attack),
+                    card: CardReference::RandomType(Attack, Fixed(1)),
                     destination: PlayerHand(Bottom),
                     copies: Fixed(1),
                     modifier: CardModifier::SetZeroTurnCost,
@@ -783,7 +790,7 @@ fn all_cards() -> Vec<BaseCard> {
             ..BaseCard::new(Silent, Skill)
         },
         BaseCard {
-            name: CLOAK_AND_DAGGER,
+            name: DAGGER_SPRAY,
             on_play: vec![
                 AttackDamage(Upgradable(4, 6), TargetEnemy),
                 AttackDamage(Upgradable(4, 6), TargetEnemy),
@@ -1004,7 +1011,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 AddCard {
-                    card: CardReference::RandomType(CardType::Skill),
+                    card: CardReference::RandomType(CardType::Skill, Fixed(1)),
                     destination: CardLocation::PlayerHand(RelativePosition::Bottom),
                     copies: Fixed(1),
                     modifier: CardModifier::SetZeroTurnCost,
@@ -1056,6 +1063,19 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: FINISHER,
+            rarity: Uncommon,
+            effects: vec![
+                (Event::BeforeHandDraw, Effect::SetN(Fixed(0))),
+                (Event::PlayCard(CardType::Attack), Effect::AddN(Fixed(1))),
+            ],
+            on_play: vec![Repeat(
+                Amount::N,
+                Box::new(AttackDamage(Upgradable(6, 8), TargetEnemy)),
+            )],
+            ..BaseCard::new(Silent, Attack)
+        },
+        BaseCard {
+            name: FLECHETTES,
             rarity: Uncommon,
             on_play: vec![Repeat(
                 Amount::Custom,
@@ -1160,7 +1180,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![Repeat(
                 X,
-                vec![AttackDamage(Upgradable(7, 10), TargetEnemy)],
+                Box::new(AttackDamage(Upgradable(7, 10), TargetEnemy)),
             )],
             cost: X,
             ..BaseCard::new(Silent, Attack)
@@ -1549,7 +1569,7 @@ fn all_cards() -> Vec<BaseCard> {
             ..BaseCard::new(Defect, Skill)
         },
         BaseCard {
-            name: AUTO_SHIELDS,
+            name: BLIZZARD,
             rarity: Uncommon,
 
             effects: vec![
@@ -1560,7 +1580,7 @@ fn all_cards() -> Vec<BaseCard> {
             ..BaseCard::new(Defect, Attack)
         },
         BaseCard {
-            name: AUTO_SHIELDS,
+            name: BOOT_SEQUENCE,
             rarity: Uncommon,
             innate: Condition::Always,
             on_play: vec![Block(Upgradable(10, 13), _Self), ExhaustCard(This)],
@@ -1696,6 +1716,12 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: GENETIC_ALGORITHM,
             rarity: Uncommon,
+            on_play: vec![Block(Sum(vec![Fixed(1), N]), _Self), AddN(Upgradable(2, 3))],
+            ..BaseCard::new(Defect, Skill)
+        },
+        BaseCard {
+            name: GLACIER,
+            rarity: Uncommon,
             on_play: vec![
                 Block(Upgradable(7, 10), _Self),
                 ChannelOrb(Orb::Frost),
@@ -1756,7 +1782,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: REINFORCED_BODY,
             rarity: Uncommon,
-            on_play: vec![Repeat(X, vec![Block(Upgradable(7, 9), _Self)])],
+            on_play: vec![Repeat(X, Box::new(Block(Upgradable(7, 9), _Self)))],
             cost: X,
             ..BaseCard::new(Defect, Skill)
         },
@@ -1839,7 +1865,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: WHITE_NOISE,
             rarity: Uncommon,
             on_play: vec![AddCard {
-                card: CardReference::RandomType(CardType::Power),
+                card: CardReference::RandomType(CardType::Power, Fixed(1)),
                 destination: CardLocation::PlayerHand(RelativePosition::Bottom),
                 copies: Fixed(1),
                 modifier: CardModifier::SetZeroTurnCost,
@@ -2087,7 +2113,7 @@ fn all_cards() -> Vec<BaseCard> {
             ..BaseCard::new(Watcher, Skill)
         },
         BaseCard {
-            name: EMPTY_BODY,
+            name: EMPTY_FIST,
             on_play: vec![
                 AttackDamage(Upgradable(9, 14), _Self),
                 SetStance(Stance::None),
@@ -2509,6 +2535,24 @@ fn all_cards() -> Vec<BaseCard> {
             ..BaseCard::new(Watcher, Skill)
         },
         BaseCard {
+            name: WEAVE,
+            rarity: Uncommon,
+            effects: vec![(
+                Event::Scry,
+                MoveCard(
+                    CardLocation::This,
+                    PlayerHand(RelativePosition::Bottom),
+                    CardModifier::None,
+                ),
+            )],
+            on_play: vec![AddBuff(
+                buffs::WAVE_OF_THE_HAND,
+                Upgradable(1, 2),
+                TargetEnemy,
+            )],
+            ..BaseCard::new(Watcher, Skill)
+        },
+        BaseCard {
             name: WHEEL_KICK,
             rarity: Uncommon,
             on_play: vec![
@@ -2746,7 +2790,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 AddCard {
-                    card: CardReference::RandomType(CardType::All),
+                    card: CardReference::RandomType(CardType::All, Fixed(3)),
                     destination: CardLocation::PlayerHand(RelativePosition::Bottom),
                     copies: Fixed(1),
                     modifier: CardModifier::SetZeroTurnCost,
@@ -2880,7 +2924,7 @@ fn all_cards() -> Vec<BaseCard> {
             ..BaseCard::new(Class::None, Skill)
         },
         BaseCard {
-            name: PANACEA,
+            name: PANIC_BUTTON,
             rarity: Uncommon,
             on_play: vec![
                 Block(Upgradable(30, 40), _Self),
@@ -2936,12 +2980,12 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             on_play: vec![Repeat(
                 Upgradable(3, 5),
-                vec![AddCard {
-                    card: CardReference::RandomType(CardType::Skill),
+                Box::new(AddCard {
+                    card: CardReference::RandomType(CardType::Skill, Fixed(1)),
                     destination: CardLocation::DrawPile(RelativePosition::Random),
                     copies: Fixed(1),
                     modifier: CardModifier::SetZeroCombatCost,
-                }],
+                }),
             )],
             cost: Fixed(2),
             ..BaseCard::new(Class::None, Skill)
@@ -2983,12 +3027,12 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             on_play: vec![Repeat(
                 Upgradable(3, 5),
-                vec![AddCard {
-                    card: CardReference::RandomType(CardType::Attack),
+                Box::new(AddCard {
+                    card: CardReference::RandomType(CardType::Attack, Fixed(1)),
                     destination: CardLocation::DrawPile(RelativePosition::Random),
                     copies: Fixed(1),
                     modifier: CardModifier::SetZeroCombatCost,
-                }],
+                }),
             )],
             cost: Fixed(2),
             ..BaseCard::new(Class::None, Skill)
@@ -3104,7 +3148,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rarity::Special,
             on_play: vec![Repeat(
                 N,
-                vec![AttackDamage(Upgradable(9, 15), TargetEnemy)],
+                Box::new(AttackDamage(Upgradable(9, 15), TargetEnemy)),
             )],
             ..BaseCard::new(Class::None, Attack)
         },
@@ -3313,6 +3357,14 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
             upgradeable: crate::models::core::Upgradable::Never,
+            ..BaseCard::new(Class::None, Curse)
+        },
+        BaseCard {
+            name: REGRET,
+            rarity: Rarity::Curse,
+            playable_if: Condition::Never,
+            upgradeable: crate::models::core::Upgradable::Never,
+            on_turn_end: vec![LoseHp(Amount::Custom, _Self)],
             ..BaseCard::new(Class::None, Curse)
         },
         BaseCard {

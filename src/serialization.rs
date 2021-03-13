@@ -355,35 +355,72 @@ pub struct Potion {
     pub price: Option<i32>,
 }
 
-pub fn ToModel(state: &GameState) -> models::state::GameState {
+pub fn to_model(state: &GameState) -> models::state::GameState {
     models::state::GameState {
-        class: ConvertClass(&state.class),
+        class: convert_class(&state.class),
         hp: state.current_hp as u16,
         max_hp: state.max_hp as u16,
         floor: state.floor as u8,
-        deck: ConvertDeck(&state.deck),
-        screen: models::state::ScreenState::None,
+        deck: convert_cards(&state.deck),
+        screen: convert_state(&state),
+        potions: convert_potions(&state.potions),
     }
 }
 
-fn ConvertDeck(deck: &Vec<Card>) -> Vector<Rc<models::state::Card>> {
-    let mut vec = Vector::new();
-    vec.extend(deck.iter().map(|card| Rc::new(ConvertCard(card))));
+pub fn convert_state(state: &GameState) -> models::state::ScreenState {
+    match &state.room_phase {
+        RoomPhase::Combat => {
+            let combat_state = (state.combat_state).as_ref().unwrap();
+            models::state::ScreenState::Battle(models::state::BattleState {
+                draw: convert_cards(&combat_state.draw_pile),
+                discard: convert_cards(&combat_state.discard_pile),
+                exhaust: convert_cards(&combat_state.exhaust_pile),
+                hand: convert_cards(&combat_state.hand),
+                monsters: convert_monsters(&combat_state.monsters),
+            })
+        },
+        _ => models::state::ScreenState::None
+    }
+}
+
+fn convert_monsters(monsters: &Vec<Monster>) -> Vec<models::state::Monster> {
+    let mut vec = Vec::new();
+    vec.extend(monsters.iter().map(|monster| models::state::Monster {
+        base: models::monsters::by_name(monster.name.as_str()),
+        hp: monster.current_hp as u16
+    }));
     vec
 }
 
-fn ConvertCard(card: &Card) -> models::state::Card {
+fn convert_potions(potions: &Vec<Potion>) -> Vec<models::state::Potion> {
+    let mut vec = Vec::new();
+    vec.extend(potions.iter().map(|potion| models::state::Potion {
+        base: models::potions::by_name(potion.name.as_str()),
+    }));
+    vec
+}
+
+fn convert_cards(cards: &Vec<Card>) -> Vector<Rc<models::state::Card>> {
+    let mut vec = Vector::new();
+    vec.extend(cards.iter().map(|card| Rc::new(convert_card(card))));
+    vec
+}
+
+fn convert_card(card: &Card) -> models::state::Card {
     models::state::Card {
         base: models::cards::by_name(card.name.as_str()),
+        n: 0,
+        n_reset: 0,
+        cost: card.cost as u8,
     }
 }
 
-fn ConvertClass(class: &PlayerClass) -> models::core::Class {
+fn convert_class(class: &PlayerClass) -> models::core::Class {
     match class {
-        Ironclad => models::core::Class::Ironclad,
-        Silent => models::core::Class::Silent,
-        Defect => models::core::Class::Defect,
-        Watcher => models::core::Class::Watcher,
-        Other => panic!("Unrecognized class"),
+        PlayerClass::Ironclad => models::core::Class::Ironclad,
+        PlayerClass::Silent => models::core::Class::Silent,
+        PlayerClass::Defect => models::core::Class::Defect,
+        PlayerClass::Watcher => models::core::Class::Watcher,
+        PlayerClass::Other => panic!("Unrecognized class"),
     }
 }

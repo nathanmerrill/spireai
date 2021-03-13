@@ -10,11 +10,30 @@ pub struct GameState {
     pub floor: u8,
     pub deck: Vector<Rc<Card>>,
     pub screen: ScreenState,
+    pub potions: Vec<Potion>,
 }
 
+#[derive(Clone, Debug)]
+pub struct Potion {
+    pub base: &'static BasePotion,
+}
+
+impl PartialEq for Potion {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.base, other.base)
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct Monster {
+    pub base: &'static BaseMonster,
     pub hp: u16,
-    pub max_hp: u16,
+}
+
+impl PartialEq for Monster {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.base, other.base) && self.hp == other.hp
+    }
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -29,17 +48,25 @@ pub struct BattleState {
     pub discard: Vector<Rc<Card>>,
     pub exhaust: Vector<Rc<Card>>,
     pub hand: Vector<Rc<Card>>,
+    pub monsters: Vec<Monster>,
 }
 
-#[derive(PartialEq)]
 pub struct Relic {}
 
-#[derive(PartialEq)]
 pub struct Buff {}
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Card {
     pub base: &'static BaseCard,
+    pub cost: u8,
+    pub n: u16,
+    pub n_reset: u16,
+}
+
+impl PartialEq for Card {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.base, other.base) && self.cost == other.cost
+    }
 }
 
 #[derive(PartialEq, Clone)]

@@ -1,7 +1,7 @@
 use crate::models::monsters::*;
 use crate::models::core::*;
 
-pub Vec<Act> acts: vec![
+pub static acts: Vec<Act> = vec![
     Act {
         easy_count: 3,
         easy_fights: vec![
@@ -154,7 +154,7 @@ pub Vec<Act> acts: vec![
                 vec![GREMLIN_LEADER, GREMLIN_WIZARD, SHIELD_GREMLIN],
                 vec![GREMLIN_LEADER, GREMLIN_WIZARD, SNEAKY_GREMLIN],
                 vec![GREMLIN_LEADER, GREMLIN_WIZARD, GREMLIN_WIZARD],
-            ])),
+            ]),
             MonsterSet::Fixed(vec![BLUE_SLAVER, TASKMASTER, RED_SLAVER]),
         ],
         bosses: vec![
@@ -226,4 +226,4 @@ pub Vec<Act> acts: vec![
             MonsterSet::Fixed(vec![CORRUPT_HEART])
         ]
     }
-]
+];

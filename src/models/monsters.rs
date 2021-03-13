@@ -209,7 +209,7 @@ fn all_monsters() -> Vec<BaseMonster> {
                     name: REBIRTH,
                     effects: vec![
                         Effect::RemoveDebuffs(Target::_Self),
-                        Effect::HealPercentage(100, Target::_Self),
+                        Effect::HealPercentage(Fixed(100), Target::_Self),
                     ],
                     intent: Intent::Unknown,
                 },
@@ -795,7 +795,7 @@ fn all_monsters() -> Vec<BaseMonster> {
                 },
                 MonsterMove {
                     name: REINCARNATE,
-                    effects: vec![Effect::HealPercentage(50, Target::_Self)],
+                    effects: vec![Effect::HealPercentage(Fixed(50), Target::_Self)],
                     intent: Intent::Buff,
                 },
                 MonsterMove {

@@ -301,7 +301,7 @@ fn all_buffs() -> Vec<BaseBuff> {
             effects: vec![(
                 Event::BeforeHandDraw,
                 Effect::AddCard {
-                    card: CardReference::RandomType(CardType::Power),
+                    card: CardReference::RandomType(CardType::Power, Fixed(1)),
                     destination: CardLocation::PlayerHand(RelativePosition::Bottom),
                     copies: X,
                     modifier: CardModifier::None,

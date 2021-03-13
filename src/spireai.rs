@@ -9,7 +9,6 @@ pub struct SpireAi {
     // Neural net nodes
 }
 
-#[allow(dead_code)]
 pub enum Choice {
     Start {
         player_class: models::core::Class,
@@ -25,9 +24,7 @@ pub enum Choice {
         target_index: Option<u8>,
     },
     End,
-    Choose {
-        choice_index: u8,
-    },
+    Choose(u8),
     Proceed,
     Return,
     State,
@@ -45,8 +42,8 @@ impl SpireAi {
             Some(expected) => verify_state(state, &expected),
             None => {}
         }
-        let choice = make_choice(state);
-        self.expected_state = predict_outcome(state, &choice);
+        let choice = make_choice(&state);
+        self.expected_state = predict_outcome(&state, &choice);
 
         return choice;
     }
@@ -86,31 +83,43 @@ fn verify_state(outcome: &GameState, prediction: &GamePossibilitySet) {
 }
 
 fn make_choice(state: &GameState) -> Choice {
-    panic!("Not implemented")
-    /*
-    match state.room_phase {
-        models::RoomPhase::Combat => {
+    let mut max_val = f64::MIN;
+    let mut best_choice = Choice::State;
 
+    for choice in all_choices(&state) {
+        match predict_outcome(state, &choice) {
+            Some(outcome) => {
+                let rating = rate_possibility_set(outcome);
+                if rating > max_val {
+                    max_val = rating;
+                    best_choice = choice
+                }
+            }
+            _ => {}
         }
-        models::RoomPhase::Complete => {
-
-        }
-
     }
 
-    return match state {
-        //ScreenState::Event(ref event) => self.handle_event(event),
-
-        _ => {
-            Choice::Choose {choice_index: 0}
-        }
-    };*/
+    best_choice
 }
 
-fn handle_combat(state: &GameState) -> Choice {
-    panic!("Not implemented")
+fn all_choices(state: &GameState) -> Vec<Choice> {
+    let mut choices: Vec<Choice> = Vec::new();
+    match &state.screen {
+        ScreenState::Battle(battle_state) => {}
+        _ => {}
+    }
+
+    choices
 }
 
 fn predict_outcome(state: &GameState, choice: &Choice) -> Option<GamePossibilitySet> {
+    panic!("Not implemented")
+}
+
+fn rate_possibility_set(set: GamePossibilitySet) -> f64 {
+    panic!("Not implemented")
+}
+
+fn rate_possibility(possibility: GamePossibility) -> f64 {
     panic!("Not implemented")
 }

@@ -1,6 +1,3 @@
-use strum_macros::Display;
-
-#[derive(PartialEq, Clone, Debug)]
 pub enum Rarity {
     Starter,
     Common,
@@ -14,7 +11,7 @@ pub enum Rarity {
     Boss,
 }
 
-#[derive(PartialEq, Clone, Debug, Display)]
+#[derive(PartialEq, Clone, Debug, strum_macros::Display)]
 pub enum Class {
     All,
     None,
@@ -24,7 +21,6 @@ pub enum Class {
     Watcher,
 }
 
-#[derive(PartialEq, Clone, Debug)]
 pub enum Amount {
     Fixed(i16),
     X,
@@ -40,7 +36,6 @@ pub enum Amount {
     Mult(Vec<Amount>),
 }
 
-#[derive(PartialEq, Clone, Debug)]
 pub enum Orb {
     Lightning,
     Dark,
@@ -49,7 +44,6 @@ pub enum Orb {
     Any,
 }
 
-#[derive(PartialEq, Clone, Debug)]
 pub enum Stance {
     Calm,
     Wrath,
@@ -59,8 +53,6 @@ pub enum Stance {
 }
 
 // Cards
-
-#[derive(PartialEq, Clone, Debug)]
 pub enum CardType {
     Attack,
     Skill,
@@ -71,7 +63,6 @@ pub enum CardType {
     All,
 }
 
-#[derive(PartialEq, Clone, Debug)]
 pub struct BaseCard {
     pub cost: Amount,
     pub rarity: Rarity,
@@ -92,7 +83,29 @@ pub struct BaseCard {
     pub removable: bool,
 }
 
-#[derive(PartialEq, Clone, Debug)]
+impl std::fmt::Debug for BaseCard {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseCard")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+pub struct BasePotion {
+    pub name: &'static str,
+    pub _class: Class,
+    pub rarity: Rarity,
+    pub on_drink: Vec<Effect>,
+}
+
+impl std::fmt::Debug for BasePotion {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BasePotion")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
 pub enum Upgradable {
     Never,
     Once,
@@ -100,7 +113,6 @@ pub enum Upgradable {
     Burn,
 }
 
-#[derive(PartialEq, Clone, Debug)]
 pub enum CardModifier {
     None,
     SetZeroCombatCost,
@@ -109,16 +121,14 @@ pub enum CardModifier {
     Upgraded,
 }
 
-#[derive(PartialEq, Clone, Debug)]
 pub enum CardReference {
     ByName(&'static str),
     CopyOf(CardLocation),
-    RandomType(CardType),
+    RandomType(CardType, Amount), // Num choices
     RandomRarity(Rarity),
     RandomClass(Class),
 }
 
-#[derive(PartialEq, Clone, Debug)]
 pub enum CardLocation {
     This,
     DeckPile(RelativePosition),
@@ -129,8 +139,6 @@ pub enum CardLocation {
 }
 
 // Buffs
-
-#[derive(PartialEq, Clone, Debug)]
 pub struct BaseBuff {
     pub name: &'static str,
     pub stacks: bool,
@@ -201,6 +209,14 @@ pub struct BaseMonster {
     pub effects: Vec<(Event, Effect)>,
 }
 
+impl std::fmt::Debug for BaseMonster {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseMonster")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
 pub enum Move {
     If(Condition, Vec<Move>, Vec<Move>),
     Loop(Vec<Move>),
@@ -244,7 +260,6 @@ pub struct MonsterMove {
 }
 
 // Rooms
-#[derive(PartialEq, Clone, Debug)]
 pub enum RoomType {
     Rest,
     Shop,
@@ -259,8 +274,6 @@ pub enum RoomType {
 }
 
 // Events
-
-#[derive(PartialEq, Clone, Debug)]
 pub enum Event {
     // Time-based
     BeforeHandDraw,
@@ -314,7 +327,6 @@ pub enum Event {
     Custom,
 }
 
-#[derive(PartialEq, Clone, Debug)]
 pub enum RelativePosition {
     Bottom,
     Top,
@@ -324,7 +336,6 @@ pub enum RelativePosition {
 }
 
 // Effects
-#[derive(PartialEq, Clone, Debug)]
 pub enum Effect {
     //Targeted
     Block(Amount, Target),
@@ -336,7 +347,7 @@ pub enum Effect {
     Unbuff(&'static str, Target),
     AddBuff(&'static str, Amount, Target),
     LoseStr(Amount, Target),
-    HealPercentage(u8, Target),
+    HealPercentage(Amount, Target),
     RemoveDebuffs(Target),
     Die(Target),
     EndTurn,
@@ -401,7 +412,6 @@ pub enum Effect {
     Custom,
 }
 
-#[derive(PartialEq, Clone, Debug)]
 pub enum Condition {
     Stance(Stance),
     MissingHp(Amount, Target),
@@ -430,7 +440,6 @@ pub enum Condition {
     Custom,
 }
 
-#[derive(PartialEq, Clone, Debug)]
 pub enum Target {
     _Self,
     RandomEnemy,
