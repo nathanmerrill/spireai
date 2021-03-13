@@ -1,7 +1,9 @@
 use crate::models::monsters::*;
 use crate::models::core::*;
 
-pub static acts: Vec<Act> = vec![
+lazy_static! {
+
+static ref ACTS: Vec<Act> = vec![
     Act {
         easy_count: 3,
         easy_fights: vec![
@@ -227,3 +229,4 @@ pub static acts: Vec<Act> = vec![
         ]
     }
 ];
+}

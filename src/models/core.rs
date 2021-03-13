@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum Rarity {
     Starter,
     Common,
@@ -21,6 +22,7 @@ pub enum Class {
     Watcher,
 }
 
+#[derive(Debug)]
 pub enum Amount {
     Fixed(i16),
     X,
@@ -36,6 +38,7 @@ pub enum Amount {
     Mult(Vec<Amount>),
 }
 
+#[derive(Debug)]
 pub enum Orb {
     Lightning,
     Dark,
@@ -44,6 +47,7 @@ pub enum Orb {
     Any,
 }
 
+#[derive(Debug)]
 pub enum Stance {
     Calm,
     Wrath,
@@ -52,7 +56,7 @@ pub enum Stance {
     All,
 }
 
-// Cards
+#[derive(Debug)]
 pub enum CardType {
     Attack,
     Skill,
@@ -77,10 +81,11 @@ pub struct BaseCard {
     pub on_retain: Vec<Effect>,
     pub on_turn_end: Vec<Effect>, //Happens if card is in hand, before cards are discarded
     pub name: &'static str,
-    pub innate: Condition,
+    pub innate: StaticCondition,
     pub upgradeable: Upgradable,
-    pub retain: Condition,
+    pub retain: StaticCondition,
     pub removable: bool,
+    pub targeted: StaticCondition,
 }
 
 impl std::fmt::Debug for BaseCard {
@@ -91,11 +96,20 @@ impl std::fmt::Debug for BaseCard {
     }
 }
 
+#[derive(PartialEq)]
+pub enum StaticCondition {
+    True,
+    False,
+    WhenUpgraded,
+    WhenUnupgraded,
+}
+
 pub struct BasePotion {
     pub name: &'static str,
     pub _class: Class,
     pub rarity: Rarity,
     pub on_drink: Vec<Effect>,
+    pub targeted: StaticCondition,
 }
 
 impl std::fmt::Debug for BasePotion {
@@ -106,6 +120,7 @@ impl std::fmt::Debug for BasePotion {
     }
 }
 
+#[derive(Debug)]
 pub enum Upgradable {
     Never,
     Once,
@@ -113,6 +128,7 @@ pub enum Upgradable {
     Burn,
 }
 
+#[derive(Debug)]
 pub enum CardModifier {
     None,
     SetZeroCombatCost,
@@ -121,6 +137,7 @@ pub enum CardModifier {
     Upgraded,
 }
 
+#[derive(Debug)]
 pub enum CardReference {
     ByName(&'static str),
     CopyOf(CardLocation),
@@ -129,6 +146,7 @@ pub enum CardReference {
     RandomClass(Class),
 }
 
+#[derive(Debug)]
 pub enum CardLocation {
     This,
     DeckPile(RelativePosition),
@@ -150,6 +168,15 @@ pub struct BaseBuff {
     pub effects: Vec<(Event, Effect)>,
 }
 
+impl std::fmt::Debug for BaseBuff {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseBuff")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+#[derive(Debug)]
 pub enum Activation {
     Immediate,
     Event(Event),
@@ -184,14 +211,24 @@ pub struct BaseRelic {
     pub replaces_starter: bool,
 }
 
-pub struct Act {
-    easy_count: u8,
-    easy_fights: Vec<(u8, MonsterSet)>,
-    normal_fights: Vec<(u8, MonsterSet)>,
-    elites: Vec<MonsterSet>,
-    bosses: Vec<MonsterSet>,
+impl std::fmt::Debug for BaseRelic {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseRelic")
+            .field("name", &self.name)
+            .finish()
+    }
 }
 
+#[derive(Debug)]
+pub struct Act {
+    pub easy_count: u8,
+    pub easy_fights: Vec<(u8, MonsterSet)>,
+    pub normal_fights: Vec<(u8, MonsterSet)>,
+    pub elites: Vec<MonsterSet>,
+    pub bosses: Vec<MonsterSet>,
+}
+
+#[derive(Debug)]
 pub enum MonsterSet {
     Fixed(Vec<&'static str>),
     ChooseN(u8, Vec<&'static str>),
@@ -217,6 +254,7 @@ impl std::fmt::Debug for BaseMonster {
     }
 }
 
+#[derive(Debug)]
 pub enum Move {
     If(Condition, Vec<Move>, Vec<Move>),
     Loop(Vec<Move>),
@@ -226,6 +264,7 @@ pub enum Move {
     AfterMove(Vec<(&'static str, Move)>),
 }
 
+#[derive(Debug)]
 pub struct ProbabilisticMove {
     pub chance: Amount,
     pub move_index: u8,
@@ -233,6 +272,7 @@ pub struct ProbabilisticMove {
     pub starter_asc: Option<u8>,
 }
 
+#[derive(Debug)]
 pub enum Intent {
     Attack,
     AttackBuff,
@@ -253,13 +293,14 @@ pub enum Intent {
     Unknown,
 }
 
+#[derive(Debug)]
 pub struct MonsterMove {
     pub name: &'static str,
     pub effects: Vec<Effect>,
     pub intent: Intent,
 }
 
-// Rooms
+#[derive(Debug)]
 pub enum RoomType {
     Rest,
     Shop,
@@ -273,7 +314,8 @@ pub enum RoomType {
     All,
 }
 
-// Events
+
+#[derive(Debug)]
 pub enum Event {
     // Time-based
     BeforeHandDraw,
@@ -327,6 +369,7 @@ pub enum Event {
     Custom,
 }
 
+#[derive(Debug)]
 pub enum RelativePosition {
     Bottom,
     Top,
@@ -335,7 +378,7 @@ pub enum RelativePosition {
     All, // If in a card effect, does not include the card
 }
 
-// Effects
+#[derive(Debug)]
 pub enum Effect {
     //Targeted
     Block(Amount, Target),
@@ -412,6 +455,7 @@ pub enum Effect {
     Custom,
 }
 
+#[derive(Debug)]
 pub enum Condition {
     Stance(Stance),
     MissingHp(Amount, Target),
@@ -440,6 +484,7 @@ pub enum Condition {
     Custom,
 }
 
+#[derive(Debug)]
 pub enum Target {
     _Self,
     RandomEnemy,

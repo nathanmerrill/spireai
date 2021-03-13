@@ -5,17 +5,16 @@ use std::rc::Rc;
 #[derive(PartialEq, Clone, Debug)]
 pub struct GameState {
     pub class: Class,
-    pub hp: u16,
-    pub max_hp: u16,
     pub floor: u8,
     pub deck: Vector<Rc<Card>>,
     pub screen: ScreenState,
     pub potions: Vec<Potion>,
+    pub player: Creature,
 }
 
 #[derive(Clone, Debug)]
 pub struct Potion {
-    pub base: &'static BasePotion,
+    pub base: &'static BasePotion
 }
 
 impl PartialEq for Potion {
@@ -27,12 +26,14 @@ impl PartialEq for Potion {
 #[derive(Clone, Debug)]
 pub struct Monster {
     pub base: &'static BaseMonster,
-    pub hp: u16,
+    pub creature: Creature,
+    pub targetable: bool,
 }
 
 impl PartialEq for Monster {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base) && self.hp == other.hp
+        std::ptr::eq(self.base, other.base) && 
+        self.creature == other.creature
     }
 }
 
@@ -42,6 +43,15 @@ pub enum ScreenState {
     None,
 }
 
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct Creature {
+    pub hp: u16,
+    pub max_hp: u16,
+    pub position: u8,
+    pub is_player: bool,
+}
+
 #[derive(PartialEq, Clone, Debug)]
 pub struct BattleState {
     pub draw: Vector<Rc<Card>>,
@@ -49,18 +59,27 @@ pub struct BattleState {
     pub exhaust: Vector<Rc<Card>>,
     pub hand: Vector<Rc<Card>>,
     pub monsters: Vec<Monster>,
+    pub energy: u8,
 }
 
 pub struct Relic {}
 
 pub struct Buff {}
 
+
+#[derive(Clone, Debug)]
+pub struct Vars {
+    pub n: u8,
+    pub n_reset: u8,
+    pub x: u8,
+}
+
 #[derive(Clone, Debug)]
 pub struct Card {
     pub base: &'static BaseCard,
     pub cost: u8,
-    pub n: u16,
-    pub n_reset: u16,
+    pub vars: Vars,
+    pub upgrades: u8,
 }
 
 impl PartialEq for Card {
@@ -75,8 +94,9 @@ pub struct GamePossibility {
     pub state: GameState,
 }
 
-pub struct GameAction {
-    pub card: Card,
+pub struct GameAction<'a> {
+    pub is_attack: bool,
+    pub creature: &'a Creature,
     pub target: Option<u8>,
 }
 

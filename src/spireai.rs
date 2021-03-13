@@ -1,3 +1,4 @@
+use crate::models::core::*;
 use log::error;
 
 use crate::models;
@@ -105,11 +106,193 @@ fn make_choice(state: &GameState) -> Choice {
 fn all_choices(state: &GameState) -> Vec<Choice> {
     let mut choices: Vec<Choice> = Vec::new();
     match &state.screen {
-        ScreenState::Battle(battle_state) => {}
-        _ => {}
+        ScreenState::Battle(battle_state) => {
+            for (card_index, card) in battle_state.hand.iter().enumerate() {
+                if card_playable(card, battle_state, state) {
+                    if card_targeted(card) {
+                        for monster in &battle_state.monsters {
+                            if monster.targetable {
+                                choices.push(Choice::Play {
+                                    card_index: card_index as u8,
+                                    target_index: Some(monster.creature.position),
+                                });
+                            }
+                        }
+                    } else {
+                        choices.push(Choice::Play {
+                            card_index: card_index as u8,
+                            target_index: None,
+                        })
+                    }
+                }
+            }
+
+            for (potion_index, potion) in state.potions.iter().enumerate() {
+                if potion_targeted(potion) {
+                    for monster in &battle_state.monsters {
+                        if monster.targetable {
+                            choices.push(Choice::Potion {
+                                should_use: true,
+                                slot: potion_index as u8,
+                                target_index: Some(monster.creature.position),
+                            });
+                        }
+                    }
+                } else {
+                    choices.push(Choice::Potion {
+                        should_use: true,
+                        slot: potion_index as u8,
+                        target_index: None,
+                    });
+                }
+                
+                choices.push(Choice::Potion {
+                    should_use: false,
+                    slot: potion_index as u8,
+                    target_index: None,
+                });
+            }            
+                
+            choices.push(Choice::End);
+        }
+        _ => {panic!("Unrecognized screen state")}
     }
 
     choices
+}
+
+fn potion_targeted(potion: &Potion) -> bool {
+    match potion.base.targeted {
+        StaticCondition::True => true,
+        _ => false,
+    }
+}
+
+fn card_targeted(card: &Card) -> bool {
+    match card.base.targeted {
+        StaticCondition::True => true,
+        StaticCondition::False => false,
+        StaticCondition::WhenUpgraded => card.upgrades > 0,
+        StaticCondition::WhenUnupgraded => card.upgrades == 0,
+    }
+}
+
+fn card_playable(card: &Card, battle_state: &BattleState, game_state: &GameState) -> bool {
+    card.cost <= battle_state.energy &&
+    eval_condition(&card.base.playable_if, battle_state, game_state, &card.vars, &game_state.player, &None, card.base.name)
+}
+
+fn eval_condition<'a>(condition: &Condition, battle_state: &BattleState, game_state: &GameState, vars: &Vars, creature: &Creature, action: &Option<GameAction>, name: &'static str) -> bool {
+    match condition {
+        Condition::Always => {
+            true
+        },
+        Condition::Never => {
+            false
+        },
+        Condition::Custom => {
+            match name {
+                _ => panic!("Unhandled custom condition: {}", name)
+            }
+        },
+        Condition::Dead(target) => {
+            match eval_target(target, battle_state, creature, action) {
+                ResolvedTarget::Player => {
+                    game_state.player.hp == 0
+                },
+                ResolvedTarget::Monster(idx) => {
+                    battle_state.monsters[idx as usize].creature.hp == 0
+                },
+                ResolvedTarget::AllMonsters => {
+                    battle_state.monsters.iter().all(|m| m.creature.hp == 0)
+                },
+                _ => panic!("Unexpected Dead condition: {:?}", condition)
+            }
+        },
+        _ => panic!("Unhandled condition: {:?}", condition)
+    }
+}
+
+enum ResolvedTarget {
+    Player,
+    Monster(u8),
+    AllMonsters,
+    RandomMonster(Vec<u8>),
+    None,
+}
+
+fn eval_target(target: &Target, battle_state: &BattleState, creature: &Creature, action: &Option<GameAction>) -> ResolvedTarget {
+    match target {
+        Target::_Self => {
+            match creature.is_player {
+                true => ResolvedTarget::Player,
+                false => ResolvedTarget::Monster(creature.position)
+            }
+        },
+        Target::AllEnemies => {
+            match creature.is_player {
+                true => ResolvedTarget::AllMonsters,
+                false => ResolvedTarget::Player,
+            }
+        },
+        Target::AnyFriendly => {
+            match creature.is_player {
+                true => ResolvedTarget::Player,
+                false => ResolvedTarget::AllMonsters,
+            }
+        },
+        Target::Attacker => {
+            match action {
+                Some(_action) => {
+                    match _action.is_attack {
+                        true => {
+                            match _action.creature.is_player {
+                                true => ResolvedTarget::Player,
+                                false => ResolvedTarget::Monster(_action.creature.position),
+                            }
+                        }
+                        false => ResolvedTarget::None,
+                    }
+                },
+                None => ResolvedTarget::None,
+            }
+        },
+        Target::Friendly(name) => {
+            match battle_state.monsters.iter().find(|m| &m.base.name == name) {
+                Some(monster) => {
+                    ResolvedTarget::Monster(monster.creature.position)
+                },
+                None => ResolvedTarget::None,
+            }
+        },
+        Target::RandomEnemy => {
+            match creature.is_player {
+                true => ResolvedTarget::RandomMonster((0..battle_state.monsters.len() as u8).collect()),
+                false => ResolvedTarget::Player,
+            }
+        },
+        Target::RandomFriendly => {
+            match creature.is_player {
+                true => ResolvedTarget::Player,
+                false => {
+                    let mut positions: Vec<u8> = (0..creature.position).collect();
+                    positions.extend(creature.position+1 .. battle_state.monsters.len() as u8);
+                    ResolvedTarget::RandomMonster(positions)
+                },
+            }
+        },
+        Target::TargetEnemy => {
+            match action {
+                Some(_action) => {
+                    match _action.creature.is_player {
+                        true => ResolvedTarget::Monster(_action.creature.position),
+                        false => ResolvedTarget::Player,
+                    }
+                },
+                None => ResolvedTarget::None,
+            }
+        }
+    }
 }
 
 fn predict_outcome(state: &GameState, choice: &Choice) -> Option<GamePossibilitySet> {

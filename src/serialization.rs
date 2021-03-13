@@ -358,8 +358,12 @@ pub struct Potion {
 pub fn to_model(state: &GameState) -> models::state::GameState {
     models::state::GameState {
         class: convert_class(&state.class),
-        hp: state.current_hp as u16,
-        max_hp: state.max_hp as u16,
+        player: models::state::Creature {
+            hp: state.current_hp as u16,
+            max_hp: state.max_hp as u16,
+            is_player: true,
+            position: 0,
+        },
         floor: state.floor as u8,
         deck: convert_cards(&state.deck),
         screen: convert_state(&state),
@@ -377,6 +381,7 @@ pub fn convert_state(state: &GameState) -> models::state::ScreenState {
                 exhaust: convert_cards(&combat_state.exhaust_pile),
                 hand: convert_cards(&combat_state.hand),
                 monsters: convert_monsters(&combat_state.monsters),
+                energy: combat_state.player.energy as u8,
             })
         },
         _ => models::state::ScreenState::None
@@ -385,9 +390,15 @@ pub fn convert_state(state: &GameState) -> models::state::ScreenState {
 
 fn convert_monsters(monsters: &Vec<Monster>) -> Vec<models::state::Monster> {
     let mut vec = Vec::new();
-    vec.extend(monsters.iter().map(|monster| models::state::Monster {
+    vec.extend(monsters.iter().enumerate().map(|(index, monster)| models::state::Monster {
         base: models::monsters::by_name(monster.name.as_str()),
-        hp: monster.current_hp as u16
+        creature: models::state::Creature {
+            hp: monster.current_hp as u16,
+            max_hp: monster.max_hp as u16,
+            is_player: false,
+            position: index as u8,
+        },
+        targetable: !monster.is_gone,
     }));
     vec
 }
@@ -395,7 +406,7 @@ fn convert_monsters(monsters: &Vec<Monster>) -> Vec<models::state::Monster> {
 fn convert_potions(potions: &Vec<Potion>) -> Vec<models::state::Potion> {
     let mut vec = Vec::new();
     vec.extend(potions.iter().map(|potion| models::state::Potion {
-        base: models::potions::by_name(potion.name.as_str()),
+        base: models::potions::by_name(potion.name.as_str())
     }));
     vec
 }
@@ -409,8 +420,12 @@ fn convert_cards(cards: &Vec<Card>) -> Vector<Rc<models::state::Card>> {
 fn convert_card(card: &Card) -> models::state::Card {
     models::state::Card {
         base: models::cards::by_name(card.name.as_str()),
-        n: 0,
-        n_reset: 0,
+        vars: models::state::Vars {
+            n: 0,
+            n_reset: 0,
+            x: 0,
+        },
+        upgrades: card.upgrades as u8,
         cost: card.cost as u8,
     }
 }
