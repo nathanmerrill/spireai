@@ -1,5 +1,6 @@
 use crate::models::cards;
 use crate::models::core::*;
+use std::collections::HashMap;
 use Amount::*;
 
 impl BaseBuff {
@@ -15,943 +16,1043 @@ impl BaseBuff {
             effects: vec![],
         }
     }
+}
 
-    pub fn by_name(name: &str) -> BaseBuff {
-        match name {
-            ARTIFACT => BaseBuff {
-                name: ARTIFACT,
-                ..BaseBuff::default()
-            },
-            ANGRY => BaseBuff {
-                name: ANGRY,
-                effects: vec![(
-                    Event::AttackDamage(Target::_Self),
-                    Effect::AddBuff(STRENGTH, X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            BARRICADE => BaseBuff {
-                name: BARRICADE,
-                is_additive: false,
-                ..BaseBuff::default()
-            },
-            BUFFER => BaseBuff {
-                name: BUFFER,
-                effects: vec![(Event::HpLoss(Target::_Self), Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            DEXTERITY => BaseBuff {
-                name: DEXTERITY,
-                ..BaseBuff::default()
-            },
-            DRAW_CARD => BaseBuff {
-                name: DRAW_CARD,
-                effects: vec![(Event::BeforeHandDraw, Effect::Draw(X))],
-                expire_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            ENERGIZED => BaseBuff {
-                name: ENERGIZED,
-                effects: vec![(Event::BeforeHandDraw, Effect::AddEnergy(X))],
-                expire_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            FOCUS => BaseBuff {
-                name: FOCUS,
-                ..BaseBuff::default()
-            },
-            INTANGIBLE => BaseBuff {
-                name: INTANGIBLE,
-                effects: vec![(Event::Damage(Target::_Self), Effect::Custom)],
-                reduce_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            MANTRA => BaseBuff {
-                name: MANTRA,
-                on_add: Effect::If(
-                    Condition::LessThan(Fixed(10), X),
-                    vec![
-                        Effect::AddX(Fixed(-10)),
-                        Effect::SetStance(Stance::Divinity),
-                    ],
+pub fn by_name(name: &str) -> &'static BaseBuff {
+    BUFFS.get(name).unwrap()
+}
+
+lazy_static! {
+    static ref BUFFS: HashMap<&'static str, BaseBuff> = {
+        let mut m = HashMap::new();
+
+        for buff in all_buffs() {
+            m.insert(buff.name, buff);
+        }
+
+        m
+    };
+}
+
+fn all_buffs() -> Vec<BaseBuff> {
+    vec![
+        BaseBuff {
+            name: ARTIFACT,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ANGRY,
+            effects: vec![(
+                Event::AttackDamage(Target::_Self),
+                Effect::AddBuff(STRENGTH, X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BARRICADE,
+            is_additive: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BUFFER,
+            effects: vec![(Event::HpLoss(Target::_Self), Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DEXTERITY,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DRAW_CARD,
+            effects: vec![(Event::BeforeHandDraw, Effect::Draw(X))],
+            expire_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ENERGIZED,
+            effects: vec![(Event::BeforeHandDraw, Effect::AddEnergy(X))],
+            expire_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: FOCUS,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: INTANGIBLE,
+            effects: vec![(Event::Damage(Target::_Self), Effect::Custom)],
+            reduce_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: MANTRA,
+            on_add: Effect::If(
+                Condition::LessThan(Fixed(10), X),
+                vec![
+                    Effect::AddX(Fixed(-10)),
+                    Effect::SetStance(Stance::Divinity),
+                ],
+                vec![],
+            ),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: METALLICIZE,
+            effects: vec![(Event::BeforeHandDraw, Effect::Block(X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: NEXT_TURN_BLOCK,
+            effects: vec![(Event::BeforeHandDraw, Effect::Block(X, Target::_Self))],
+            expire_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: PAINFUL_STABS,
+            effects: vec![(
+                Event::UnblockedDamage(Target::TargetEnemy),
+                Effect::AddCard {
+                    card: CardReference::ByName(cards::WOUND),
+                    destination: CardLocation::DiscardPile(RelativePosition::Bottom),
+                    copies: X,
+                    modifier: CardModifier::None,
+                },
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: PLATED_ARMOR,
+            effects: vec![(Event::BeforeEnemyMove, Effect::Block(X, Target::_Self))],
+            reduce_at: Event::UnblockedDamage(Target::_Self),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: RITUAL,
+            effects: vec![(Event::TurnEnd, Effect::AddBuff(STRENGTH, X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: SPLIT,
+            is_additive: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: STRENGTH,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: STRENGTH_UP,
+            effects: vec![(
+                Event::AfterEnemyMove,
+                Effect::AddBuff(STRENGTH, X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: THORNS,
+            effects: vec![(
+                Event::AttackDamage(Target::_Self),
+                Effect::Damage(X, Target::Attacker),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: VIGOR,
+            effects: vec![(Event::PlayCard(CardType::Attack), Effect::Custom)],
+            expire_at: Event::PlayCard(CardType::Attack),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ACCURACY,
+            effects: vec![(
+                Event::PlayCard(CardType::ByName(cards::SHIV)),
+                Effect::Custom,
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: AFTER_IMAGE,
+            effects: vec![(
+                Event::PlayCard(CardType::All),
+                Effect::Block(X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: AMPLIFY,
+            effects: vec![(Event::PlayCard(CardType::Power), Effect::Custom)],
+            expire_at: Event::BeforeEnemyMove,
+            reduce_at: Event::PlayCard(CardType::Power),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ASLEEP,
+            expire_at: Event::UnblockedDamage(Target::_Self),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BATTLE_HYMN,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddCard {
+                    card: CardReference::ByName(cards::SMITE),
+                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
+                    copies: X,
+                    modifier: CardModifier::None,
+                },
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BEAT_OF_DEATH,
+            effects: vec![(
+                Event::PlayCard(CardType::All),
+                Effect::Damage(X, Target::AllEnemies),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BERSERK,
+            effects: vec![(Event::BeforeHandDraw, Effect::AddEnergy(X))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BLASPHEMER,
+            is_additive: false,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::Damage(Fixed(9999), Target::_Self),
+            )],
+            expire_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BLUR,
+            reduce_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BRUTALITY,
+            effects: vec![
+                (Event::BeforeHandDraw, Effect::LoseHp(X, Target::_Self)),
+                (Event::BeforeHandDraw, Effect::Draw(X)),
+            ],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BURST,
+            effects: vec![(Event::PlayCard(CardType::Skill), Effect::Custom)],
+            reduce_at: Event::PlayCard(CardType::Skill),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: CURL_UP,
+            effects: vec![(
+                Event::AttackDamage(Target::_Self),
+                Effect::Block(X, Target::_Self),
+            )],
+            expire_at: Event::AttackDamage(Target::_Self),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: CURIOSITY,
+            effects: vec![(
+                Event::PlayCard(CardType::Power),
+                Effect::AddBuff(STRENGTH, X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: COLLECT,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddCard {
+                    card: CardReference::ByName(cards::COLLECT),
+                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
+                    copies: Fixed(1),
+                    modifier: CardModifier::Upgraded,
+                },
+            )],
+            reduce_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: COMBUST,
+            on_add: Effect::AddN(Fixed(1)),
+            effects: vec![
+                (
+                    Event::BeforeEnemyMove,
+                    Effect::LoseHp(Amount::N, Target::_Self),
+                ),
+                (
+                    Event::BeforeEnemyMove,
+                    Effect::Damage(Amount::X, Target::AllEnemies),
+                ),
+            ],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: CORRUPTION,
+            is_additive: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: CREATIVE_AI,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddCard {
+                    card: CardReference::RandomType(CardType::Power),
+                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
+                    copies: X,
+                    modifier: CardModifier::None,
+                },
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DARK_EMBRACE,
+            effects: vec![(Event::Exhaust, Effect::Draw(X))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DEMON_FORM,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddBuff(STRENGTH, X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DEVA,
+            effects: vec![
+                (Event::BeforeHandDraw, Effect::AddN(X)),
+                (Event::BeforeHandDraw, Effect::AddEnergy(N)),
+            ],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DEVOTION,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddBuff(MANTRA, X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DOUBLE_DAMAGE,
+            reduce_at: Event::BeforeEnemyMove,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DOUBLE_TAP,
+            reduce_at: Event::PlayCard(CardType::Attack),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DUPLICATION,
+            reduce_at: Event::PlayCard(CardType::All),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ECHO_FORM,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ELECTRO,
+            is_additive: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ENRAGE,
+            effects: vec![(
+                Event::PlayCard(CardType::Attack),
+                Effect::AddBuff(STRENGTH, X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ENVENOM,
+            effects: vec![(
+                Event::UnblockedDamage(Target::TargetEnemy),
+                Effect::AddBuff(POISON, X, Target::TargetEnemy),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: EQUILIBRIUM,
+            reduce_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ESTABLISHMENT,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: EVOLVE,
+            effects: vec![(Event::DrawCard(CardType::Status), Effect::Draw(X))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: EXPLODE,
+            reduce_at: Event::AttackDamage(Target::TargetEnemy),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: FADING,
+            reduce_at: Event::AfterEnemyMove,
+            effects: vec![(
+                Event::UnBuff(FADING, Target::_Self),
+                Effect::Die(Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: FEEL_NO_PAIN,
+            effects: vec![(Event::Exhaust, Effect::Block(X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: FLAME_BARRIER,
+            effects: vec![(
+                Event::AttackDamage(Target::_Self),
+                Effect::Damage(X, Target::Attacker),
+            )],
+            expire_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: FLYING,
+            effects: vec![(Event::AttackDamage(Target::_Self), Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: FIRE_BREATHING,
+            effects: vec![(
+                Event::Multiple(vec![
+                    Event::DrawCard(CardType::Status),
+                    Event::DrawCard(CardType::Status),
+                ]),
+                Effect::Damage(X, Target::AllEnemies),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: FORESIGHT,
+            effects: vec![(Event::BeforeHandDraw, Effect::Scry(X))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: FREE_ATTACK_POWER,
+            reduce_at: Event::PlayCard(CardType::Attack),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: HEATSINK,
+            effects: vec![(Event::PlayCard(CardType::Power), Effect::Draw(X))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: HELLO,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddCard {
+                    card: CardReference::RandomRarity(Rarity::Common),
+                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
+                    copies: X,
+                    modifier: CardModifier::None,
+                },
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: INFINITE_BLADES,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddCard {
+                    card: CardReference::ByName(cards::SHIV),
+                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
+                    copies: X,
+                    modifier: CardModifier::None,
+                },
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: INNATE_THIEVERY,
+            effects: vec![(Event::Damage(Target::TargetEnemy), Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: INVINCIBLE,
+            effects: vec![(Event::HpLoss(Target::_Self), Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: JUGGERNAUT,
+            effects: vec![(
+                Event::Block(Target::_Self),
+                Effect::Damage(X, Target::RandomEnemy),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: LIFE_LINK,
+            is_additive: false,
+            effects: vec![(Event::Die(Target::_Self), Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: LIKE_WATER,
+            effects: vec![(
+                Event::BeforeEnemyMove,
+                Effect::If(
+                    Condition::Stance(Stance::Calm),
+                    vec![Effect::Block(X, Target::_Self)],
                     vec![],
                 ),
-                ..BaseBuff::default()
-            },
-            METALLICIZE => BaseBuff {
-                name: METALLICIZE,
-                effects: vec![(Event::BeforeHandDiscard, Effect::Block(X, Target::_Self))],
-                ..BaseBuff::default()
-            },
-            NEXT_TURN_BLOCK => BaseBuff {
-                name: NEXT_TURN_BLOCK,
-                effects: vec![(Event::BeforeHandDraw, Effect::Block(X, Target::_Self))],
-                expire_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            PAINFUL_STABS => BaseBuff {
-                name: PAINFUL_STABS,
-                effects: vec![(
-                    Event::UnblockedDamage(Target::TargetEnemy),
-                    Effect::AddCard {
-                        card: CardReference::ByName(cards::WOUND),
-                        destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                        copies: X,
-                        modifier: CardModifier::None,
-                    },
-                )],
-                ..BaseBuff::default()
-            },
-            PLATED_ARMOR => BaseBuff {
-                name: PLATED_ARMOR,
-                effects: vec![(Event::BeforeHandDiscard, Effect::Block(X, Target::_Self))],
-                reduce_at: Event::UnblockedDamage(Target::_Self),
-                ..BaseBuff::default()
-            },
-            RITUAL => BaseBuff {
-                name: RITUAL,
-                effects: vec![(Event::TurnEnd, Effect::AddBuff(STRENGTH, X, Target::_Self))],
-                ..BaseBuff::default()
-            },
-            SPLIT => BaseBuff {
-                name: SPLIT,
-                is_additive: false,
-                ..BaseBuff::default()
-            },
-            STRENGTH => BaseBuff {
-                name: STRENGTH,
-                ..BaseBuff::default()
-            },
-            STRENGTH_UP => BaseBuff {
-                name: STRENGTH_UP,
-                effects: vec![(
-                    Event::AfterEnemyMove,
-                    Effect::AddBuff(STRENGTH, X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            THORNS => BaseBuff {
-                name: THORNS,
-                effects: vec![(
-                    Event::AttackDamage(Target::_Self),
-                    Effect::Damage(X, Target::Attacker),
-                )],
-                ..BaseBuff::default()
-            },
-            VIGOR => BaseBuff {
-                name: VIGOR,
-                effects: vec![(Event::PlayCard(CardType::Attack), Effect::Custom)],
-                expire_at: Event::PlayCard(CardType::Attack),
-                ..BaseBuff::default()
-            },
-            ACCURACY => BaseBuff {
-                name: ACCURACY,
-                effects: vec![(
-                    Event::PlayCard(CardType::ByName(cards::SHIV)),
-                    Effect::Custom,
-                )],
-                ..BaseBuff::default()
-            },
-            AFTER_IMAGE => BaseBuff {
-                name: AFTER_IMAGE,
-                effects: vec![(
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: METALLICIZE,
+            effects: vec![(Event::BeforeHandDiscard, Effect::Block(X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: NEXT_TURN_BLOCK,
+            effects: vec![(Event::BeforeHandDraw, Effect::Block(X, Target::_Self))],
+            expire_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: PAINFUL_STABS,
+            effects: vec![(
+                Event::UnblockedDamage(Target::TargetEnemy),
+                Effect::AddCard {
+                    card: CardReference::ByName(cards::WOUND),
+                    destination: CardLocation::DiscardPile(RelativePosition::Bottom),
+                    copies: X,
+                    modifier: CardModifier::None,
+                },
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: PLATED_ARMOR,
+            effects: vec![(Event::BeforeHandDiscard, Effect::Block(X, Target::_Self))],
+            reduce_at: Event::UnblockedDamage(Target::_Self),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: RITUAL,
+            effects: vec![(Event::TurnEnd, Effect::AddBuff(STRENGTH, X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: SPLIT,
+            is_additive: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: STRENGTH,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: STRENGTH_UP,
+            effects: vec![(
+                Event::AfterEnemyMove,
+                Effect::AddBuff(STRENGTH, X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: THORNS,
+            effects: vec![(
+                Event::AttackDamage(Target::_Self),
+                Effect::Damage(X, Target::Attacker),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: VIGOR,
+            effects: vec![(Event::PlayCard(CardType::Attack), Effect::Custom)],
+            expire_at: Event::PlayCard(CardType::Attack),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ACCURACY,
+            effects: vec![(
+                Event::PlayCard(CardType::ByName(cards::SHIV)),
+                Effect::Custom,
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: AFTER_IMAGE,
+            effects: vec![(
+                Event::PlayCard(CardType::All),
+                Effect::If(
+                    Condition::Equals(N, Fixed(0)),
+                    vec![Effect::ResetN, Effect::Damage(X, Target::AllEnemies)],
+                    vec![],
+                ),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: LOOP,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: MACHINE_LEARNING,
+            effects: vec![(Event::BeforeHandDraw, Effect::Draw(X))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: MALLEABLE,
+            effects: vec![(Event::Custom, Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: MAGNETISM,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddCard {
+                    card: CardReference::RandomClass(Class::None),
+                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
+                    copies: X,
+                    modifier: CardModifier::None,
+                },
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: MASTER_REALITY,
+            is_additive: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: MAYHEM,
+            effects: vec![(
+                Event::AfterHandDraw,
+                Effect::AutoPlayCard(CardLocation::DrawPile(RelativePosition::Top)),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: MENTAL_FORTRESS,
+            effects: vec![(
+                Event::StanceChange(Stance::All, Stance::All),
+                Effect::Block(X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: MODE_SHIFT,
+            effects: vec![(Event::UnblockedDamage(Target::_Self), Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: NIGHTMARE,
+            is_additive: false,
+            stacks: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: NIRVANA,
+            effects: vec![(Event::Scry, Effect::Block(X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: NOXIOUS_FUMES,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddBuff(POISON, X, Target::AllEnemies),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: OMEGA,
+            effects: vec![(
+                Event::BeforeEnemyMove,
+                Effect::Damage(X, Target::AllEnemies),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: PANACHE,
+            on_add: Effect::SetN(Fixed(5)),
+            effects: vec![
+                (Event::PlayCard(CardType::All), Effect::AddN(Fixed(-1))),
+                (
                     Event::PlayCard(CardType::All),
-                    Effect::Block(X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            AMPLIFY => BaseBuff {
-                name: AMPLIFY,
-                effects: vec![(Event::PlayCard(CardType::Power), Effect::Custom)],
-                expire_at: Event::BeforeEnemyMove,
-                reduce_at: Event::PlayCard(CardType::Power),
-                ..BaseBuff::default()
-            },
-            ASLEEP => BaseBuff {
-                name: ASLEEP,
-                expire_at: Event::UnblockedDamage(Target::_Self),
-                ..BaseBuff::default()
-            },
-            BATTLE_HYMN => BaseBuff {
-                name: BATTLE_HYMN,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddCard {
-                        card: CardReference::ByName(cards::SMITE),
-                        destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                        copies: X,
-                        modifier: CardModifier::None,
-                    },
-                )],
-                ..BaseBuff::default()
-            },
-            BEAT_OF_DEATH => BaseBuff {
-                name: BEAT_OF_DEATH,
-                effects: vec![(
-                    Event::PlayCard(CardType::All),
-                    Effect::Damage(X, Target::AllEnemies),
-                )],
-                ..BaseBuff::default()
-            },
-            BERSERK => BaseBuff {
-                name: BERSERK,
-                effects: vec![(Event::BeforeHandDraw, Effect::AddEnergy(X))],
-                ..BaseBuff::default()
-            },
-            BLASPHEMER => BaseBuff {
-                name: BLASPHEMER,
-                is_additive: false,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::Damage(Fixed(9999), Target::_Self),
-                )],
-                expire_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            BLUR => BaseBuff {
-                name: BLUR,
-                reduce_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            BRUTALITY => BaseBuff {
-                name: BRUTALITY,
-                effects: vec![
-                    (Event::BeforeHandDraw, Effect::LoseHp(X, Target::_Self)),
-                    (Event::BeforeHandDraw, Effect::Draw(X)),
-                ],
-                ..BaseBuff::default()
-            },
-            BURST => BaseBuff {
-                name: BURST,
-                effects: vec![(Event::PlayCard(CardType::Skill), Effect::Custom)],
-                reduce_at: Event::PlayCard(CardType::Skill),
-                ..BaseBuff::default()
-            },
-            CURL_UP => BaseBuff {
-                name: CURL_UP,
-                effects: vec![(
-                    Event::AttackDamage(Target::_Self),
-                    Effect::Block(X, Target::_Self),
-                )],
-                expire_at: Event::AttackDamage(Target::_Self),
-                ..BaseBuff::default()
-            },
-            CURIOSITY => BaseBuff {
-                name: CURIOSITY,
-                effects: vec![(
-                    Event::PlayCard(CardType::Power),
-                    Effect::AddBuff(STRENGTH, X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            COLLECT => BaseBuff {
-                name: COLLECT,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddCard {
-                        card: CardReference::ByName(cards::COLLECT),
-                        destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                        copies: Fixed(1),
-                        modifier: CardModifier::Upgraded,
-                    },
-                )],
-                reduce_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            COMBUST => BaseBuff {
-                name: COMBUST,
-                on_add: Effect::AddN(Fixed(1)),
-                effects: vec![
-                    (
-                        Event::BeforeEnemyMove,
-                        Effect::LoseHp(Amount::N, Target::_Self),
-                    ),
-                    (
-                        Event::BeforeEnemyMove,
-                        Effect::Damage(Amount::X, Target::AllEnemies),
-                    ),
-                ],
-                ..BaseBuff::default()
-            },
-            CORRUPTION => BaseBuff {
-                name: CORRUPTION,
-                is_additive: false,
-                ..BaseBuff::default()
-            },
-            CREATIVE_AI => BaseBuff {
-                name: CREATIVE_AI,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddCard {
-                        card: CardReference::RandomType(CardType::Power),
-                        destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                        copies: X,
-                        modifier: CardModifier::None,
-                    },
-                )],
-                ..BaseBuff::default()
-            },
-            DARK_EMBRACE => BaseBuff {
-                name: DARK_EMBRACE,
-                effects: vec![(Event::Exhaust, Effect::Draw(X))],
-                ..BaseBuff::default()
-            },
-            DEMON_FORM => BaseBuff {
-                name: DEMON_FORM,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddBuff(STRENGTH, X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            DEVA => BaseBuff {
-                name: DEVA,
-                effects: vec![
-                    (Event::BeforeHandDraw, Effect::AddN(X)),
-                    (Event::BeforeHandDraw, Effect::AddEnergy(N)),
-                ],
-                ..BaseBuff::default()
-            },
-            DEVOTION => BaseBuff {
-                name: DEVOTION,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddBuff(MANTRA, X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            DOUBLE_DAMAGE => BaseBuff {
-                name: DOUBLE_DAMAGE,
-                reduce_at: Event::BeforeEnemyMove,
-                ..BaseBuff::default()
-            },
-            DOUBLE_TAP => BaseBuff {
-                name: DOUBLE_TAP,
-                reduce_at: Event::PlayCard(CardType::Attack),
-                ..BaseBuff::default()
-            },
-            DUPLICATION => BaseBuff {
-                name: DUPLICATION,
-                reduce_at: Event::PlayCard(CardType::All),
-                ..BaseBuff::default()
-            },
-            ECHO_FORM => BaseBuff {
-                name: ECHO_FORM,
-                ..BaseBuff::default()
-            },
-            ELECTRO => BaseBuff {
-                name: ELECTRO,
-                is_additive: false,
-                ..BaseBuff::default()
-            },
-            ENRAGE => BaseBuff {
-                name: ENRAGE,
-                effects: vec![(
-                    Event::PlayCard(CardType::Attack),
-                    Effect::AddBuff(STRENGTH, X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            ENVENOM => BaseBuff {
-                name: ENVENOM,
-                effects: vec![(
-                    Event::UnblockedDamage(Target::TargetEnemy),
-                    Effect::AddBuff(POISON, X, Target::TargetEnemy),
-                )],
-                ..BaseBuff::default()
-            },
-            EQUILIBRIUM => BaseBuff {
-                name: EQUILIBRIUM,
-                reduce_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            ESTABLISHMENT => BaseBuff {
-                name: ESTABLISHMENT,
-                ..BaseBuff::default()
-            },
-            EVOLVE => BaseBuff {
-                name: EVOLVE,
-                effects: vec![(Event::DrawCard(CardType::Status), Effect::Draw(X))],
-                ..BaseBuff::default()
-            },
-            EXPLODE => BaseBuff {
-                name: EXPLODE,
-                reduce_at: Event::AttackDamage(Target::TargetEnemy),
-                ..BaseBuff::default()
-            },
-            FADING => BaseBuff {
-                name: FADING,
-                reduce_at: Event::AfterEnemyMove,
-                effects: vec![(
-                    Event::UnBuff(FADING, Target::_Self),
-                    Effect::Die(Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            FEEL_NO_PAIN => BaseBuff {
-                name: FEEL_NO_PAIN,
-                effects: vec![(Event::Exhaust, Effect::Block(X, Target::_Self))],
-                ..BaseBuff::default()
-            },
-            FLAME_BARRIER => BaseBuff {
-                name: FLAME_BARRIER,
-                effects: vec![(
-                    Event::AttackDamage(Target::_Self),
-                    Effect::Damage(X, Target::Attacker),
-                )],
-                expire_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            FLYING => BaseBuff {
-                name: FLYING,
-                effects: vec![(Event::AttackDamage(Target::_Self), Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            FIRE_BREATHING => BaseBuff {
-                name: FIRE_BREATHING,
-                effects: vec![(
-                    Event::Multiple(vec![
-                        Event::DrawCard(CardType::Status),
-                        Event::DrawCard(CardType::Status),
-                    ]),
-                    Effect::Damage(X, Target::AllEnemies),
-                )],
-                ..BaseBuff::default()
-            },
-            FORESIGHT => BaseBuff {
-                name: FORESIGHT,
-                effects: vec![(Event::BeforeHandDraw, Effect::Scry(X))],
-                ..BaseBuff::default()
-            },
-            FREE_ATTACK_POWER => BaseBuff {
-                name: FREE_ATTACK_POWER,
-                reduce_at: Event::PlayCard(CardType::Attack),
-                ..BaseBuff::default()
-            },
-            HEATSINK => BaseBuff {
-                name: HEATSINK,
-                effects: vec![(Event::PlayCard(CardType::Power), Effect::Draw(X))],
-                ..BaseBuff::default()
-            },
-            HELLO => BaseBuff {
-                name: HELLO,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddCard {
-                        card: CardReference::RandomRarity(Rarity::Common),
-                        destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                        copies: X,
-                        modifier: CardModifier::None,
-                    },
-                )],
-                ..BaseBuff::default()
-            },
-            INFINITE_BLADES => BaseBuff {
-                name: INFINITE_BLADES,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddCard {
-                        card: CardReference::ByName(cards::SHIV),
-                        destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                        copies: X,
-                        modifier: CardModifier::None,
-                    },
-                )],
-                ..BaseBuff::default()
-            },
-            INNATE_THIEVERY => BaseBuff {
-                name: INNATE_THIEVERY,
-                effects: vec![(Event::Damage(Target::TargetEnemy), Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            INVINCIBLE => BaseBuff {
-                name: INVINCIBLE,
-                effects: vec![(Event::HpLoss(Target::_Self), Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            JUGGERNAUT => BaseBuff {
-                name: JUGGERNAUT,
-                effects: vec![(
-                    Event::Block(Target::_Self),
-                    Effect::Damage(X, Target::RandomEnemy),
-                )],
-                ..BaseBuff::default()
-            },
-            LIFE_LINK => BaseBuff {
-                name: LIFE_LINK,
-                is_additive: false,
-                effects: vec![(Event::Die(Target::_Self), Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            LIKE_WATER => BaseBuff {
-                name: LIKE_WATER,
-                effects: vec![(
-                    Event::BeforeEnemyMove,
                     Effect::If(
-                        Condition::Stance(Stance::Calm),
-                        vec![Effect::Block(X, Target::_Self)],
+                        Condition::Equals(N, Fixed(0)),
+                        vec![Effect::ResetN, Effect::Damage(X, Target::AllEnemies)],
                         vec![],
                     ),
-                )],
-                ..BaseBuff::default()
-            },
-            LOOP => BaseBuff {
-                name: LOOP,
-                ..BaseBuff::default()
-            },
-            MACHINE_LEARNING => BaseBuff {
-                name: MACHINE_LEARNING,
-                effects: vec![(Event::BeforeHandDraw, Effect::Draw(X))],
-                ..BaseBuff::default()
-            },
-            MALLEABLE => BaseBuff {
-                name: MALLEABLE,
-                effects: vec![(Event::Custom, Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            MAGNETISM => BaseBuff {
-                name: MAGNETISM,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddCard {
-                        card: CardReference::RandomClass(Class::None),
-                        destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                        copies: X,
-                        modifier: CardModifier::None,
-                    },
-                )],
-                ..BaseBuff::default()
-            },
-            MASTER_REALITY => BaseBuff {
-                name: MASTER_REALITY,
-                is_additive: false,
-                ..BaseBuff::default()
-            },
-            MAYHEM => BaseBuff {
-                name: MAYHEM,
-                effects: vec![(
+                ),
+            ],
+
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: PEN_NIB,
+            is_additive: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: PHANTASMAL,
+            reduce_at: Event::BeforeHandDraw,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddBuff(DOUBLE_DAMAGE, Fixed(1), Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: RAGE,
+            effects: vec![(
+                Event::PlayCard(CardType::Attack),
+                Effect::Block(X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: REACTIVE,
+            effects: vec![(Event::UnblockedDamage(Target::_Self), Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: REBOUND,
+            reduce_at: Event::PlayCard(CardType::All),
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: REGENERATION,
+            reduce_at: Event::BeforeEnemyMove,
+            effects: vec![(Event::BeforeEnemyMove, Effect::Heal(X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: REGENERATE,
+            effects: vec![(Event::BeforeEnemyMove, Effect::Heal(X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: RUSHDOWN,
+            effects: vec![(
+                Event::StanceChange(Stance::All, Stance::Wrath),
+                Effect::Draw(X),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: REPAIR,
+            effects: vec![(Event::CombatEnd, Effect::Heal(X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: RUPTURE,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: SADISTIC,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: SHARP_HIDE,
+            effects: vec![(Event::Custom, Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: SHIFTING,
+            effects: vec![(
+                Event::PlayCard(CardType::Attack),
+                Effect::Damage(X, Target::Attacker),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: SIMMERING_RAGE,
+            is_additive: false,
+            expire_at: Event::BeforeHandDraw,
+            effects: vec![(Event::BeforeHandDraw, Effect::SetStance(Stance::Wrath))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: STASIS,
+            is_additive: false,
+            effects: vec![(Event::Die(Target::_Self), Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: STATIC_DISCHARGE,
+            effects: vec![(
+                Event::UnblockedDamage(Target::_Self),
+                Effect::ChannelOrb(Orb::Lightning),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: STORM,
+            effects: vec![(
+                Event::PlayCard(CardType::Power),
+                Effect::ChannelOrb(Orb::Lightning),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: STUDY,
+            effects: vec![(
+                Event::BeforeEnemyMove,
+                Effect::AddCard {
+                    card: CardReference::ByName(cards::INSIGHT),
+                    destination: CardLocation::DrawPile(RelativePosition::Random),
+                    copies: X,
+                    modifier: CardModifier::None,
+                },
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: SPORE_CLOUD,
+            effects: vec![(
+                Event::Die(Target::_Self),
+                Effect::AddBuff(VULNERABLE, X, Target::AllEnemies),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: SURROUNDED,
+            is_additive: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: TIME_WARP,
+            is_additive: false,
+            reduce_at: Event::PlayCard(CardType::All),
+            effects: vec![(Event::UnBuff(TIME_WARP, Target::_Self), Effect::Custom)],
+            stacks: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: THE_BOMB,
+            is_additive: false,
+            effects: vec![(Event::BeforeEnemyMove, Effect::Custom)],
+            stacks: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: THOUSAND_CUTS,
+            effects: vec![(
+                Event::PlayCard(CardType::All),
+                Effect::Damage(X, Target::AllEnemies),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: TOOLS_OF_THE_TRADE,
+            effects: vec![
+                (Event::AfterHandDraw, Effect::Draw(X)),
+                (
                     Event::AfterHandDraw,
-                    Effect::AutoPlayCard(CardLocation::DrawPile(RelativePosition::Top)),
-                )],
-                ..BaseBuff::default()
-            },
-            MENTAL_FORTRESS => BaseBuff {
-                name: MENTAL_FORTRESS,
-                effects: vec![(
-                    Event::StanceChange(Stance::All, Stance::All),
-                    Effect::Block(X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            MODE_SHIFT => BaseBuff {
-                name: MODE_SHIFT,
-                effects: vec![(Event::UnblockedDamage(Target::_Self), Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            NIGHTMARE => BaseBuff {
-                name: NIGHTMARE,
-                is_additive: false,
-                stacks: false,
-                ..BaseBuff::default()
-            },
-            NIRVANA => BaseBuff {
-                name: NIRVANA,
-                effects: vec![(Event::Scry, Effect::Block(X, Target::_Self))],
-                ..BaseBuff::default()
-            },
-            NOXIOUS_FUMES => BaseBuff {
-                name: NOXIOUS_FUMES,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddBuff(POISON, X, Target::AllEnemies),
-                )],
-                ..BaseBuff::default()
-            },
-            OMEGA => BaseBuff {
-                name: OMEGA,
-                effects: vec![(
-                    Event::BeforeEnemyMove,
-                    Effect::Damage(X, Target::AllEnemies),
-                )],
-                ..BaseBuff::default()
-            },
-            PANACHE => BaseBuff {
-                name: PANACHE,
-                on_add: Effect::SetN(Fixed(5)),
-                effects: vec![
-                    (Event::PlayCard(CardType::All), Effect::AddN(Fixed(-1))),
-                    (
-                        Event::PlayCard(CardType::All),
-                        Effect::If(
-                            Condition::Equals(N, Fixed(0)),
-                            vec![Effect::ResetN, Effect::Damage(X, Target::AllEnemies)],
-                            vec![],
-                        ),
-                    ),
-                ],
-
-                ..BaseBuff::default()
-            },
-            PEN_NIB => BaseBuff {
-                name: PEN_NIB,
-                is_additive: false,
-                ..BaseBuff::default()
-            },
-            PHANTASMAL => BaseBuff {
-                name: PHANTASMAL,
-                reduce_at: Event::BeforeHandDraw,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddBuff(DOUBLE_DAMAGE, Fixed(1), Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            RAGE => BaseBuff {
-                name: RAGE,
-                effects: vec![(
-                    Event::PlayCard(CardType::Attack),
-                    Effect::Block(X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            REACTIVE => BaseBuff {
-                name: REACTIVE,
-                effects: vec![(Event::UnblockedDamage(Target::_Self), Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            REBOUND => BaseBuff {
-                name: REBOUND,
-                reduce_at: Event::PlayCard(CardType::All),
-                ..BaseBuff::default()
-            },
-            REGENERATION => BaseBuff {
-                name: REGENERATION,
-                reduce_at: Event::BeforeEnemyMove,
-                effects: vec![(Event::BeforeEnemyMove, Effect::Heal(X, Target::_Self))],
-                ..BaseBuff::default()
-            },
-            REGENERATE => BaseBuff {
-                name: REGENERATE,
-                effects: vec![(Event::BeforeEnemyMove, Effect::Heal(X, Target::_Self))],
-                ..BaseBuff::default()
-            },
-            RUSHDOWN => BaseBuff {
-                name: RUSHDOWN,
-                effects: vec![(
-                    Event::StanceChange(Stance::All, Stance::Wrath),
-                    Effect::Draw(X),
-                )],
-                ..BaseBuff::default()
-            },
-            REPAIR => BaseBuff {
-                name: REPAIR,
-                effects: vec![(Event::CombatEnd, Effect::Heal(X, Target::_Self))],
-                ..BaseBuff::default()
-            },
-            RUPTURE => BaseBuff {
-                name: RUPTURE,
-                ..BaseBuff::default()
-            },
-            SADISTIC => BaseBuff {
-                name: SADISTIC,
-                ..BaseBuff::default()
-            },
-            SHARP_HIDE => BaseBuff {
-                name: SHARP_HIDE,
-                effects: vec![(Event::Custom, Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            SHIFTING => BaseBuff {
-                name: SHIFTING,
-                effects: vec![(
-                    Event::PlayCard(CardType::Attack),
-                    Effect::Damage(X, Target::Attacker),
-                )],
-                ..BaseBuff::default()
-            },
-            SIMMERING_RAGE => BaseBuff {
-                name: SIMMERING_RAGE,
-                is_additive: false,
-                expire_at: Event::BeforeHandDraw,
-                effects: vec![(Event::BeforeHandDraw, Effect::SetStance(Stance::Wrath))],
-                ..BaseBuff::default()
-            },
-            STASIS => BaseBuff {
-                name: STASIS,
-                is_additive: false,
-                effects: vec![(Event::Die(Target::_Self), Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            STATIC_DISCHARGE => BaseBuff {
-                name: STATIC_DISCHARGE,
-                effects: vec![(
-                    Event::UnblockedDamage(Target::_Self),
-                    Effect::ChannelOrb(Orb::Lightning),
-                )],
-                ..BaseBuff::default()
-            },
-            STORM => BaseBuff {
-                name: STORM,
-                effects: vec![(
+                    Effect::DiscardCard(CardLocation::PlayerHand(RelativePosition::PlayerChoice(
+                        Fixed(1),
+                    ))),
+                ),
+            ],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: WAVE_OF_THE_HAND,
+            effects: vec![(
+                Event::Block(Target::_Self),
+                Effect::AddBuff(WEAK, X, Target::AllEnemies),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: WELL_LAID_PLANS,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: CONFUSED,
+            is_additive: false,
+            is_buff: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DEXTERITY_DOWN,
+            is_buff: false,
+            effects: vec![(
+                Event::BeforeEnemyMove,
+                Effect::AddBuff(DEXTERITY, NegX, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: FRAIL,
+            is_buff: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: NO_DRAW,
+            is_buff: false,
+            is_additive: false,
+            expire_at: Event::BeforeEnemyMove,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: POISON,
+            is_buff: false,
+            effects: vec![(Event::BeforeEnemyMove, Effect::LoseHp(X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: SHACKLED,
+            is_buff: false,
+            effects: vec![(
+                Event::BeforeEnemyMove,
+                Effect::AddBuff(STRENGTH, X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: SLOW,
+            is_buff: false,
+            effects: vec![(Event::PlayCard(CardType::All), Effect::Custom)],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: STRENGTH_DOWN,
+            is_buff: false,
+            effects: vec![(
+                Event::BeforeEnemyMove,
+                Effect::AddBuff(STRENGTH, NegX, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: VULNERABLE,
+            is_buff: false,
+            reduce_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: WEAK,
+            is_buff: false,
+            reduce_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BIAS,
+            is_buff: false,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddBuff(FOCUS, NegX, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: BLOCK_RETURN,
+            is_buff: false,
+            effects: vec![(
+                Event::AttackDamage(Target::_Self),
+                Effect::Block(X, Target::Attacker),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: CHOKED,
+            is_buff: false,
+            expire_at: Event::BeforeHandDraw,
+            effects: vec![(
+                Event::PlayCard(CardType::All),
+                Effect::LoseHp(X, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: CONSTRICTED,
+            is_buff: false,
+            effects: vec![(Event::BeforeEnemyMove, Effect::Damage(X, Target::_Self))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: CORPSE_EXPLOSION,
+            is_buff: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: DRAW_REDUCTION,
+            is_buff: false,
+            expire_at: Event::BeforeEnemyMove,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: ENTANGLED,
+            is_buff: false,
+            is_additive: false,
+            expire_at: Event::BeforeEnemyMove,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: FASTING,
+            is_buff: false,
+            effects: vec![(Event::BeforeHandDraw, Effect::AddEnergy(NegX))],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: HEX,
+            is_buff: false,
+            effects: vec![(
+                Event::Multiple(vec![
+                    Event::PlayCard(CardType::Curse),
                     Event::PlayCard(CardType::Power),
-                    Effect::ChannelOrb(Orb::Lightning),
-                )],
-                ..BaseBuff::default()
-            },
-            STUDY => BaseBuff {
-                name: STUDY,
-                effects: vec![(
-                    Event::BeforeEnemyMove,
-                    Effect::AddCard {
-                        card: CardReference::ByName(cards::INSIGHT),
-                        destination: CardLocation::DrawPile(RelativePosition::Random),
-                        copies: X,
-                        modifier: CardModifier::None,
-                    },
-                )],
-                ..BaseBuff::default()
-            },
-            SPORE_CLOUD => BaseBuff {
-                name: SPORE_CLOUD,
-                effects: vec![(
-                    Event::Die(Target::_Self),
-                    Effect::AddBuff(VULNERABLE, X, Target::AllEnemies),
-                )],
-                ..BaseBuff::default()
-            },
-            SURROUNDED => BaseBuff {
-                name: SURROUNDED,
-                is_additive: false,
-                ..BaseBuff::default()
-            },
-            TIME_WARP => BaseBuff {
-                name: TIME_WARP,
-                is_additive: false,
-                reduce_at: Event::PlayCard(CardType::All),
-                effects: vec![(Event::UnBuff(TIME_WARP, Target::_Self), Effect::Custom)],
-                stacks: false,
-                ..BaseBuff::default()
-            },
-            THE_BOMB => BaseBuff {
-                name: THE_BOMB,
-                is_additive: false,
-                effects: vec![(Event::BeforeEnemyMove, Effect::Custom)],
-                stacks: false,
-                ..BaseBuff::default()
-            },
-            THOUSAND_CUTS => BaseBuff {
-                name: THOUSAND_CUTS,
-                effects: vec![(
-                    Event::PlayCard(CardType::All),
-                    Effect::Damage(X, Target::AllEnemies),
-                )],
-                ..BaseBuff::default()
-            },
-            TOOLS_OF_THE_TRADE => BaseBuff {
-                name: TOOLS_OF_THE_TRADE,
-                effects: vec![
-                    (Event::AfterHandDraw, Effect::Draw(X)),
-                    (
-                        Event::AfterHandDraw,
-                        Effect::DiscardCard(CardLocation::PlayerHand(
-                            RelativePosition::PlayerChoice(Fixed(1)),
-                        )),
-                    ),
-                ],
-                ..BaseBuff::default()
-            },
-            WAVE_OF_THE_HAND => BaseBuff {
-                name: WAVE_OF_THE_HAND,
-                effects: vec![(
-                    Event::Block(Target::_Self),
-                    Effect::AddBuff(WEAK, X, Target::AllEnemies),
-                )],
-                ..BaseBuff::default()
-            },
-            WELL_LAID_PLANS => BaseBuff {
-                name: WELL_LAID_PLANS,
-                ..BaseBuff::default()
-            },
-
-            CONFUSED => BaseBuff {
-                name: CONFUSED,
-                is_additive: false,
-                is_buff: false,
-                ..BaseBuff::default()
-            },
-            DEXTERITY_DOWN => BaseBuff {
-                name: DEXTERITY_DOWN,
-                is_buff: false,
-                effects: vec![(
-                    Event::BeforeEnemyMove,
-                    Effect::AddBuff(DEXTERITY, NegX, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            FRAIL => BaseBuff {
-                name: FRAIL,
-                is_buff: false,
-                ..BaseBuff::default()
-            },
-            NO_DRAW => BaseBuff {
-                name: NO_DRAW,
-                is_buff: false,
-                is_additive: false,
-                expire_at: Event::BeforeEnemyMove,
-                ..BaseBuff::default()
-            },
-            POISON => BaseBuff {
-                name: POISON,
-                is_buff: false,
-                effects: vec![(Event::BeforeEnemyMove, Effect::LoseHp(X, Target::_Self))],
-                ..BaseBuff::default()
-            },
-            SHACKLED => BaseBuff {
-                name: SHACKLED,
-                is_buff: false,
-                effects: vec![(
-                    Event::BeforeEnemyMove,
-                    Effect::AddBuff(STRENGTH, X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            SLOW => BaseBuff {
-                name: SLOW,
-                is_buff: false,
-                effects: vec![(Event::PlayCard(CardType::All), Effect::Custom)],
-                ..BaseBuff::default()
-            },
-            STRENGTH_DOWN => BaseBuff {
-                name: STRENGTH_DOWN,
-                is_buff: false,
-                effects: vec![(
-                    Event::BeforeEnemyMove,
-                    Effect::AddBuff(STRENGTH, NegX, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            VULNERABLE => BaseBuff {
-                name: VULNERABLE,
-                is_buff: false,
-                reduce_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            WEAK => BaseBuff {
-                name: WEAK,
-                is_buff: false,
-                reduce_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            BIAS => BaseBuff {
-                name: BIAS,
-                is_buff: false,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddBuff(FOCUS, NegX, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            BLOCK_RETURN => BaseBuff {
-                name: BLOCK_RETURN,
-                is_buff: false,
-                effects: vec![(
-                    Event::AttackDamage(Target::_Self),
-                    Effect::Block(X, Target::Attacker),
-                )],
-                ..BaseBuff::default()
-            },
-            CHOKED => BaseBuff {
-                name: CHOKED,
-                is_buff: false,
-                expire_at: Event::BeforeHandDraw,
-                effects: vec![(
-                    Event::PlayCard(CardType::All),
-                    Effect::LoseHp(X, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            CONSTRICTED => BaseBuff {
-                name: CONSTRICTED,
-                is_buff: false,
-                effects: vec![(Event::BeforeEnemyMove, Effect::Damage(X, Target::_Self))],
-                ..BaseBuff::default()
-            },
-            CORPSE_EXPLOSION => BaseBuff {
-                name: CORPSE_EXPLOSION,
-                is_buff: false,
-                ..BaseBuff::default()
-            },
-            DRAW_REDUCTION => BaseBuff {
-                name: DRAW_REDUCTION,
-                is_buff: false,
-                expire_at: Event::BeforeEnemyMove,
-                ..BaseBuff::default()
-            },
-            ENTANGLED => BaseBuff {
-                name: ENTANGLED,
-                is_buff: false,
-                is_additive: false,
-                expire_at: Event::BeforeEnemyMove,
-                ..BaseBuff::default()
-            },
-            FASTING => BaseBuff {
-                name: FASTING,
-                is_buff: false,
-                effects: vec![(Event::BeforeHandDraw, Effect::AddEnergy(NegX))],
-                ..BaseBuff::default()
-            },
-            HEX => BaseBuff {
-                name: HEX,
-                is_buff: false,
-                effects: vec![(
-                    Event::Multiple(vec![
-                        Event::PlayCard(CardType::Curse),
-                        Event::PlayCard(CardType::Power),
-                        Event::PlayCard(CardType::Skill),
-                        Event::PlayCard(CardType::Status),
-                    ]),
-                    Effect::AddCard {
-                        card: CardReference::ByName(cards::DAZED),
-                        destination: CardLocation::DrawPile(RelativePosition::Random),
-                        copies: X,
-                        modifier: CardModifier::None,
-                    },
-                )],
-                ..BaseBuff::default()
-            },
-            LOCK_ON => BaseBuff {
-                name: LOCK_ON,
-                is_buff: false,
-                reduce_at: Event::BeforeHandDraw,
-                ..BaseBuff::default()
-            },
-            MARK => BaseBuff {
-                name: MARK,
-                effects: vec![(
-                    Event::Buff(MARK, Target::AnyFriendly),
-                    Effect::LoseHp(X, Target::_Self),
-                )],
-                is_buff: false,
-                ..BaseBuff::default()
-            },
-            NO_BLOCK => BaseBuff {
-                name: NO_BLOCK,
-                is_buff: false,
-                reduce_at: Event::BeforeEnemyMove,
-                ..BaseBuff::default()
-            },
-            WRAITH_FORM => BaseBuff {
-                name: WRAITH_FORM,
-                is_buff: false,
-                effects: vec![(
-                    Event::BeforeHandDraw,
-                    Effect::AddBuff(DEXTERITY, NegX, Target::_Self),
-                )],
-                ..BaseBuff::default()
-            },
-            _ => panic!("Unrecognized BaseBuff name"),
-        }
-    }
+                    Event::PlayCard(CardType::Skill),
+                    Event::PlayCard(CardType::Status),
+                ]),
+                Effect::AddCard {
+                    card: CardReference::ByName(cards::DAZED),
+                    destination: CardLocation::DrawPile(RelativePosition::Random),
+                    copies: X,
+                    modifier: CardModifier::None,
+                },
+            )],
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: LOCK_ON,
+            is_buff: false,
+            reduce_at: Event::BeforeHandDraw,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: MARK,
+            effects: vec![(
+                Event::Buff(MARK, Target::AnyFriendly),
+                Effect::LoseHp(X, Target::_Self),
+            )],
+            is_buff: false,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: NO_BLOCK,
+            is_buff: false,
+            reduce_at: Event::BeforeEnemyMove,
+            ..BaseBuff::default()
+        },
+        BaseBuff {
+            name: WRAITH_FORM,
+            is_buff: false,
+            effects: vec![(
+                Event::BeforeHandDraw,
+                Effect::AddBuff(DEXTERITY, NegX, Target::_Self),
+            )],
+            ..BaseBuff::default()
+        },
+    ]
 }
 
 pub const ACCURACY: &str = "Accuracy";

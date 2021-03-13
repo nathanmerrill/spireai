@@ -1,15 +1,14 @@
 use crate::models::core::*;
 use im::Vector;
-use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct GameState {
     pub class: Class,
     pub hp: u16,
     pub max_hp: u16,
     pub floor: u8,
-    pub deck: Vector<Rc<RefCell<Card>>>,
+    pub deck: Vector<Rc<Card>>,
     pub screen: ScreenState,
 }
 
@@ -18,17 +17,18 @@ pub struct Monster {
     pub max_hp: u16,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum ScreenState {
     Battle(BattleState),
+    None,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct BattleState {
-    pub draw: Vector<Rc<RefCell<Card>>>,
-    pub discard: Vector<Rc<RefCell<Card>>>,
-    pub exhaust: Vector<Rc<RefCell<Card>>>,
-    pub hand: Vector<Rc<RefCell<Card>>>,
+    pub draw: Vector<Rc<Card>>,
+    pub discard: Vector<Rc<Card>>,
+    pub exhaust: Vector<Rc<Card>>,
+    pub hand: Vector<Rc<Card>>,
 }
 
 #[derive(PartialEq)]
@@ -37,9 +37,9 @@ pub struct Relic {}
 #[derive(PartialEq)]
 pub struct Buff {}
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct Card {
-    pub base: BaseCard,
+    pub base: &'static BaseCard,
 }
 
 #[derive(PartialEq, Clone)]
@@ -54,7 +54,7 @@ pub struct GameAction {
 }
 
 pub struct GamePossibilitySet {
-    pub states: Vector<Rc<RefCell<GamePossibility>>>,
+    pub states: Vector<Rc<GamePossibility>>,
 }
 
 impl GamePossibilitySet {

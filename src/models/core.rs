@@ -1,4 +1,6 @@
-#[derive(PartialEq, Clone)]
+use strum_macros::Display;
+
+#[derive(PartialEq, Clone, Debug)]
 pub enum Rarity {
     Starter,
     Common,
@@ -12,7 +14,7 @@ pub enum Rarity {
     Boss,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug, Display)]
 pub enum Class {
     All,
     None,
@@ -22,7 +24,7 @@ pub enum Class {
     Watcher,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Amount {
     Fixed(i16),
     X,
@@ -38,7 +40,7 @@ pub enum Amount {
     Mult(Vec<Amount>),
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Orb {
     Lightning,
     Dark,
@@ -47,7 +49,7 @@ pub enum Orb {
     Any,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Stance {
     Calm,
     Wrath,
@@ -58,7 +60,7 @@ pub enum Stance {
 
 // Cards
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum CardType {
     Attack,
     Skill,
@@ -69,7 +71,7 @@ pub enum CardType {
     All,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct BaseCard {
     pub cost: Amount,
     pub rarity: Rarity,
@@ -90,7 +92,7 @@ pub struct BaseCard {
     pub removable: bool,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Upgradable {
     Never,
     Once,
@@ -98,7 +100,7 @@ pub enum Upgradable {
     Burn,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum CardModifier {
     None,
     SetZeroCombatCost,
@@ -107,7 +109,7 @@ pub enum CardModifier {
     Upgraded,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum CardReference {
     ByName(&'static str),
     CopyOf(CardLocation),
@@ -116,7 +118,7 @@ pub enum CardReference {
     RandomClass(Class),
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum CardLocation {
     This,
     DeckPile(RelativePosition),
@@ -128,7 +130,7 @@ pub enum CardLocation {
 
 // Buffs
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct BaseBuff {
     pub name: &'static str,
     pub stacks: bool,
@@ -137,7 +139,7 @@ pub struct BaseBuff {
     pub on_add: Effect,
     pub reduce_at: Event,
     pub expire_at: Event,
-    pub effects: vec![(Event, Effect)],
+    pub effects: Vec<(Event, Effect)>,
 }
 
 pub enum Activation {
@@ -174,19 +176,18 @@ pub struct BaseRelic {
     pub replaces_starter: bool,
 }
 
-// Monsters
-pub struct MonsterSet {
-    pub act: u8,
-    pub monsters: MonsterSetVarations,
-    pub easy: bool,
-    pub asc: u8,
-    pub chance: u8,
+pub struct Act {
+    easy_count: u8,
+    easy_fights: Vec<(u8, MonsterSet)>,
+    normal_fights: Vec<(u8, MonsterSet)>,
+    elites: Vec<MonsterSet>,
+    bosses: Vec<MonsterSet>,
 }
 
-pub enum MonsterSetVarations {
-    Fixed(Vec<BaseMonster>),
-    ChooseN(u8, Vec<BaseMonster>),
-    Multiple(Vec<MonsterSetVarations>),
+pub enum MonsterSet {
+    Fixed(Vec<&'static str>),
+    ChooseN(u8, Vec<&'static str>),
+    RandomSet(Vec<Vec<&'static str>>),
 }
 
 pub struct BaseMonster {
@@ -243,7 +244,7 @@ pub struct MonsterMove {
 }
 
 // Rooms
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum RoomType {
     Rest,
     Shop,
@@ -259,7 +260,7 @@ pub enum RoomType {
 
 // Events
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Event {
     // Time-based
     BeforeHandDraw,
@@ -313,7 +314,7 @@ pub enum Event {
     Custom,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum RelativePosition {
     Bottom,
     Top,
@@ -323,7 +324,7 @@ pub enum RelativePosition {
 }
 
 // Effects
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Effect {
     //Targeted
     Block(Amount, Target),
@@ -400,7 +401,7 @@ pub enum Effect {
     Custom,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Condition {
     Stance(Stance),
     MissingHp(Amount, Target),
@@ -429,7 +430,7 @@ pub enum Condition {
     Custom,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Target {
     _Self,
     RandomEnemy,

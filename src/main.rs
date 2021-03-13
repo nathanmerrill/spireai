@@ -6,9 +6,13 @@ use std::error::Error;
 use std::io::stdin;
 
 mod models;
+mod serialization;
 mod spireai;
 
-const DESIRED_CLASS: models::PlayerClass = models::PlayerClass::Ironclad;
+#[macro_use]
+extern crate lazy_static;
+
+const DESIRED_CLASS: models::core::Class = models::core::Class::Ironclad;
 
 fn main() {
     init_logger().unwrap();
@@ -17,9 +21,9 @@ fn main() {
     let mut ai = spireai::SpireAi::new();
 
     loop {
-        let response: models::Response = read_state();
+        let response: serialization::Response = read_state();
         let choice = match response.game_state {
-            Some(state) => ai.choose(&state),
+            Some(state) => ai.choose(&serialization::ToModel(&state)),
             None => {
                 if response.available_commands.contains(&String::from("start")) {
                     spireai::Choice::Start {
@@ -36,7 +40,7 @@ fn main() {
     }
 }
 
-fn read_state() -> models::Response {
+fn read_state() -> serialization::Response {
     match read_response() {
         Ok(a) => {
             match &a.error {
@@ -65,7 +69,7 @@ fn serialize_choice(choice: spireai::Choice) -> String {
             player_class,
             ascension,
         } => {
-            format!("START {:?} {}", player_class, fmt_opt_i(ascension))
+            format!("START {} {}", player_class, fmt_opt_i(ascension))
         }
         spireai::Choice::Potion {
             should_use,
@@ -123,12 +127,12 @@ fn init_logger() -> Result<(), Box<dyn Error>> {
     return Ok(());
 }
 
-fn read_response() -> Result<models::Response, Box<dyn Error>> {
+fn read_response() -> Result<serialization::Response, Box<dyn Error>> {
     let stdin = stdin();
     let input = &mut String::new();
     stdin.read_line(input)?;
     info!("{}", input);
-    let response: models::Response = serde_json::from_str(input)?;
+    let response: serialization::Response = serde_json::from_str(input)?;
 
     return Ok(response);
 }

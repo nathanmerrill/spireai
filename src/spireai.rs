@@ -1,17 +1,18 @@
-use crate::models;
+use log::error;
 
-use crate::models::core::*;
+use crate::models;
 use crate::models::state::*;
-use models::GameState;
+use models::state::GameState;
 
 pub struct SpireAi {
     expected_state: Option<GamePossibilitySet>,
+    // Neural net nodes
 }
 
 #[allow(dead_code)]
 pub enum Choice {
     Start {
-        player_class: models::PlayerClass,
+        player_class: models::core::Class,
         ascension: Option<u8>,
     },
     Potion {
@@ -40,26 +41,14 @@ impl SpireAi {
     }
 
     pub fn choose(&mut self, state: &GameState) -> Choice {
-        self.verify_state(state);
+        match &self.expected_state {
+            Some(expected) => verify_state(state, &expected),
+            None => {}
+        }
         let choice = make_choice(state);
-        let outcome = predict_outcome(state, &choice);
-        self.expected_state = Some(outcome);
-
-        BaseBuff::by_name("");
-        BaseCard::by_name("");
+        self.expected_state = predict_outcome(state, &choice);
 
         return choice;
-    }
-
-    fn verify_state(&mut self, new_state: &GameState) {
-        panic!("Not implemented");
-        /*
-        if let Some(state) = &self.expected_state {
-            if !state.contains_state(new_state) {
-                error!("New state does not match expected state.  New state: {:?}", new_state);
-                panic!()
-            }
-        }*/
     }
 
     /*
@@ -84,6 +73,16 @@ impl SpireAi {
         }
     }
     */
+}
+
+fn verify_state(outcome: &GameState, prediction: &GamePossibilitySet) {
+    if prediction.states.iter().all(|a| &a.state != outcome) {
+        error!(
+            "New state does not match expected state.  New state: {:?}",
+            outcome
+        );
+        panic!()
+    }
 }
 
 fn make_choice(state: &GameState) -> Choice {
@@ -112,6 +111,6 @@ fn handle_combat(state: &GameState) -> Choice {
     panic!("Not implemented")
 }
 
-fn predict_outcome(state: &GameState, choice: &Choice) -> GamePossibilitySet {
+fn predict_outcome(state: &GameState, choice: &Choice) -> Option<GamePossibilitySet> {
     panic!("Not implemented")
 }
