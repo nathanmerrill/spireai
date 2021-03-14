@@ -1,9 +1,10 @@
-use crate::models::core::*;
-use log::error;
 
 use crate::models;
+use crate::models::core::*;
 use crate::models::state::*;
 use models::state::GameState;
+
+pub mod evaluator;
 
 pub struct SpireAi {
     expected_state: Option<GamePossibilitySet>,
@@ -38,13 +39,18 @@ impl SpireAi {
         }
     }
 
-    pub fn choose(&mut self, state: &GameState) -> Choice {
-        match &self.expected_state {
-            Some(expected) => verify_state(state, &expected),
-            None => {}
-        }
-        let choice = make_choice(&state);
-        self.expected_state = predict_outcome(&state, &choice);
+    pub fn choose(&mut self, new_state: &GameState) -> Choice {
+        let state: &GameState = match &self.expected_state {
+            Some(expected) => {
+                verify_state(new_state, &expected)
+            }
+            None => {
+                new_state
+            }
+        };
+
+        let choice = make_choice(state);
+        self.expected_state = predict_outcome(state, &choice);
 
         return choice;
     }
@@ -73,13 +79,12 @@ impl SpireAi {
     */
 }
 
-fn verify_state(outcome: &GameState, prediction: &GamePossibilitySet) {
-    if prediction.states.iter().all(|a| &a.state != outcome) {
-        error!(
-            "New state does not match expected state.  New state: {:?}",
-            outcome
-        );
-        panic!()
+fn verify_state<'a>(outcome: &GameState, prediction: &'a GamePossibilitySet) -> &'a GameState {
+    let matches: Vec<&GameState> = prediction.states.iter().map(|a| &a.state).filter(|a| a == &outcome).collect();
+    match matches.len() {
+        0 => panic!("New state did not match any of the predicted states.\n New state: {:?}.\n\n Expected states: {:?}", outcome, prediction.states),
+        1 => matches.get(0).unwrap(),
+        _ => panic!("New state matched multiple predicted states.\n New state: {:?}.\n\n Expected states: {:?}", outcome, prediction.states),
     }
 }
 
@@ -179,122 +184,9 @@ fn card_targeted(card: &Card) -> bool {
 
 fn card_playable(card: &Card, battle_state: &BattleState, game_state: &GameState) -> bool {
     card.cost <= battle_state.energy &&
-    eval_condition(&card.base.playable_if, battle_state, game_state, &card.vars, &game_state.player, &None, card.base.name)
+    evaluator::eval_condition(&card.base.playable_if, battle_state, game_state, &evaluator::Binding::Card(card), &None)
 }
-
-fn eval_condition<'a>(condition: &Condition, battle_state: &BattleState, game_state: &GameState, vars: &Vars, creature: &Creature, action: &Option<GameAction>, name: &'static str) -> bool {
-    match condition {
-        Condition::Always => {
-            true
-        },
-        Condition::Never => {
-            false
-        },
-        Condition::Custom => {
-            match name {
-                _ => panic!("Unhandled custom condition: {}", name)
-            }
-        },
-        Condition::Dead(target) => {
-            match eval_target(target, battle_state, creature, action) {
-                ResolvedTarget::Player => {
-                    game_state.player.hp == 0
-                },
-                ResolvedTarget::Monster(idx) => {
-                    battle_state.monsters[idx as usize].creature.hp == 0
-                },
-                ResolvedTarget::AllMonsters => {
-                    battle_state.monsters.iter().all(|m| m.creature.hp == 0)
-                },
-                _ => panic!("Unexpected Dead condition: {:?}", condition)
-            }
-        },
-        _ => panic!("Unhandled condition: {:?}", condition)
-    }
-}
-
-enum ResolvedTarget {
-    Player,
-    Monster(u8),
-    AllMonsters,
-    RandomMonster(Vec<u8>),
-    None,
-}
-
-fn eval_target(target: &Target, battle_state: &BattleState, creature: &Creature, action: &Option<GameAction>) -> ResolvedTarget {
-    match target {
-        Target::_Self => {
-            match creature.is_player {
-                true => ResolvedTarget::Player,
-                false => ResolvedTarget::Monster(creature.position)
-            }
-        },
-        Target::AllEnemies => {
-            match creature.is_player {
-                true => ResolvedTarget::AllMonsters,
-                false => ResolvedTarget::Player,
-            }
-        },
-        Target::AnyFriendly => {
-            match creature.is_player {
-                true => ResolvedTarget::Player,
-                false => ResolvedTarget::AllMonsters,
-            }
-        },
-        Target::Attacker => {
-            match action {
-                Some(_action) => {
-                    match _action.is_attack {
-                        true => {
-                            match _action.creature.is_player {
-                                true => ResolvedTarget::Player,
-                                false => ResolvedTarget::Monster(_action.creature.position),
-                            }
-                        }
-                        false => ResolvedTarget::None,
-                    }
-                },
-                None => ResolvedTarget::None,
-            }
-        },
-        Target::Friendly(name) => {
-            match battle_state.monsters.iter().find(|m| &m.base.name == name) {
-                Some(monster) => {
-                    ResolvedTarget::Monster(monster.creature.position)
-                },
-                None => ResolvedTarget::None,
-            }
-        },
-        Target::RandomEnemy => {
-            match creature.is_player {
-                true => ResolvedTarget::RandomMonster((0..battle_state.monsters.len() as u8).collect()),
-                false => ResolvedTarget::Player,
-            }
-        },
-        Target::RandomFriendly => {
-            match creature.is_player {
-                true => ResolvedTarget::Player,
-                false => {
-                    let mut positions: Vec<u8> = (0..creature.position).collect();
-                    positions.extend(creature.position+1 .. battle_state.monsters.len() as u8);
-                    ResolvedTarget::RandomMonster(positions)
-                },
-            }
-        },
-        Target::TargetEnemy => {
-            match action {
-                Some(_action) => {
-                    match _action.creature.is_player {
-                        true => ResolvedTarget::Monster(_action.creature.position),
-                        false => ResolvedTarget::Player,
-                    }
-                },
-                None => ResolvedTarget::None,
-            }
-        }
-    }
-}
-
+ 
 fn predict_outcome(state: &GameState, choice: &Choice) -> Option<GamePossibilitySet> {
     panic!("Not implemented")
 }

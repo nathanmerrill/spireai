@@ -38,8 +38,8 @@ pub enum Amount {
     Mult(Vec<Amount>),
 }
 
-#[derive(Debug)]
-pub enum Orb {
+#[derive(PartialEq, Clone, Debug)]
+pub enum OrbType {
     Lightning,
     Dark,
     Frost,
@@ -272,7 +272,7 @@ pub struct ProbabilisticMove {
     pub starter_asc: Option<u8>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Intent {
     Attack,
     AttackBuff,
@@ -300,7 +300,7 @@ pub struct MonsterMove {
     pub intent: Intent,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum RoomType {
     Rest,
     Shop,
@@ -339,7 +339,7 @@ pub enum Event {
     Die(Target),
     Buff(&'static str, Target),
     UnBuff(&'static str, Target),
-    Channel(Orb),
+    Channel(OrbType),
 
     // Monster
     Move(&'static str),
@@ -408,7 +408,7 @@ pub enum Effect {
     AddMaxHp(Amount),
     Heal(Amount, Target),
     SetStance(Stance),
-    ChannelOrb(Orb),
+    ChannelOrb(OrbType),
     AddGold(Amount),
     AddPotionSlot(Amount),
     AddOrbSlot(Amount),

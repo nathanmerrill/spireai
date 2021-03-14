@@ -1408,7 +1408,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: ZAP,
             rarity: Starter,
-            on_play: vec![ChannelOrb(Orb::Lightning)],
+            on_play: vec![ChannelOrb(OrbType::Lightning)],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Defect, Skill)
         },
@@ -1416,7 +1416,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: BALL_LIGHTNING,
             on_play: vec![
                 AttackDamage(Upgradable(7, 10), TargetEnemy),
-                ChannelOrb(Orb::Lightning),
+                ChannelOrb(OrbType::Lightning),
             ],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Defect, Attack)
@@ -1460,7 +1460,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: COLD_SNAP,
             on_play: vec![
                 AttackDamage(Upgradable(6, 9), TargetEnemy),
-                ChannelOrb(Orb::Frost),
+                ChannelOrb(OrbType::Frost),
             ],
             ..BaseCard::new(Defect, Attack)
         },
@@ -1471,7 +1471,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: COOLHEADED,
-            on_play: vec![ChannelOrb(Orb::Frost), Draw(Upgradable(1, 2))],
+            on_play: vec![ChannelOrb(OrbType::Frost), Draw(Upgradable(1, 2))],
             ..BaseCard::new(Defect, Skill)
         },
         BaseCard {
@@ -1582,7 +1582,7 @@ fn all_cards() -> Vec<BaseCard> {
             targeted: StaticCondition::False,
             effects: vec![
                 (Event::CombatStart, SetN(Fixed(0))),
-                (Event::Channel(Orb::Frost), AddN(Upgradable(2, 3))),
+                (Event::Channel(OrbType::Frost), AddN(Upgradable(2, 3))),
             ],
             on_play: vec![AttackDamage(N, AllEnemies)],
             ..BaseCard::new(Defect, Attack)
@@ -1614,8 +1614,8 @@ fn all_cards() -> Vec<BaseCard> {
             name: CHAOS,
             rarity: Uncommon,
             on_play: vec![
-                ChannelOrb(Orb::Any),
-                If(Condition::Upgraded, vec![ChannelOrb(Orb::Any)], vec![]),
+                ChannelOrb(OrbType::Any),
+                If(Condition::Upgraded, vec![ChannelOrb(OrbType::Any)], vec![]),
             ],
             ..BaseCard::new(Defect, Skill)
         },
@@ -1624,7 +1624,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             innate: StaticCondition::WhenUpgraded,
             on_play: vec![
-                Repeat(Amount::EnemyCount, Box::new(ChannelOrb(Orb::Frost))),
+                Repeat(Amount::EnemyCount, Box::new(ChannelOrb(OrbType::Frost))),
                 ExhaustCard(This),
             ],
             cost: Fixed(0),
@@ -1643,7 +1643,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: DARKNESS,
             rarity: Uncommon,
             on_play: vec![
-                ChannelOrb(Orb::Dark),
+                ChannelOrb(OrbType::Dark),
                 If(Condition::Upgraded, vec![Effect::Custom], vec![]),
             ],
             ..BaseCard::new(Defect, Skill)
@@ -1660,7 +1660,7 @@ fn all_cards() -> Vec<BaseCard> {
             targeted: StaticCondition::False,
             on_play: vec![
                 AttackDamage(Upgradable(10, 14), AllEnemies),
-                ChannelOrb(Orb::Dark),
+                ChannelOrb(OrbType::Dark),
             ],
             cost: Fixed(2),
             ..BaseCard::new(Defect, Attack)
@@ -1717,7 +1717,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: FUSION,
             rarity: Uncommon,
-            on_play: vec![ChannelOrb(Orb::Plasma)],
+            on_play: vec![ChannelOrb(OrbType::Plasma)],
             cost: Upgradable(2, 1),
             ..BaseCard::new(Defect, Skill)
         },
@@ -1732,8 +1732,8 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 Block(Upgradable(7, 10), _Self),
-                ChannelOrb(Orb::Frost),
-                ChannelOrb(Orb::Frost),
+                ChannelOrb(OrbType::Frost),
+                ChannelOrb(OrbType::Frost),
             ],
             cost: Fixed(2),
             ..BaseCard::new(Defect, Skill)
@@ -1862,7 +1862,7 @@ fn all_cards() -> Vec<BaseCard> {
             on_play: vec![
                 Repeat(
                     Amount::Sum(vec![X, Upgradable(0, 1)]),
-                    Box::new(ChannelOrb(Orb::Lightning)),
+                    Box::new(ChannelOrb(OrbType::Lightning)),
                 ),
                 ExhaustCard(This),
             ],
@@ -1942,7 +1942,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             on_play: vec![
                 AddBuff(buffs::ELECTRO, Fixed(1), _Self),
-                Repeat(Upgradable(2, 3), Box::new(ChannelOrb(Orb::Lightning))),
+                Repeat(Upgradable(2, 3), Box::new(ChannelOrb(OrbType::Lightning))),
             ],
             cost: Fixed(2),
             ..BaseCard::new(Defect, Power)
@@ -1977,9 +1977,9 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             on_play: vec![
                 Damage(Amount::Upgradable(24, 30), TargetEnemy),
-                ChannelOrb(Orb::Plasma),
-                ChannelOrb(Orb::Plasma),
-                ChannelOrb(Orb::Plasma),
+                ChannelOrb(OrbType::Plasma),
+                ChannelOrb(OrbType::Plasma),
+                ChannelOrb(OrbType::Plasma),
             ],
             cost: Fixed(5),
             ..BaseCard::new(Defect, Attack)
@@ -1995,9 +1995,9 @@ fn all_cards() -> Vec<BaseCard> {
             name: RAINBOW,
             rarity: Rare,
             on_play: vec![
-                ChannelOrb(Orb::Lightning),
-                ChannelOrb(Orb::Frost),
-                ChannelOrb(Orb::Dark),
+                ChannelOrb(OrbType::Lightning),
+                ChannelOrb(OrbType::Frost),
+                ChannelOrb(OrbType::Dark),
                 If(Condition::Upgraded, vec![], vec![ExhaustCard(This)]),
             ],
             cost: Fixed(2),
@@ -2044,7 +2044,7 @@ fn all_cards() -> Vec<BaseCard> {
             targeted: StaticCondition::False,
             effects: vec![
                 (Event::CombatStart, Effect::SetN(Fixed(0))),
-                (Event::Channel(Orb::Lightning), Effect::AddN(Fixed(1))),
+                (Event::Channel(OrbType::Lightning), Effect::AddN(Fixed(1))),
             ],
             on_play: vec![Repeat(
                 N,

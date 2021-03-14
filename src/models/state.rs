@@ -1,15 +1,20 @@
 use crate::models::core::*;
 use im::Vector;
 use std::rc::Rc;
+use std::collections::HashMap;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct GameState {
     pub class: Class,
     pub floor: u8,
+    pub act: u8,
+    pub asc: u8,
     pub deck: Vector<Rc<Card>>,
     pub screen: ScreenState,
     pub potions: Vec<Potion>,
+    pub relics: HashMap<&'static str, Relic>,
     pub player: Creature,
+    pub room: RoomType,
 }
 
 #[derive(Clone, Debug)]
@@ -28,12 +33,16 @@ pub struct Monster {
     pub base: &'static BaseMonster,
     pub creature: Creature,
     pub targetable: bool,
+    pub intent: Intent,
+    pub vars: Vars,
 }
 
 impl PartialEq for Monster {
     fn eq(&self, other: &Self) -> bool {
         std::ptr::eq(self.base, other.base) && 
-        self.creature == other.creature
+        self.creature == other.creature &&
+        self.targetable == other.targetable &&
+        self.intent == other.intent
     }
 }
 
@@ -50,7 +59,9 @@ pub struct Creature {
     pub max_hp: u16,
     pub position: u8,
     pub is_player: bool,
+    pub buffs: HashMap<&'static str, Buff>,
 }
+
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct BattleState {
@@ -59,12 +70,41 @@ pub struct BattleState {
     pub exhaust: Vector<Rc<Card>>,
     pub hand: Vector<Rc<Card>>,
     pub monsters: Vec<Monster>,
+    pub orbs: Vec<Orb>,
     pub energy: u8,
 }
 
-pub struct Relic {}
+#[derive(PartialEq, Clone, Debug)]
+pub struct Orb {
+    pub base: OrbType,
+    pub n: u16,
+}
 
-pub struct Buff {}
+#[derive(Clone, Debug)]
+pub struct Relic {
+    pub base: &'static BaseRelic,
+    pub vars: Vars,
+}
+
+impl PartialEq for Relic {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.base, other.base) && 
+        self.vars.n == other.vars.n
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Buff {
+    pub base: &'static BaseBuff,
+    pub vars: Vars,
+}
+
+impl PartialEq for Buff {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.base, other.base) && 
+        self.vars.n == other.vars.n
+    }
+}
 
 
 #[derive(Clone, Debug)]
@@ -84,11 +124,13 @@ pub struct Card {
 
 impl PartialEq for Card {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base) && self.cost == other.cost
+        std::ptr::eq(self.base, other.base) && 
+        self.cost == other.cost &&
+        self.upgrades == other.upgrades
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub struct GamePossibility {
     pub probability: f64,
     pub state: GameState,

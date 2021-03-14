@@ -56,7 +56,7 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: CRACKED_CORE,
             activation: Activation::Event(Event::CombatStart),
-            effect: Effect::ChannelOrb(Orb::Lightning),
+            effect: Effect::ChannelOrb(OrbType::Lightning),
             rarity: Rarity::Starter,
             class: Class::Defect,
             ..BaseRelic::default()
@@ -631,7 +631,7 @@ fn all_relics() -> Vec<BaseRelic> {
             class: Class::Defect,
             rarity: Rarity::Uncommon,
             activation: Activation::Event(Event::CombatStart),
-            effect: Effect::ChannelOrb(Orb::Dark),
+            effect: Effect::ChannelOrb(OrbType::Dark),
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -1348,7 +1348,7 @@ fn all_relics() -> Vec<BaseRelic> {
             class: Class::Defect,
             rarity: Rarity::Boss,
             activation: Activation::Event(Event::CombatStart),
-            effect: Effect::ChannelOrb(Orb::Plasma),
+            effect: Effect::ChannelOrb(OrbType::Plasma),
             ..BaseRelic::default()
         },
         BaseRelic {

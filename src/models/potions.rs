@@ -187,7 +187,7 @@ fn all_potions() -> Vec<BasePotion> {
             targeted: StaticCondition::False,
             on_drink: vec![Effect::Repeat(
                 Upgradable(1, 2),
-                Box::new(Effect::ChannelOrb(Orb::Dark))
+                Box::new(Effect::ChannelOrb(OrbType::Dark))
             )],
         },
         BasePotion {
