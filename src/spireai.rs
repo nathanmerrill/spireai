@@ -1,4 +1,3 @@
-
 use crate::models;
 use crate::models::core::*;
 use crate::models::state::*;
@@ -41,12 +40,8 @@ impl SpireAi {
 
     pub fn choose(&mut self, new_state: &GameState) -> Choice {
         let state: &GameState = match &self.expected_state {
-            Some(expected) => {
-                verify_state(new_state, &expected)
-            }
-            None => {
-                new_state
-            }
+            Some(expected) => verify_state(new_state, &expected),
+            None => new_state,
         };
 
         let choice = make_choice(state);
@@ -80,7 +75,12 @@ impl SpireAi {
 }
 
 fn verify_state<'a>(outcome: &GameState, prediction: &'a GamePossibilitySet) -> &'a GameState {
-    let matches: Vec<&GameState> = prediction.states.iter().map(|a| &a.state).filter(|a| a == &outcome).collect();
+    let matches: Vec<&GameState> = prediction
+        .states
+        .iter()
+        .map(|a| &a.state)
+        .filter(|a| a == &outcome)
+        .collect();
     match matches.len() {
         0 => panic!("New state did not match any of the predicted states.\n New state: {:?}.\n\n Expected states: {:?}", outcome, prediction.states),
         1 => matches.get(0).unwrap(),
@@ -150,17 +150,19 @@ fn all_choices(state: &GameState) -> Vec<Choice> {
                         target_index: None,
                     });
                 }
-                
+
                 choices.push(Choice::Potion {
                     should_use: false,
                     slot: potion_index as u8,
                     target_index: None,
                 });
-            }            
-                
+            }
+
             choices.push(Choice::End);
         }
-        _ => {panic!("Unrecognized screen state")}
+        _ => {
+            panic!("Unrecognized screen state")
+        }
     }
 
     choices
@@ -183,10 +185,16 @@ fn card_targeted(card: &Card) -> bool {
 }
 
 fn card_playable(card: &Card, battle_state: &BattleState, game_state: &GameState) -> bool {
-    card.cost <= battle_state.energy &&
-    evaluator::eval_condition(&card.base.playable_if, battle_state, game_state, &evaluator::Binding::Card(card), &None)
+    card.cost <= battle_state.energy
+        && evaluator::eval_condition(
+            &card.base.playable_if,
+            battle_state,
+            game_state,
+            &evaluator::Binding::Card(card),
+            &None,
+        )
 }
- 
+
 fn predict_outcome(state: &GameState, choice: &Choice) -> Option<GamePossibilitySet> {
     panic!("Not implemented")
 }

@@ -1,8 +1,8 @@
 use crate::models;
 use im::Vector;
 use serde::Deserialize;
-use std::rc::Rc;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -362,7 +362,13 @@ pub fn to_model(state: &GameState) -> models::state::GameState {
             max_hp: state.max_hp as u16,
             is_player: true,
             position: 0,
-            buffs: convert_buffs(&state.combat_state.as_ref().map(|a| &a.player.powers).unwrap_or(&Vec::new()))
+            buffs: convert_buffs(
+                &state
+                    .combat_state
+                    .as_ref()
+                    .map(|a| &a.player.powers)
+                    .unwrap_or(&Vec::new()),
+            ),
         },
         floor: state.floor as u8,
         deck: convert_cards(&state.deck),
@@ -371,7 +377,7 @@ pub fn to_model(state: &GameState) -> models::state::GameState {
         act: state.act as u8,
         asc: state.ascension_level as u8,
         relics: convert_relics(&state.relics),
-        room: convert_room(&state.room_type)
+        room: convert_room(&state.room_type),
     }
 }
 
@@ -386,23 +392,23 @@ pub fn convert_room(room_type: &String) -> models::core::RoomType {
         "Elite" => models::core::RoomType::Elite,
         "Boss" => models::core::RoomType::Boss,
         "Treasure" => models::core::RoomType::Treasure,
-        _ => panic!("Unrecognized room type: {}", room_type)
+        _ => panic!("Unrecognized room type: {}", room_type),
     }
 }
 
 pub fn convert_relics(relics: &Vec<Relic>) -> HashMap<&'static str, models::state::Relic> {
-    relics.iter().map(|relic| {
-        models::state::Relic {
+    relics
+        .iter()
+        .map(|relic| models::state::Relic {
             base: models::relics::by_name(relic.name.as_str()),
             vars: models::state::Vars {
                 n: relic.counter as u8,
                 x: 0,
                 n_reset: 0,
             },
-        }
-    }).map(|relic| {
-        (relic.base.name, relic)
-    }).collect()
+        })
+        .map(|relic| (relic.base.name, relic))
+        .collect()
 }
 
 pub fn convert_intent(intent: &Intent) -> models::core::Intent {
@@ -437,73 +443,80 @@ pub fn convert_state(state: &GameState) -> models::state::ScreenState {
                 hand: convert_cards(&combat_state.hand),
                 monsters: convert_monsters(&combat_state.monsters),
                 energy: combat_state.player.energy as u8,
-                orbs: convert_orbs(&combat_state.player.orbs)
+                orbs: convert_orbs(&combat_state.player.orbs),
             })
-        },
-        _ => models::state::ScreenState::None
+        }
+        _ => models::state::ScreenState::None,
     }
 }
 
 fn convert_orbs(orbs: &Vec<OrbType>) -> Vec<models::state::Orb> {
-    orbs.iter().map(|orb| {
-        models::state::Orb {
+    orbs.iter()
+        .map(|orb| models::state::Orb {
             base: match orb.name.as_str() {
                 "Lightning" => models::core::OrbType::Lightning,
                 "Dark" => models::core::OrbType::Dark,
                 "Frost" => models::core::OrbType::Frost,
                 "Plasma" => models::core::OrbType::Plasma,
-                _ => panic!("Unrecognized orb type")
+                _ => panic!("Unrecognized orb type"),
             },
-            n: orb.evoke_amount as u16
-        }
-    }).collect()
+            n: orb.evoke_amount as u16,
+        })
+        .collect()
 }
 
 fn convert_monsters(monsters: &Vec<Monster>) -> Vec<models::state::Monster> {
-    monsters.iter().enumerate().map(|(index, monster)| models::state::Monster {
-        base: models::monsters::by_name(monster.name.as_str()),
-        creature: models::state::Creature {
-            hp: monster.current_hp as u16,
-            max_hp: monster.max_hp as u16,
-            is_player: false,
-            position: index as u8,
-            buffs: convert_buffs(&monster.powers)
-        },
-        vars: models::state::Vars {
-            n: 0,
-            x: 0,
-            n_reset: 0
-        },
-        targetable: !monster.is_gone,
-        intent: convert_intent(&monster.intent)
-    }).collect()
+    monsters
+        .iter()
+        .enumerate()
+        .map(|(index, monster)| models::state::Monster {
+            base: models::monsters::by_name(monster.name.as_str()),
+            creature: models::state::Creature {
+                hp: monster.current_hp as u16,
+                max_hp: monster.max_hp as u16,
+                is_player: false,
+                position: index as u8,
+                buffs: convert_buffs(&monster.powers),
+            },
+            vars: models::state::Vars {
+                n: 0,
+                x: 0,
+                n_reset: 0,
+            },
+            targetable: !monster.is_gone,
+            intent: convert_intent(&monster.intent),
+        })
+        .collect()
 }
 
 fn convert_buffs(buffs: &Vec<Power>) -> HashMap<&'static str, models::state::Buff> {
-    buffs.iter().map(|buff| {
-        models::state::Buff {
+    buffs
+        .iter()
+        .map(|buff| models::state::Buff {
             base: models::buffs::by_name(buff.name.as_str()),
             vars: models::state::Vars {
                 n: buff.amount as u8,
                 x: 0,
                 n_reset: 0,
             },
-        }
-    }).map(|buff| {
-        (buff.base.name, buff)
-    }).collect()
+        })
+        .map(|buff| (buff.base.name, buff))
+        .collect()
 }
 
 fn convert_potions(potions: &Vec<Potion>) -> Vec<models::state::Potion> {
     let mut vec = Vec::new();
     vec.extend(potions.iter().map(|potion| models::state::Potion {
-        base: models::potions::by_name(potion.name.as_str())
+        base: models::potions::by_name(potion.name.as_str()),
     }));
     vec
 }
 
 fn convert_cards(cards: &Vec<Card>) -> Vector<Rc<models::state::Card>> {
-    cards.iter().map(|card| Rc::new(convert_card(card))).collect()
+    cards
+        .iter()
+        .map(|card| Rc::new(convert_card(card)))
+        .collect()
 }
 
 fn convert_card(card: &Card) -> models::state::Card {

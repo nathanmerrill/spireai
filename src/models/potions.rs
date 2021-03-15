@@ -20,7 +20,6 @@ lazy_static! {
     };
 }
 
-
 fn all_potions() -> Vec<BasePotion> {
     vec![
         BasePotion {
@@ -187,7 +186,7 @@ fn all_potions() -> Vec<BasePotion> {
             targeted: StaticCondition::False,
             on_drink: vec![Effect::Repeat(
                 Upgradable(1, 2),
-                Box::new(Effect::ChannelOrb(OrbType::Dark))
+                Box::new(Effect::ChannelOrb(OrbType::Dark)),
             )],
         },
         BasePotion {

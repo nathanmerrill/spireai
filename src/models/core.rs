@@ -32,6 +32,8 @@ pub enum Amount {
     Custom,
     EnemyCount,
     Any,
+    PlayerBlock,
+    MaxHp,
     ByAsc(i16, i16, i16),
     Upgradable(i16, i16),
     Sum(Vec<Amount>),
@@ -281,12 +283,10 @@ pub enum Intent {
     Buff,
     Debuff,
     StrongDebuff,
-    Debug,
     Defend,
     DefendDebuff,
     DefendBuff,
     Escape,
-    Magic,
     None,
     Sleep,
     Stun,
@@ -337,6 +337,7 @@ pub enum Event {
     Heal(Target),
     Block(Target),
     Die(Target),
+    AnyBuff(Target),
     Buff(&'static str, Target),
     UnBuff(&'static str, Target),
     Channel(OrbType),
@@ -350,8 +351,9 @@ pub enum Event {
     Scry,
     Shuffle,
     StanceChange(Stance, Stance),
-    PlayCard(CardType),
-    DrawCard(CardType),
+    PlayCard(CardType), // Sets This to be the card played
+    DrawCard(CardType), // Sets This to be the card drawn
+    RetainCard(CardType), // Sets This to be the card retained
 
     // Non-fight
     ChestOpen,
@@ -392,6 +394,7 @@ pub enum Effect {
     LoseStr(Amount, Target),
     HealPercentage(Amount, Target),
     RemoveDebuffs(Target),
+    RetainBlock(Amount),
     Die(Target),
     EndTurn,
 
@@ -428,7 +431,9 @@ pub enum Effect {
     },
     UpgradeCard(CardLocation),
     AutoPlayCard(CardLocation),
-    SetCardCost(CardLocation, Amount),
+    AddCardCost(CardLocation, Amount),
+    RandomizeCost(CardLocation),
+    RetainCard(CardLocation),
 
     // Meta-scaling
     CardReward,
@@ -446,13 +451,21 @@ pub enum Effect {
         choices: Vec<&'static str>,
         count: Amount,
     },
+    
+    // Event-related
+    Duplicate,
+    Boost(Amount),
+    BoostMult(Amount), // Adds/subtracts to the multiplier. In percentage units
+    Cancel,
+
+    IfAmount(Vec<Effect>, Vec<Effect>),
 
     //Meta
     If(Condition, Vec<Effect>, Vec<Effect>),
     Multiple(Vec<Effect>),
     Repeat(Amount, Box<Effect>),
     None,
-    Custom,
+    //Custom,
 }
 
 #[derive(Debug)]

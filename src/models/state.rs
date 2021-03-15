@@ -1,7 +1,7 @@
 use crate::models::core::*;
 use im::Vector;
-use std::rc::Rc;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct GameState {
@@ -19,7 +19,7 @@ pub struct GameState {
 
 #[derive(Clone, Debug)]
 pub struct Potion {
-    pub base: &'static BasePotion
+    pub base: &'static BasePotion,
 }
 
 impl PartialEq for Potion {
@@ -39,10 +39,10 @@ pub struct Monster {
 
 impl PartialEq for Monster {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base) && 
-        self.creature == other.creature &&
-        self.targetable == other.targetable &&
-        self.intent == other.intent
+        std::ptr::eq(self.base, other.base)
+            && self.creature == other.creature
+            && self.targetable == other.targetable
+            && self.intent == other.intent
     }
 }
 
@@ -52,7 +52,6 @@ pub enum ScreenState {
     None,
 }
 
-
 #[derive(PartialEq, Clone, Debug)]
 pub struct Creature {
     pub hp: u16,
@@ -61,7 +60,6 @@ pub struct Creature {
     pub is_player: bool,
     pub buffs: HashMap<&'static str, Buff>,
 }
-
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct BattleState {
@@ -88,8 +86,7 @@ pub struct Relic {
 
 impl PartialEq for Relic {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base) && 
-        self.vars.n == other.vars.n
+        std::ptr::eq(self.base, other.base) && self.vars.n == other.vars.n
     }
 }
 
@@ -101,11 +98,9 @@ pub struct Buff {
 
 impl PartialEq for Buff {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base) && 
-        self.vars.n == other.vars.n
+        std::ptr::eq(self.base, other.base) && self.vars.n == other.vars.n
     }
 }
-
 
 #[derive(Clone, Debug)]
 pub struct Vars {
@@ -124,9 +119,9 @@ pub struct Card {
 
 impl PartialEq for Card {
     fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base) && 
-        self.cost == other.cost &&
-        self.upgrades == other.upgrades
+        std::ptr::eq(self.base, other.base)
+            && self.cost == other.cost
+            && self.upgrades == other.upgrades
     }
 }
 

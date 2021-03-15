@@ -2468,7 +2468,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: SANDS_OF_TIME,
             rarity: Uncommon,
             retain: StaticCondition::True,
-            on_retain: vec![SetCardCost(This, Sum(vec![X, Fixed(-1)]))],
+            on_retain: vec![AddCardCost(This, Fixed(-1))],
             on_play: vec![AttackDamage(Upgradable(20, 26), TargetEnemy)],
             cost: Fixed(4),
             ..BaseCard::new(Watcher, Attack)
