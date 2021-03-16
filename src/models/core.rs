@@ -38,6 +38,7 @@ pub enum Amount {
     Upgradable(i16, i16),
     Sum(Vec<Amount>),
     Mult(Vec<Amount>),
+    EventAmount,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -331,6 +332,7 @@ pub enum Event {
     Damage(Target),
     AttackDamage(Target),
     UnblockedDamage(Target),
+    OrbDamage(Target),
     HpLoss(Target),
     HpChange(Target),
     HalfHp(Target),
@@ -399,6 +401,7 @@ pub enum Effect {
     EndTurn,
 
     AddX(Amount),
+    SetX(Amount),
 
     SetN(Amount),
     AddN(Amount),
@@ -451,11 +454,13 @@ pub enum Effect {
         choices: Vec<&'static str>,
         count: Amount,
     },
+    FakeDie,
     
     // Event-related
     Duplicate,
     Boost(Amount),
     BoostMult(Amount), // Adds/subtracts to the multiplier. In percentage units
+    Cap(Amount),
     Cancel,
 
     IfAmount(Vec<Effect>, Vec<Effect>),
@@ -485,7 +490,7 @@ pub enum Condition {
     Act(u8),
     Dead(Target),
     InPosition(Target, u8),
-    HasFriendlies(u8),
+    HasFriendlies(u8), //Does not include fake deaths
     Not(Box<Condition>),
     LastCard(CardType),
     HasCard(CardLocation, CardType),

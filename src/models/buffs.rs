@@ -488,7 +488,7 @@ fn all_buffs() -> Vec<BaseBuff> {
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: FOCUS,
+            name: FOCUS,  //TODO
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -498,11 +498,14 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: FRAIL,
+            effects: vec![
+                (Event::Block(Target::_Self), Effect::BoostMult(Fixed(-25)))
+            ],
             is_buff: false,
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: FREE_ATTACK_POWER,
+            name: FREE_ATTACK_POWER,  //TODO
             reduce_at: Event::PlayCard(CardType::Attack),
             ..BaseBuff::default()
         },
@@ -557,19 +560,28 @@ fn all_buffs() -> Vec<BaseBuff> {
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: INNATE_THIEVERY,
+            name: INNATE_THIEVERY,  //TODO
             effects: vec![(Event::Damage(Target::TargetEnemy), Effect::Custom)],
             ..BaseBuff::default()
         },
         BaseBuff {
             name: INTANGIBLE,
-            effects: vec![(Event::Damage(Target::_Self), Effect::Custom)],
+            effects: vec![
+                (Event::Damage(Target::_Self), Effect::Cap(Fixed(1))),
+                (Event::HpLoss(Target::_Self), Effect::Cap(Fixed(1))),
+            ],
             reduce_at: Event::BeforeHandDraw,
             ..BaseBuff::default()
         },
         BaseBuff {
             name: INVINCIBLE,
-            effects: vec![(Event::HpLoss(Target::_Self), Effect::Custom)],
+            on_add: Effect::SetN(X),
+            effects: vec![
+                (Event::HpLoss(Target::_Self), Effect::Multiple(vec![
+                    Effect::Cap(X),
+                    Effect::AddX(EventAmount)
+                ]))
+            ],
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -582,6 +594,13 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: LIFE_LINK,
+            effects: vec![(Event::Die(Target::_Self),
+                Effect::If(Condition::HasFriendlies(1), vec![
+                    Effect::FakeDie,
+                ], vec![
+                    Effect::Die(Target::AnyFriendly)
+                ])),
+            ],
             is_additive: false,
             ..BaseBuff::default()
         },
@@ -600,11 +619,13 @@ fn all_buffs() -> Vec<BaseBuff> {
         BaseBuff {
             name: LOCK_ON,
             is_buff: false,
+            effects: vec![(Event::OrbDamage(Target::_Self), Effect::BoostMult(Fixed(50)))],
             reduce_at: Event::BeforeHandDraw,
             ..BaseBuff::default()
         },
         BaseBuff {
             name: LOOP,
+            effects: vec![]
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -627,7 +648,17 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: MALLEABLE,
-            effects: vec![(Event::Custom, Effect::Custom)],
+            effects: vec![
+                (Event::BeforeHandDraw, Effect::SetX(Fixed(3))),
+                (Event::AttackDamage(Target::_Self), Effect::Multiple(vec![
+                    Effect::AddN(X),
+                    Effect::AddX(Fixed(1)),
+                ])),
+                (Event::PlayCard(CardType::Attack), Effect::Multiple(vec![
+                    Effect::Block(N, Target::_Self),
+                    Effect::SetN(Fixed(0)),
+                ])),
+            ],
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -652,7 +683,7 @@ fn all_buffs() -> Vec<BaseBuff> {
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: MASTER_REALITY,
+            name: MASTER_REALITY,  //TODO
             is_additive: false,
             ..BaseBuff::default()
         },
@@ -674,12 +705,7 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: METALLICIZE,
-            effects: vec![(Event::BeforeHandDiscard, Effect::Block(X, Target::_Self))],
-            ..BaseBuff::default()
-        },
-        BaseBuff {
-            name: METALLICIZE,
-            effects: vec![(Event::BeforeHandDraw, Effect::Block(X, Target::_Self))],
+            effects: vec![(Event::TurnEnd, Effect::Block(X, Target::_Self))],
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -1156,7 +1182,7 @@ pub const MASTER_REALITY: &str = "Master Reality";
 pub const MAYHEM: &str = "Mayhem";
 pub const MENTAL_FORTRESS: &str = "Mental Fortress";
 pub const METALLICIZE: &str = "Metallicize";
-pub const MODE_SHIFT: &str = "Metallicize";
+pub const MODE_SHIFT: &str = "Mode Shift";
 pub const NEXT_TURN_BLOCK: &str = "Next Turn Block";
 pub const NIGHTMARE: &str = "Nightmare";
 pub const NIRVANA: &str = "Nirvana";
