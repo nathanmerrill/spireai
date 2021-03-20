@@ -110,8 +110,8 @@ fn make_choice(state: &GameState) -> Choice {
 
 fn all_choices(state: &GameState) -> Vec<Choice> {
     let mut choices: Vec<Choice> = Vec::new();
-    match &state.screen {
-        ScreenState::Battle(battle_state) => {
+    match &state.floor_state {
+        FloorState::Battle(battle_state) => {
             for (card_index, card) in battle_state.hand.iter().enumerate() {
                 if card_playable(card, battle_state, state) {
                     if card_targeted(card) {
@@ -132,34 +132,39 @@ fn all_choices(state: &GameState) -> Vec<Choice> {
                 }
             }
 
-            for (potion_index, potion) in state.potions.iter().enumerate() {
-                if potion_targeted(potion) {
-                    for monster in &battle_state.monsters {
-                        if monster.targetable {
+            for (potion_index, potion_slot) in state.potions.iter().enumerate() {
+                match potion_slot {
+                    Some(potion) => {
+                        if potion_targeted(potion) {
+                            for monster in &battle_state.monsters {
+                                if monster.targetable {
+                                    choices.push(Choice::Potion {
+                                        should_use: true,
+                                        slot: potion_index as u8,
+                                        target_index: Some(monster.creature.position),
+                                    });
+                                }
+                            }
+                        } else {
                             choices.push(Choice::Potion {
                                 should_use: true,
                                 slot: potion_index as u8,
-                                target_index: Some(monster.creature.position),
+                                target_index: None,
                             });
                         }
-                    }
-                } else {
-                    choices.push(Choice::Potion {
-                        should_use: true,
-                        slot: potion_index as u8,
-                        target_index: None,
-                    });
-                }
 
-                choices.push(Choice::Potion {
-                    should_use: false,
-                    slot: potion_index as u8,
-                    target_index: None,
-                });
+                        choices.push(Choice::Potion {
+                            should_use: false,
+                            slot: potion_index as u8,
+                            target_index: None,
+                        });
+                    },
+                    None => {}
+                }
             }
 
             choices.push(Choice::End);
-        }
+        },
         _ => {
             panic!("Unrecognized screen state")
         }

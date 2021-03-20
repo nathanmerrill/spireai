@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use Amount::*;
 
 pub fn by_name(name: &str) -> &'static BasePotion {
-    POTIONS.get(name).unwrap()
+    POTIONS.get(name).expect(format!("Potion {} not found", name).as_str())
 }
 
 lazy_static! {

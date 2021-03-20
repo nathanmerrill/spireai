@@ -38,7 +38,6 @@ pub enum Amount {
     Upgradable(i16, i16),
     Sum(Vec<Amount>),
     Mult(Vec<Amount>),
-    EventAmount,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -50,7 +49,7 @@ pub enum OrbType {
     Any,
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Stance {
     Calm,
     Wrath,
@@ -177,6 +176,17 @@ impl std::fmt::Debug for BaseBuff {
             .field("name", &self.name)
             .finish()
     }
+}
+
+pub struct BaseEvent {
+    pub name: &'static str,
+    pub choices: Vec<BaseEventChoice>,
+    pub shrine: bool,
+}
+
+pub struct BaseEventChoice {
+    pub name: &'static str,
+    pub effects: Vec<Effect>,
 }
 
 #[derive(Debug)]
@@ -470,7 +480,7 @@ pub enum Effect {
     Multiple(Vec<Effect>),
     Repeat(Amount, Box<Effect>),
     None,
-    //Custom,
+    Custom,
 }
 
 #[derive(Debug)]

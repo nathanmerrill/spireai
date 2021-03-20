@@ -11,6 +11,16 @@ pub enum Binding<'a> {
 }
 
 impl<'a> Binding<'a> {
+    fn get_creature(self, game_state: &'a GameState) -> &'a Creature {
+        match self {
+            Binding::Buff(creature, _) => creature,
+            Binding::Card(_) => &game_state.player,
+            Binding::Potion(_) => &game_state.player,
+            Binding::Relic(_) => &game_state.player,
+            Binding::Monster(monster) => &monster.creature,
+        }
+    }
+
     fn get_monster(self) -> Option<&'a Creature> {
         match self {
             Binding::Buff(creature, _) => {
@@ -139,8 +149,8 @@ pub fn eval_amount(
     binding: &Binding,
 ) -> i16 {
     match amount {
-        Amount::ByAsc(low, mid, high) => match game_state.room {
-            RoomType::HallwayFight => {
+        Amount::ByAsc(low, mid, high) => match battle_state.battle_type {
+            BattleType::Common | BattleType::Event => {
                 if game_state.asc >= 17 {
                     *high
                 } else if game_state.asc >= 2 {
@@ -149,7 +159,7 @@ pub fn eval_amount(
                     *low
                 }
             }
-            RoomType::Elite => {
+            BattleType::Elite => {
                 if game_state.asc >= 18 {
                     *high
                 } else if game_state.asc >= 3 {
@@ -158,7 +168,7 @@ pub fn eval_amount(
                     *low
                 }
             }
-            RoomType::Boss => {
+            BattleType::Boss => {
                 if game_state.asc >= 19 {
                     *high
                 } else if game_state.asc >= 4 {
@@ -190,7 +200,7 @@ pub fn eval_amount(
                 sum = sum + eval_amount(amount, game_state, battle_state, binding);
             }
             sum
-        }
+        },
         Amount::Upgradable(low, high) => match binding {
             Binding::Buff(_, buff) => {
                 panic!("Unexpected upgradeable check on buff: {}", buff.base.name)
@@ -221,7 +231,11 @@ pub fn eval_amount(
                 }
             }
         },
+        Amount::MaxHp => binding.get_creature(game_state).max_hp as i16,
         Amount::X => binding.get_vars().x as i16,
+        Amount::PlayerBlock => {
+            game_state.player.block as i16
+        },
         Amount::Any => {
             panic!("Any does not resolve to a fixed number")
         }
@@ -282,7 +296,9 @@ pub fn eval_condition<'a>(
                 .to_creature(battle_state, game_state);
             creature.hp * 2 <= creature.max_hp
         }
+        Condition::Stance(stance) => &battle_state.stance == stance,
+        
         Condition::Never => false,
-        _ => panic!("Unhandled condition: {:?}", condition),
+        _ => panic!("Unhandled condition")
     }
 }

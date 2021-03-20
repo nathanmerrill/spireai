@@ -300,11 +300,7 @@ fn all_buffs() -> Vec<BaseBuff> {
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: DEXTERITY,
-            effects: vec![(
-                Event::Block(Target::_Self),
-                Effect::Boost(X),
-            )],
+            name: DEXTERITY, //TODO
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -574,13 +570,9 @@ fn all_buffs() -> Vec<BaseBuff> {
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: INVINCIBLE,
-            on_add: Effect::SetN(X),
+            name: INVINCIBLE, //TODO
             effects: vec![
-                (Event::HpLoss(Target::_Self), Effect::Multiple(vec![
-                    Effect::Cap(X),
-                    Effect::AddX(EventAmount)
-                ]))
+                (Event::HpLoss(Target::_Self), Effect::Custom)
             ],
             ..BaseBuff::default()
         },
@@ -625,7 +617,7 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: LOOP,
-            effects: vec![]
+            effects: vec![],
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -720,12 +712,6 @@ fn all_buffs() -> Vec<BaseBuff> {
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: NEXT_TURN_BLOCK,
-            effects: vec![(Event::BeforeHandDraw, Effect::Block(X, Target::_Self))],
-            expire_at: Event::BeforeHandDraw,
-            ..BaseBuff::default()
-        },
-        BaseBuff {
             name: NIGHTMARE,
             is_additive: false,
             stacks: false,
@@ -745,7 +731,7 @@ fn all_buffs() -> Vec<BaseBuff> {
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: NO_BLOCK,
+            name: NO_BLOCK, //TODO
             is_buff: false,
             reduce_at: Event::BeforeEnemyMove,
             ..BaseBuff::default()

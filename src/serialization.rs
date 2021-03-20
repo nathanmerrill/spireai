@@ -369,30 +369,15 @@ pub fn to_model(state: &GameState) -> models::state::GameState {
                     .map(|a| &a.player.powers)
                     .unwrap_or(&Vec::new()),
             ),
+            block: state.combat_state.as_ref().map(|a| a.player.block).unwrap_or(0) as u16
         },
         floor: state.floor as u8,
         deck: convert_cards(&state.deck),
-        screen: convert_state(&state),
+        floor_state: read_floor_state(&state),
         potions: convert_potions(&state.potions),
         act: state.act as u8,
         asc: state.ascension_level as u8,
         relics: convert_relics(&state.relics),
-        room: convert_room(&state.room_type),
-    }
-}
-
-pub fn convert_room(room_type: &String) -> models::core::RoomType {
-    match room_type.as_str() {
-        "Rest" => models::core::RoomType::Rest,
-        "Shop" => models::core::RoomType::Shop,
-        "Question" => models::core::RoomType::Question,
-        "Battle" => models::core::RoomType::Battle,
-        "HallwayFight" => models::core::RoomType::HallwayFight,
-        "Event" => models::core::RoomType::Event,
-        "Elite" => models::core::RoomType::Elite,
-        "Boss" => models::core::RoomType::Boss,
-        "Treasure" => models::core::RoomType::Treasure,
-        _ => panic!("Unrecognized room type: {}", room_type),
     }
 }
 
@@ -432,21 +417,51 @@ pub fn convert_intent(intent: &Intent) -> models::core::Intent {
     }
 }
 
-pub fn convert_state(state: &GameState) -> models::state::ScreenState {
+pub fn read_battle_state(state: &CombatState) -> models::state::BattleState {
+    models::state::BattleState {
+        draw: convert_cards(&state.draw_pile),
+        discard: convert_cards(&state.discard_pile),
+        exhaust: convert_cards(&state.exhaust_pile),
+        hand: convert_cards(&state.hand),
+        monsters: convert_monsters(&state.monsters),
+        energy: state.player.energy as u8,
+        orbs: convert_orbs(&state.player.orbs),
+        stance: models::core::Stance::None,
+        battle_type: models::state::BattleType::Common,
+    }
+}
+
+pub fn read_floor_state(state: &GameState) -> models::state::FloorState {
     match &state.room_phase {
         RoomPhase::Combat => {
             let combat_state = (state.combat_state).as_ref().unwrap();
-            models::state::ScreenState::Battle(models::state::BattleState {
-                draw: convert_cards(&combat_state.draw_pile),
-                discard: convert_cards(&combat_state.discard_pile),
-                exhaust: convert_cards(&combat_state.exhaust_pile),
-                hand: convert_cards(&combat_state.hand),
-                monsters: convert_monsters(&combat_state.monsters),
-                energy: combat_state.player.energy as u8,
-                orbs: convert_orbs(&combat_state.player.orbs),
-            })
+            models::state::FloorState::Battle(read_battle_state(combat_state))
         }
-        _ => models::state::ScreenState::None,
+        _ => {
+            match &state.screen_state {
+                ScreenState::None => models::state::FloorState::None,
+                ScreenState::Event(event) => models::state::FloorState::Event(convert_event(event)),
+                // ScreenState::Chest(Chest) => models::state::F,
+                // ScreenState::ShopRoom,
+                // ScreenState::Rest(Rest),
+                // ScreenState::CardReward(CardReward),
+                // ScreenState::CombatReward(Vec<RewardType>),
+                // ScreenState::Map(MapChoice),
+                // ScreenState::BossReward(Vec<Relic>),
+                // ScreenState::ShopScreen(ShopScreen),
+                // ScreenState::Grid(Grid),
+                // ScreenState::HandSelect(HandSelect),
+                // ScreenState::GameOver(GameOver),
+                // ScreenState::Complete,
+                _ => panic!("Unhandled screen state")
+            }
+        }
+    }
+}
+
+fn convert_event(event: &Event) -> models::state::EventState {
+    models::state::EventState{
+        base: models::events::by_name(event.event_name.as_str()).name
     }
 }
 
@@ -477,6 +492,7 @@ fn convert_monsters(monsters: &Vec<Monster>) -> Vec<models::state::Monster> {
                 is_player: false,
                 position: index as u8,
                 buffs: convert_buffs(&monster.powers),
+                block: monster.block as u16,
             },
             vars: models::state::Vars {
                 n: 0,
@@ -504,12 +520,16 @@ fn convert_buffs(buffs: &Vec<Power>) -> HashMap<&'static str, models::state::Buf
         .collect()
 }
 
-fn convert_potions(potions: &Vec<Potion>) -> Vec<models::state::Potion> {
-    let mut vec = Vec::new();
-    vec.extend(potions.iter().map(|potion| models::state::Potion {
-        base: models::potions::by_name(potion.name.as_str()),
-    }));
-    vec
+fn convert_potions(potions: &Vec<Potion>) -> Vec<Option<models::state::Potion>> {
+    potions.iter().map(|potion| 
+        if potion.name == "Potion Slot" {
+            None
+        } else {
+            Some(models::state::Potion {
+                base: models::potions::by_name(potion.name.as_str()),
+            })
+        }
+    ).collect()
 }
 
 fn convert_cards(cards: &Vec<Card>) -> Vector<Rc<models::state::Card>> {

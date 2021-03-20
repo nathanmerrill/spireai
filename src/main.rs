@@ -12,7 +12,7 @@ mod spireai;
 #[macro_use]
 extern crate lazy_static;
 
-const DESIRED_CLASS: models::core::Class = models::core::Class::Ironclad;
+const DESIRED_CLASS: models::core::Class = models::core::Class::Watcher;
 
 fn main() {
     init_logger().unwrap();

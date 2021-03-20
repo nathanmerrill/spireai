@@ -7,14 +7,13 @@ use std::rc::Rc;
 pub struct GameState {
     pub class: Class,
     pub floor: u8,
+    pub floor_state: FloorState,
     pub act: u8,
     pub asc: u8,
     pub deck: Vector<Rc<Card>>,
-    pub screen: ScreenState,
-    pub potions: Vec<Potion>,
+    pub potions: Vec<Option<Potion>>,
     pub relics: HashMap<&'static str, Relic>,
     pub player: Creature,
-    pub room: RoomType,
 }
 
 #[derive(Clone, Debug)]
@@ -47,10 +46,30 @@ impl PartialEq for Monster {
 }
 
 #[derive(PartialEq, Clone, Debug)]
-pub enum ScreenState {
-    Battle(BattleState),
+pub enum FloorState {
     None,
+    Event(EventState),
+    Chest(ChestType),
+    Battle(BattleState),
 }
+
+#[derive(Clone, Debug)]
+pub struct EventState {
+    pub base: &'static str,
+}
+
+impl PartialEq for EventState {
+    fn eq(&self, other: &Self) -> bool {
+        std::ptr::eq(self.base, other.base)
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum ChestType {
+
+}
+
+
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Creature {
@@ -59,6 +78,7 @@ pub struct Creature {
     pub position: u8,
     pub is_player: bool,
     pub buffs: HashMap<&'static str, Buff>,
+    pub block: u16,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -70,6 +90,16 @@ pub struct BattleState {
     pub monsters: Vec<Monster>,
     pub orbs: Vec<Orb>,
     pub energy: u8,
+    pub stance: Stance,
+    pub battle_type: BattleType,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum BattleType {
+    Common,
+    Elite,
+    Boss,
+    Event
 }
 
 #[derive(PartialEq, Clone, Debug)]
