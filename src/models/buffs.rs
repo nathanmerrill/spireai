@@ -19,7 +19,7 @@ impl BaseBuff {
 }
 
 pub fn by_name(name: &str) -> &'static BaseBuff {
-    BUFFS.get(name).unwrap()
+    BUFFS.get(name).expect(format!("Unrecognized buff: {}", name).as_str())
 }
 
 lazy_static! {
@@ -1215,6 +1215,6 @@ pub const TOOLS_OF_THE_TRADE: &str = "Tools of the Trade";
 pub const VIGOR: &str = "Vigor";
 pub const VULNERABLE: &str = "Vulnerable";
 pub const WAVE_OF_THE_HAND: &str = "Wave of the Hand";
-pub const WEAK: &str = "Weak";
+pub const WEAK: &str = "Weakened";
 pub const WELL_LAID_PLANS: &str = "Well-Laid Plans";
 pub const WRAITH_FORM: &str = "Wraith Form";

@@ -20,7 +20,7 @@ impl BaseMonster {
 }
 
 pub fn by_name(name: &str) -> &'static BaseMonster {
-    MONSTERS.get(name).unwrap()
+    MONSTERS.get(name).expect(format!("Unexpected monster: {}", name).as_str())
 }
 
 lazy_static! {
@@ -3392,71 +3392,71 @@ fn all_monsters() -> Vec<BaseMonster> {
     ]
 }
 
-pub const ACID_SLIME_L: &str = "Acid Slime (L)";
-pub const ACID_SLIME_M: &str = "Acid Slime (M)";
-pub const ACID_SLIME_S: &str = "Acid Slime (S)";
-pub const AWAKENED_ONE: &str = "Awakened One";
+pub const ACID_SLIME_L: &str = "AcidSlime_L";
+pub const ACID_SLIME_M: &str = "AcidSlime_M";
+pub const ACID_SLIME_S: &str = "AcidSlime_S";
+pub const AWAKENED_ONE: &str = "AwakenedOne";
 pub const BEAR: &str = "Bear";
-pub const BOOK_OF_STABBING: &str = "Book of Stabbing";
-pub const BLUE_SLAVER: &str = "Blue Slaver";
-pub const BRONZE_AUTOMATON: &str = "Bronze Automaton";
-pub const BRONZE_ORB: &str = "Bronze OrbType";
+pub const BOOK_OF_STABBING: &str = "BookOfStabbing";
+pub const BLUE_SLAVER: &str = "BlueSlaver";
+pub const BRONZE_AUTOMATON: &str = "BronzeAutomaton";
+pub const BRONZE_ORB: &str = "BronzeOrbType";
 pub const BYRD: &str = "Byrd";
 pub const CENTURION: &str = "Centurion";
 pub const CHOSEN: &str = "Chosen";
-pub const CORRUPT_HEART: &str = "Corrupt Heart";
+pub const CORRUPT_HEART: &str = "CorruptHeart";
 pub const CULTIST: &str = "Cultist";
 pub const DARKLING: &str = "Darkling";
 pub const DAGGER: &str = "Dagger";
 pub const DECA: &str = "Deca";
 pub const DONU: &str = "Donu";
 pub const EXPLODER: &str = "Exploder";
-pub const FAT_GREMLIN: &str = "Fat Gremlin";
-pub const FUNGI_BEAST: &str = "Fungi Beast";
-pub const GIANT_HEAD: &str = "Giant Head";
-pub const GREEN_LOUSE: &str = "Green Louse";
-pub const GREMLIN_LEADER: &str = "Gremlin Leader";
-pub const GREMLIN_NOB: &str = "Gremlin Nob";
-pub const GREMLIN_WIZARD: &str = "Gremlin Wizard";
+pub const FAT_GREMLIN: &str = "FatGremlin";
+pub const FUNGI_BEAST: &str = "FungiBeast";
+pub const GIANT_HEAD: &str = "GiantHead";
+pub const GREEN_LOUSE: &str = "FuzzyLouseDefensive";
+pub const GREMLIN_LEADER: &str = "GremlinLeader";
+pub const GREMLIN_NOB: &str = "GremlinNob";
+pub const GREMLIN_WIZARD: &str = "GremlinWizard";
 pub const HEXAGHOST: &str = "Hexaghost";
-pub const JAW_WORM: &str = "Jaw Worm";
+pub const JAW_WORM: &str = "JawWorm";
 pub const LAGAVULIN: &str = "Lagavulin";
 pub const LOOTER: &str = "Looter";
-pub const MAD_GREMLIN: &str = "Mad Gremlin";
+pub const MAD_GREMLIN: &str = "MadGremlin";
 pub const MUGGER: &str = "Mugger";
 pub const MYSTIC: &str = "Mystic";
 pub const NEMESIS: &str = "Nemesis";
-pub const ORB_WALKER: &str = "OrbType Walker";
+pub const ORB_WALKER: &str = "OrbWalker";
 pub const POINTY: &str = "Pointy";
-pub const RED_LOUSE: &str = "Red Louse";
-pub const RED_SLAVER: &str = "Red Slaver";
+pub const RED_LOUSE: &str = "FuzzyLouseNormal";
+pub const RED_SLAVER: &str = "RedSlaver";
 pub const REPTOMANCER: &str = "Reptomancer";
 pub const REPULSOR: &str = "Repulsor";
 pub const ROMEO: &str = "Romeo";
 pub const SENTRY: &str = "Sentry";
-pub const SHELLED_PARASITE: &str = "Shelled Parasite";
-pub const SHIELD_GREMLIN: &str = "Shield Gremlin";
-pub const SLIME_BOSS: &str = "Slime Boss";
-pub const SNAKE_PLANT: &str = "Snake Plant";
+pub const SHELLED_PARASITE: &str = "ShelledParasite";
+pub const SHIELD_GREMLIN: &str = "ShieldGremlin";
+pub const SLIME_BOSS: &str = "SlimeBoss";
+pub const SNAKE_PLANT: &str = "SnakePlant";
 pub const SNECKO: &str = "Snecko";
-pub const SNEAKY_GREMLIN: &str = "Sneaky Gremlin";
-pub const SPHERIC_GUARDIAN: &str = "Spheric Guardian";
-pub const SPIRE_GROWTH: &str = "Spire Growth";
-pub const SPIKE_SLIME_L: &str = "Spike Slime (L)";
-pub const SPIKE_SLIME_M: &str = "Spike Slime (M)";
-pub const SPIKE_SLIME_S: &str = "Spike Slime (S)";
+pub const SNEAKY_GREMLIN: &str = "SneakyGremlin";
+pub const SPHERIC_GUARDIAN: &str = "SphericGuardian";
+pub const SPIRE_GROWTH: &str = "SpireGrowth";
+pub const SPIKE_SLIME_L: &str = "SpikeSlime_L";
+pub const SPIKE_SLIME_M: &str = "SpikeSlime_M";
+pub const SPIKE_SLIME_S: &str = "SpikeSlime_S";
 pub const SPIKER: &str = "Spiker";
-pub const SPIRE_SHIELD: &str = "Spire Shield";
-pub const SPIRE_SPEAR: &str = "Spire Spear";
+pub const SPIRE_SHIELD: &str = "SpireShield";
+pub const SPIRE_SPEAR: &str = "SpireSpear";
 pub const TASKMASTER: &str = "Taskmaster";
-pub const THE_CHAMP: &str = "The Champ";
-pub const THE_COLLECTOR: &str = "The Collector";
-pub const THE_GUARDIAN: &str = "The Guardian";
-pub const THE_MAW: &str = "The Maw";
-pub const TIME_EATER: &str = "Time Eater";
-pub const TORCH_HEAD: &str = "Torch Head";
+pub const THE_CHAMP: &str = "TheChamp";
+pub const THE_COLLECTOR: &str = "TheCollector";
+pub const THE_GUARDIAN: &str = "TheGuardian";
+pub const THE_MAW: &str = "TheMaw";
+pub const TIME_EATER: &str = "TimeEater";
+pub const TORCH_HEAD: &str = "TorchHead";
 pub const TRANSIENT: &str = "Transient";
-pub const WRITHING_MASS: &str = "Writhing Mass";
+pub const WRITHING_MASS: &str = "WrithingMass";
 
 pub const SLASH: &str = "Slash";
 pub const SOUL_STRIKE: &str = "Soul Strike";

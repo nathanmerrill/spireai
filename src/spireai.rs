@@ -28,6 +28,8 @@ pub enum Choice {
     Choose(u8),
     Proceed,
     Return,
+    Skip,
+    SingingBowl,
     State,
 }
 
@@ -101,7 +103,11 @@ fn make_choice(state: &GameState) -> Choice {
                     best_choice = choice
                 }
             }
-            _ => {}
+            None => {
+                if max_val == f64::MIN {
+                    best_choice = choice
+                }
+            }
         }
     }
 
@@ -112,9 +118,11 @@ fn all_choices(state: &GameState) -> Vec<Choice> {
     let mut choices: Vec<Choice> = Vec::new();
     match &state.floor_state {
         FloorState::Battle(battle_state) => {
+            choices.push(Choice::End);
+
             for (card_index, card) in battle_state.hand.iter().enumerate() {
                 if card_playable(card, battle_state, state) {
-                    if card_targeted(card) {
+                    if card_targeted(card, state) {
                         for monster in &battle_state.monsters {
                             if monster.targetable {
                                 choices.push(Choice::Play {
@@ -135,7 +143,7 @@ fn all_choices(state: &GameState) -> Vec<Choice> {
             for (potion_index, potion_slot) in state.potions.iter().enumerate() {
                 match potion_slot {
                     Some(potion) => {
-                        if potion_targeted(potion) {
+                        if potion_targeted(potion, state) {
                             for monster in &battle_state.monsters {
                                 if monster.targetable {
                                     choices.push(Choice::Potion {
@@ -162,31 +170,62 @@ fn all_choices(state: &GameState) -> Vec<Choice> {
                     None => {}
                 }
             }
-
-            choices.push(Choice::End);
         },
-        _ => {
-            panic!("Unrecognized screen state")
+        FloorState::Event(event_state) => {
+            for index in 0..event_state.available_choices.len() {
+                choices.push(Choice::Choose(index as u8))
+            }
+        },
+        FloorState::Map => {
+            let map = &state.map;
+            if map.floor == 0 {
+                for index in 0..map.nodes[0].iter().flatten().count() {
+                    choices.push(Choice::Choose(index as u8))
+                }
+            } else {
+                let (_, next) = &map.nodes[(map.floor-1) as usize][map.node as usize].as_ref().unwrap();
+                for index in 0..next.len() {
+                    choices.push(Choice::Choose(index as u8))
+                }
+            }
+        },
+        FloorState::GameOver => {
+            choices.push(Choice::Proceed)
+        },
+        FloorState::CombatRewards(rewards) => {
+            choices.push(Choice::Proceed);
+            for index in 0..rewards.len() {
+                choices.push(Choice::Choose(index as u8))
+            }
+        },
+        FloorState::CardReward(card_choices) => {
+            choices.push(Choice::Skip);
+            for card in 0..card_choices.len() {
+                choices.push(Choice::Choose(card as u8))
+            }
+            if state.relic_names.contains(models::relics::SINGING_BOWL) {
+                choices.push(Choice::SingingBowl)
+            }
         }
     }
 
     choices
 }
 
-fn potion_targeted(potion: &Potion) -> bool {
-    match potion.base.targeted {
-        StaticCondition::True => true,
-        _ => false,
-    }
+fn potion_targeted(potion: &Potion, game_state: &GameState) -> bool {
+    evaluator::eval_static_condition(
+        &potion.base.targeted,
+        game_state,
+        &evaluator::Binding::Potion(potion)
+    )
 }
 
-fn card_targeted(card: &Card) -> bool {
-    match card.base.targeted {
-        StaticCondition::True => true,
-        StaticCondition::False => false,
-        StaticCondition::WhenUpgraded => card.upgrades > 0,
-        StaticCondition::WhenUnupgraded => card.upgrades == 0,
-    }
+fn card_targeted(card: &Card, game_state: &GameState) -> bool {
+    evaluator::eval_static_condition(
+        &card.base.targeted, 
+        game_state, 
+        &evaluator::Binding::Card(card)
+    )
 }
 
 fn card_playable(card: &Card, battle_state: &BattleState, game_state: &GameState) -> bool {
@@ -201,7 +240,7 @@ fn card_playable(card: &Card, battle_state: &BattleState, game_state: &GameState
 }
 
 fn predict_outcome(state: &GameState, choice: &Choice) -> Option<GamePossibilitySet> {
-    panic!("Not implemented")
+    None
 }
 
 fn rate_possibility_set(set: GamePossibilitySet) -> f64 {

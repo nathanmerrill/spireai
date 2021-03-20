@@ -41,7 +41,7 @@ impl BaseCard {
 }
 
 pub fn by_name(name: &str) -> &'static BaseCard {
-    CARDS.get(name).unwrap()
+    CARDS.get(name).expect(format!("Unrecognized card: {}", name).as_str())
 }
 
 lazy_static! {

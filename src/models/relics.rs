@@ -20,7 +20,7 @@ impl BaseRelic {
 }
 
 pub fn by_name(name: &str) -> &'static BaseRelic {
-    RELICS.get(name).unwrap()
+    RELICS.get(name).expect(format!("Unrecognized relic: {}", name).as_str())
 }
 
 lazy_static! {

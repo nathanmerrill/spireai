@@ -1,4 +1,4 @@
-use log::{error, info, LevelFilter};
+use log::{info, LevelFilter};
 use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
@@ -16,6 +16,7 @@ const DESIRED_CLASS: models::core::Class = models::core::Class::Watcher;
 
 fn main() {
     init_logger().unwrap();
+    log_panics::init();
     println!("ready");
 
     let mut ai = spireai::SpireAi::new();
@@ -45,7 +46,7 @@ fn read_state() -> serialization::Response {
         Ok(a) => {
             match &a.error {
                 Some(error) => {
-                    error!("Error recieved: {}", error);
+                    panic!("Error recieved: {}", error);
                 }
                 None => {}
             }
@@ -53,8 +54,7 @@ fn read_state() -> serialization::Response {
             return a;
         }
         Err(a) => {
-            error!("Failure! {}", a);
-            panic!();
+            panic!("Failure! {}", a );
         }
     }
 }
@@ -87,7 +87,7 @@ fn serialize_choice(choice: spireai::Choice) -> String {
             card_index,
             target_index,
         } => {
-            format!("PLAY {} {}", card_index, fmt_opt_i(target_index))
+            format!("PLAY {} {}", (card_index+1)%10, fmt_opt_i(target_index))
         }
         spireai::Choice::End => {
             format!("END")
@@ -103,7 +103,13 @@ fn serialize_choice(choice: spireai::Choice) -> String {
         }
         spireai::Choice::State => {
             format!("STATE")
-        }
+        },
+        spireai::Choice::Skip => {
+            format!("SKIP")
+        },
+        spireai::Choice::SingingBowl => {
+            format!("SINGING_BOWL")
+        },
     }
 }
 
@@ -114,6 +120,8 @@ fn send_choice(choice: spireai::Choice) {
 }
 
 fn init_logger() -> Result<(), Box<dyn Error>> {
+    std::fs::remove_file("log/output.log")?;
+
     let logfile = FileAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
         .build("log/output.log")?;

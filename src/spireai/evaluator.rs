@@ -1,5 +1,6 @@
 use crate::models::core::*;
 use crate::models::state::*;
+use crate::models;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Binding<'a> {
@@ -8,6 +9,7 @@ pub enum Binding<'a> {
     Monster(&'a Monster),
     Potion(&'a Potion),
     Relic(&'a Relic),
+    Event(&'a EventState),
 }
 
 impl<'a> Binding<'a> {
@@ -18,6 +20,9 @@ impl<'a> Binding<'a> {
             Binding::Potion(_) => &game_state.player,
             Binding::Relic(_) => &game_state.player,
             Binding::Monster(monster) => &monster.creature,
+            Binding::Event(event) => {
+                panic!("Unexpected get_creature call on an event: {}", event.base.name)
+            }
         }
     }
 
@@ -32,6 +37,9 @@ impl<'a> Binding<'a> {
             }
             Binding::Card(_) | Binding::Potion(_) | Binding::Relic(_) => None,
             Binding::Monster(monster) => Some(&monster.creature),
+            Binding::Event(event) =>  {
+                panic!("Unexpected get_monster call on event: {}", event.base.name)
+            }
         }
     }
 
@@ -42,6 +50,7 @@ impl<'a> Binding<'a> {
             Binding::Monster(monster) => monster.base.name,
             Binding::Potion(potion) => potion.base.name,
             Binding::Relic(relic) => relic.base.name,
+            Binding::Event(event) => event.base.name,
         }
     }
 
@@ -54,6 +63,28 @@ impl<'a> Binding<'a> {
                 panic!("Unexpected vars check on potion: {}", potion.base.name)
             }
             Binding::Relic(relic) => &relic.vars,
+            Binding::Event(event) => &event.vars,
+        }
+    }
+
+    fn is_upgraded(self, game_state: &'a GameState) -> bool {
+        match self {
+            Binding::Buff(_, buff) => {
+                panic!("Unexpected is_upgraded check on buff: {}", buff.base.name)
+            }
+            Binding::Card(card) => card.upgrades > 0,
+            Binding::Monster(monster) => {
+                panic!("Unexpected is_upgraded check on monster: {}", monster.base.name)
+            },
+            Binding::Potion(potion) => {
+                game_state.relic_names.contains(models::relics::SACRED_BARK)
+            }
+            Binding::Relic(relic) => {
+                panic!("Unexpected is_upgraded check on relic: {}", relic.base.name)
+            },
+            Binding::Event(event) => {
+                game_state.asc >= 15
+            }
         }
     }
 }
@@ -177,7 +208,6 @@ pub fn eval_amount(
                     *low
                 }
             }
-            _ => panic!("Unexpected room type in ByAsc: {:?}", amount),
         },
         Amount::Custom => match binding.get_name() {
             _ => panic!("Unhandled custom amount: {:?}", binding),
@@ -201,34 +231,10 @@ pub fn eval_amount(
             }
             sum
         },
-        Amount::Upgradable(low, high) => match binding {
-            Binding::Buff(_, buff) => {
-                panic!("Unexpected upgradeable check on buff: {}", buff.base.name)
-            }
-            Binding::Card(card) => {
-                if card.upgrades == 0 {
-                    *low
-                } else {
-                    *high
-                }
-            }
-            Binding::Monster(monster) => panic!(
-                "Unexpected upgradeable check on monster: {}",
-                monster.base.name
-            ),
-            Binding::Potion(potion) => panic!(
-                "Unexpected upgradeable check on potion: {}",
-                potion.base.name
-            ),
-            Binding::Relic(_) => {
-                if game_state
-                    .relics
-                    .contains_key(crate::models::relics::SACRED_BARK)
-                {
-                    *high
-                } else {
-                    *low
-                }
+        Amount::Upgradable(low, high) => {
+            match binding.is_upgraded(game_state) {
+                true => *high,
+                false => *low
             }
         },
         Amount::MaxHp => binding.get_creature(game_state).max_hp as i16,
@@ -242,7 +248,18 @@ pub fn eval_amount(
     }
 }
 
-pub fn eval_condition<'a>(
+pub fn eval_static_condition(condition: &StaticCondition, game_state: &GameState, binding: &Binding) -> bool{
+    match condition {
+        StaticCondition::DeckSize(size) => game_state.deck.len() as u8 >= *size,
+        StaticCondition::False => false,
+        StaticCondition::MinGold(gold) => game_state.gold as u16 >= *gold,
+        StaticCondition::True => true,
+        StaticCondition::WhenUnupgraded => !binding.is_upgraded(game_state),
+        StaticCondition::WhenUpgraded => binding.is_upgraded(game_state),
+    }
+}
+
+pub fn eval_condition(
     condition: &Condition,
     battle_state: &BattleState,
     game_state: &GameState,
@@ -261,7 +278,7 @@ pub fn eval_condition<'a>(
                 Intent::AttackDefend => true,
                 _ => false,
             },
-            _ => panic!("Unexpected resolved target in condition: {:?}", condition),
+            _ => panic!("Unexpected target that is not a monster in Condition::Attacking")
         },
         Condition::Buff(target, buff) => {
             let creature = eval_target(target, battle_state, binding, action)

@@ -1,4 +1,6 @@
-#[derive(Debug)]
+// ------------------  Fundamental types  -------------------------
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum Rarity {
     Starter,
     Common,
@@ -12,7 +14,7 @@ pub enum Rarity {
     Boss,
 }
 
-#[derive(PartialEq, Clone, Debug, strum_macros::Display)]
+#[derive(Debug, PartialEq, Clone, strum_macros::Display)]
 pub enum Class {
     All,
     None,
@@ -22,7 +24,66 @@ pub enum Class {
     Watcher,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
+pub enum OrbType {
+    Lightning,
+    Dark,
+    Frost,
+    Plasma,
+    Any,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Stance {
+    Calm,
+    Wrath,
+    Divinity,
+    None,
+    All,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum RoomType {
+    Rest,
+    Shop,
+    Question,
+    Battle,
+    HallwayFight,
+    Event,
+    Elite,
+    Boss,
+    Treasure,
+    All,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Intent {
+    Attack,
+    AttackBuff,
+    AttackDebuff,
+    AttackDefend,
+    Buff,
+    Debuff,
+    StrongDebuff,
+    Defend,
+    DefendDebuff,
+    DefendBuff,
+    Escape,
+    None,
+    Sleep,
+    Stun,
+    Unknown,
+}
+
+pub struct Act {
+    pub easy_count: u8,
+    pub easy_fights: Vec<(u8, MonsterSet)>,
+    pub normal_fights: Vec<(u8, MonsterSet)>,
+    pub elites: Vec<MonsterSet>,
+    pub bosses: Vec<MonsterSet>,
+}
+
+// ------------------- Evalulation -------------------------------
 pub enum Amount {
     Fixed(i16),
     X,
@@ -40,25 +101,6 @@ pub enum Amount {
     Mult(Vec<Amount>),
 }
 
-#[derive(PartialEq, Clone, Debug)]
-pub enum OrbType {
-    Lightning,
-    Dark,
-    Frost,
-    Plasma,
-    Any,
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum Stance {
-    Calm,
-    Wrath,
-    Divinity,
-    None,
-    All,
-}
-
-#[derive(Debug)]
 pub enum CardType {
     Attack,
     Skill,
@@ -69,60 +111,15 @@ pub enum CardType {
     All,
 }
 
-pub struct BaseCard {
-    pub cost: Amount,
-    pub rarity: Rarity,
-    pub _type: CardType,
-    pub _class: Class,
-    pub playable_if: Condition,
-    pub effects: Vec<(Event, Effect)>,
-    pub on_play: Vec<Effect>,
-    pub on_discard: Vec<Effect>,
-    pub on_draw: Vec<Effect>,
-    pub on_exhaust: Vec<Effect>,
-    pub on_retain: Vec<Effect>,
-    pub on_turn_end: Vec<Effect>, //Happens if card is in hand, before cards are discarded
-    pub name: &'static str,
-    pub innate: StaticCondition,
-    pub upgradeable: Upgradable,
-    pub retain: StaticCondition,
-    pub removable: bool,
-    pub targeted: StaticCondition,
-}
-
-impl std::fmt::Debug for BaseCard {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BaseCard")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-
-#[derive(PartialEq)]
 pub enum StaticCondition {
     True,
     False,
     WhenUpgraded,
     WhenUnupgraded,
+    DeckSize(u8),
+    MinGold(u16),
 }
 
-pub struct BasePotion {
-    pub name: &'static str,
-    pub _class: Class,
-    pub rarity: Rarity,
-    pub on_drink: Vec<Effect>,
-    pub targeted: StaticCondition,
-}
-
-impl std::fmt::Debug for BasePotion {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BasePotion")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-
-#[derive(Debug)]
 pub enum Upgradable {
     Never,
     Once,
@@ -130,7 +127,6 @@ pub enum Upgradable {
     Burn,
 }
 
-#[derive(Debug)]
 pub enum CardModifier {
     None,
     SetZeroCombatCost,
@@ -139,7 +135,6 @@ pub enum CardModifier {
     Upgraded,
 }
 
-#[derive(Debug)]
 pub enum CardReference {
     ByName(&'static str),
     CopyOf(CardLocation),
@@ -148,7 +143,6 @@ pub enum CardReference {
     RandomClass(Class),
 }
 
-#[derive(Debug)]
 pub enum CardLocation {
     This,
     DeckPile(RelativePosition),
@@ -158,38 +152,6 @@ pub enum CardLocation {
     DiscardPile(RelativePosition),
 }
 
-// Buffs
-pub struct BaseBuff {
-    pub name: &'static str,
-    pub stacks: bool,
-    pub is_additive: bool,
-    pub is_buff: bool,
-    pub on_add: Effect,
-    pub reduce_at: Event,
-    pub expire_at: Event,
-    pub effects: Vec<(Event, Effect)>,
-}
-
-impl std::fmt::Debug for BaseBuff {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BaseBuff")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-
-pub struct BaseEvent {
-    pub name: &'static str,
-    pub choices: Vec<BaseEventChoice>,
-    pub shrine: bool,
-}
-
-pub struct BaseEventChoice {
-    pub name: &'static str,
-    pub effects: Vec<Effect>,
-}
-
-#[derive(Debug)]
 pub enum Activation {
     Immediate,
     Event(Event),
@@ -212,62 +174,12 @@ pub enum Activation {
     Custom,
 }
 
-// Relics
-pub struct BaseRelic {
-    pub name: &'static str,
-    pub rarity: Rarity,
-    pub activation: Activation,
-    pub effect: Effect,
-    pub disable_at: Event,
-    pub class: Class,
-    pub energy_relic: bool,
-    pub replaces_starter: bool,
-}
-
-impl std::fmt::Debug for BaseRelic {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BaseRelic")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-
-#[derive(Debug)]
-pub struct Act {
-    pub easy_count: u8,
-    pub easy_fights: Vec<(u8, MonsterSet)>,
-    pub normal_fights: Vec<(u8, MonsterSet)>,
-    pub elites: Vec<MonsterSet>,
-    pub bosses: Vec<MonsterSet>,
-}
-
-#[derive(Debug)]
 pub enum MonsterSet {
     Fixed(Vec<&'static str>),
     ChooseN(u8, Vec<&'static str>),
     RandomSet(Vec<Vec<&'static str>>),
 }
 
-pub struct BaseMonster {
-    pub name: &'static str,
-    pub hp_range: (u16, u16),
-    pub hp_range_asc: (u16, u16),
-    pub moveset: Vec<MonsterMove>,
-    pub move_order: Vec<Move>,
-    pub n_range: (Amount, Amount),
-    pub x_range: (Amount, Amount),
-    pub effects: Vec<(Event, Effect)>,
-}
-
-impl std::fmt::Debug for BaseMonster {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BaseMonster")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-
-#[derive(Debug)]
 pub enum Move {
     If(Condition, Vec<Move>, Vec<Move>),
     Loop(Vec<Move>),
@@ -277,7 +189,6 @@ pub enum Move {
     AfterMove(Vec<(&'static str, Move)>),
 }
 
-#[derive(Debug)]
 pub struct ProbabilisticMove {
     pub chance: Amount,
     pub move_index: u8,
@@ -285,48 +196,13 @@ pub struct ProbabilisticMove {
     pub starter_asc: Option<u8>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Intent {
-    Attack,
-    AttackBuff,
-    AttackDebuff,
-    AttackDefend,
-    Buff,
-    Debuff,
-    StrongDebuff,
-    Defend,
-    DefendDebuff,
-    DefendBuff,
-    Escape,
-    None,
-    Sleep,
-    Stun,
-    Unknown,
-}
-
-#[derive(Debug)]
 pub struct MonsterMove {
     pub name: &'static str,
     pub effects: Vec<Effect>,
     pub intent: Intent,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum RoomType {
-    Rest,
-    Shop,
-    Question,
-    Battle,
-    HallwayFight,
-    Event,
-    Elite,
-    Boss,
-    Treasure,
-    All,
-}
 
-
-#[derive(Debug)]
 pub enum Event {
     // Time-based
     BeforeHandDraw,
@@ -383,7 +259,6 @@ pub enum Event {
     Custom,
 }
 
-#[derive(Debug)]
 pub enum RelativePosition {
     Bottom,
     Top,
@@ -392,7 +267,6 @@ pub enum RelativePosition {
     All, // If in a card effect, does not include the card
 }
 
-#[derive(Debug)]
 pub enum Effect {
     //Targeted
     Block(Amount, Target),
@@ -450,13 +324,15 @@ pub enum Effect {
 
     // Meta-scaling
     CardReward,
-    AddRelic,
+    AddRelic(&'static str),
     ShowReward {
         potions: i8,
         cards: i8,
         gold: i8,
         relics: i8,
     },
+    RemoveCard(u8),
+    TransformCard(u8),
 
     // Monster
     Split(&'static str, &'static str),
@@ -483,7 +359,7 @@ pub enum Effect {
     Custom,
 }
 
-#[derive(Debug)]
+#[derive(strum_macros::AsStaticStr)]
 pub enum Condition {
     Stance(Stance),
     MissingHp(Amount, Target),
@@ -512,7 +388,6 @@ pub enum Condition {
     Custom,
 }
 
-#[derive(Debug)]
 pub enum Target {
     _Self,
     RandomEnemy,
@@ -522,4 +397,124 @@ pub enum Target {
     AnyFriendly,    // Includes self
     RandomFriendly, // Self if only remaining
     Friendly(&'static str),
+}
+
+//----------------------- Base Models ---------------------
+
+pub struct BaseBuff {
+    pub name: &'static str,
+    pub stacks: bool,
+    pub is_additive: bool,
+    pub is_buff: bool,
+    pub on_add: Effect,
+    pub reduce_at: Event,
+    pub expire_at: Event,
+    pub effects: Vec<(Event, Effect)>,
+}
+impl std::fmt::Debug for BaseBuff {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseBuff")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+pub struct BaseCard {
+    pub cost: Amount,
+    pub rarity: Rarity,
+    pub _type: CardType,
+    pub _class: Class,
+    pub playable_if: Condition,
+    pub effects: Vec<(Event, Effect)>,
+    pub on_play: Vec<Effect>,
+    pub on_discard: Vec<Effect>,
+    pub on_draw: Vec<Effect>,
+    pub on_exhaust: Vec<Effect>,
+    pub on_retain: Vec<Effect>,
+    pub on_turn_end: Vec<Effect>, //Happens if card is in hand, before cards are discarded
+    pub name: &'static str,
+    pub innate: StaticCondition,
+    pub upgradeable: Upgradable,
+    pub retain: StaticCondition,
+    pub removable: bool,
+    pub targeted: StaticCondition,
+}
+impl std::fmt::Debug for BaseCard {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseCard")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+
+pub struct BaseEvent {
+    pub name: &'static str,
+    pub choices: Vec<BaseEventChoice>,
+    pub shrine: bool,
+}
+pub struct BaseEventChoice {
+    pub name: &'static str,
+    pub effects: Vec<Effect>,
+    pub allowed: StaticCondition,
+}
+impl std::fmt::Debug for BaseEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseEvent")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+pub struct BaseMonster {
+    pub name: &'static str,
+    pub hp_range: (u16, u16),
+    pub hp_range_asc: (u16, u16),
+    pub moveset: Vec<MonsterMove>,
+    pub move_order: Vec<Move>,
+    pub n_range: (Amount, Amount),
+    pub x_range: (Amount, Amount),
+    pub effects: Vec<(Event, Effect)>,
+}
+impl std::fmt::Debug for BaseMonster {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseMonster")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+
+pub struct BasePotion {
+    pub name: &'static str,
+    pub _class: Class,
+    pub rarity: Rarity,
+    pub on_drink: Vec<Effect>,
+    pub targeted: StaticCondition,
+}
+impl std::fmt::Debug for BasePotion {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BasePotion")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+
+pub struct BaseRelic {
+    pub name: &'static str,
+    pub rarity: Rarity,
+    pub activation: Activation,
+    pub effect: Effect,
+    pub disable_at: Event,
+    pub class: Class,
+    pub energy_relic: bool,
+    pub replaces_starter: bool,
+}
+impl std::fmt::Debug for BaseRelic {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseRelic")
+            .field("name", &self.name)
+            .finish()
+    }
 }

@@ -16,3 +16,4 @@ phf = {version = "0.8.0", features = ["macros"]}
 strum = "0.20.0"
 strum_macros = "0.20.1"
 lazy_static = "1.4.0"
+log-panics = "2.0.0"

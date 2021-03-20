@@ -1,7 +1,7 @@
 use crate::models;
 use im::Vector;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -129,13 +129,13 @@ pub struct GameOver {
     rename_all = "SCREAMING_SNAKE_CASE"
 )]
 pub enum ScreenState {
-    None,
+    None(HashMap<u8, u8>),
     Event(Event),
     Chest(Chest),
     ShopRoom,
     Rest(Rest),
     CardReward(CardReward),
-    CombatReward(Vec<RewardType>),
+    CombatReward(CombatRewards),
     Map(MapChoice),
     BossReward(Vec<Relic>),
     ShopScreen(ShopScreen),
@@ -143,6 +143,11 @@ pub enum ScreenState {
     HandSelect(HandSelect),
     GameOver(GameOver),
     Complete,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct CombatRewards {
+    rewards: Vec<RewardType>
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -156,7 +161,7 @@ pub enum ChestType {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-#[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
+#[serde(tag = "reward_type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum RewardType {
     Card,
     Gold { gold: i32 },
@@ -355,6 +360,7 @@ pub struct Potion {
 }
 
 pub fn to_model(state: &GameState) -> models::state::GameState {
+    let relics = convert_relics(&state.relics);
     models::state::GameState {
         class: convert_class(&state.class),
         player: models::state::Creature {
@@ -371,28 +377,80 @@ pub fn to_model(state: &GameState) -> models::state::GameState {
             ),
             block: state.combat_state.as_ref().map(|a| a.player.block).unwrap_or(0) as u16
         },
-        floor: state.floor as u8,
+        gold: state.gold as u16,
+        floor_state: read_floor_state(state),
         deck: convert_cards(&state.deck),
-        floor_state: read_floor_state(&state),
+        map: read_map_state(state),
         potions: convert_potions(&state.potions),
         act: state.act as u8,
         asc: state.ascension_level as u8,
-        relics: convert_relics(&state.relics),
+        relic_names: relics.iter().map(|a| a.base.name).collect(), 
+        relics: relics,
     }
 }
 
-pub fn convert_relics(relics: &Vec<Relic>) -> HashMap<&'static str, models::state::Relic> {
+pub fn read_map_state(state: &GameState) -> models::state::MapState {
+    let mut map: Vec<Vec<Option<(models::state::MapNode, Vec<u8>)>>> = Vec::new();
+    for node in &state.map {
+        while map.len() <= node.y as usize {
+            map.push(Vec::new())
+        }
+
+        let row = &mut map[node.y as usize];
+
+        while row.len() <= node.x as usize {
+            row.push(None)
+        }
+    
+        let node_type: models::state::MapNode = match node.symbol {
+            'M' => models::state::MapNode::Monster,
+            '?' => models::state::MapNode::Question,
+            '$' => models::state::MapNode::Shop,
+            'R' => models::state::MapNode::Campfire,
+            'T' => models::state::MapNode::Chest,
+            'E' => models::state::MapNode::Elite,
+            _ => panic!("Unhandled node type: {}", node.symbol)
+        };
+
+        let next_nodes: Vec<u8> = node.children.iter().map(|a| a.x as u8).collect();
+
+        row[node.x as usize] = Some((node_type, next_nodes))
+    }
+    
+    let node = match &state.screen_state {
+        ScreenState::Map(map_choice) => {
+            match &map_choice.current_node {
+                Some(current_node) => {
+                    current_node.x as u8
+                }
+                None => 0
+            }
+        },
+        _ => 0
+    };
+
+    models::state::MapState {
+        nodes: map,
+        floor: state.floor as u8,
+        node: node,
+    }
+}
+
+pub fn convert_relic(relic: &Relic) -> models::state::Relic {
+    models::state::Relic {
+        base: models::relics::by_name(relic.name.as_str()),
+        vars: models::state::Vars {
+            n: relic.counter as u8,
+            x: 0,
+            n_reset: 0,
+        },
+    }
+}
+
+pub fn convert_relics(relics: &Vec<Relic>) -> Vec<models::state::Relic> {
     relics
         .iter()
-        .map(|relic| models::state::Relic {
-            base: models::relics::by_name(relic.name.as_str()),
-            vars: models::state::Vars {
-                n: relic.counter as u8,
-                x: 0,
-                n_reset: 0,
-            },
-        })
-        .map(|relic| (relic.base.name, relic))
+        .map(convert_relic)
         .collect()
 }
 
@@ -432,36 +490,59 @@ pub fn read_battle_state(state: &CombatState) -> models::state::BattleState {
 }
 
 pub fn read_floor_state(state: &GameState) -> models::state::FloorState {
-    match &state.room_phase {
-        RoomPhase::Combat => {
-            let combat_state = (state.combat_state).as_ref().unwrap();
-            models::state::FloorState::Battle(read_battle_state(combat_state))
-        }
-        _ => {
-            match &state.screen_state {
-                ScreenState::None => models::state::FloorState::None,
-                ScreenState::Event(event) => models::state::FloorState::Event(convert_event(event)),
-                // ScreenState::Chest(Chest) => models::state::F,
-                // ScreenState::ShopRoom,
-                // ScreenState::Rest(Rest),
-                // ScreenState::CardReward(CardReward),
-                // ScreenState::CombatReward(Vec<RewardType>),
-                // ScreenState::Map(MapChoice),
-                // ScreenState::BossReward(Vec<Relic>),
-                // ScreenState::ShopScreen(ShopScreen),
-                // ScreenState::Grid(Grid),
-                // ScreenState::HandSelect(HandSelect),
-                // ScreenState::GameOver(GameOver),
-                // ScreenState::Complete,
-                _ => panic!("Unhandled screen state")
+    match &state.screen_state {
+        ScreenState::None(_) => {
+            match &state.room_phase {
+                RoomPhase::Combat => {
+                    let combat_state = (state.combat_state).as_ref().unwrap();
+                    models::state::FloorState::Battle(read_battle_state(combat_state))
+                },
+                _ => panic!("Expected Battle in None state")
             }
-        }
+        },
+        ScreenState::Event(event) => models::state::FloorState::Event(convert_event(event)),
+        ScreenState::Map(_) => models::state::FloorState::Map,
+        ScreenState::CombatReward(rewards) => models::state::FloorState::CombatRewards(convert_rewards(rewards)),
+        ScreenState::CardReward(reward) => models::state::FloorState::CardReward(reward.cards.iter().map(|a| convert_card(a)).collect()),
+        // ScreenState::ShopRoom,
+        // ScreenState::Rest(Rest),
+        // ScreenState::CardReward(CardReward),
+        // ScreenState::Map(MapChoice),
+        // ScreenState::BossReward(Vec<Relic>),
+        // ScreenState::ShopScreen(ShopScreen),
+        // ScreenState::Grid(Grid),
+        // ScreenState::HandSelect(HandSelect),
+        ScreenState::GameOver(_) => {
+            models::state::FloorState::GameOver
+        },
+        // ScreenState::Complete,
+        _ => panic!("Unhandled screen state")
     }
 }
 
+fn convert_rewards(rewards: &CombatRewards) -> Vec<models::state::Reward> {
+    rewards.rewards.iter().map(|a| match a {
+        RewardType::Card => models::state::Reward::CardChoice,
+        RewardType::EmeraldKey => models::state::Reward::EmeraldKey,
+        RewardType::Gold{gold} => models::state::Reward::Gold(*gold as u8),
+        RewardType::Potion{potion} => models::state::Reward::Potion(convert_potion(potion)),
+        RewardType::Relic{relic} => models::state::Reward::Relic(convert_relic(relic)),
+        RewardType::StolenGold{ gold} => models::state::Reward::Gold(*gold as u8),
+        RewardType::SapphireKey{link} => models::state::Reward::SapphireKey(convert_relic(link)),
+    }).collect()
+}
+
 fn convert_event(event: &Event) -> models::state::EventState {
+    let base_event = models::events::by_name(event.event_name.as_str());
+
     models::state::EventState{
-        base: models::events::by_name(event.event_name.as_str()).name
+        base: base_event,
+        available_choices: base_event.choices.iter().map(|a| a.name).collect(),
+        vars: models::state::Vars {
+            n: 0,
+            x: 0,
+            n_reset: 0,
+        },
     }
 }
 
@@ -485,7 +566,7 @@ fn convert_monsters(monsters: &Vec<Monster>) -> Vec<models::state::Monster> {
         .iter()
         .enumerate()
         .map(|(index, monster)| models::state::Monster {
-            base: models::monsters::by_name(monster.name.as_str()),
+            base: models::monsters::by_name(monster.id.as_str()),
             creature: models::state::Creature {
                 hp: monster.current_hp as u16,
                 max_hp: monster.max_hp as u16,
@@ -520,14 +601,18 @@ fn convert_buffs(buffs: &Vec<Power>) -> HashMap<&'static str, models::state::Buf
         .collect()
 }
 
+fn convert_potion(potion: &Potion) -> models::state::Potion {
+    models::state::Potion {
+        base: models::potions::by_name(potion.name.as_str()),
+    }
+}
+
 fn convert_potions(potions: &Vec<Potion>) -> Vec<Option<models::state::Potion>> {
     potions.iter().map(|potion| 
         if potion.name == "Potion Slot" {
             None
         } else {
-            Some(models::state::Potion {
-                base: models::potions::by_name(potion.name.as_str()),
-            })
+            Some(convert_potion(potion))
         }
     ).collect()
 }

@@ -1,19 +1,21 @@
 use crate::models::core::*;
 use im::Vector;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct GameState {
     pub class: Class,
-    pub floor: u8,
+    pub map: MapState,
     pub floor_state: FloorState,
     pub act: u8,
     pub asc: u8,
     pub deck: Vector<Rc<Card>>,
     pub potions: Vec<Option<Potion>>,
-    pub relics: HashMap<&'static str, Relic>,
+    pub relics: Vec<Relic>,
+    pub relic_names: HashSet<&'static str>,
     pub player: Creature,
+    pub gold: u16,
 }
 
 #[derive(Clone, Debug)]
@@ -47,15 +49,49 @@ impl PartialEq for Monster {
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum FloorState {
-    None,
     Event(EventState),
-    Chest(ChestType),
+    //Chest(ChestType),
     Battle(BattleState),
+    Map,
+    GameOver,
+    CombatRewards(Vec<Reward>),
+    CardReward(Vec<Card>),
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum Reward {
+    CardChoice,
+    Gold(u8),
+    Relic(Relic),
+    Potion(Potion),
+    EmeraldKey,
+    SapphireKey(Relic),
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct MapState {
+    pub nodes: Vec<Vec<Option<(MapNode, Vec<u8>)>>>,
+    pub floor: u8,
+    pub node: u8,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum MapNode {
+    Question,
+    Elite,
+    BurningElite,
+    Campfire,
+    Boss,
+    Monster,
+    Shop,
+    Chest,
 }
 
 #[derive(Clone, Debug)]
 pub struct EventState {
-    pub base: &'static str,
+    pub base: &'static BaseEvent,
+    pub vars: Vars,
+    pub available_choices: Vec<&'static str>
 }
 
 impl PartialEq for EventState {
