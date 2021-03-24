@@ -13,8 +13,8 @@ use Target::*;
 impl BaseCard {
     fn new(_class: Class, _type: CardType) -> Self {
         let targeted = match _type {
-            CardType::Attack => StaticCondition::True,
-            _ => StaticCondition::False,
+            CardType::Attack => Condition::Always,
+            _ => Condition::Never,
         };
 
         Self {
@@ -31,8 +31,8 @@ impl BaseCard {
             on_turn_end: vec![],
             cost: Fixed(1),
             upgradeable: crate::models::core::Upgradable::Once,
-            innate: StaticCondition::False,
-            retain: StaticCondition::False,
+            innate: Condition::Never,
+            retain: Condition::Never,
             targeted: targeted,
             playable_if: Condition::Always,
             removable: true,
@@ -121,7 +121,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: CLEAVE,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![AttackDamage(Upgradable(8, 11), AllEnemies)],
             ..BaseCard::new(Ironclad, Attack)
         },
@@ -196,7 +196,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: SWORD_BOOMERANG,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![
                 AttackDamage(Fixed(3), RandomEnemy),
                 AttackDamage(Fixed(3), RandomEnemy),
@@ -212,7 +212,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: THUNDERCLAP,
             _type: Attack,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![
                 AttackDamage(Upgradable(4, 7), AllEnemies),
                 AddBuff(buffs::VULNERABLE, Fixed(1), AllEnemies),
@@ -323,7 +323,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: DISARM,
             rarity: Uncommon,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![
                 AddBuff(buffs::STRENGTH, Upgradable(-2, -3), TargetEnemy),
                 ExhaustCard(This),
@@ -548,7 +548,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: SHOCKWAVE,
             rarity: Uncommon,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![
                 AddBuff(buffs::VULNERABLE, Upgradable(3, 5), AllEnemies),
                 AddBuff(buffs::WEAK, Upgradable(3, 5), AllEnemies),
@@ -560,7 +560,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: SPOT_WEAKNESS,
             rarity: Uncommon,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![If(
                 Condition::Attacking(TargetEnemy),
                 vec![AddBuff(buffs::STRENGTH, Upgradable(3, 4), _Self)],
@@ -582,7 +582,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: WHIRLWIND,
             rarity: Uncommon,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![Effect::Repeat(
                 X,
                 Box::new(Effect::AttackDamage(Upgradable(5, 8), AllEnemies)),
@@ -618,7 +618,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: BRUTALITY,
             rarity: Rare,
             on_play: vec![AddBuff(buffs::BRUTALITY, Fixed(1), _Self)],
-            innate: StaticCondition::WhenUpgraded,
+            innate: Condition::Upgraded,
             cost: Fixed(0),
             ..BaseCard::new(Ironclad, Power)
         },
@@ -816,7 +816,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: DEADLY_POISON,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![AddBuff(buffs::POISON, Upgradable(5, 7), TargetEnemy)],
             ..BaseCard::new(Silent, Skill)
         },
@@ -906,7 +906,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: ALL_OUT_ATTACK,
             rarity: Uncommon,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![
                 AttackDamage(Upgradable(10, 14), AllEnemies),
                 DiscardCard(PlayerHand(Random)),
@@ -920,7 +920,7 @@ fn all_cards() -> Vec<BaseCard> {
                 AttackDamage(Upgradable(11, 15), TargetEnemy),
                 ExhaustCard(This),
             ],
-            innate: StaticCondition::True,
+            innate: Condition::Always,
             ..BaseCard::new(Silent, Attack)
         },
         BaseCard {
@@ -965,7 +965,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: CATALYST,
             rarity: Uncommon,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![
                 AddBuff(buffs::POISON, Amount::Custom, TargetEnemy),
                 ExhaustCard(This),
@@ -1119,7 +1119,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: LEG_SWEEP,
             rarity: Uncommon,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![
                 AddBuff(buffs::WEAK, Upgradable(2, 3), TargetEnemy),
                 Block(Upgradable(11, 14), _Self),
@@ -1203,7 +1203,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: TERROR,
             rarity: Uncommon,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![
                 AddBuff(buffs::VULNERABLE, Fixed(99), TargetEnemy),
                 ExhaustCard(This),
@@ -1239,7 +1239,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: AFTER_IMAGE,
             rarity: Rare,
             on_play: vec![AddBuff(buffs::AFTER_IMAGE, Fixed(1), _Self)],
-            innate: StaticCondition::WhenUpgraded,
+            innate: Condition::Upgraded,
             ..BaseCard::new(Silent, Power)
         },
         BaseCard {
@@ -1268,7 +1268,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: CORPSE_EXPLOSION,
             rarity: Rare,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![
                 AddBuff(buffs::POISON, Upgradable(6, 9), TargetEnemy),
                 AddBuff(buffs::CORPSE_EXPLOSION, Fixed(1), TargetEnemy),
@@ -1279,7 +1279,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: DIE_DIE_DIE,
             rarity: Rare,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![AttackDamage(Upgradable(13, 17), AllEnemies)],
             ..BaseCard::new(Silent, Attack)
         },
@@ -1326,7 +1326,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: GRAND_FINALE,
             rarity: Rare,
             playable_if: Condition::Custom,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![AttackDamage(Upgradable(50, 60), AllEnemies)],
             cost: Fixed(0),
             ..BaseCard::new(Silent, Attack)
@@ -1334,7 +1334,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: MALAISE,
             rarity: Rare,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![
                 AddBuff(
                     buffs::STRENGTH,
@@ -1543,7 +1543,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: SWEEPING_BEAM,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![AttackDamage(Upgradable(6, 9), AllEnemies), Draw(Fixed(1))],
             ..BaseCard::new(Defect, Attack)
         },
@@ -1579,7 +1579,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: BLIZZARD,
             rarity: Uncommon,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             effects: vec![
                 (Event::CombatStart, SetN(Fixed(0))),
                 (Event::Channel(OrbType::Frost), AddN(Upgradable(2, 3))),
@@ -1590,7 +1590,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: BOOT_SEQUENCE,
             rarity: Uncommon,
-            innate: StaticCondition::True,
+            innate: Condition::Always,
             on_play: vec![Block(Upgradable(10, 13), _Self), ExhaustCard(This)],
             cost: Fixed(0),
             ..BaseCard::new(Defect, Skill)
@@ -1622,7 +1622,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: CHILL,
             rarity: Uncommon,
-            innate: StaticCondition::WhenUpgraded,
+            innate: Condition::Upgraded,
             on_play: vec![
                 Repeat(Amount::EnemyCount, Box::new(ChannelOrb(OrbType::Frost))),
                 ExhaustCard(This),
@@ -1657,7 +1657,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: DOOM_AND_GLOOM,
             rarity: Uncommon,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![
                 AttackDamage(Upgradable(10, 14), AllEnemies),
                 ChannelOrb(OrbType::Dark),
@@ -1747,7 +1747,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: HELLO_WORLD,
             rarity: Uncommon,
-            innate: StaticCondition::WhenUpgraded,
+            innate: Condition::Upgraded,
             on_play: vec![AddBuff(buffs::HELLO, Fixed(1), _Self)],
             ..BaseCard::new(Defect, Power)
         },
@@ -1807,7 +1807,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: RIP_AND_TEAR,
             rarity: Uncommon,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![
                 AttackDamage(Upgradable(7, 9), RandomEnemy),
                 AttackDamage(Upgradable(7, 9), RandomEnemy),
@@ -1841,7 +1841,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: STORM,
             rarity: Uncommon,
-            innate: StaticCondition::WhenUpgraded,
+            innate: Condition::Upgraded,
             on_play: vec![AddBuff(buffs::STORM, Fixed(1), _Self)],
             ..BaseCard::new(Defect, Power)
         },
@@ -1957,7 +1957,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: HYPERBEAM,
             rarity: Rare,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![
                 AttackDamage(Upgradable(26, 34), AllEnemies),
                 AddBuff(buffs::FOCUS, Fixed(-3), _Self),
@@ -1968,7 +1968,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: MACHINE_LEARNING,
             rarity: Rare,
-            innate: StaticCondition::WhenUpgraded,
+            innate: Condition::Upgraded,
             on_play: vec![AddBuff(buffs::MACHINE_LEARNING, Fixed(1), _Self)],
             ..BaseCard::new(Defect, Power)
         },
@@ -2041,7 +2041,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: THUNDER_STRIKE,
             rarity: Rare,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             effects: vec![
                 (Event::CombatStart, Effect::SetN(Fixed(0))),
                 (Event::Channel(OrbType::Lightning), Effect::AddN(Fixed(1))),
@@ -2080,13 +2080,13 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: CONSECRATE,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![AttackDamage(Upgradable(5, 8), AllEnemies)],
             ..BaseCard::new(Watcher, Attack)
         },
         BaseCard {
             name: CRESCENDO,
-            retain: StaticCondition::True,
+            retain: Condition::Always,
             on_play: vec![SetStance(Stance::Wrath), ExhaustCard(This)],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Watcher, Attack)
@@ -2162,7 +2162,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: FLYING_SLEEVES,
-            retain: StaticCondition::True,
+            retain: Condition::Always,
             on_play: vec![
                 AttackDamage(Upgradable(4, 6), TargetEnemy),
                 AttackDamage(Upgradable(4, 6), TargetEnemy),
@@ -2206,7 +2206,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: PRESSURE_POINTS,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![
                 AddBuff(buffs::MARK, Upgradable(8, 11), TargetEnemy),
                 Effect::Custom,
@@ -2224,7 +2224,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: PROTECT,
-            retain: StaticCondition::True,
+            retain: Condition::Always,
             on_play: vec![Block(Upgradable(12, 16), _Self)],
             cost: Fixed(2),
             ..BaseCard::new(Watcher, Skill)
@@ -2248,7 +2248,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: TRANQUILITY,
-            retain: StaticCondition::True,
+            retain: Condition::Always,
             on_play: vec![SetStance(Stance::Calm), ExhaustCard(This)],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Watcher, Skill)
@@ -2256,7 +2256,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: BATTLE_HYMN,
             rarity: Uncommon,
-            innate: StaticCondition::WhenUpgraded,
+            innate: Condition::Upgraded,
             on_play: vec![AddBuff(buffs::BATTLE_HYMN, Fixed(1), _Self)],
             ..BaseCard::new(Watcher, Power)
         },
@@ -2284,7 +2284,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: CONCLUDE,
             rarity: Uncommon,
-            targeted: StaticCondition::False,
+            targeted: Condition::Never,
             on_play: vec![Damage(Upgradable(12, 16), AllEnemies), EndTurn],
             ..BaseCard::new(Watcher, Attack)
         },
@@ -2412,7 +2412,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: PERSEVERANCE,
             rarity: Uncommon,
-            retain: StaticCondition::True,
+            retain: Condition::Always,
             effects: vec![(Event::CombatStart, SetN(Fixed(0)))],
             on_retain: vec![AddN(Upgradable(2, 3))],
             on_play: vec![Effect::Block(Sum(vec![N, Upgradable(5, 7)]), _Self)],
@@ -2467,7 +2467,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: SANDS_OF_TIME,
             rarity: Uncommon,
-            retain: StaticCondition::True,
+            retain: Condition::Always,
             on_retain: vec![AddCardCost(This, Fixed(-1))],
             on_play: vec![AttackDamage(Upgradable(20, 26), TargetEnemy)],
             cost: Fixed(4),
@@ -2536,7 +2536,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: WAVE_OF_THE_HAND,
             rarity: Uncommon,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![AddBuff(
                 buffs::WAVE_OF_THE_HAND,
                 Upgradable(1, 2),
@@ -2575,7 +2575,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: WINDMILL_STRIKE,
             rarity: Uncommon,
-            retain: StaticCondition::True,
+            retain: Condition::Always,
             effects: vec![(Event::CombatStart, SetN(Fixed(0)))],
             on_retain: vec![AddN(Upgradable(4, 5))],
             on_play: vec![AttackDamage(Sum(vec![N, Upgradable(7, 10)]), TargetEnemy)],
@@ -2585,7 +2585,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: WORSHIP,
             rarity: Uncommon,
-            retain: StaticCondition::WhenUpgraded,
+            retain: Condition::Upgraded,
             on_play: vec![AddBuff(buffs::MANTRA, Fixed(5), _Self)],
             cost: Fixed(2),
             ..BaseCard::new(Watcher, Skill)
@@ -2599,7 +2599,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: ALPHA,
             rarity: Rare,
-            innate: StaticCondition::WhenUpgraded,
+            innate: Condition::Upgraded,
             on_play: vec![
                 AddCard {
                     card: CardReference::ByName(BETA),
@@ -2614,7 +2614,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: BLASPHEMY,
             rarity: Rare,
-            retain: StaticCondition::WhenUpgraded,
+            retain: Condition::Upgraded,
             on_play: vec![
                 SetStance(Stance::Divinity),
                 AddBuff(buffs::BLASPHEMER, Fixed(1), _Self),
@@ -2671,15 +2671,15 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: ESTABLISHMENT,
             rarity: Rare,
-            innate: StaticCondition::WhenUpgraded,
+            innate: Condition::Upgraded,
             on_play: vec![AddBuff(buffs::ESTABLISHMENT, Fixed(1), _Self)],
             ..BaseCard::new(Watcher, Power)
         },
         BaseCard {
             name: JUDGMENT,
             rarity: Rare,
-            innate: StaticCondition::WhenUpgraded,
-            targeted: StaticCondition::True,
+            innate: Condition::Upgraded,
+            targeted: Condition::Always,
             on_play: vec![If(
                 Condition::RemainingHp(Upgradable(31, 41), TargetEnemy),
                 vec![],
@@ -2766,7 +2766,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: BLIND,
             rarity: Uncommon,
-            targeted: StaticCondition::WhenUnupgraded,
+            targeted: Condition::Not(Box::new(Condition::Upgraded)),
             on_play: vec![If(
                 Condition::Upgraded,
                 vec![AddBuff(buffs::WEAK, Fixed(2), AllEnemies)],
@@ -2778,7 +2778,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: DARK_SHACKLES,
             rarity: Uncommon,
-            targeted: StaticCondition::True,
+            targeted: Condition::Always,
             on_play: vec![LoseStr(Upgradable(9, 15), TargetEnemy), ExhaustCard(This)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
@@ -2815,8 +2815,8 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: DRAMATIC_ENTRANCE,
             rarity: Uncommon,
-            innate: StaticCondition::True,
-            targeted: StaticCondition::False,
+            innate: Condition::Always,
+            targeted: Condition::Never,
             on_play: vec![
                 AttackDamage(Upgradable(8, 12), AllEnemies),
                 ExhaustCard(This),
@@ -2922,8 +2922,8 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: MIND_BLAST,
             rarity: Uncommon,
-            innate: StaticCondition::True,
-            targeted: StaticCondition::False,
+            innate: Condition::Always,
+            targeted: Condition::Never,
             on_play: vec![AttackDamage(Amount::Custom, AllEnemies)],
             cost: Fixed(2),
             ..BaseCard::new(Class::None, Attack)
@@ -2971,7 +2971,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: TRIP,
             rarity: Uncommon,
-            targeted: StaticCondition::WhenUnupgraded,
+            targeted:  Condition::Not(Box::new(Condition::Upgraded)),
             on_play: vec![If(
                 Condition::Upgraded,
                 vec![AddBuff(buffs::VULNERABLE, Fixed(2), TargetEnemy)],
@@ -3171,7 +3171,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: INSIGHT,
             rarity: Rarity::Special,
-            retain: StaticCondition::True,
+            retain: Condition::Always,
             on_play: vec![Draw(Upgradable(2, 3)), ExhaustCard(This)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
@@ -3189,7 +3189,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: MIRACLE,
             rarity: Rarity::Special,
-            retain: StaticCondition::True,
+            retain: Condition::Always,
             on_play: vec![AddEnergy(Upgradable(1, 2))],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
@@ -3217,7 +3217,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: SAFETY,
             rarity: Rarity::Special,
-            retain: StaticCondition::True,
+            retain: Condition::Always,
             on_play: vec![Block(Upgradable(12, 16), _Self), ExhaustCard(This)],
             ..BaseCard::new(Class::None, Skill)
         },
@@ -3386,7 +3386,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: PRIDE,
             rarity: Rarity::Curse,
-            innate: StaticCondition::True,
+            innate: Condition::Always,
             upgradeable: crate::models::core::Upgradable::Never,
             on_turn_end: vec![AddCard {
                 card: CardReference::ByName(PRIDE),
@@ -3409,7 +3409,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: WRITHE,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            innate: StaticCondition::True,
+            innate: Condition::Always,
             upgradeable: crate::models::core::Upgradable::Never,
             ..BaseCard::new(Class::None, Curse)
         },

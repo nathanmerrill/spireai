@@ -1,5 +1,4 @@
 use crate::models;
-use crate::models::core::*;
 use crate::models::state::*;
 use models::state::GameState;
 
@@ -117,7 +116,8 @@ fn make_choice(state: &GameState) -> Choice {
 fn all_choices(state: &GameState) -> Vec<Choice> {
     let mut choices: Vec<Choice> = Vec::new();
     match &state.floor_state {
-        FloorState::Battle(battle_state) => {
+        FloorState::Battle => {
+            let battle_state: &BattleState = state.battle_state.as_ref().expect("Battle state not set when floor state is battle");
             choices.push(Choice::End);
 
             for (card_index, card) in battle_state.hand.iter().enumerate() {
@@ -212,28 +212,24 @@ fn all_choices(state: &GameState) -> Vec<Choice> {
     choices
 }
 
-fn potion_targeted(potion: &Potion, game_state: &GameState) -> bool {
-    evaluator::eval_static_condition(
-        &potion.base.targeted,
-        game_state,
-        &evaluator::Binding::Potion(potion)
-    )
+fn potion_targeted(potion: &Potion, state: &GameState) -> bool {
+    evaluator::eval_condition(&potion.base.targeted, state, &evaluator::Binding::Potion(potion), &None)
 }
 
-fn card_targeted(card: &Card, game_state: &GameState) -> bool {
-    evaluator::eval_static_condition(
+fn card_targeted(card: &Card, state: &GameState) -> bool {
+    evaluator::eval_condition(
         &card.base.targeted, 
-        game_state, 
-        &evaluator::Binding::Card(card)
+        state, 
+        &evaluator::Binding::Card(card),
+        &None,
     )
 }
 
-fn card_playable(card: &Card, battle_state: &BattleState, game_state: &GameState) -> bool {
+fn card_playable(card: &Card, battle_state: &BattleState, state: &GameState) -> bool {
     card.cost <= battle_state.energy
         && evaluator::eval_condition(
             &card.base.playable_if,
-            battle_state,
-            game_state,
+            state,
             &evaluator::Binding::Card(card),
             &None,
         )

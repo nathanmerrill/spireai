@@ -9,7 +9,6 @@ pub enum Binding<'a> {
     Monster(&'a Monster),
     Potion(&'a Potion),
     Relic(&'a Relic),
-    Event(&'a EventState),
 }
 
 impl<'a> Binding<'a> {
@@ -20,9 +19,6 @@ impl<'a> Binding<'a> {
             Binding::Potion(_) => &game_state.player,
             Binding::Relic(_) => &game_state.player,
             Binding::Monster(monster) => &monster.creature,
-            Binding::Event(event) => {
-                panic!("Unexpected get_creature call on an event: {}", event.base.name)
-            }
         }
     }
 
@@ -37,9 +33,6 @@ impl<'a> Binding<'a> {
             }
             Binding::Card(_) | Binding::Potion(_) | Binding::Relic(_) => None,
             Binding::Monster(monster) => Some(&monster.creature),
-            Binding::Event(event) =>  {
-                panic!("Unexpected get_monster call on event: {}", event.base.name)
-            }
         }
     }
 
@@ -50,7 +43,6 @@ impl<'a> Binding<'a> {
             Binding::Monster(monster) => monster.base.name,
             Binding::Potion(potion) => potion.base.name,
             Binding::Relic(relic) => relic.base.name,
-            Binding::Event(event) => event.base.name,
         }
     }
 
@@ -63,7 +55,6 @@ impl<'a> Binding<'a> {
                 panic!("Unexpected vars check on potion: {}", potion.base.name)
             }
             Binding::Relic(relic) => &relic.vars,
-            Binding::Event(event) => &event.vars,
         }
     }
 
@@ -76,15 +67,12 @@ impl<'a> Binding<'a> {
             Binding::Monster(monster) => {
                 panic!("Unexpected is_upgraded check on monster: {}", monster.base.name)
             },
-            Binding::Potion(potion) => {
+            Binding::Potion(_) => {
                 game_state.relic_names.contains(models::relics::SACRED_BARK)
             }
             Binding::Relic(relic) => {
                 panic!("Unexpected is_upgraded check on relic: {}", relic.base.name)
             },
-            Binding::Event(event) => {
-                game_state.asc >= 15
-            }
         }
     }
 }
@@ -101,12 +89,13 @@ pub enum ResolvedTarget {
 impl ResolvedTarget {
     fn to_creature<'a>(
         self,
-        battle_state: &'a BattleState,
-        game_state: &'a GameState,
+        state: &'a GameState,
     ) -> &'a Creature {
         match self {
-            ResolvedTarget::Player => &game_state.player,
-            ResolvedTarget::Monster(idx) => &battle_state.monsters[idx as usize].creature,
+            ResolvedTarget::Player => &state.player,
+            ResolvedTarget::Monster(idx) => {
+                &state.battle_state.as_ref().expect("No battle state when resolving monster").monsters[idx as usize].creature
+            }
             _ => panic!("Cannot resolve to a single creature: {:?}", self),
         }
     }
@@ -114,7 +103,7 @@ impl ResolvedTarget {
 
 pub fn eval_target(
     target: &Target,
-    battle_state: &BattleState,
+    state: &GameState,
     binding: &Binding,
     action: &Option<GameAction>,
 ) -> ResolvedTarget {
@@ -142,6 +131,7 @@ pub fn eval_target(
             None => ResolvedTarget::None,
         },
         Target::Friendly(name) => {
+            let battle_state = state.battle_state.as_ref().expect("Battle state not found in Target::Friendly");
             match battle_state.monsters.iter().find(|m| &m.base.name == name) {
                 Some(monster) => ResolvedTarget::Monster(monster.creature.position),
                 None => ResolvedTarget::None,
@@ -149,15 +139,16 @@ pub fn eval_target(
         }
         Target::RandomEnemy => match binding.get_monster() {
             Some(_) => ResolvedTarget::Player,
-            None => ResolvedTarget::RandomMonster((0..battle_state.monsters.len() as u8).collect()),
+            None => ResolvedTarget::RandomMonster((0..get_monster_count(state)).collect()),
         },
         Target::RandomFriendly => match binding.get_monster() {
             Some(creature) => {
-                if battle_state.monsters.len() == 1 {
+                let monster_count = get_monster_count(state);
+                if monster_count == 1 {
                     ResolvedTarget::Monster(0)
                 } else {
                     let mut positions: Vec<u8> = (0..creature.position).collect();
-                    positions.extend(creature.position + 1..battle_state.monsters.len() as u8);
+                    positions.extend(creature.position + 1..monster_count);
                     ResolvedTarget::RandomMonster(positions)
                 }
             }
@@ -173,74 +164,87 @@ pub fn eval_target(
     }
 }
 
+fn get_monster_count(state: &GameState) -> u8{
+    let battle_state = state.battle_state.as_ref().expect("Battle state not found in get_monster_count");
+    battle_state.monsters.len() as u8
+}
+
 pub fn eval_amount(
     amount: &Amount,
-    game_state: &GameState,
-    battle_state: &BattleState,
+    state: &GameState,
     binding: &Binding,
 ) -> i16 {
     match amount {
-        Amount::ByAsc(low, mid, high) => match battle_state.battle_type {
-            BattleType::Common | BattleType::Event => {
-                if game_state.asc >= 17 {
-                    *high
-                } else if game_state.asc >= 2 {
-                    *mid
-                } else {
-                    *low
+        Amount::ByAsc(low, mid, high) => {
+            let battle_state = state.battle_state.as_ref().expect("Unable to read battle state when in Amount::ByAsc");
+            match battle_state.battle_type {
+                BattleType::Common | BattleType::Event => {
+                    if state.asc >= 17 {
+                        *high
+                    } else if state.asc >= 2 {
+                        *mid
+                    } else {
+                        *low
+                    }
                 }
-            }
-            BattleType::Elite => {
-                if game_state.asc >= 18 {
-                    *high
-                } else if game_state.asc >= 3 {
-                    *mid
-                } else {
-                    *low
+                BattleType::Elite => {
+                    if state.asc >= 18 {
+                        *high
+                    } else if state.asc >= 3 {
+                        *mid
+                    } else {
+                        *low
+                    }
                 }
-            }
-            BattleType::Boss => {
-                if game_state.asc >= 19 {
-                    *high
-                } else if game_state.asc >= 4 {
-                    *mid
-                } else {
-                    *low
+                BattleType::Boss => {
+                    if state.asc >= 19 {
+                        *high
+                    } else if state.asc >= 4 {
+                        *mid
+                    } else {
+                        *low
+                    }
                 }
             }
         },
         Amount::Custom => match binding.get_name() {
             _ => panic!("Unhandled custom amount: {:?}", binding),
         },
-        Amount::EnemyCount => battle_state.monsters.len() as i16,
+        Amount::EnemyCount => {
+            let battle_state = state.battle_state.as_ref().expect("Unable to read battle state when in Amount::EnemyCount");
+            battle_state.monsters.len() as i16
+        },
         Amount::Fixed(amount) => *amount,
         Amount::Mult(amounts) => {
             let mut product = 1;
             for amount in amounts {
-                product = product * eval_amount(amount, game_state, battle_state, binding);
+                product = product * eval_amount(amount, state, binding);
             }
             product
         }
         Amount::N => binding.get_vars().n as i16,
         Amount::NegX => binding.get_vars().x as i16 * -1,
-        Amount::OrbCount => battle_state.orbs.len() as i16,
+        Amount::OrbCount => {
+            let battle_state = state.battle_state.as_ref().expect("Unable to read battle state when in Amount::OrbCount");
+            battle_state.orbs.len() as i16
+        },
         Amount::Sum(amounts) => {
             let mut sum = 0;
             for amount in amounts {
-                sum = sum + eval_amount(amount, game_state, battle_state, binding);
+                sum = sum + eval_amount(amount, state, binding);
             }
             sum
         },
         Amount::Upgradable(low, high) => {
-            match binding.is_upgraded(game_state) {
+            match binding.is_upgraded(state) {
                 true => *high,
                 false => *low
             }
         },
-        Amount::MaxHp => binding.get_creature(game_state).max_hp as i16,
+        Amount::MaxHp => binding.get_creature(state).max_hp as i16,
         Amount::X => binding.get_vars().x as i16,
         Amount::PlayerBlock => {
-            game_state.player.block as i16
+            state.player.block as i16
         },
         Amount::Any => {
             panic!("Any does not resolve to a fixed number")
@@ -248,47 +252,37 @@ pub fn eval_amount(
     }
 }
 
-pub fn eval_static_condition(condition: &StaticCondition, game_state: &GameState, binding: &Binding) -> bool{
-    match condition {
-        StaticCondition::DeckSize(size) => game_state.deck.len() as u8 >= *size,
-        StaticCondition::False => false,
-        StaticCondition::MinGold(gold) => game_state.gold as u16 >= *gold,
-        StaticCondition::True => true,
-        StaticCondition::WhenUnupgraded => !binding.is_upgraded(game_state),
-        StaticCondition::WhenUpgraded => binding.is_upgraded(game_state),
-    }
-}
-
 pub fn eval_condition(
     condition: &Condition,
-    battle_state: &BattleState,
-    game_state: &GameState,
+    state: &GameState,
     binding: &Binding,
     action: &Option<GameAction>,
 ) -> bool {
     match condition {
-        Condition::Act(act) => &game_state.act == act,
+        Condition::Act(act) => &state.act == act,
         Condition::Always => true,
-        Condition::Asc(asc) => &game_state.asc >= asc,
-        Condition::Attacking(target) => match eval_target(target, battle_state, binding, action) {
-            ResolvedTarget::Monster(idx) => match battle_state.monsters[idx as usize].intent {
-                Intent::Attack => true,
-                Intent::AttackBuff => true,
-                Intent::AttackDebuff => true,
-                Intent::AttackDefend => true,
-                _ => false,
-            },
-            _ => panic!("Unexpected target that is not a monster in Condition::Attacking")
+        Condition::Asc(asc) => &state.asc >= asc,
+        Condition::Attacking(target) => {
+            let battle_state = state.battle_state.as_ref().expect("Battle state not found in Condition::Attacking");
+            match eval_target(target, state, binding, action) {
+                ResolvedTarget::Monster(idx) => match battle_state.monsters[idx as usize].intent {
+                    Intent::Attack => true,
+                    Intent::AttackBuff => true,
+                    Intent::AttackDebuff => true,
+                    Intent::AttackDefend => true,
+                    _ => false,
+                },
+                _ => panic!("Unexpected target that is not a monster in Condition::Attacking")
+            }
         },
         Condition::Buff(target, buff) => {
-            let creature = eval_target(target, battle_state, binding, action)
-                .to_creature(battle_state, game_state);
+            let creature = eval_target(target, state, binding, action).to_creature(state);
             creature.buffs.contains_key(buff)
         }
         Condition::BuffX(target, buff, x) => {
-            let val = eval_amount(x, game_state, battle_state, binding) as u8;
-            let creature = eval_target(target, battle_state, binding, action)
-                .to_creature(battle_state, game_state);
+            let battle_state = state.battle_state.as_ref().expect("Battle state not found in Condition::BuffX");
+            let val = eval_amount(x, state, binding) as u8;
+            let creature = eval_target(target, state, binding, action).to_creature(state);
             creature
                 .buffs
                 .get(buff)
@@ -299,22 +293,19 @@ pub fn eval_condition(
             _ => panic!("Unhandled custom condition: {:?}", binding),
         },
         Condition::Dead(target) => {
-            eval_target(target, battle_state, binding, action)
-                .to_creature(battle_state, game_state)
-                .hp
-                == 0
+            eval_target(target, state, binding, action).to_creature(state).hp == 0
         }
         Condition::Equals(amount1, amount2) => {
-            eval_amount(amount1, game_state, battle_state, binding)
-                == eval_amount(amount2, game_state, battle_state, binding)
+            eval_amount(amount1, state, binding) == eval_amount(amount2, state, binding)
         }
         Condition::HalfHp(target) => {
-            let creature = eval_target(target, battle_state, binding, action)
-                .to_creature(battle_state, game_state);
+            let creature = eval_target(target, state, binding, action).to_creature(state);
             creature.hp * 2 <= creature.max_hp
         }
-        Condition::Stance(stance) => &battle_state.stance == stance,
-        
+        Condition::Stance(stance) => {
+            let battle_state = state.battle_state.as_ref().expect("Battle state not found in Condition::Stance");
+            &battle_state.stance == stance
+        },        
         Condition::Never => false,
         _ => panic!("Unhandled condition")
     }

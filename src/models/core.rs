@@ -111,15 +111,6 @@ pub enum CardType {
     All,
 }
 
-pub enum StaticCondition {
-    True,
-    False,
-    WhenUpgraded,
-    WhenUnupgraded,
-    DeckSize(u8),
-    MinGold(u16),
-}
-
 pub enum Upgradable {
     Never,
     Once,
@@ -189,13 +180,6 @@ pub enum Move {
     AfterMove(Vec<(&'static str, Move)>),
 }
 
-pub struct ProbabilisticMove {
-    pub chance: Amount,
-    pub move_index: u8,
-    pub max_repeats: Amount,
-    pub starter_asc: Option<u8>,
-}
-
 pub struct MonsterMove {
     pub name: &'static str,
     pub effects: Vec<Effect>,
@@ -229,9 +213,6 @@ pub enum Event {
     Buff(&'static str, Target),
     UnBuff(&'static str, Target),
     Channel(OrbType),
-
-    // Monster
-    Move(&'static str),
 
     // Player
     Discard,
@@ -296,6 +277,8 @@ pub enum Effect {
     Scry(Amount),
     AddEnergy(Amount),
     AddMaxHp(Amount),
+    ReduceMaxHpPercentage(u8),
+    
     Heal(Amount, Target),
     SetStance(Stance),
     ChannelOrb(OrbType),
@@ -323,14 +306,9 @@ pub enum Effect {
     RetainCard(CardLocation),
 
     // Meta-scaling
-    CardReward,
     AddRelic(&'static str),
-    ShowReward {
-        potions: i8,
-        cards: i8,
-        gold: i8,
-        relics: i8,
-    },
+    RandomRelic,
+    ShowReward(Vec<RewardType>),
     RemoveCard(u8),
     TransformCard(u8),
 
@@ -348,15 +326,27 @@ pub enum Effect {
     BoostMult(Amount), // Adds/subtracts to the multiplier. In percentage units
     Cap(Amount),
     Cancel,
-
-    IfAmount(Vec<Effect>, Vec<Effect>),
+    Fight(Vec<&'static str>, bool), // True if elite
+    ShowChoices(Vec<BaseEventChoice>),
 
     //Meta
     If(Condition, Vec<Effect>, Vec<Effect>),
+    RandomChance(Amount, Vec<Effect>, Vec<Effect>),
     Multiple(Vec<Effect>),
     Repeat(Amount, Box<Effect>),
     None,
     Custom,
+}
+
+pub enum RewardType {
+    StandardCard,
+    EliteCard,
+    BossCard,
+    Relic(Rarity),
+    RandomRelic,
+    PotionChance,
+    Gold(u8, u8),
+    RandomBook,
 }
 
 #[derive(strum_macros::AsStaticStr)]
@@ -383,7 +373,13 @@ pub enum Condition {
     Upgraded,
     HasOrbSlot,
     HasDiscarded,
+    MultipleAnd(Vec<Condition>),
+    MultipleOr(Vec<Condition>),
+    DeckSize(u8),
+    HasGold(u8),
+    IsVariant(&'static str),  //Event variant
     Always,
+    Class(Class),
     Never,
     Custom,
 }
@@ -433,11 +429,11 @@ pub struct BaseCard {
     pub on_retain: Vec<Effect>,
     pub on_turn_end: Vec<Effect>, //Happens if card is in hand, before cards are discarded
     pub name: &'static str,
-    pub innate: StaticCondition,
+    pub innate: Condition,
     pub upgradeable: Upgradable,
-    pub retain: StaticCondition,
+    pub retain: Condition,
     pub removable: bool,
-    pub targeted: StaticCondition,
+    pub targeted: Condition,
 }
 impl std::fmt::Debug for BaseCard {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -452,12 +448,17 @@ pub struct BaseEvent {
     pub name: &'static str,
     pub choices: Vec<BaseEventChoice>,
     pub shrine: bool,
+    pub variants: Vec<&'static str>,
 }
+
 pub struct BaseEventChoice {
     pub name: &'static str,
     pub effects: Vec<Effect>,
-    pub allowed: StaticCondition,
+    pub condition: Condition,
+    pub repeats: bool,
 }
+
+
 impl std::fmt::Debug for BaseEvent {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("BaseEvent")
@@ -490,7 +491,7 @@ pub struct BasePotion {
     pub _class: Class,
     pub rarity: Rarity,
     pub on_drink: Vec<Effect>,
-    pub targeted: StaticCondition,
+    pub targeted: Condition,
 }
 impl std::fmt::Debug for BasePotion {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

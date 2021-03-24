@@ -1,7 +1,7 @@
 use crate::models;
 use im::Vector;
 use serde::Deserialize;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -377,6 +377,7 @@ pub fn to_model(state: &GameState) -> models::state::GameState {
             ),
             block: state.combat_state.as_ref().map(|a| a.player.block).unwrap_or(0) as u16
         },
+        battle_state: state.combat_state.as_ref().map(|a| read_battle_state(a)),
         gold: state.gold as u16,
         floor_state: read_floor_state(state),
         deck: convert_cards(&state.deck),
@@ -494,8 +495,7 @@ pub fn read_floor_state(state: &GameState) -> models::state::FloorState {
         ScreenState::None(_) => {
             match &state.room_phase {
                 RoomPhase::Combat => {
-                    let combat_state = (state.combat_state).as_ref().unwrap();
-                    models::state::FloorState::Battle(read_battle_state(combat_state))
+                    models::state::FloorState::Battle
                 },
                 _ => panic!("Expected Battle in None state")
             }
@@ -537,12 +537,11 @@ fn convert_event(event: &Event) -> models::state::EventState {
 
     models::state::EventState{
         base: base_event,
-        available_choices: base_event.choices.iter().map(|a| a.name).collect(),
-        vars: models::state::Vars {
-            n: 0,
-            x: 0,
-            n_reset: 0,
-        },
+        available_choices: event.options.iter().map(|option: &EventOption| {
+            base_event.choices.iter()
+            .find(|a| a.name == option.label).expect(format!("No option found that matches label: {}", option.label).as_str())
+            .name
+        }).collect(),
     }
 }
 

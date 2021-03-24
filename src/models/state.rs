@@ -8,6 +8,7 @@ pub struct GameState {
     pub class: Class,
     pub map: MapState,
     pub floor_state: FloorState,
+    pub battle_state: Option<BattleState>,
     pub act: u8,
     pub asc: u8,
     pub deck: Vector<Rc<Card>>,
@@ -51,7 +52,7 @@ impl PartialEq for Monster {
 pub enum FloorState {
     Event(EventState),
     //Chest(ChestType),
-    Battle(BattleState),
+    Battle,
     Map,
     GameOver,
     CombatRewards(Vec<Reward>),
@@ -90,7 +91,6 @@ pub enum MapNode {
 #[derive(Clone, Debug)]
 pub struct EventState {
     pub base: &'static BaseEvent,
-    pub vars: Vars,
     pub available_choices: Vec<&'static str>
 }
 
