@@ -149,7 +149,9 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: DREAM_CATCHER,
             activation: Activation::Event(Event::Rest),
-            effect: Effect::CardReward,
+            effect: Effect::ShowReward(vec![
+                RewardType::StandardCard
+            ]),
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -1103,12 +1105,11 @@ fn all_relics() -> Vec<BaseRelic> {
                     copies: Fixed(1),
                     modifier: CardModifier::None,
                 },
-                Effect::ShowReward {
-                    cards: 0,
-                    potions: 0,
-                    relics: 3,
-                    gold: 0,
-                },
+                Effect::ShowReward(vec![
+                    RewardType::RandomRelic,
+                    RewardType::RandomRelic,
+                    RewardType::RandomRelic,
+                ]),
             ]),
             ..BaseRelic::default()
         },
@@ -1225,12 +1226,11 @@ fn all_relics() -> Vec<BaseRelic> {
             effect: Effect::Multiple(vec![
                 Effect::AddMaxHp(Fixed(6)),
                 Effect::UpgradeCard(CardLocation::DeckPile(RelativePosition::Random)),
-                Effect::ShowReward {
-                    potions: 1,
-                    cards: 1,
-                    gold: 50,
-                    relics: 0,
-                },
+                Effect::ShowReward(vec![
+                    RewardType::RandomPotion,
+                    RewardType::StandardCard,
+                    RewardType::Gold(50, 50),
+                ]),
             ]),
             ..BaseRelic::default()
         },

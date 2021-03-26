@@ -260,6 +260,7 @@ pub enum Effect {
     AddBuff(&'static str, Amount, Target),
     LoseStr(Amount, Target),
     HealPercentage(Amount, Target),
+    DamagePercentage(Amount),
     RemoveDebuffs(Target),
     RetainBlock(Amount),
     Die(Target),
@@ -277,12 +278,13 @@ pub enum Effect {
     Scry(Amount),
     AddEnergy(Amount),
     AddMaxHp(Amount),
-    ReduceMaxHpPercentage(u8),
+    ReduceMaxHpPercentage(Amount),
     
     Heal(Amount, Target),
     SetStance(Stance),
     ChannelOrb(OrbType),
     AddGold(Amount),
+    LoseAllGold,
     AddPotionSlot(Amount),
     AddOrbSlot(Amount),
     EvokeOrb(Amount),
@@ -310,7 +312,11 @@ pub enum Effect {
     RandomRelic,
     ShowReward(Vec<RewardType>),
     RemoveCard(u8),
+    RemoveRelic(&'static str),
     TransformCard(u8),
+    TransformRandomCard(u8),
+    DuplicateCard,
+    RandomPotion,
 
     // Monster
     Split(&'static str, &'static str),
@@ -331,7 +337,7 @@ pub enum Effect {
 
     //Meta
     If(Condition, Vec<Effect>, Vec<Effect>),
-    RandomChance(Amount, Vec<Effect>, Vec<Effect>),
+    RandomChance(Vec<(Amount, Effect)>),
     Multiple(Vec<Effect>),
     Repeat(Amount, Box<Effect>),
     None,
@@ -343,8 +349,10 @@ pub enum RewardType {
     EliteCard,
     BossCard,
     Relic(Rarity),
+    RelicName(&'static str),
     RandomRelic,
     PotionChance,
+    RandomPotion,
     Gold(u8, u8),
     RandomBook,
 }
@@ -376,10 +384,13 @@ pub enum Condition {
     MultipleAnd(Vec<Condition>),
     MultipleOr(Vec<Condition>),
     DeckSize(u8),
-    HasGold(u8),
+    HasRelic(&'static str),
+    HasGold(Amount),
     IsVariant(&'static str),  //Event variant
     Always,
     Class(Class),
+    HasUpgradableCard,
+    HasRemoveableCards(u8, CardType),
     Never,
     Custom,
 }

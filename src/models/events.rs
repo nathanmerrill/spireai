@@ -202,29 +202,16 @@ fn all_events() -> Vec<BaseEvent> {
                         Effect::AddGold(Amount::Fixed(-35)),
                         Effect::HealPercentage(Amount::Fixed(25), Target::_Self),
                     ],
-                    condition: Condition::HasGold(35),
+                    condition: Condition::HasGold(Amount::Fixed(35)),
                     ..BaseEventChoice::new()
                 },
                 BaseEventChoice {
                     name: "Purify",
                     effects: vec![
-                        Effect::If(Condition::Asc(15), vec![
-                            Effect::AddGold(Amount::Fixed(-50))
-                        ], vec![
-                            Effect::AddGold(Amount::Fixed(-75))
-                        ]),
+                        Effect::AddGold(Amount::ByAsc(-50, -75, -75)),
                         Effect::RemoveCard(1),
                     ],
-                    condition: Condition::MultipleOr(vec![
-                        Condition::MultipleAnd(vec![
-                            Condition::Asc(15),
-                            Condition::HasGold(75),
-                        ]),
-                        Condition::MultipleAnd(vec![
-                            Condition::Not(Box::new(Condition::Asc(15))),
-                            Condition::HasGold(50),
-                        ])
-                    ]),
+                    condition: Condition::HasGold(Amount::ByAsc(50, 75, 75)),
                     ..BaseEventChoice::new()
                 },
                 BaseEventChoice {
@@ -274,22 +261,13 @@ fn all_events() -> Vec<BaseEvent> {
                 BaseEventChoice {
                     name: "Accept",
                     effects: vec![
-                        Effect::ReduceMaxHpPercentage(50),
-                        Effect::If(Condition::Asc(15), vec![
-                            Effect::AddCard {
-                                card: CardReference::ByName(cards::APPARITION),
-                                destination: CardLocation::DeckPile(RelativePosition::Bottom),
-                                copies: Amount::Fixed(3),
-                                modifier: CardModifier::None,
-                            },
-                        ], vec![
-                            Effect::AddCard {
-                                card: CardReference::ByName(cards::APPARITION),
-                                destination: CardLocation::DeckPile(RelativePosition::Bottom),
-                                copies: Amount::Fixed(5),
-                                modifier: CardModifier::None,
-                            },
-                        ])
+                        Effect::ReduceMaxHpPercentage(Amount::Fixed(50)),
+                        Effect::AddCard {
+                            card: CardReference::ByName(cards::APPARITION),
+                            destination: CardLocation::DeckPile(RelativePosition::Bottom),
+                            copies: Amount::ByAsc(5, 3, 3),
+                            modifier: CardModifier::None,
+                        },
                     ],
                     ..BaseEventChoice::new()
                 },
@@ -339,11 +317,7 @@ fn all_events() -> Vec<BaseEvent> {
                             BaseEventChoice {
                                 name: "Take",
                                 effects: vec![
-                                    Effect::If(Condition::Asc(15), vec![
-                                        Effect::LoseHp(Amount::Fixed(15), Target::_Self),
-                                    ], vec![
-                                        Effect::LoseHp(Amount::Fixed(10), Target::_Self),
-                                    ]),
+                                    Effect::LoseHp(Amount::ByAsc(10, 15, 15), Target::_Self),
                                     Effect::ShowReward(vec![RewardType::RandomBook]),
                                 ],
                                 ..BaseEventChoice::new()
@@ -382,159 +356,173 @@ fn all_events() -> Vec<BaseEvent> {
                 BaseEventChoice {
                     name: "Search",
                     effects: vec![
-                        Effect::If(Condition::Asc(15), vec![
-                            Effect::AddX(Amount::Fixed(35))
-                        ], vec![
-                            Effect::AddX(Amount::Fixed(25))
-                        ]),
-                        Effect::RandomChance(Amount::X, vec![
-                            Effect::If(Condition::IsVariant(DEAD_ADVENTURER_GREMLIN_NOB), vec![
-                                Effect::Fight(vec![monsters::GREMLIN_NOB], true)
-                            ], vec![
-                                Effect::If(Condition::IsVariant(DEAD_ADVENTURER_LAGAVULIN), vec![
-                                    Effect::Fight(vec![monsters::LAGAVULIN], true)
+                        Effect::RandomChance(vec![
+                            (Amount::ByAsc(25, 35, 35), Effect::Multiple(vec![
+                                Effect::If(Condition::IsVariant(DEAD_ADVENTURER_GREMLIN_NOB), vec![
+                                    Effect::Fight(vec![monsters::GREMLIN_NOB], true)
                                 ], vec![
-                                    Effect::Fight(vec![monsters::SENTRY, monsters::SENTRY, monsters::SENTRY], true)
+                                    Effect::If(Condition::IsVariant(DEAD_ADVENTURER_LAGAVULIN), vec![
+                                        Effect::Fight(vec![monsters::LAGAVULIN], true)
+                                    ], vec![
+                                        Effect::Fight(vec![monsters::SENTRY, monsters::SENTRY, monsters::SENTRY], true)
+                                    ])
+                                ]),
+                                Effect::ShowReward(vec![
+                                    RewardType::RandomRelic,
+                                    RewardType::Gold(55, 65),
+                                    RewardType::EliteCard,
                                 ])
-                            ]),
-                            Effect::ShowReward(vec![
-                                RewardType::RandomRelic,
-                                RewardType::Gold(55, 65),
-                                RewardType::EliteCard,
-                            ])
-                        ], vec![
-                            Effect::RandomChance(Amount::Fixed(33), vec![
-                                Effect::AddGold(Amount::Fixed(30)),
-                                Effect::AddN(Amount::Fixed(1))
-                            ], vec![
-                                Effect::RandomChance(Amount::Fixed(50), vec![
-                                    Effect::RandomRelic,
-                                    Effect::AddN(Amount::Fixed(-1))
-                                ], vec![])
-                            ]),
-                            Effect::AddX(Amount::Fixed(10)),
-                            Effect::ShowChoices(vec![
-                                BaseEventChoice {
-                                    name: "Leave",
-                                    ..BaseEventChoice::new()
-                                },
-                                BaseEventChoice {
-                                    name: "Search",
-                                    effects: vec![
-                                        Effect::RandomChance(Amount::X, vec![
-                                            Effect::If(Condition::IsVariant(DEAD_ADVENTURER_GREMLIN_NOB), vec![
-                                                Effect::Fight(vec![monsters::GREMLIN_NOB], true)
-                                            ], vec![
-                                                Effect::If(Condition::IsVariant(DEAD_ADVENTURER_LAGAVULIN), vec![
-                                                    Effect::Fight(vec![monsters::LAGAVULIN], true)
-                                                ], vec![
-                                                    Effect::Fight(vec![monsters::SENTRY, monsters::SENTRY, monsters::SENTRY], true)
-                                                ])
-                                            ]),     
-                                            Effect::If(Condition::LessThan(Amount::N, Amount::Fixed(0)), vec![
-                                                Effect::ShowReward(vec![
-                                                    RewardType::Gold(55, 65),
-                                                    RewardType::EliteCard,
-                                                ])
-                                            ], vec![
-                                                Effect::If(Condition::LessThan(Amount::Fixed(0), Amount::N), vec![
-                                                    Effect::ShowReward(vec![
-                                                        RewardType::RandomRelic,
-                                                        RewardType::Gold(25, 35),
-                                                        RewardType::EliteCard,
-                                                    ])
-                                                ], vec![
-                                                    Effect::ShowReward(vec![
-                                                        RewardType::RandomRelic,
-                                                        RewardType::Gold(55, 65),
-                                                        RewardType::EliteCard,
-                                                    ])
-                                                ])
-                                            ])                          
-                                        ], vec![
-                                            Effect::If(Condition::LessThan(Amount::N, Amount::Fixed(0)), vec![
-                                                Effect::RandomChance(Amount::Fixed(50), vec![
-                                                    Effect::AddGold(Amount::Fixed(30)),
-                                                    Effect::AddN(Amount::Fixed(1))
-                                                ], vec![])
-                                            ], vec![
-                                                Effect::If(Condition::LessThan(Amount::Fixed(0), Amount::N), vec![
-                                                    Effect::RandomChance(Amount::Fixed(50), vec![
-                                                        Effect::RandomRelic,
-                                                        Effect::AddN(Amount::Fixed(-1))
-                                                    ], vec![])
-                                                ], vec![
-                                                    Effect::RandomChance(Amount::Fixed(50), vec![
-                                                        Effect::RandomRelic,
-                                                        Effect::AddN(Amount::Fixed(-1))
+                            ])),
+                            (Amount::ByAsc(75, 65, 65), Effect::Multiple(vec![
+                                Effect::RandomChance(vec![
+                                    (Amount::Fixed(33), Effect::Multiple(vec![
+                                        Effect::AddGold(Amount::Fixed(30)),
+                                        Effect::AddN(Amount::Fixed(1))
+                                    ])),
+                                    (Amount::Fixed(33), Effect::Multiple(vec![
+                                        Effect::RandomRelic,
+                                        Effect::AddN(Amount::Fixed(-1))
+                                    ])),
+                                    (Amount::Fixed(33), Effect::None),
+                                ]),
+                                Effect::ShowChoices(vec![
+                                    BaseEventChoice {
+                                        name: "Leave",
+                                        ..BaseEventChoice::new()
+                                    },
+                                    BaseEventChoice {
+                                        name: "Search",
+                                        effects: vec![
+                                            Effect::RandomChance(vec![
+                                                (Amount::ByAsc(50, 60, 60), Effect::Multiple(vec![
+                                                    Effect::If(Condition::IsVariant(DEAD_ADVENTURER_GREMLIN_NOB), vec![
+                                                        Effect::Fight(vec![monsters::GREMLIN_NOB], true)
                                                     ], vec![
-                                                        Effect::AddGold(Amount::Fixed(30)),
-                                                        Effect::AddN(Amount::Fixed(1))
-                                                    ])
-                                                ])
-                                            ]),
-                                            Effect::AddX(Amount::Fixed(10)),
-                                            Effect::ShowChoices(vec![
-                                                BaseEventChoice {
-                                                    name: "Leave",
-                                                    ..BaseEventChoice::new()
-                                                },
-                                                BaseEventChoice {
-                                                    name: "Search",
-                                                    effects: vec![
-                                                        Effect::RandomChance(Amount::X, vec![
-                                                            Effect::If(Condition::IsVariant(DEAD_ADVENTURER_GREMLIN_NOB), vec![
-                                                                Effect::Fight(vec![monsters::GREMLIN_NOB], true)
-                                                            ], vec![
-                                                                Effect::If(Condition::IsVariant(DEAD_ADVENTURER_LAGAVULIN), vec![
-                                                                    Effect::Fight(vec![monsters::LAGAVULIN], true)
-                                                                ], vec![
-                                                                    Effect::Fight(vec![monsters::SENTRY, monsters::SENTRY, monsters::SENTRY], true)
-                                                                ])
-                                                            ]),     
-                                                            Effect::If(Condition::LessThan(Amount::N, Amount::Fixed(0)), vec![
-                                                                Effect::ShowReward(vec![
-                                                                    RewardType::Gold(55, 65),
-                                                                    RewardType::EliteCard,
-                                                                ])
-                                                            ], vec![
-                                                                Effect::If(Condition::LessThan(Amount::Fixed(0), Amount::N), vec![
-                                                                    Effect::ShowReward(vec![
-                                                                        RewardType::RandomRelic,
-                                                                        RewardType::Gold(25, 35),
-                                                                        RewardType::EliteCard,
-                                                                    ])
-                                                                ], vec![
-                                                                    Effect::ShowReward(vec![
-                                                                        RewardType::Gold(25, 35),
-                                                                        RewardType::EliteCard,
-                                                                    ])                                                                
-                                                                ])
-                                                            ]),                   
+                                                        Effect::If(Condition::IsVariant(DEAD_ADVENTURER_LAGAVULIN), vec![
+                                                            Effect::Fight(vec![monsters::LAGAVULIN], true)
                                                         ], vec![
-                                                            Effect::If(Condition::LessThan(Amount::N, Amount::Fixed(0)), vec![
-                                                                Effect::AddGold(Amount::Fixed(30))
-                                                            ], vec![
-                                                                Effect::If(Condition::LessThan(Amount::Fixed(0), Amount::N), vec![
-                                                                    Effect::RandomRelic,
-                                                                ], vec![])
-                                                            ]), 
-                                                            Effect::ShowChoices(vec![
-                                                                BaseEventChoice {
-                                                                    name: "Leave",
-                                                                    ..BaseEventChoice::new()
-                                                                },
+                                                            Effect::Fight(vec![monsters::SENTRY, monsters::SENTRY, monsters::SENTRY], true)
+                                                        ])
+                                                    ]),     
+                                                    Effect::If(Condition::LessThan(Amount::N, Amount::Fixed(0)), vec![
+                                                        Effect::ShowReward(vec![
+                                                            RewardType::Gold(55, 65),
+                                                            RewardType::EliteCard,
+                                                        ])
+                                                    ], vec![
+                                                        Effect::If(Condition::LessThan(Amount::Fixed(0), Amount::N), vec![
+                                                            Effect::ShowReward(vec![
+                                                                RewardType::RandomRelic,
+                                                                RewardType::Gold(25, 35),
+                                                                RewardType::EliteCard,
+                                                            ])
+                                                        ], vec![
+                                                            Effect::ShowReward(vec![
+                                                                RewardType::RandomRelic,
+                                                                RewardType::Gold(55, 65),
+                                                                RewardType::EliteCard,
                                                             ])
                                                         ])
-                                                    ],
-                                                    ..BaseEventChoice::new()
-                                                }
+                                                    ])
+                                                ])),
+                                                (Amount::ByAsc(50, 40, 40), Effect::Multiple(vec![
+                                                    Effect::If(Condition::LessThan(Amount::N, Amount::Fixed(0)), vec![
+                                                        Effect::RandomChance(vec![
+                                                            (Amount::Fixed(50), Effect::Multiple(vec![
+                                                                Effect::AddGold(Amount::Fixed(30)),
+                                                                Effect::AddN(Amount::Fixed(1))
+                                                            ])),
+                                                            (Amount::Fixed(50), Effect::None),
+                                                        ]),
+                                                    ], vec![
+                                                        Effect::If(Condition::LessThan(Amount::Fixed(0), Amount::N), vec![
+                                                            Effect::RandomChance(vec![
+                                                                (Amount::Fixed(50), Effect::Multiple(vec![
+                                                                    Effect::RandomRelic,
+                                                                    Effect::AddN(Amount::Fixed(-1))
+                                                                ])),
+                                                                (Amount::Fixed(50), Effect::None),
+                                                            ]),
+                                                        ], vec![
+                                                            Effect::RandomChance(vec![
+                                                                (Amount::Fixed(50), Effect::Multiple(vec![
+                                                                    Effect::RandomRelic,
+                                                                    Effect::AddN(Amount::Fixed(-1))
+                                                                ])),
+                                                                (Amount::Fixed(50), Effect::Multiple(vec![
+                                                                    Effect::AddGold(Amount::Fixed(30)),
+                                                                    Effect::AddN(Amount::Fixed(1))
+                                                                ])),
+                                                            ]),
+                                                        ])
+                                                    ]),
+                                                    Effect::ShowChoices(vec![
+                                                        BaseEventChoice {
+                                                            name: "Leave",
+                                                            ..BaseEventChoice::new()
+                                                        },
+                                                        BaseEventChoice {
+                                                            name: "Search",
+                                                            effects: vec![
+                                                                Effect::RandomChance(vec![
+                                                                    (Amount::ByAsc(75, 85, 85), Effect::Multiple(vec![
+                                                                        Effect::If(Condition::IsVariant(DEAD_ADVENTURER_GREMLIN_NOB), vec![
+                                                                            Effect::Fight(vec![monsters::GREMLIN_NOB], true)
+                                                                        ], vec![
+                                                                            Effect::If(Condition::IsVariant(DEAD_ADVENTURER_LAGAVULIN), vec![
+                                                                                Effect::Fight(vec![monsters::LAGAVULIN], true)
+                                                                            ], vec![
+                                                                                Effect::Fight(vec![monsters::SENTRY, monsters::SENTRY, monsters::SENTRY], true)
+                                                                            ])
+                                                                        ]),     
+                                                                        Effect::If(Condition::LessThan(Amount::N, Amount::Fixed(0)), vec![
+                                                                            Effect::ShowReward(vec![
+                                                                                RewardType::Gold(55, 65),
+                                                                                RewardType::EliteCard,
+                                                                            ])
+                                                                        ], vec![
+                                                                            Effect::If(Condition::LessThan(Amount::Fixed(0), Amount::N), vec![
+                                                                                Effect::ShowReward(vec![
+                                                                                    RewardType::RandomRelic,
+                                                                                    RewardType::Gold(25, 35),
+                                                                                    RewardType::EliteCard,
+                                                                                ])
+                                                                            ], vec![
+                                                                                Effect::ShowReward(vec![
+                                                                                    RewardType::Gold(25, 35),
+                                                                                    RewardType::EliteCard,
+                                                                                ])                                                                
+                                                                            ])
+                                                                        ]),
+                                                                    ])),
+                                                                    (Amount::ByAsc(25, 15, 15), Effect::Multiple(vec![
+                                                                        
+                                                                        Effect::If(Condition::LessThan(Amount::N, Amount::Fixed(0)), vec![
+                                                                            Effect::AddGold(Amount::Fixed(30))
+                                                                        ], vec![
+                                                                            Effect::If(Condition::LessThan(Amount::Fixed(0), Amount::N), vec![
+                                                                                Effect::RandomRelic,
+                                                                            ], vec![])
+                                                                        ]), 
+                                                                        Effect::ShowChoices(vec![
+                                                                            BaseEventChoice {
+                                                                                name: "Leave",
+                                                                                ..BaseEventChoice::new()
+                                                                            },
+                                                                        ])
+                                                                    ]))
+                                                                ])
+                                                            ],
+                                                            ..BaseEventChoice::new()
+                                                        }
+                                                    ])
+                                                ]))
                                             ])
-                                        ])
-                                    ],
-                                    ..BaseEventChoice::new()
-                                }
-                            ])
+                                        ],
+                                        ..BaseEventChoice::new()
+                                    }
+                                ])
+                            ]))
                         ])
                     ],
                     ..BaseEventChoice::new()
@@ -544,27 +532,531 @@ fn all_events() -> Vec<BaseEvent> {
         },
         BaseEvent {
             name: DESIGNER_INSPIRE,
-            variants: vec![],
+            variants: vec![
+                DESIGNER_INSPIRE_BASE,
+                DESIGNER_INSPIRE_UP2,
+                DESIGNER_INSPIRE_TRANS2,
+                DESIGNER_INSPIRE_UP2_TRANS2,
+            ],
             shrine: true,
             choices: vec![
                 BaseEventChoice {
                     name: "Adjustments",
+                    effects: vec![
+                        Effect::AddGold(Amount::ByAsc(-40, -50, -50)),
+                        Effect::If(Condition::MultipleOr(vec![
+                            Condition::IsVariant(DESIGNER_INSPIRE_BASE),
+                            Condition::IsVariant(DESIGNER_INSPIRE_TRANS2)
+                        ]), vec![
+                            Effect::UpgradeCard(CardLocation::DeckPile(RelativePosition::PlayerChoice(Amount::Fixed(1))))
+                        ], vec![
+                            Effect::UpgradeCard(CardLocation::DeckPile(RelativePosition::Random)),
+                            Effect::UpgradeCard(CardLocation::DeckPile(RelativePosition::Random)),
+                        ])
+                    ],
+                    condition: Condition::MultipleAnd(vec![
+                        Condition::HasUpgradableCard,
+                        Condition::HasGold(Amount::ByAsc(40, 50, 50)),
+                    ]),
                     ..BaseEventChoice::new()
                 },
                 BaseEventChoice {
                     name: "Clean Up",
+                    effects: vec![
+                        Effect::AddGold(Amount::ByAsc(-60, -75, -75)),
+                        Effect::If(Condition::MultipleOr(vec![
+                            Condition::IsVariant(DESIGNER_INSPIRE_BASE),
+                            Condition::IsVariant(DESIGNER_INSPIRE_UP2)
+                        ]), vec![
+                            Effect::RemoveCard(1),
+                        ], vec![
+                            Effect::TransformRandomCard(2),
+                        ])
+                    ],
+                    condition: Condition::MultipleAnd(vec![
+                        Condition::HasGold(Amount::ByAsc(60, 75, 75)),
+                        Condition::MultipleOr(vec![
+                            Condition::MultipleAnd(vec![
+                                Condition::MultipleOr(vec![
+                                    Condition::IsVariant(DESIGNER_INSPIRE_BASE),
+                                    Condition::IsVariant(DESIGNER_INSPIRE_UP2)
+                                ]),
+                                Condition::HasRemoveableCards(1, CardType::All),
+                            ]),
+                            Condition::MultipleAnd(vec![
+                                Condition::MultipleOr(vec![
+                                    Condition::IsVariant(DESIGNER_INSPIRE_TRANS2),
+                                    Condition::IsVariant(DESIGNER_INSPIRE_UP2_TRANS2)
+                                ]),
+                                Condition::HasRemoveableCards(2, CardType::All),
+                            ]),
+                        ]),
+                    ]),
                     ..BaseEventChoice::new()
                 },
                 BaseEventChoice {
                     name: "Full Service",
+                    effects: vec![
+                        Effect::AddGold(Amount::ByAsc(-90, -110, -110)),
+                        Effect::RemoveCard(1),
+                        Effect::UpgradeCard(CardLocation::DeckPile(RelativePosition::Random)),
+                    ],
+                    condition: Condition::MultipleAnd(vec![
+                        Condition::HasRemoveableCards(1, CardType::All),
+                        Condition::HasGold(Amount::ByAsc(90, 110, 110)),
+                    ]),
                     ..BaseEventChoice::new()
                 },
                 BaseEventChoice {
                     name: "Punch",
+                    effects: vec![
+                        Effect::LoseHp(Amount::ByAsc(3, 5, 5), Target::_Self),
+                    ],
                     ..BaseEventChoice::new()
                 },
             ]
-        }
+        },
+        BaseEvent {
+            name: THE_DIVINE_FOUNTAIN,
+            shrine: true,
+            variants: vec![],
+            choices: vec![
+                BaseEventChoice {
+                    name: "Drink",
+                    effects: vec![
+                        Effect::Custom
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Leave",
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: DUPLICATOR,
+            shrine: true,
+            variants: vec![],
+            choices: vec![
+                BaseEventChoice {
+                    name: "Pray",
+                    effects: vec![
+                        Effect::DuplicateCard,
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Leave",
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: FACE_TRADER,
+            shrine: true,
+            variants: vec![],
+            choices: vec![
+                BaseEventChoice {
+                    name: "Touch",
+                    effects: vec![
+                        Effect::DamagePercentage(Amount::Fixed(10)),
+                        Effect::If(Condition::Asc(15), vec![
+                            Effect::AddGold(Amount::Fixed(50))
+                        ], vec![
+                            Effect::AddGold(Amount::Fixed(75))
+                        ]),
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Trade",
+                    effects: vec![
+                        Effect::RandomChance(vec![
+                            (Amount::Fixed(20), Effect::AddRelic(relics::CULTIST_HEADPIECE)),
+                            (Amount::Fixed(20), Effect::AddRelic(relics::FACE_OF_CLERIC)),
+                            (Amount::Fixed(20), Effect::AddRelic(relics::GREMLIN_VISAGE)),
+                            (Amount::Fixed(20), Effect::AddRelic(relics::NLOTHS_HUNGRY_FACE)),
+                            (Amount::Fixed(20), Effect::AddRelic(relics::SSSERPENT_HEAD)),
+                        ])
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Leave",
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: FALLING,
+            shrine: false,
+            variants: vec![],
+            choices: vec![
+                BaseEventChoice {
+                    name: "Land",
+                    effects: vec![
+                        Effect::Custom,
+                    ],
+                    condition: Condition::HasRemoveableCards(1, CardType::Skill),
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Channel",
+                    effects: vec![
+                        Effect::Custom,
+                    ],
+                    condition: Condition::HasRemoveableCards(1, CardType::Power),
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Attack",
+                    effects: vec![
+                        Effect::Custom,
+                    ],
+                    condition: Condition::HasRemoveableCards(1, CardType::Attack),
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Land gracefully",
+                    condition: Condition::MultipleAnd(vec![
+                        Condition::Not(Box::new(Condition::HasRemoveableCards(1, CardType::Skill))),
+                        Condition::Not(Box::new(Condition::HasRemoveableCards(1, CardType::Attack))),
+                        Condition::Not(Box::new(Condition::HasRemoveableCards(1, CardType::Power))),
+                    ]),
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: FORGOTTEN_ALTAR,
+            shrine: false,
+            variants: vec![],
+            choices: vec![
+                BaseEventChoice {
+                    name: "Offer",
+                    effects: vec![
+                        Effect::RemoveRelic(relics::GOLDEN_IDOL),
+                        Effect::AddRelic(relics::BLOODY_IDOL),
+                    ],
+                    condition: Condition::HasRelic(relics::GOLDEN_IDOL),
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Sacrifice",
+                    effects: vec![
+                        Effect::DamagePercentage(Amount::ByAsc(25, 35, 35)),
+                        Effect::AddMaxHp(Amount::Fixed(5)),
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Desecrate",
+                    effects: vec![
+                        Effect::AddCard{
+                            card: CardReference::ByName(cards::DECAY),
+                            destination: CardLocation::DeckPile(RelativePosition::Bottom),
+                            copies: Amount::Fixed(1),
+                            modifier: CardModifier::None,
+                        },
+                    ],
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: GOLDEN_IDOL,
+            shrine: false,
+            variants: vec![],
+            choices: vec![
+                BaseEventChoice {
+                    name: "Take",
+                    effects: vec![
+                        Effect::AddRelic(relics::GOLDEN_IDOL),
+                        Effect::ShowChoices(vec![
+                            BaseEventChoice {
+                                name: "Outrun",
+                                effects: vec![
+                                    Effect::AddCard{
+                                        card: CardReference::ByName(cards::INJURY),
+                                        destination: CardLocation::DeckPile(RelativePosition::Bottom),
+                                        copies: Amount::Fixed(1),
+                                        modifier: CardModifier::None,
+                                    },
+                                ],
+                                ..BaseEventChoice::new()
+                            },
+                            BaseEventChoice {
+                                name: "Smash",
+                                effects: vec![
+                                    Effect::DamagePercentage(Amount::ByAsc(25, 35, 35)),
+                                ],
+                                ..BaseEventChoice::new()
+                            },
+                            BaseEventChoice {
+                                name: "Hide",
+                                effects: vec![
+                                    Effect::ReduceMaxHpPercentage(Amount::ByAsc(8, 10, 10)),
+                                ],
+                                ..BaseEventChoice::new()
+                            },
+                        ])
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Leave",
+                    effects: vec![
+                    ],
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: GOLDEN_SHRINE,
+            shrine: true,
+            variants: vec![],
+            choices: vec![
+                BaseEventChoice {
+                    name: "Pray",
+                    effects: vec![
+                        Effect::AddGold(Amount::ByAsc(100, 50, 50)),
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Desecrate",
+                    effects: vec![
+                        Effect::AddGold(Amount::Fixed(275)),
+                        Effect::AddCard{
+                            card: CardReference::ByName(cards::REGRET),
+                            destination: CardLocation::DeckPile(RelativePosition::Bottom),
+                            copies: Amount::Fixed(1),
+                            modifier: CardModifier::None,
+                        },
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Leave",
+                    effects: vec![],
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: THE_JOUST,
+            shrine: true,
+            variants: vec![],
+            choices: vec![
+                BaseEventChoice {
+                    name: "Bet on Murderer",
+                    effects: vec![
+                        Effect::AddGold(Amount::Fixed(-50)),
+                        Effect::RandomChance(vec![
+                            (Amount::Fixed(70), Effect::AddGold(Amount::Fixed(100)))
+                        ]),
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Bet on Owner",
+                    effects: vec![
+                        Effect::AddGold(Amount::Fixed(-50)),
+                        Effect::RandomChance(vec![
+                            (Amount::Fixed(30), Effect::AddGold(Amount::Fixed(250)))
+                        ]),
+                    ],
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: KNOWING_SKULL,
+            shrine: true,
+            variants: vec![],
+            choices: vec![
+                BaseEventChoice {
+                    name: "Success?",
+                    effects: vec![
+                        Effect::LoseHp(Amount::Sum(vec![
+                            Amount::Fixed(6),
+                            Amount::N
+                        ]), Target::_Self),
+                        Effect::AddCard {
+                            card: CardReference::RandomClass(Class::None),
+                            destination: CardLocation::DeckPile(RelativePosition::Bottom),
+                            copies: Amount::Fixed(1),
+                            modifier: CardModifier::None,
+                        },
+                        Effect::AddN(Amount::Fixed(1)),
+                    ],
+                    repeats: true,
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Success?",
+                    effects: vec![
+                        Effect::LoseHp(Amount::Sum(vec![
+                            Amount::Fixed(6),
+                            Amount::N
+                        ]), Target::_Self),
+                        Effect::AddCard {
+                            card: CardReference::RandomClass(Class::None),
+                            destination: CardLocation::DeckPile(RelativePosition::Bottom),
+                            copies: Amount::Fixed(1),
+                            modifier: CardModifier::None,
+                        },
+                        Effect::AddN(Amount::Fixed(1)),
+                    ],
+                    repeats: true,
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "A Pick Me Up?",
+                    effects: vec![
+                        Effect::LoseHp(Amount::Sum(vec![
+                            Amount::Fixed(6),
+                            Amount::N
+                        ]), Target::_Self),
+                        Effect::RandomPotion,
+                        Effect::AddN(Amount::Fixed(1)),
+                    ],
+                    repeats: true,
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Riches?",
+                    effects: vec![
+                        Effect::LoseHp(Amount::Sum(vec![
+                            Amount::Fixed(6),
+                            Amount::N
+                        ]), Target::_Self),
+                        Effect::AddGold(Amount::Fixed(90)),
+                        Effect::AddN(Amount::Fixed(1)),
+                    ],
+                    repeats: true,
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "How do I leave?",
+                    effects: vec![
+                        Effect::LoseHp(Amount::Fixed(6), Target::_Self),
+                    ],
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: LAB,
+            shrine: true,
+            variants: vec![],
+            choices: vec![
+                BaseEventChoice {
+                    name: "Find Some Potions!",
+                    effects: vec![
+                        Effect::If(Condition::Asc(15), vec![
+                            Effect::ShowReward(vec![
+                                RewardType::RandomPotion,
+                                RewardType::RandomPotion,
+                            ])
+                        ], vec![
+                            Effect::ShowReward(vec![
+                                RewardType::RandomPotion,
+                                RewardType::RandomPotion,
+                                RewardType::RandomPotion,
+                            ])
+                        ])
+                    ],
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: THE_LIBRARY,
+            variants: vec![],
+            shrine: false,
+            choices: vec![
+                BaseEventChoice {
+                    name: "Read",
+                    effects: vec![
+                        Effect::AddCard {
+                            card: CardReference::RandomType(CardType::All, Amount::Fixed(20)),
+                            destination: CardLocation::DeckPile(RelativePosition::Bottom),
+                            copies: Amount::Fixed(1),
+                            modifier: CardModifier::None,
+                        }
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Sleep",
+                    effects: vec![
+                        Effect::HealPercentage(Amount::ByAsc(33, 20, 20), Target::_Self),
+                    ],
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: LIVING_WALL,
+            variants: vec![],
+            shrine: false,
+            choices: vec![
+                BaseEventChoice {
+                    name: "Forget",
+                    effects: vec![
+                        Effect::RemoveCard(1),
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Change",
+                    effects: vec![
+                        Effect::TransformCard(1),
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Grow",
+                    effects: vec![
+                        Effect::UpgradeCard(CardLocation::DeckPile(RelativePosition::PlayerChoice(Amount::Fixed(1)))),
+                    ],
+                    condition: Condition::HasUpgradableCard,
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
+        BaseEvent {
+            name: MASKED_BANDITS,
+            variants: vec![],
+            shrine: false,
+            choices: vec![
+                BaseEventChoice {
+                    name: "Pay",
+                    effects: vec![
+                        Effect::LoseAllGold,
+                    ],
+                    ..BaseEventChoice::new()
+                },
+                BaseEventChoice {
+                    name: "Fight",
+                    effects: vec![
+                        Effect::Fight(vec![
+                            monsters::POINTY,
+                            monsters::ROMEO,
+                            monsters::BEAR
+                        ], false),
+                        Effect::ShowReward(vec![
+                            RewardType::RelicName(relics::RED_MASK),
+                            RewardType::Gold(25, 35),
+                            RewardType::StandardCard,
+                        ]),
+                    ],
+                    ..BaseEventChoice::new()
+                },
+            ],
+        },
 
     ]
 }
@@ -629,3 +1121,8 @@ pub const DEAD_ADVENTURER_GREMLIN_NOB: &str = "Dead Adventurer Nob";
 
 pub const NEOW_FIRST_RUN: &str = "Neow First Run";
 pub const NEOW_SUCCESS_RUN: &str = "Neow Success Run";
+
+pub const DESIGNER_INSPIRE_BASE: &str = "Designer In-Spire Base";
+pub const DESIGNER_INSPIRE_UP2: &str = "Designer In-Spire Upgrade 2";
+pub const DESIGNER_INSPIRE_TRANS2: &str = "Designer In-Spire Transform 2";
+pub const DESIGNER_INSPIRE_UP2_TRANS2: &str = "Designer In-Spire Transform and Upgrade 2";
