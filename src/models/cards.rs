@@ -30,12 +30,10 @@ impl BaseCard {
             on_retain: vec![],
             on_turn_end: vec![],
             cost: Fixed(1),
-            upgradeable: crate::models::core::Upgradable::Once,
             innate: Condition::Never,
             retain: Condition::Never,
             targeted: targeted,
             playable_if: Condition::Always,
-            removable: true,
         }
     }
 }
@@ -510,7 +508,6 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: SEARING_BLOW,
             rarity: Uncommon,
-            upgradeable: crate::models::core::Upgradable::Infinite,
             on_play: vec![AttackDamage(Amount::Custom, TargetEnemy)],
             cost: Fixed(2),
             ..BaseCard::new(Ironclad, Attack)
@@ -3254,7 +3251,6 @@ fn all_cards() -> Vec<BaseCard> {
             name: BURN,
             rarity: Rarity::Status,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Burn,
             on_turn_end: vec![Damage(Upgradable(2, 4), _Self), DiscardCard(This)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Status)
@@ -3263,7 +3259,6 @@ fn all_cards() -> Vec<BaseCard> {
             name: DAZED,
             rarity: Rarity::Status,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             on_turn_end: vec![ExhaustCard(This)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Status)
@@ -3272,14 +3267,12 @@ fn all_cards() -> Vec<BaseCard> {
             name: WOUND,
             rarity: Rarity::Status,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Status)
         },
         BaseCard {
             name: SLIMED,
             rarity: Rarity::Status,
-            upgradeable: crate::models::core::Upgradable::Never,
             on_play: vec![ExhaustCard(This)],
             ..BaseCard::new(Class::None, Status)
         },
@@ -3287,7 +3280,6 @@ fn all_cards() -> Vec<BaseCard> {
             name: VOID,
             rarity: Rarity::Status,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             on_draw: vec![AddEnergy(Fixed(-1))],
             on_turn_end: vec![ExhaustCard(This)],
             ..BaseCard::new(Class::None, Status)
@@ -3296,16 +3288,13 @@ fn all_cards() -> Vec<BaseCard> {
             name: ASCENDERS_BANE,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             on_turn_end: vec![ExhaustCard(This)],
-            removable: false,
             ..BaseCard::new(Class::None, Curse)
         },
         BaseCard {
             name: CLUMSY,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             on_turn_end: vec![ExhaustCard(This)],
             ..BaseCard::new(Class::None, Curse)
         },
@@ -3313,15 +3302,12 @@ fn all_cards() -> Vec<BaseCard> {
             name: CURSE_OF_THE_BELL,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
-            removable: false,
             ..BaseCard::new(Class::None, Curse)
         },
         BaseCard {
             name: DECAY,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             on_turn_end: vec![Damage(Fixed(2), _Self), DiscardCard(This)],
             ..BaseCard::new(Class::None, Curse)
         },
@@ -3329,7 +3315,6 @@ fn all_cards() -> Vec<BaseCard> {
             name: DOUBT,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             on_turn_end: vec![AddBuff(buffs::WEAK, Fixed(1), _Self), DiscardCard(This)],
             ..BaseCard::new(Class::None, Curse)
         },
@@ -3337,15 +3322,12 @@ fn all_cards() -> Vec<BaseCard> {
             name: INJURY,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             ..BaseCard::new(Class::None, Curse)
         },
         BaseCard {
             name: NECRONOMICURSE,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
-            removable: false,
             on_exhaust: vec![AddCard {
                 card: CardReference::ByName(NECRONOMICURSE),
                 destination: CardLocation::PlayerHand(RelativePosition::Bottom),
@@ -3358,28 +3340,24 @@ fn all_cards() -> Vec<BaseCard> {
             name: NORMALITY,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             ..BaseCard::new(Class::None, Curse)
         },
         BaseCard {
             name: PAIN,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             ..BaseCard::new(Class::None, Curse)
         },
         BaseCard {
             name: PARASITE,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             ..BaseCard::new(Class::None, Curse)
         },
         BaseCard {
             name: REGRET,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             on_turn_end: vec![LoseHp(Amount::Custom, _Self)],
             ..BaseCard::new(Class::None, Curse)
         },
@@ -3387,7 +3365,6 @@ fn all_cards() -> Vec<BaseCard> {
             name: PRIDE,
             rarity: Rarity::Curse,
             innate: Condition::Always,
-            upgradeable: crate::models::core::Upgradable::Never,
             on_turn_end: vec![AddCard {
                 card: CardReference::ByName(PRIDE),
                 destination: CardLocation::DrawPile(RelativePosition::Top),
@@ -3401,7 +3378,6 @@ fn all_cards() -> Vec<BaseCard> {
             name: SHAME,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            upgradeable: crate::models::core::Upgradable::Never,
             on_turn_end: vec![AddBuff(buffs::FRAIL, Fixed(1), _Self), DiscardCard(This)],
             ..BaseCard::new(Class::None, Curse)
         },
@@ -3410,7 +3386,6 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
             innate: Condition::Always,
-            upgradeable: crate::models::core::Upgradable::Never,
             ..BaseCard::new(Class::None, Curse)
         },
     ]
@@ -3571,7 +3546,7 @@ pub const FLEX: &str = "Flex";
 pub const FLURRY_OF_BLOWS: &str = "Flurry of Blows";
 pub const FLYING_KNEE: &str = "Flying Knee";
 pub const FLYING_SLEEVES: &str = "Flying Sleeves";
-pub const FOLLOW_UP: &str = "Follow Up";
+pub const FOLLOW_UP: &str = "Follow-Up";
 pub const FOOTWORK: &str = "Footwork";
 pub const FORCE_FIELD: &str = "Force Field";
 pub const FOREIGN_INFLUENCE: &str = "Foreign Influence";

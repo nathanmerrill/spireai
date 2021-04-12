@@ -164,6 +164,35 @@ pub fn eval_target(
     }
 }
 
+pub fn card_upgradable(card: &Card) -> bool {
+    match card.base._type {
+        CardType::Attack | CardType::Skill | CardType::Power => {
+            card.upgrades == 0 && card.base.name != models::cards::SEARING_BLOW
+        },
+        CardType::Status => false,
+        CardType::Curse => false,
+        CardType::ByName(_) => panic!("Unexpected ByName on card type"),
+        CardType::All => panic!("Unexpected All on card type")
+    }
+}
+
+pub fn card_removable(card: &Card) -> bool {
+    if card.bottled {
+        return false
+    }
+
+    match card.base.name {
+        models::cards::ASCENDERS_BANE => false,
+        models::cards::CURSE_OF_THE_BELL => false,
+        models::cards::NECRONOMICURSE => false,
+        _ => true
+    }
+}
+
+pub fn card_playable(card: &Card, battle_state: &BattleState, state: &GameState) -> bool {
+    card.cost <= battle_state.energy && eval_condition(&card.base.playable_if, state, &Binding::Card(card), &None)
+}
+
 fn get_monster_count(state: &GameState) -> u8{
     let battle_state = state.battle_state.as_ref().expect("Battle state not found in get_monster_count");
     battle_state.monsters.len() as u8

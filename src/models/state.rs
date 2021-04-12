@@ -17,6 +17,14 @@ pub struct GameState {
     pub relic_names: HashSet<&'static str>,
     pub player: Creature,
     pub gold: u16,
+    pub keys: Option<KeyState>,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct KeyState {
+    pub ruby: bool,
+    pub emerald: bool,
+    pub sapphire: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -51,12 +59,18 @@ impl PartialEq for Monster {
 #[derive(PartialEq, Clone, Debug)]
 pub enum FloorState {
     Event(EventState),
-    //Chest(ChestType),
+    EventUpgrade(u8),
+    EventTransform(u8, bool), // true if it upgrades cards
+    EventRemove(u8),
+    Rest,
+    Chest(ChestType),
     Battle,
     Map,
     GameOver,
-    CombatRewards(Vec<Reward>),
+    Rewards(Vec<Reward>),
     CardReward(Vec<Card>),
+    ShopEntrance,
+    Shop(Vec<(Card, u16)>, Vec<(Relic, u16)>, Vec<(Potion, u16)>, u16) // Last u8 is remove
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -71,13 +85,21 @@ pub enum Reward {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct MapState {
-    pub nodes: Vec<Vec<Option<(MapNode, Vec<u8>)>>>,
-    pub floor: u8,
-    pub node: u8,
+    pub nodes: HashMap<(i8, i8), MapNode>,
+    pub floor: i8,
+    pub x: i8,
 }
 
 #[derive(PartialEq, Clone, Debug)]
-pub enum MapNode {
+pub struct MapNode {
+    pub floor: i8,
+    pub x: i8,
+    pub next: Vec<i8>,
+    pub icon: MapNodeIcon
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum MapNodeIcon {
     Question,
     Elite,
     BurningElite,
@@ -91,7 +113,12 @@ pub enum MapNode {
 #[derive(Clone, Debug)]
 pub struct EventState {
     pub base: &'static BaseEvent,
-    pub available_choices: Vec<&'static str>
+    pub variant: Option<&'static str>,
+    pub variant_cards: Vec<Rc<Card>>,
+    pub variant_relic: Option<&'static str>,
+    pub variant_amount: Option<u16>,
+    pub available_choices: Vec<&'static str>,
+    
 }
 
 impl PartialEq for EventState {
@@ -102,7 +129,10 @@ impl PartialEq for EventState {
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum ChestType {
-
+    Large,
+    Medium,
+    Small,
+    Boss
 }
 
 
@@ -128,6 +158,14 @@ pub struct BattleState {
     pub energy: u8,
     pub stance: Stance,
     pub battle_type: BattleType,
+    pub card_choices: Vector<Rc<Card>>,
+    pub card_choice_type: CardChoiceType,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum CardChoiceType {
+    None,
+    Scry,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -178,9 +216,11 @@ pub struct Vars {
 #[derive(Clone, Debug)]
 pub struct Card {
     pub base: &'static BaseCard,
+    pub id: String,
     pub cost: u8,
     pub vars: Vars,
     pub upgrades: u8,
+    pub bottled: bool,
 }
 
 impl PartialEq for Card {

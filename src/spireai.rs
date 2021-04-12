@@ -1,6 +1,7 @@
 use crate::models;
 use crate::models::state::*;
 use models::state::GameState;
+use itertools::Itertools;
 
 pub mod evaluator;
 
@@ -14,17 +15,38 @@ pub enum Choice {
         player_class: models::core::Class,
         ascension: Option<u8>,
     },
-    Potion {
-        should_use: bool,
+    DrinkPotion {
         slot: u8,
         target_index: Option<u8>,
     },
-    Play {
+    DiscardPotion {
+        slot: u8,
+    },
+    PlayCard {
         card_index: u8,
         target_index: Option<u8>,
     },
+    EventChoice(&'static str),
+    NavigateToNode(i8),
+    TakeReward(u8),
+    SelectCard(&'static str),
+    BuyCard(String),
+    BuyRelic(&'static str),
+    BuyPotion(&'static str),
+    BuyRemoveCard(String),
+    DeckRemove(Vec<String>),
+    DeckTransform(Vec<String>, bool), //And upgrade if true
+    DeckUpgrade(Vec<String>),
+    OpenChest,
+    Rest,
+    Smith,
+    Lift,
+    Dig,
+    ScryDiscard(Vec<String>),
+    Recall,
+    Toke(String),
+    EnterShop,
     End,
-    Choose(u8),
     Proceed,
     Return,
     Skip,
@@ -118,94 +140,192 @@ fn all_choices(state: &GameState) -> Vec<Choice> {
     match &state.floor_state {
         FloorState::Battle => {
             let battle_state: &BattleState = state.battle_state.as_ref().expect("Battle state not set when floor state is battle");
-            choices.push(Choice::End);
 
-            for (card_index, card) in battle_state.hand.iter().enumerate() {
-                if card_playable(card, battle_state, state) {
-                    if card_targeted(card, state) {
-                        for monster in &battle_state.monsters {
-                            if monster.targetable {
-                                choices.push(Choice::Play {
-                                    card_index: card_index as u8,
-                                    target_index: Some(monster.creature.position),
-                                });
-                            }
-                        }
-                    } else {
-                        choices.push(Choice::Play {
-                            card_index: card_index as u8,
-                            target_index: None,
-                        })
+            match battle_state.card_choice_type {
+                CardChoiceType::Scry => {
+                    for combination in battle_state.card_choices.iter().map(|a| a.id.to_string()).powerset() {
+                        choices.push(Choice::ScryDiscard(combination))
                     }
                 }
-            }
 
-            for (potion_index, potion_slot) in state.potions.iter().enumerate() {
-                match potion_slot {
-                    Some(potion) => {
-                        if potion_targeted(potion, state) {
-                            for monster in &battle_state.monsters {
-                                if monster.targetable {
-                                    choices.push(Choice::Potion {
-                                        should_use: true,
+                CardChoiceType::None => {
+                    choices.push(Choice::End);
+                    for (card_index, card) in battle_state.hand.iter().enumerate() {
+                        if evaluator::card_playable(card, battle_state, state) {
+                            if card_targeted(card, state) {
+                                for monster in &battle_state.monsters {
+                                    if monster.targetable {
+                                        choices.push(Choice::PlayCard {
+                                            card_index: card_index as u8,
+                                            target_index: Some(monster.creature.position),
+                                        });
+                                    }
+                                }
+                            } else {
+                                choices.push(Choice::PlayCard {
+                                    card_index: card_index as u8,
+                                    target_index: None,
+                                })
+                            }
+                        }
+                    }
+        
+                    for (potion_index, potion_slot) in state.potions.iter().enumerate() {
+                        match potion_slot {
+                            Some(potion) => {
+                                if potion_targeted(potion, state) {
+                                    for monster in &battle_state.monsters {
+                                        if monster.targetable {
+                                            choices.push(Choice::DrinkPotion {
+                                                slot: potion_index as u8,
+                                                target_index: Some(monster.creature.position),
+                                            });
+                                        }
+                                    }
+                                } else {
+                                    choices.push(Choice::DrinkPotion {
                                         slot: potion_index as u8,
-                                        target_index: Some(monster.creature.position),
+                                        target_index: None,
                                     });
                                 }
-                            }
-                        } else {
-                            choices.push(Choice::Potion {
-                                should_use: true,
-                                slot: potion_index as u8,
-                                target_index: None,
-                            });
+        
+                                choices.push(Choice::DiscardPotion {
+                                    slot: potion_index as u8
+                                });
+                            },
+                            None => {}
                         }
-
-                        choices.push(Choice::Potion {
-                            should_use: false,
-                            slot: potion_index as u8,
-                            target_index: None,
-                        });
-                    },
-                    None => {}
+                    }
                 }
             }
         },
         FloorState::Event(event_state) => {
-            for index in 0..event_state.available_choices.len() {
-                choices.push(Choice::Choose(index as u8))
+            for available_choice in &event_state.available_choices {
+                choices.push(Choice::EventChoice(available_choice))
             }
         },
         FloorState::Map => {
             let map = &state.map;
-            if map.floor == 0 {
-                for index in 0..map.nodes[0].iter().flatten().count() {
-                    choices.push(Choice::Choose(index as u8))
+            match &map.floor {
+                -1 => {
+                    for (y, x) in map.nodes.keys() {
+                        if *y == 0 {
+                            choices.push(Choice::NavigateToNode(*x))
+                        }
+                    }
                 }
-            } else {
-                let (_, next) = &map.nodes[(map.floor-1) as usize][map.node as usize].as_ref().unwrap();
-                for index in 0..next.len() {
-                    choices.push(Choice::Choose(index as u8))
+                _ => {
+                    let node = &map.nodes[&(map.floor, map.x)];
+
+                    for next in &node.next {
+                        choices.push(Choice::NavigateToNode(*next))
+                    }
                 }
             }
         },
         FloorState::GameOver => {
             choices.push(Choice::Proceed)
         },
-        FloorState::CombatRewards(rewards) => {
+        FloorState::Rewards(rewards) => {
             choices.push(Choice::Proceed);
             for index in 0..rewards.len() {
-                choices.push(Choice::Choose(index as u8))
+                choices.push(Choice::TakeReward(index as u8))
             }
         },
         FloorState::CardReward(card_choices) => {
             choices.push(Choice::Skip);
-            for card in 0..card_choices.len() {
-                choices.push(Choice::Choose(card as u8))
+            for card in card_choices {
+                choices.push(Choice::SelectCard(card.base.name))
             }
             if state.relic_names.contains(models::relics::SINGING_BOWL) {
                 choices.push(Choice::SingingBowl)
             }
+        },
+        FloorState::ShopEntrance => {
+            choices.push(Choice::EnterShop);
+            choices.push(Choice::Proceed);
+        },
+        FloorState::Shop(cards, relics, potions, remove) => {
+            for (card, cost) in cards {
+                if *cost <= state.gold {
+                    choices.push(Choice::BuyCard(card.id.to_string()))
+                }
+            }
+
+            for (relic, cost) in relics {
+                if *cost <= state.gold {
+                    choices.push(Choice::BuyRelic(relic.base.name))
+                }
+            }
+
+            for (potion, cost) in potions {
+                if *cost <= state.gold {
+                    choices.push(Choice::BuyPotion(potion.base.name))
+                }
+            }
+            
+            if *remove != 0 && *remove <= state.gold {
+                for card in &state.deck {
+                    if evaluator::card_removable(&card) {
+                        choices.push(Choice::BuyRemoveCard(card.id.to_string()))
+                    }
+                }
+            }
+        },
+        FloorState::Rest => {
+            if !state.relic_names.contains(models::relics::COFFEE_DRIPPER) {
+                choices.push(Choice::Rest)
+            }
+            if !state.relic_names.contains(models::relics::FUSION_HAMMER) {
+                if !state.deck.iter().all(|card| evaluator::card_upgradable(card)) {
+                    choices.push(Choice::Smith)
+                }
+            }
+            if state.relic_names.contains(models::relics::GIRYA) {
+                let relic = state.relics.iter().find(|relic| relic.base.name == models::relics::GIRYA).unwrap();
+                if relic.vars.x < 3 {
+                    choices.push(Choice::Lift)
+                }
+            }
+            if state.relic_names.contains(models::relics::SHOVEL) {
+                choices.push(Choice::Dig)
+            }
+            match &state.keys {
+                Some(keys) => {
+                    if !keys.ruby {
+                        choices.push(Choice::Recall)
+                    }
+                },
+                None => {}
+            }
+        },
+        FloorState::EventRemove(count) => {
+            for combination in state.deck.iter()
+                                .filter(|card| evaluator::card_removable(card))
+                                .map(|card| card.id.to_string())
+                                .combinations((*count).into()) {
+                choices.push(Choice::DeckRemove(combination))
+            }
+        },
+        FloorState::EventTransform(count, upgrade) => {
+            for combination in state.deck.iter()
+                                .filter(|card| evaluator::card_removable(card))
+                                .map(|card| card.id.to_string())
+                                .combinations((*count).into()) {
+                choices.push(Choice::DeckTransform(combination, *upgrade))
+            }
+        },
+        FloorState::EventUpgrade(count) => {
+            for combination in state.deck.iter()
+                                .filter(|card| evaluator::card_upgradable(card))
+                                .map(|card| card.id.to_string())
+                                .combinations((*count).into()) {
+                choices.push(Choice::DeckUpgrade(combination))
+            }
+        },
+        FloorState::Chest(_) => {
+            choices.push(Choice::Proceed);
+            choices.push(Choice::OpenChest);
         }
     }
 
@@ -223,16 +343,6 @@ fn card_targeted(card: &Card, state: &GameState) -> bool {
         &evaluator::Binding::Card(card),
         &None,
     )
-}
-
-fn card_playable(card: &Card, battle_state: &BattleState, state: &GameState) -> bool {
-    card.cost <= battle_state.energy
-        && evaluator::eval_condition(
-            &card.base.playable_if,
-            state,
-            &evaluator::Binding::Card(card),
-            &None,
-        )
 }
 
 fn predict_outcome(state: &GameState, choice: &Choice) -> Option<GamePossibilitySet> {

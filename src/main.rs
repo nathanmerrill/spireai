@@ -1,130 +1,102 @@
-use log::{info, LevelFilter};
+use crate::comm::request::GameState;
+use std::sync::Mutex;
+use std::sync::{Arc};
+use log::LevelFilter;
 use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
 use std::error::Error;
 use std::io::stdin;
+use comm::request::Request;
+use comm::response::Response;
 
 mod models;
-mod serialization;
 mod spireai;
+mod comm;
 
 #[macro_use]
 extern crate lazy_static;
 
 const DESIRED_CLASS: models::core::Class = models::core::Class::Watcher;
 
+lazy_static! {
+    static ref LAST_ACTION: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+    static ref LAST_STATE: Arc<Mutex<String>>  = Arc::new(Mutex::new(String::new()));
+}
+
 fn main() {
     init_logger().unwrap();
-    log_panics::init();
-    println!("ready");
+
+    let last_action_clone = Arc::clone(&LAST_ACTION);
+    let last_state_clone = Arc::clone(&LAST_STATE);
+    std::panic::set_hook(Box::new(move |_info| {
+        let state = json::parse((*last_state_clone.lock().unwrap()).as_str()).unwrap();
+        log::error!("{}\nLast action: {}\nLast state: {}", _info, last_action_clone.lock().unwrap(), state.pretty(2));
+
+        std::process::exit(1);
+    }));
 
     let mut ai = spireai::SpireAi::new();
+    let mut game_state: Option<GameState> = None;
+    let mut queue: Vec<Response> = vec![Response::Simple(String::from("ready"))];
 
     loop {
-        let response: serialization::Response = read_state();
-        let choice = match response.game_state {
-            Some(state) => ai.choose(&serialization::to_model(&state)),
-            None => {
-                if response.available_commands.contains(&String::from("start")) {
-                    spireai::Choice::Start {
-                        player_class: DESIRED_CLASS,
-                        ascension: None,
-                    }
-                } else {
-                    spireai::Choice::State
+        let request = process_queue(&mut queue, &game_state);
+        let choice = handle_request(&request, &mut ai);
+        
+        game_state = request.game_state;
+        queue = comm::response::decompose_choice(choice);
+    }
+}
+
+fn handle_request(request: &Request, ai: &mut spireai::SpireAi) -> spireai::Choice {
+    match &request.game_state {
+        Some(state) => ai.choose(&comm::interop::convert_state(&state)),
+        None => {
+            if request.available_commands.contains(&String::from("start")) {
+                spireai::Choice::Start {
+                    player_class: DESIRED_CLASS,
+                    ascension: None,
                 }
+            } else {
+                spireai::Choice::State
             }
-        };
-
-        send_choice(choice);
-    }
-}
-
-fn read_state() -> serialization::Response {
-    match read_response() {
-        Ok(a) => {
-            match &a.error {
-                Some(error) => {
-                    panic!("Error recieved: {}", error);
-                }
-                None => {}
-            }
-
-            return a;
-        }
-        Err(a) => {
-            panic!("Failure! {}", a );
         }
     }
 }
 
-fn fmt_opt_i(i: Option<u8>) -> String {
-    i.map(|a| a.to_string()).unwrap_or(String::default())
-}
-
-fn serialize_choice(choice: spireai::Choice) -> String {
-    match choice {
-        spireai::Choice::Start {
-            player_class,
-            ascension,
-        } => {
-            format!("START {} {}", player_class, fmt_opt_i(ascension))
-        }
-        spireai::Choice::Potion {
-            should_use,
-            slot,
-            target_index,
-        } => {
-            let action = match should_use {
-                true => "Use",
-                false => "Discard",
-            };
-
-            format!("POTION {} {} {}", action, slot, fmt_opt_i(target_index))
-        }
-        spireai::Choice::Play {
-            card_index,
-            target_index,
-        } => {
-            format!("PLAY {} {}", (card_index+1)%10, fmt_opt_i(target_index))
-        }
-        spireai::Choice::End => {
-            format!("END")
-        }
-        spireai::Choice::Choose(choice_index) => {
-            format!("CHOOSE {}", choice_index)
-        }
-        spireai::Choice::Proceed => {
-            format!("PROCEED")
-        }
-        spireai::Choice::Return => {
-            format!("RETURN")
-        }
-        spireai::Choice::State => {
-            format!("STATE")
+fn process_queue(queue: &mut Vec<Response>, game_state: &Option<GameState>) -> Request {
+    send_message(&queue[0], game_state);
+    let request = read_request();
+    match &request.error {
+        Some(err) => {
+            panic!("Game error: {}", err)
         },
-        spireai::Choice::Skip => {
-            format!("SKIP")
-        },
-        spireai::Choice::SingingBowl => {
-            format!("SINGING_BOWL")
-        },
+        None => {}
     }
+
+    if queue.len() > 1 {
+        queue.remove(0);
+        return process_queue(queue, &request.game_state);
+    }
+
+    return request;
 }
 
-fn send_choice(choice: spireai::Choice) {
-    let response = serialize_choice(choice);
-    info!("Sending: {}", response);
-    println!("{}", response);
+
+fn send_message(response: &Response, game: &Option<GameState>) {
+    let serialized = comm::response::serialize_response(response, game);
+    println!("{}", serialized);
+    *LAST_ACTION.lock().unwrap() = serialized;
 }
+
 
 fn init_logger() -> Result<(), Box<dyn Error>> {
-    std::fs::remove_file("log/output.log")?;
+    let filename = format!("log/output-{}.log", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
 
     let logfile = FileAppender::builder()
         .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
-        .build("log/output.log")?;
+        .build(filename)?;
 
     let config = Config::builder()
         .appender(Appender::builder().build("logfile", Box::new(logfile)))
@@ -135,12 +107,25 @@ fn init_logger() -> Result<(), Box<dyn Error>> {
     return Ok(());
 }
 
-fn read_response() -> Result<serialization::Response, Box<dyn Error>> {
+fn read_request() -> Request {
     let stdin = stdin();
     let input = &mut String::new();
-    stdin.read_line(input)?;
-    info!("{}", input);
-    let response: serialization::Response = serde_json::from_str(input)?;
+    let request = match stdin.read_line(input) {
+        Ok(_) => input.to_string(),
+        Err(err) => panic!("Communication failed! Error: {}", err)
+    };
 
-    return Ok(response);
+    let model = match deserialize(&request) {
+        Ok(model) => model,
+        Err(err) => panic!("Failed to deserialize game state: Error: {}", err)
+    };
+
+    *LAST_STATE.lock().unwrap() = request;
+
+    model
+}
+
+fn deserialize(state: &String) -> Result<comm::request::Request, Box<dyn Error>> {
+    let deserialized = serde_json::from_str(state)?;
+    Ok(deserialized)
 }

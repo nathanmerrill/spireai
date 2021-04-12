@@ -81,6 +81,7 @@ pub struct Act {
     pub normal_fights: Vec<(u8, MonsterSet)>,
     pub elites: Vec<MonsterSet>,
     pub bosses: Vec<MonsterSet>,
+    pub events: Vec<&'static str>,
 }
 
 // ------------------- Evalulation -------------------------------
@@ -332,8 +333,8 @@ pub enum Effect {
     BoostMult(Amount), // Adds/subtracts to the multiplier. In percentage units
     Cap(Amount),
     Cancel,
-    Fight(Vec<&'static str>, bool), // True if elite
-    ShowChoices(Vec<BaseEventChoice>),
+    Fight(Vec<&'static str>, RoomType),
+    ShowChoices(Vec<&'static str>),
 
     //Meta
     If(Condition, Vec<Effect>, Vec<Effect>),
@@ -348,6 +349,7 @@ pub enum RewardType {
     StandardCard,
     EliteCard,
     BossCard,
+    ColorlessCard,
     Relic(Rarity),
     RelicName(&'static str),
     RandomRelic,
@@ -391,6 +393,7 @@ pub enum Condition {
     Class(Class),
     HasUpgradableCard,
     HasRemoveableCards(u8, CardType),
+    OnFloor(u8),
     Never,
     Custom,
 }
@@ -441,11 +444,10 @@ pub struct BaseCard {
     pub on_turn_end: Vec<Effect>, //Happens if card is in hand, before cards are discarded
     pub name: &'static str,
     pub innate: Condition,
-    pub upgradeable: Upgradable,
     pub retain: Condition,
-    pub removable: bool,
     pub targeted: Condition,
 }
+
 impl std::fmt::Debug for BaseCard {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("BaseCard")
@@ -460,13 +462,14 @@ pub struct BaseEvent {
     pub choices: Vec<BaseEventChoice>,
     pub shrine: bool,
     pub variants: Vec<&'static str>,
+    pub condition: Condition,
 }
 
 pub struct BaseEventChoice {
     pub name: &'static str,
     pub effects: Vec<Effect>,
     pub condition: Condition,
-    pub repeats: bool,
+    pub initial: bool,
 }
 
 
