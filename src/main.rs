@@ -1,14 +1,13 @@
+use std::fs::File;
 use crate::comm::request::GameState;
 use std::sync::Mutex;
 use std::sync::{Arc};
-use log::LevelFilter;
-use log4rs::append::file::FileAppender;
-use log4rs::config::{Appender, Config, Root};
-use log4rs::encode::pattern::PatternEncoder;
 use std::error::Error;
 use std::io::stdin;
+use std::io::Write;
 use comm::request::Request;
 use comm::response::Response;
+use crate::models::choices::Choice;
 
 mod models;
 mod spireai;
@@ -25,20 +24,33 @@ lazy_static! {
 }
 
 fn main() {
-    init_logger().unwrap();
-
     let last_action_clone = Arc::clone(&LAST_ACTION);
     let last_state_clone = Arc::clone(&LAST_STATE);
     std::panic::set_hook(Box::new(move |_info| {
+        let filename = format!("log/output-{}.log", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
         let state = json::parse((*last_state_clone.lock().unwrap()).as_str()).unwrap();
-        log::error!("{}\nLast action: {}\nLast state: {}", _info, last_action_clone.lock().unwrap(), state.pretty(2));
+        let message = format!("{}\nLast action: {}\nLast state: {}", _info, last_action_clone.lock().unwrap(), state.pretty(2));
 
-        std::process::exit(1);
+        if let Ok(mut f) = File::create(filename) {
+            f.write_all(message.as_bytes()).ok();
+        }
     }));
 
+    std::panic::catch_unwind(|| {
+        run("ready");
+    }).ok();
+
+    loop {
+        std::panic::catch_unwind(|| {
+            run("state");
+        }).ok();
+    }
+}
+
+fn run(start_message: &str) {
     let mut ai = spireai::SpireAi::new();
     let mut game_state: Option<GameState> = None;
-    let mut queue: Vec<Response> = vec![Response::Simple(String::from("ready"))];
+    let mut queue: Vec<Response> = vec![Response::Simple(String::from(start_message))];
 
     loop {
         let request = process_queue(&mut queue, &game_state);
@@ -49,17 +61,17 @@ fn main() {
     }
 }
 
-fn handle_request(request: &Request, ai: &mut spireai::SpireAi) -> spireai::Choice {
+fn handle_request(request: &Request, ai: &mut spireai::SpireAi) -> Choice {
     match &request.game_state {
         Some(state) => ai.choose(&comm::interop::convert_state(&state)),
         None => {
             if request.available_commands.contains(&String::from("start")) {
-                spireai::Choice::Start {
+                Choice::Start {
                     player_class: DESIRED_CLASS,
                     ascension: None,
                 }
             } else {
-                spireai::Choice::State
+                Choice::State
             }
         }
     }
@@ -88,23 +100,6 @@ fn send_message(response: &Response, game: &Option<GameState>) {
     let serialized = comm::response::serialize_response(response, game);
     println!("{}", serialized);
     *LAST_ACTION.lock().unwrap() = serialized;
-}
-
-
-fn init_logger() -> Result<(), Box<dyn Error>> {
-    let filename = format!("log/output-{}.log", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-
-    let logfile = FileAppender::builder()
-        .encoder(Box::new(PatternEncoder::new("{l} - {m}\n")))
-        .build(filename)?;
-
-    let config = Config::builder()
-        .appender(Appender::builder().build("logfile", Box::new(logfile)))
-        .build(Root::builder().appender("logfile").build(LevelFilter::Info))?;
-
-    log4rs::init_config(config)?;
-
-    return Ok(());
 }
 
 fn read_request() -> Request {

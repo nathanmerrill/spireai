@@ -1,7 +1,5 @@
 use crate::models::core::*;
-use im::Vector;
 use std::collections::{HashMap, HashSet};
-use std::rc::Rc;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct GameState {
@@ -11,7 +9,7 @@ pub struct GameState {
     pub battle_state: Option<BattleState>,
     pub act: u8,
     pub asc: u8,
-    pub deck: Vector<Rc<Card>>,
+    pub deck: Vec<Card>,
     pub potions: Vec<Option<Potion>>,
     pub relics: Vec<Relic>,
     pub relic_names: HashSet<&'static str>,
@@ -114,7 +112,7 @@ pub enum MapNodeIcon {
 pub struct EventState {
     pub base: &'static BaseEvent,
     pub variant: Option<&'static str>,
-    pub variant_cards: Vec<Rc<Card>>,
+    pub variant_cards: Vec<Card>,
     pub variant_relic: Option<&'static str>,
     pub variant_amount: Option<u16>,
     pub available_choices: Vec<&'static str>,
@@ -149,16 +147,16 @@ pub struct Creature {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct BattleState {
-    pub draw: Vector<Rc<Card>>,
-    pub discard: Vector<Rc<Card>>,
-    pub exhaust: Vector<Rc<Card>>,
-    pub hand: Vector<Rc<Card>>,
+    pub draw: Vec<Card>,
+    pub discard: Vec<Card>,
+    pub exhaust: Vec<Card>,
+    pub hand: Vec<Card>,
     pub monsters: Vec<Monster>,
     pub orbs: Vec<Orb>,
     pub energy: u8,
     pub stance: Stance,
     pub battle_type: BattleType,
-    pub card_choices: Vector<Rc<Card>>,
+    pub card_choices: Vec<Card>,
     pub card_choice_type: CardChoiceType,
 }
 
@@ -231,37 +229,8 @@ impl PartialEq for Card {
     }
 }
 
-#[derive(PartialEq, Clone, Debug)]
-pub struct GamePossibility {
-    pub probability: f64,
-    pub state: GameState,
-}
-
 pub struct GameAction<'a> {
     pub is_attack: bool,
     pub creature: &'a Creature,
     pub target: Option<u8>,
-}
-
-pub struct GamePossibilitySet {
-    pub states: Vector<Rc<GamePossibility>>,
-}
-
-impl GamePossibilitySet {
-    /*
-    pub fn contains_state(&self, state: &GameState) -> bool {
-        self.states.iter().any(|a| &a.state == state)
-    }
-
-    pub fn new(state: GameState) -> Self {
-        let mut states = Vector::new();
-        states.push_back(GamePossibility {
-            probability: 1.0,
-            state: state,
-        });
-        Self {
-            states: states
-        }
-    }
-    */
 }

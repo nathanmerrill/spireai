@@ -1,5 +1,5 @@
 use crate::comm::request::GameState;
-use crate::spireai::Choice;
+use crate::models::choices::Choice;
 
 pub fn serialize_response(response: &Response, state: &Option<GameState>) -> String {
     match response {
@@ -78,13 +78,16 @@ pub fn decompose_choice(choice: Choice) -> Vec<Response> {
         Choice::TakeReward(idx) => vec![Response::Simple(format!("CHOOSE {}", idx))],
         Choice::NavigateToNode(idx) => vec![Response::Choose(format!("x={}",idx))],
         Choice::SelectCard(card) => vec![Response::Choose(String::from(card))],
+        Choice::RestDreamCatcher => vec![Response::Choose(String::from("rest"))],
         Choice::Rest => vec![
             Response::Choose(String::from("rest")),
             Response::Simple(String::from("PROCEED"))
         ],
-        Choice::Smith => vec![
+        Choice::Smith(card) => vec![
             Response::Choose(String::from("smith")),
-            Response::Simple(String::from("PROCEED"))
+            Response::Card(card),
+            Response::Simple(String::from("CONFIRM")),
+            Response::Simple(String::from("PROCEED")),
         ],
         Choice::Dig => vec![
             Response::Choose(String::from("dig")),

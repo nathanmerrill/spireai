@@ -2,8 +2,6 @@ use crate::comm::request as old;
 use crate::models::state as new;
 use crate::models::core as new_core;
 use std::collections::HashMap;
-use im::Vector;
-use std::rc::Rc;
 
 pub fn convert_state(state: &old::GameState) -> new::GameState {
     let relics = convert_relics(&state.relics);
@@ -138,12 +136,12 @@ pub fn convert_battle_state(state: &old::CombatState, game_state: &old::GameStat
     }
 }
 
-pub fn convert_card_choices(state: &old::CombatState, game_state: &old::GameState) -> Vector<Rc<new::Card>> {
+pub fn convert_card_choices(state: &old::CombatState, game_state: &old::GameState) -> Vec<new::Card> {
     match &game_state.screen_state {
         old::ScreenState::Grid(grid) => {
             convert_cards(&grid.cards)
         },
-        _ => Vector::new()
+        _ => Vec::new()
     }
 }
 
@@ -340,16 +338,17 @@ fn convert_potions(potions: &Vec<old::Potion>) -> Vec<Option<new::Potion>> {
     ).collect()
 }
 
-fn convert_cards(cards: &Vec<old::Card>) -> Vector<Rc<new::Card>> {
+fn convert_cards(cards: &Vec<old::Card>) -> Vec<new::Card> {
     cards
         .iter()
-        .map(|card| Rc::new(convert_card(card)))
+        .map(|card| convert_card(card))
         .collect()
 }
 
 fn convert_card(card: &old::Card) -> new::Card {
+    let name = if card.name.ends_with('+') {&card.name[0..card.name.len()-1]} else {card.name.as_str()};
     new::Card {
-        base: crate::models::cards::by_name(&card.name.as_str()),
+        base: crate::models::cards::by_name(name),
         vars: new::Vars {
             n: 0,
             n_reset: 0,

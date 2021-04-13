@@ -7,3 +7,4 @@ pub mod potions;
 pub mod relics;
 pub mod state;
 pub mod events;
+pub mod choices;

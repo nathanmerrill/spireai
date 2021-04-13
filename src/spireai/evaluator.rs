@@ -339,3 +339,16 @@ pub fn eval_condition(
         _ => panic!("Unhandled condition")
     }
 }
+
+pub fn potion_targeted(potion: &Potion, state: &GameState) -> bool {
+    eval_condition(&potion.base.targeted, state, &Binding::Potion(potion), &None)
+}
+
+pub fn card_targeted(card: &Card, state: &GameState) -> bool {
+    eval_condition(
+        &card.base.targeted, 
+        state, 
+        &Binding::Card(card),
+        &None,
+    )
+}

@@ -984,6 +984,7 @@ fn all_events() -> Vec<BaseEvent> {
                     name: "Forget",
                     effects: vec![
                         Effect::RemoveCard(1),
+                        Effect::ShowChoices(vec![LEAVE]),
                     ],
                     ..BaseEventChoice::new()
                 },
@@ -991,6 +992,7 @@ fn all_events() -> Vec<BaseEvent> {
                     name: "Change",
                     effects: vec![
                         Effect::TransformCard(1),
+                        Effect::ShowChoices(vec![LEAVE]),
                     ],
                     ..BaseEventChoice::new()
                 },
@@ -998,10 +1000,12 @@ fn all_events() -> Vec<BaseEvent> {
                     name: "Grow",
                     effects: vec![
                         Effect::UpgradeCard(CardLocation::DeckPile(RelativePosition::PlayerChoice(Amount::Fixed(1)))),
+                        Effect::ShowChoices(vec![LEAVE]),
                     ],
                     condition: Condition::HasUpgradableCard,
                     ..BaseEventChoice::new()
                 },
+                leave(false),
             ],
         },
         BaseEvent {
