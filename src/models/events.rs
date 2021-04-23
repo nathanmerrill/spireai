@@ -5,7 +5,7 @@ use crate::models::core::*;
 use std::collections::HashMap;
 
 pub fn by_name(name: &str) -> &'static BaseEvent {
-    EVENTS.get(name).expect(format!("Unrecognized event: {}", name).as_str())
+    EVENTS.get(name).unwrap_or_else(|| panic!("Unrecognized event: {}", name))
 }
 
 lazy_static! {
@@ -37,7 +37,7 @@ fn leave(initial: bool) -> BaseEventChoice {
         name: LEAVE,
         effects: vec![],
         condition: Condition::Always,
-        initial: initial
+        initial
     }
 }
 
@@ -82,7 +82,6 @@ fn all_events() -> Vec<BaseEvent> {
                         Effect::ShowChoices(vec![LEAVE]),
                     ],
                     condition: Condition::Class(Class::Silent),
-                    ..BaseEventChoice::new()
                 },
                 BaseEventChoice {
                     name: NEOW_SEVEN_HP,
@@ -95,7 +94,6 @@ fn all_events() -> Vec<BaseEvent> {
                         Condition::Class(Class::Defect),
                         Condition::Class(Class::Watcher)
                     ]),
-                    ..BaseEventChoice::new()
                 },
                 BaseEventChoice {
                     name: NEOW_EIGHT_HP,
@@ -105,7 +103,6 @@ fn all_events() -> Vec<BaseEvent> {
                         Effect::ShowChoices(vec![LEAVE]),
                     ],
                     condition: Condition::Class(Class::Ironclad),
-                    ..BaseEventChoice::new()
                 },
                 leave(false)
             ],       

@@ -20,8 +20,8 @@ impl BaseCard {
         Self {
             name: &"",
             rarity: Rarity::Common,
-            _type: _type,
-            _class: _class,
+            _type,
+            _class,
             effects: vec![],
             on_play: vec![],
             on_discard: vec![],
@@ -32,18 +32,30 @@ impl BaseCard {
             cost: Fixed(1),
             innate: Condition::Never,
             retain: Condition::Never,
-            targeted: targeted,
+            targeted,
             playable_if: Condition::Always,
         }
     }
 }
 
 pub fn by_name(name: &str) -> &'static BaseCard {
-    CARDS.get(name).expect(format!("Unrecognized card: {}", name).as_str())
+    ALL_CARDS.get(name).unwrap_or_else(|| panic!("Unrecognized card: {}", name))
+}
+
+pub fn available_cards_by_class(class: Class) -> &'static Vec<&'static str> {
+    match class {
+        Class::All => &ANY_CLASS_CARDS,
+        Class::Curse => &CURSES,
+        Class::Defect => &DEFECT_CARDS,
+        Class::Ironclad => &IRONCLAD_CARDS,
+        Class::None => &COLORLESS_CARDS,
+        Class::Silent => &SILENT_CARDS,
+        Class::Watcher => &WATCHER_CARDS,
+    }
 }
 
 lazy_static! {
-    static ref CARDS: HashMap<&'static str, BaseCard> = {
+    static ref ALL_CARDS: HashMap<&'static str, BaseCard> = {
         let mut m = HashMap::new();
 
         for card in all_cards() {
@@ -52,6 +64,47 @@ lazy_static! {
 
         m
     };
+
+    // Sets of cards available for transformations and shop inventory
+    static ref ANY_CLASS_CARDS: Vec<&'static str> =
+        ALL_CARDS.values()
+        .filter(|a| a._class != Class::Curse && a.rarity != Rarity::Starter && a.rarity != Rarity::Special)
+        .map(|a| a.name)
+        .collect();
+    static ref IRONCLAD_CARDS: Vec<&'static str> = 
+        ALL_CARDS.values()
+        .filter(|a| a._class == Class::Ironclad && a.rarity != Rarity::Starter)
+        .map(|a| a.name)
+        .collect();
+    static ref SILENT_CARDS: Vec<&'static str> = 
+        ALL_CARDS.values()
+        .filter(|a| a._class == Class::Silent)
+        .map(|a| a.name)
+        .collect();
+    static ref DEFECT_CARDS: Vec<&'static str> = 
+        ALL_CARDS.values()
+        .filter(|a| a._class == Class::Defect)
+        .map(|a| a.name)
+        .collect();
+    static ref WATCHER_CARDS: Vec<&'static str> = 
+        ALL_CARDS.values()
+        .filter(|a| a._class == Class::Watcher)
+        .map(|a| a.name)
+        .collect();
+
+    static ref CURSES: Vec<&'static str> = 
+        ALL_CARDS.values()
+        .filter(|a| a._type == CardType::Curse)
+        .map(|a| a.name)
+        .collect();
+
+    static ref COLORLESS_CARDS: Vec<&'static str> = 
+        ALL_CARDS.values()
+        .filter(|a| a._class == Class::None && a.rarity != Rarity::Special && a._type != CardType::Curse)
+        .map(|a| a.name)
+        .collect();
+    
+
 }
 
 fn all_cards() -> Vec<BaseCard> {
@@ -2388,7 +2441,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: MEDITATE,
             rarity: Uncommon,
             on_play: vec![Effect::Custom],
-            ..BaseCard::new(Watcher, Power)
+            ..BaseCard::new(Watcher, Skill)
         },
         BaseCard {
             name: MENTAL_FORTRESS,
@@ -3289,40 +3342,40 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
             on_turn_end: vec![ExhaustCard(This)],
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: CLUMSY,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
             on_turn_end: vec![ExhaustCard(This)],
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: CURSE_OF_THE_BELL,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: DECAY,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
             on_turn_end: vec![Damage(Fixed(2), _Self), DiscardCard(This)],
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: DOUBT,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
             on_turn_end: vec![AddBuff(buffs::WEAK, Fixed(1), _Self), DiscardCard(This)],
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: INJURY,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: NECRONOMICURSE,
@@ -3334,32 +3387,32 @@ fn all_cards() -> Vec<BaseCard> {
                 copies: Fixed(1),
                 modifier: CardModifier::None,
             }],
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: NORMALITY,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: PAIN,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: PARASITE,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: REGRET,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
             on_turn_end: vec![LoseHp(Amount::Custom, _Self)],
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: PRIDE,
@@ -3372,21 +3425,21 @@ fn all_cards() -> Vec<BaseCard> {
                 modifier: CardModifier::None,
             }],
             on_play: vec![ExhaustCard(This)],
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: SHAME,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
             on_turn_end: vec![AddBuff(buffs::FRAIL, Fixed(1), _Self), DiscardCard(This)],
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: WRITHE,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
             innate: Condition::Always,
-            ..BaseCard::new(Class::None, Curse)
+            ..BaseCard::new(Class::Curse, CardType::Curse)
         },
     ]
 }

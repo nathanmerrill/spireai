@@ -1,9 +1,10 @@
-use crate::spireai::{GamePossibility, GamePossibilitySet};
+use crate::spireai::*;
+use crate::models::state::GameState;
 
-pub fn rate_possibility_set(set: GamePossibilitySet) -> f64 {
+pub fn rate_possibility_set(set: &GamePossibilitySet) -> f64 {
     panic!("Not implemented")
 }
 
-fn rate_possibility(possibility: GamePossibility) -> f64 {
+fn rate_state(state: GameState) -> f64 {
     panic!("Not implemented")
 }

@@ -1,4 +1,4 @@
-use crate::models::core::Class;
+use crate::models::core::*;
 
 pub enum Choice {
     Start {
@@ -6,36 +6,36 @@ pub enum Choice {
         ascension: Option<u8>,
     },
     DrinkPotion {
-        slot: u8,
-        target_index: Option<u8>,
+        slot: usize,
+        target_index: Option<usize>,
     },
     DiscardPotion {
-        slot: u8,
+        slot: usize,
     },
     PlayCard {
-        card_index: u8,
-        target_index: Option<u8>,
+        card_index: usize,
+        target_index: Option<usize>,
     },
     EventChoice(&'static str),
     NavigateToNode(i8),
-    TakeReward(u8),
+    TakeReward(usize),
     SelectCard(&'static str),
-    BuyCard(String),
+    BuyCard(&'static str),
     BuyRelic(&'static str),
     BuyPotion(&'static str),
-    BuyRemoveCard(String),
-    DeckRemove(Vec<String>),
-    DeckTransform(Vec<String>, bool), //And upgrade if true
-    DeckUpgrade(Vec<String>),
+    BuyRemoveCard(usize),
+    DeckRemove(Vec<usize>),
+    DeckTransform(Vec<usize>, bool), //And upgrade if true
+    DeckUpgrade(Vec<usize>),
     OpenChest,
     Rest,
     RestDreamCatcher,
-    Smith(String),
+    Smith(usize),
     Lift,
     Dig,
-    ScryDiscard(Vec<String>),
+    ScryDiscard(Vec<usize>),
     Recall,
-    Toke(String),
+    Toke(usize),
     EnterShop,
     End,
     Proceed,

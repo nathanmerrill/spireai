@@ -92,7 +92,7 @@ fn process_queue(queue: &mut Vec<Response>, game_state: &Option<GameState>) -> R
         return process_queue(queue, &request.game_state);
     }
 
-    return request;
+    request
 }
 
 
@@ -120,7 +120,7 @@ fn read_request() -> Request {
     model
 }
 
-fn deserialize(state: &String) -> Result<comm::request::Request, Box<dyn Error>> {
+fn deserialize(state: &str) -> Result<comm::request::Request, Box<dyn Error>> {
     let deserialized = serde_json::from_str(state)?;
     Ok(deserialized)
 }

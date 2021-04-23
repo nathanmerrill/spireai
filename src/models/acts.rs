@@ -5,6 +5,7 @@ use crate::models::events;
 lazy_static! {
     static ref ACTS: Vec<Act> = vec![
         Act {
+            num: 1,
             easy_count: 3,
             easy_fights: vec![
                 (1, MonsterSet::Fixed(vec![CULTIST])),
@@ -143,6 +144,7 @@ lazy_static! {
             ],
         },
         Act {
+            num: 2,
             easy_count: 2,
             easy_fights: vec![
                 (1, MonsterSet::Fixed(vec![SPHERIC_GUARDIAN])),
@@ -233,6 +235,7 @@ lazy_static! {
             ],
         },
         Act {
+            num: 3,
             easy_count: 2,
             easy_fights: vec![
                 (1, MonsterSet::Fixed(vec![DARKLING, DARKLING, DARKLING])),
@@ -311,6 +314,7 @@ lazy_static! {
             ],
         },
         Act {
+            num: 4,
             easy_count: 0,
             easy_fights: vec![],
             normal_fights: vec![],

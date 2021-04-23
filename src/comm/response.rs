@@ -1,5 +1,6 @@
-use crate::comm::request::GameState;
+use crate::comm::request::*;
 use crate::models::choices::Choice;
+use std::iter::once;
 
 pub fn serialize_response(response: &Response, state: &Option<GameState>) -> String {
     match response {
@@ -7,43 +8,37 @@ pub fn serialize_response(response: &Response, state: &Option<GameState>) -> Str
         Response::Choose(name) => {
             let selection = state.as_ref().unwrap().choice_list.iter()
                 .position(|a| a.as_str().to_ascii_lowercase() == name.to_ascii_lowercase())
-                .expect(format!("Could not find option with name {}", name).as_str());
+                .unwrap_or_else(|| panic!("Could not find option with name {}", name));
 
             format!("CHOOSE {}", selection)
         },
-        Response::Card(id) => {
-            match &state.as_ref().unwrap().screen_state {
-                crate::comm::request::ScreenState::Grid(grid) => {
-                    pick_by_id(id, &grid.cards)
-                },
-                crate::comm::request::ScreenState::CardReward(reward) => {
-                    pick_by_id(id, &reward.cards)
-                },
-                _ => {
-                    panic!("Unexpected Card choice")
-                }
+        Response::CardInGrid(position) => format!("CHOOSE {}", position),
+        Response::CardInDeck(position) => {
+            let game_state = state.as_ref().unwrap();
+            let ref_card = &game_state.deck[*position];
+            if let ScreenState::Grid(grid) = &game_state.screen_state {
+                let position = 
+                grid.cards.iter()
+                    .position(|card| card.id == ref_card.id)
+                    .unwrap_or_else(|| panic!("Did not find card {} in the grid", ref_card.name));
+
+                format!("CHOOSE {}", position)
+            } else {
+                panic!("Expected a Grid in CardInDeck")
             }
         }
     }
 }
 
-fn pick_by_id(id: &String, cards: &Vec<crate::comm::request::Card>) -> String {
-    let selection = cards.iter()
-        .position(|a| a.id.as_str() == id)
-        .expect(format!("Could not find card with id {}", id).as_str());
-
-    format!("CHOOSE {}", selection)
-}
-
-
 pub enum Response {
     Simple(String),
     Choose(String),
-    Card(String),
+    CardInGrid(usize),
+    CardInDeck(usize),
 }
 
-fn fmt_opt_i(i: Option<u8>) -> String {
-    i.map(|a| a.to_string()).unwrap_or(String::default())
+fn fmt_opt_i<T: std::fmt::Display>(i: Option<T>) -> String {
+    i.map(|a| a.to_string()).unwrap_or_default()
 }
 
 pub fn decompose_choice(choice: Choice) -> Vec<Response> {
@@ -73,7 +68,7 @@ pub fn decompose_choice(choice: Choice) -> Vec<Response> {
         Choice::BuyRelic(relic) => vec![Response::Choose(String::from(relic))],
         Choice::BuyRemoveCard(card) => vec![
             Response::Choose(String::from("purge")),
-            Response::Card(String::from(card))
+            Response::CardInDeck(card)
         ],
         Choice::TakeReward(idx) => vec![Response::Simple(format!("CHOOSE {}", idx))],
         Choice::NavigateToNode(idx) => vec![Response::Choose(format!("x={}",idx))],
@@ -85,7 +80,7 @@ pub fn decompose_choice(choice: Choice) -> Vec<Response> {
         ],
         Choice::Smith(card) => vec![
             Response::Choose(String::from("smith")),
-            Response::Card(card),
+            Response::CardInDeck(card),
             Response::Simple(String::from("CONFIRM")),
             Response::Simple(String::from("PROCEED")),
         ],
@@ -103,23 +98,14 @@ pub fn decompose_choice(choice: Choice) -> Vec<Response> {
         ],
         Choice::Toke(card) => vec![
             Response::Choose(String::from("toke")),
-            Response::Card(String::from(card))
+            Response::CardInDeck(card)
         ],
-        Choice::ScryDiscard(cards) => grid_choice(cards, true),
-        Choice::DeckUpgrade(cards) => grid_choice(cards, true),
-        Choice::DeckTransform(cards, _) => grid_choice(cards, true),
-        Choice::DeckRemove(cards) => grid_choice(cards, true),
+        Choice::ScryDiscard(cards) => 
+            cards.into_iter().map(Response::CardInGrid).chain(once(Response::Simple(String::from("CONFIRM")))).collect(),
+
+        Choice::DeckUpgrade(cards) | Choice::DeckTransform(cards, _) | Choice::DeckRemove(cards) => 
+            cards.into_iter().map(Response::CardInDeck).chain(once(Response::Simple(String::from("CONFIRM")))).collect(),
+
         Choice::OpenChest => vec![Response::Simple(String::from("CHOOSE 0"))],
     }
-}
-    
-fn grid_choice(cards: Vec<String>, add_confirm: bool) -> Vec<Response> {
-    let mut response: Vec<Response> = Vec::new();
-    for card in cards {
-        response.push(Response::Card(String::from(card)));
-    }
-    if add_confirm {
-        response.push(Response::Simple(String::from("Confirm")));
-    }
-    response
 }

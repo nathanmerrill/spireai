@@ -19,7 +19,7 @@ impl BaseBuff {
 }
 
 pub fn by_name(name: &str) -> &'static BaseBuff {
-    BUFFS.get(name).expect(format!("Unrecognized buff: {}", name).as_str())
+    BUFFS.get(name).unwrap_or_else(|| panic!("Unrecognized buff: {}", name))
 }
 
 lazy_static! {

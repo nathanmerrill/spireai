@@ -20,7 +20,7 @@ impl BaseMonster {
 }
 
 pub fn by_name(name: &str) -> &'static BaseMonster {
-    MONSTERS.get(name).expect(format!("Unexpected monster: {}", name).as_str())
+    MONSTERS.get(name).unwrap_or_else(|| panic!("Unexpected monster: {}", name))
 }
 
 lazy_static! {
@@ -1052,8 +1052,7 @@ fn all_monsters() -> Vec<BaseMonster> {
                 Condition::Asc(17),
                 vec![Move::Probability(vec![(25, SPIT_WEB, 1), (75, BITE, 2)])],
                 vec![Move::Probability(vec![(25, SPIT_WEB, 2), (75, BITE, 2)])],
-            )])],
-            ..BaseMonster::default()
+            )])]
         },
         BaseMonster {
             name: GREMLIN_LEADER,
@@ -1648,7 +1647,6 @@ fn all_monsters() -> Vec<BaseMonster> {
                 vec![Move::Probability(vec![(25, GROW, 1), (75, BITE, 2)])],
                 vec![Move::Probability(vec![(25, GROW, 2), (75, BITE, 2)])],
             )])],
-            ..BaseMonster::default()
         },
         BaseMonster {
             name: RED_SLAVER,
@@ -1764,7 +1762,7 @@ fn all_monsters() -> Vec<BaseMonster> {
                     name: REPULSE,
                     effects: vec![Effect::AddCard {
                         card: CardReference::ByName(cards::DAZED),
-                        destination: CardLocation::DeckPile(RelativePosition::Random),
+                        destination: CardLocation::DrawPile(RelativePosition::Random),
                         copies: Fixed(2),
                         modifier: CardModifier::None,
                     }],

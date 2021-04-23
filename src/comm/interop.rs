@@ -30,7 +30,7 @@ pub fn convert_state(state: &old::GameState) -> new::GameState {
         act: state.act as u8,
         asc: state.ascension_level as u8,
         relic_names: relics.iter().map(|a| a.base.name).collect(), 
-        relics: relics,
+        relics,
         keys: None,
     }
 }
@@ -59,7 +59,7 @@ pub fn convert_map(state: &old::GameState) -> new::MapState {
     };
 
     new::MapState {
-        nodes: nodes,
+        nodes,
         x: x as i8,
         floor: y as i8,
     }
@@ -85,14 +85,15 @@ pub fn convert_relic(relic: &old::Relic) -> new::Relic {
     new::Relic {
         base: crate::models::relics::by_name(relic.name.as_str()),
         vars: new::Vars {
-            n: relic.counter as u8,
+            n: relic.counter as i16,
             x: 0,
             n_reset: 0,
         },
+        enabled: true,
     }
 }
 
-pub fn convert_relics(relics: &Vec<old::Relic>) -> Vec<new::Relic> {
+pub fn convert_relics(relics: &[old::Relic]) -> Vec<new::Relic> {
     relics
         .iter()
         .map(convert_relic)
@@ -122,7 +123,9 @@ pub fn convert_intent(intent: &old::Intent) -> new_core::Intent {
 
 pub fn convert_battle_state(state: &old::CombatState, game_state: &old::GameState) -> new::BattleState {
     new::BattleState {
-        draw: convert_cards(&state.draw_pile),
+        draw_unknown: convert_cards(&state.draw_pile),
+        draw_top: vec![],
+        draw_bottom: vec![],
         discard: convert_cards(&state.discard_pile),
         exhaust: convert_cards(&state.exhaust_pile),
         hand: convert_cards(&state.hand),
@@ -131,12 +134,12 @@ pub fn convert_battle_state(state: &old::CombatState, game_state: &old::GameStat
         orbs: convert_orbs(&state.player.orbs),
         stance: new_core::Stance::None,
         battle_type: new::BattleType::Common,
-        card_choices: convert_card_choices(state, game_state),
-        card_choice_type: convert_card_choice_type(state, game_state),
+        card_choices: convert_card_choices(game_state),
+        card_choice_type: convert_card_choice_type(game_state),
     }
 }
 
-pub fn convert_card_choices(state: &old::CombatState, game_state: &old::GameState) -> Vec<new::Card> {
+pub fn convert_card_choices(game_state: &old::GameState) -> Vec<new::Card> {
     match &game_state.screen_state {
         old::ScreenState::Grid(grid) => {
             convert_cards(&grid.cards)
@@ -145,7 +148,7 @@ pub fn convert_card_choices(state: &old::CombatState, game_state: &old::GameStat
     }
 }
 
-pub fn convert_card_choice_type(state: &old::CombatState, game_state: &old::GameState) -> new::CardChoiceType {
+pub fn convert_card_choice_type(game_state: &old::GameState) -> new::CardChoiceType {
     match &game_state.current_action {
         Some(s) => match s.as_str() {
             "ScryAction" => new::CardChoiceType::Scry,
@@ -169,7 +172,9 @@ pub fn convert_floor_state(state: &old::GameState) -> new::FloorState {
         old::ScreenState::Event(event) => new::FloorState::Event(convert_event(event)),
         old::ScreenState::Map(_) => new::FloorState::Map,
         old::ScreenState::CombatReward(rewards) => new::FloorState::Rewards(convert_rewards(rewards)),
-        old::ScreenState::CardReward(reward) => new::FloorState::CardReward(reward.cards.iter().map(|a| convert_card(a)).collect()),
+        old::ScreenState::CardReward(reward) => new::FloorState::CardReward(reward.cards.iter().map(|a| {
+            (crate::models::cards::by_name(a.name.as_str()).name, a.upgrades > 0)
+        }).collect()),
         old::ScreenState::ShopRoom{} => new::FloorState::ShopEntrance,
         old::ScreenState::ShopScreen(screen) => convert_shop(screen),
         old::ScreenState::Rest(_) => new::FloorState::Rest,
@@ -210,10 +215,10 @@ fn convert_chest(chest: &old::Chest) -> new::FloorState {
         panic!("Not sure how to handle open chest")
     } else {
         let chest_type = match chest.chest_type {
-            old::ChestType::SmallChest => new::ChestType::Small,
-            old::ChestType::MediumChest => new::ChestType::Medium,
-            old::ChestType::LargeChest => new::ChestType::Large,
-            old::ChestType::BossChest => new::ChestType::Boss,
+            old::ChestType::SmallChest => new_core::ChestType::Small,
+            old::ChestType::MediumChest => new_core::ChestType::Medium,
+            old::ChestType::LargeChest => new_core::ChestType::Large,
+            old::ChestType::BossChest => new_core::ChestType::Boss,
             _ => panic!("Unexpected type of chest")
         };
 
@@ -223,17 +228,22 @@ fn convert_chest(chest: &old::Chest) -> new::FloorState {
 
 fn convert_shop(shop: &old::ShopScreen) -> new::FloorState {
     let cards = shop.cards.iter().map(|a|
-        (convert_card(a), a.price.expect("No price on card") as u16)
+        (crate::models::cards::by_name(a.name.as_str()).name, a.price.expect("No price on card") as u16)
     ).collect();
     let relics = shop.relics.iter().map(|a|
-        (convert_relic(a), a.price.expect("No price on relic") as u16)
+        (crate::models::relics::by_name(a.name.as_str()).name, a.price.expect("No price on relic") as u16)
     ).collect();
     let potions = shop.potions.iter().map(|a|
-        (convert_potion(a), a.price.expect("No price on potion") as u16)
+        (crate::models::potions::by_name(a.name.as_str()).name, a.price.expect("No price on potion") as u16)
     ).collect();
     let price = if shop.purge_available { shop.purge_cost as u16 } else { 0 };
 
-    new::FloorState::Shop(cards, relics, potions, price)
+    new::FloorState::Shop {
+        cards, 
+        relics, 
+        potions, 
+        purge_cost: price
+    }
 }
 
 fn convert_rewards(rewards: &old::CombatRewards) -> Vec<new::Reward> {
@@ -261,13 +271,14 @@ fn convert_event(event: &old::Event) -> new::EventState {
         .filter(|a| !a.disabled)
         .map(|option: &old::EventOption| {
             base_event.choices.iter()
-            .find(|a| a.name == option.label).expect(format!("No option found that matches label: {}", option.label).as_str())
+            .find(|a| a.name == option.label)
+            .unwrap_or_else(|| panic!("No option found that matches label: {}", option.label))
             .name
         }).collect(),
     }
 }
 
-fn convert_orbs(orbs: &Vec<old::OrbType>) -> Vec<new::Orb> {
+fn convert_orbs(orbs: &[old::OrbType]) -> Vec<new::Orb> {
     orbs.iter()
         .map(|orb| new::Orb {
             base: match orb.name.as_str() {
@@ -282,7 +293,7 @@ fn convert_orbs(orbs: &Vec<old::OrbType>) -> Vec<new::Orb> {
         .collect()
 }
 
-fn convert_monsters(monsters: &Vec<old::Monster>) -> Vec<new::Monster> {
+fn convert_monsters(monsters: &[old::Monster]) -> Vec<new::Monster> {
     monsters
         .iter()
         .enumerate()
@@ -292,7 +303,7 @@ fn convert_monsters(monsters: &Vec<old::Monster>) -> Vec<new::Monster> {
                 hp: monster.current_hp as u16,
                 max_hp: monster.max_hp as u16,
                 is_player: false,
-                position: index as u8,
+                position: index,
                 buffs: convert_buffs(&monster.powers),
                 block: monster.block as u16,
             },
@@ -307,16 +318,17 @@ fn convert_monsters(monsters: &Vec<old::Monster>) -> Vec<new::Monster> {
         .collect()
 }
 
-fn convert_buffs(buffs: &Vec<old::Power>) -> HashMap<&'static str, new::Buff> {
+fn convert_buffs(buffs: &[old::Power]) -> HashMap<&'static str, new::Buff> {
     buffs
         .iter()
         .map(|buff| new::Buff {
             base: crate::models::buffs::by_name(buff.name.as_str()),
             vars: new::Vars {
-                n: buff.amount as u8,
+                n: buff.amount as i16,
                 x: 0,
                 n_reset: 0,
             },
+            stacked_vars: vec![]
         })
         .map(|buff| (buff.base.name, buff))
         .collect()
@@ -328,7 +340,7 @@ fn convert_potion(potion: &old::Potion) -> new::Potion {
     }
 }
 
-fn convert_potions(potions: &Vec<old::Potion>) -> Vec<Option<new::Potion>> {
+fn convert_potions(potions: &[old::Potion]) -> Vec<Option<new::Potion>> {
     potions.iter().map(|potion| 
         if potion.name == "Potion Slot" {
             None
@@ -338,7 +350,7 @@ fn convert_potions(potions: &Vec<old::Potion>) -> Vec<Option<new::Potion>> {
     ).collect()
 }
 
-fn convert_cards(cards: &Vec<old::Card>) -> Vec<new::Card> {
+fn convert_cards(cards: &[old::Card]) -> Vec<new::Card> {
     cards
         .iter()
         .map(|card| convert_card(card))
@@ -354,7 +366,6 @@ fn convert_card(card: &old::Card) -> new::Card {
             n_reset: 0,
             x: 0,
         },
-        id: card.id.to_string(),
         bottled: false,
         upgrades: card.upgrades as u8,
         cost: card.cost as u8,

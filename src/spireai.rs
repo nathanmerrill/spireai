@@ -1,6 +1,7 @@
 use crate::models;
 use models::state::GameState;
 use models::choices::Choice;
+use rand::Rng;
 
 pub mod evaluator;
 pub mod enumerator;
@@ -15,69 +16,37 @@ pub struct SpireAi {
 impl SpireAi {
     pub fn new() -> SpireAi {
         SpireAi {
-            expected_state: None,
+            expected_state: None
         }
     }
 
     pub fn choose(&mut self, new_state: &GameState) -> Choice {
-        let state: &GameState = match &self.expected_state {
-            Some(expected) => predictor::verify_prediction(new_state, &expected),
-            None => new_state,
-        };
+        if let Some(expected_state) = &self.expected_state {
+            predictor::verify_prediction(new_state, &expected_state);
+        }
+        let (choice, possibilities) = make_choice(new_state);
+        self.expected_state = possibilities;
 
-        let choice = make_choice(state);
-        self.expected_state = predictor::predict_outcome(state, &choice);
-
-        return choice;
+        choice
     }
 }
 
-fn make_choice(state: &GameState) -> Choice {
+fn make_choice(state: &GameState) -> (Choice, Option<GamePossibilitySet>) {
     let mut max_val = f64::MIN;
     let mut best_choice = Choice::State;
+    let mut best_outcome: Option<GamePossibilitySet> = None;
 
     for choice in enumerator::all_choices(&state) {
-        match predictor::predict_outcome(state, &choice) {
-            Some(outcome) => {
-                let rating = appraiser::rate_possibility_set(outcome);
-                if rating > max_val {
-                    max_val = rating;
-                    best_choice = choice
-                }
-            }
-            None => {
-                if max_val == f64::MIN {
-                    best_choice = choice
-                }
-            }
+        let prediction = predictor::predict_outcome(state, &choice);
+        let rating = appraiser::rate_possibility_set(&prediction);
+        if rating > max_val {
+            max_val = rating;
+            best_choice = choice;
+            best_outcome = Some(prediction);
         }
     }
 
-    best_choice
+    (best_choice, best_outcome)
 }
 
-
-#[derive(PartialEq, Clone, Debug)]
-pub struct GamePossibility {
-    pub probability: f64,
-    pub state: GameState,
-}
-
-pub struct GamePossibilitySet {
-    pub states: Vec<GamePossibility>,
-}
-
-impl GamePossibilitySet {
-    /*
-    pub fn new(state: GameState) -> Self {
-        let mut states = Vector::new();
-        states.push_back(GamePossibility {
-            probability: 1.0,
-            state: state,
-        });
-        Self {
-            states: states
-        }
-    }
-    */
-}
+type GamePossibilitySet = (GameState, f64);

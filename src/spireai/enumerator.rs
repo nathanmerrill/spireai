@@ -1,38 +1,45 @@
 use crate::spireai::{evaluator};
 use crate::models;
 use models::choices::Choice;
-use models::state::{BattleState, GameState, FloorState, CardChoiceType};
+use models::state::*;
 use itertools::Itertools;
 
 pub fn all_choices(state: &GameState) -> Vec<Choice> {
     let mut choices: Vec<Choice> = Vec::new();
+    choices.extend(
+        state.potions.iter()
+            .enumerate()
+            .filter(|(_, potion)| potion.is_some())
+            .map(|(position, _)| Choice::DiscardPotion {slot: position})
+    );
+
     match &state.floor_state {
         FloorState::Battle => {
             let battle_state: &BattleState = state.battle_state.as_ref().expect("Battle state not set when floor state is battle");
 
             match battle_state.card_choice_type {
                 CardChoiceType::Scry => {
-                    for combination in battle_state.card_choices.iter().map(|a| a.id.to_string()).powerset() {
-                        choices.push(Choice::ScryDiscard(combination))
-                    }
-                }
+                    (0..(battle_state.card_choices.len()))
+                        .powerset()
+                        .for_each(|combination| choices.push(Choice::ScryDiscard(combination)));                    
+                },
 
                 CardChoiceType::None => {
                     choices.push(Choice::End);
                     for (card_index, card) in battle_state.hand.iter().enumerate() {
                         if evaluator::card_playable(card, battle_state, state) {
                             if evaluator::card_targeted(card, state) {
-                                for monster in &battle_state.monsters {
-                                    if monster.targetable {
-                                        choices.push(Choice::PlayCard {
-                                            card_index: card_index as u8,
-                                            target_index: Some(monster.creature.position),
-                                        });
-                                    }
-                                }
+                                choices.extend(
+                                    battle_state.monsters.iter()
+                                    .filter(|monster| monster.targetable)
+                                    .map(|monster| Choice::PlayCard {
+                                        card_index,
+                                        target_index: Some(monster.creature.position)
+                                    })
+                                );
                             } else {
                                 choices.push(Choice::PlayCard {
-                                    card_index: card_index as u8,
+                                    card_index,
                                     target_index: None,
                                 })
                             }
@@ -43,24 +50,21 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                         match potion_slot {
                             Some(potion) => {
                                 if evaluator::potion_targeted(potion, state) {
-                                    for monster in &battle_state.monsters {
-                                        if monster.targetable {
-                                            choices.push(Choice::DrinkPotion {
-                                                slot: potion_index as u8,
-                                                target_index: Some(monster.creature.position),
-                                            });
-                                        }
-                                    }
+                                    choices.extend(
+                                        battle_state.monsters.iter()
+                                        .enumerate()
+                                        .filter(|(_, monster)| monster.targetable)
+                                        .map(|(position, _)| Choice::DrinkPotion {
+                                            slot: potion_index,
+                                            target_index: Some(position)
+                                        })
+                                    );
                                 } else {
                                     choices.push(Choice::DrinkPotion {
-                                        slot: potion_index as u8,
+                                        slot: potion_index,
                                         target_index: None,
                                     });
                                 }
-        
-                                choices.push(Choice::DiscardPotion {
-                                    slot: potion_index as u8
-                                });
                             },
                             None => {}
                         }
@@ -98,13 +102,13 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
         FloorState::Rewards(rewards) => {
             choices.push(Choice::Proceed);
             for index in 0..rewards.len() {
-                choices.push(Choice::TakeReward(index as u8))
+                choices.push(Choice::TakeReward(index))
             }
         },
         FloorState::CardReward(card_choices) => {
             choices.push(Choice::Skip);
-            for card in card_choices {
-                choices.push(Choice::SelectCard(card.base.name))
+            for (card, _) in card_choices {
+                choices.push(Choice::SelectCard(card))
             }
             if state.relic_names.contains(models::relics::SINGING_BOWL) {
                 choices.push(Choice::SingingBowl)
@@ -114,31 +118,34 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
             choices.push(Choice::EnterShop);
             choices.push(Choice::Proceed);
         },
-        FloorState::Shop(cards, relics, potions, remove) => {
+        FloorState::Shop{cards, relics, potions, purge_cost} => {
             for (card, cost) in cards {
                 if *cost <= state.gold {
-                    choices.push(Choice::BuyCard(card.id.to_string()))
+                    choices.push(Choice::BuyCard(card))
                 }
             }
 
             for (relic, cost) in relics {
                 if *cost <= state.gold {
-                    choices.push(Choice::BuyRelic(relic.base.name))
+                    choices.push(Choice::BuyRelic(relic))
                 }
             }
 
-            for (potion, cost) in potions {
-                if *cost <= state.gold {
-                    choices.push(Choice::BuyPotion(potion.base.name))
+            if state.potions.iter().any(|a| a.is_none()) {
+               for (potion, cost) in potions {
+                    if *cost <= state.gold {
+                        choices.push(Choice::BuyPotion(potion))
+                    }
                 }
             }
             
-            if *remove != 0 && *remove <= state.gold {
-                for card in &state.deck {
-                    if evaluator::card_removable(&card) {
-                        choices.push(Choice::BuyRemoveCard(card.id.to_string()))
-                    }
-                }
+            if *purge_cost != 0 && *purge_cost <= state.gold {
+                choices.extend(
+                    state.deck.iter()
+                        .enumerate()
+                        .filter(|(_, card)| evaluator::card_removable(&card))
+                        .map(|(position, _)| Choice::BuyRemoveCard(position))
+                );
             }
         },
         FloorState::Rest => {
@@ -150,11 +157,12 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                 }
             }
             if !state.relic_names.contains(models::relics::FUSION_HAMMER) {
-                for card in &state.deck {
-                    if evaluator::card_upgradable(&card) {
-                        choices.push(Choice::Smith(card.id.to_string()))
-                    }
-                }
+                choices.extend(
+                    state.deck.iter()
+                        .enumerate()
+                        .filter(|(_, card)| evaluator::card_upgradable(card))
+                        .map(|(position, _)| Choice::Smith(position))
+                );
             }
             if state.relic_names.contains(models::relics::GIRYA) {
                 let relic = state.relics.iter().find(|relic| relic.base.name == models::relics::GIRYA).unwrap();
@@ -164,6 +172,14 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
             }
             if state.relic_names.contains(models::relics::SHOVEL) {
                 choices.push(Choice::Dig)
+            }
+            if state.relic_names.contains(models::relics::PEACE_PIPE) {
+                choices.extend(
+                    state.deck.iter()
+                        .enumerate()
+                        .filter(|(_, card)| evaluator::card_removable(card))
+                        .map(|(position, _)| Choice::Toke(position))
+                );
             }
             match &state.keys {
                 Some(keys) => {
@@ -175,28 +191,34 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
             }
         },
         FloorState::EventRemove(count) => {
-            for combination in state.deck.iter()
-                                .filter(|card| evaluator::card_removable(card))
-                                .map(|card| card.id.to_string())
-                                .combinations((*count).into()) {
-                choices.push(Choice::DeckRemove(combination))
-            }
+            choices.extend(
+                state.deck.iter()
+                    .enumerate()
+                    .filter(|(_, card)| evaluator::card_removable(card))
+                    .map(|(position, _)| position)
+                    .combinations((*count).into())
+                    .map(Choice::DeckRemove)
+            )
         },
         FloorState::EventTransform(count, upgrade) => {
-            for combination in state.deck.iter()
-                                .filter(|card| evaluator::card_removable(card))
-                                .map(|card| card.id.to_string())
-                                .combinations((*count).into()) {
-                choices.push(Choice::DeckTransform(combination, *upgrade))
-            }
+            choices.extend(
+                state.deck.iter()
+                    .enumerate()
+                    .filter(|(_, card)| evaluator::card_removable(card))
+                    .map(|(position, _)| position)
+                    .combinations((*count).into())
+                    .map(|combination| Choice::DeckTransform(combination, *upgrade))
+            );
         },
         FloorState::EventUpgrade(count) => {
-            for combination in state.deck.iter()
-                                .filter(|card| evaluator::card_upgradable(card))
-                                .map(|card| card.id.to_string())
-                                .combinations((*count).into()) {
-                choices.push(Choice::DeckUpgrade(combination))
-            }
+            choices.extend(
+                state.deck.iter()
+                    .enumerate()
+                    .filter(|(_, card)| evaluator::card_upgradable(card))
+                    .map(|(position, _)| position)
+                    .combinations((*count).into())
+                    .map(Choice::DeckUpgrade)
+            )
         },
         FloorState::Chest(_) => {
             choices.push(Choice::Proceed);

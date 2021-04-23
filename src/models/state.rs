@@ -1,7 +1,7 @@
 use crate::models::core::*;
 use std::collections::{HashMap, HashSet};
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct GameState {
     pub class: Class,
     pub map: MapState,
@@ -18,25 +18,19 @@ pub struct GameState {
     pub keys: Option<KeyState>,
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct KeyState {
     pub ruby: bool,
     pub emerald: bool,
     pub sapphire: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Potion {
     pub base: &'static BasePotion,
 }
 
-impl PartialEq for Potion {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base)
-    }
-}
-
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Monster {
     pub base: &'static BaseMonster,
     pub creature: Creature,
@@ -45,16 +39,7 @@ pub struct Monster {
     pub vars: Vars,
 }
 
-impl PartialEq for Monster {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base)
-            && self.creature == other.creature
-            && self.targetable == other.targetable
-            && self.intent == other.intent
-    }
-}
-
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum FloorState {
     Event(EventState),
     EventUpgrade(u8),
@@ -66,12 +51,17 @@ pub enum FloorState {
     Map,
     GameOver,
     Rewards(Vec<Reward>),
-    CardReward(Vec<Card>),
+    CardReward(Vec<(&'static str, bool)>), // true if upgraded
     ShopEntrance,
-    Shop(Vec<(Card, u16)>, Vec<(Relic, u16)>, Vec<(Potion, u16)>, u16) // Last u8 is remove
+    Shop {
+        cards: Vec<(&'static str, u16)>, 
+        potions: Vec<(&'static str, u16)>, 
+        relics: Vec<(&'static str, u16)>, 
+        purge_cost: u16
+     } // Last u8 is remove
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Reward {
     CardChoice,
     Gold(u8),
@@ -81,14 +71,14 @@ pub enum Reward {
     SapphireKey(Relic),
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct MapState {
     pub nodes: HashMap<(i8, i8), MapNode>,
     pub floor: i8,
     pub x: i8,
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct MapNode {
     pub floor: i8,
     pub x: i8,
@@ -96,7 +86,7 @@ pub struct MapNode {
     pub icon: MapNodeIcon
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum MapNodeIcon {
     Question,
     Elite,
@@ -108,7 +98,7 @@ pub enum MapNodeIcon {
     Chest,
 }
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct EventState {
     pub base: &'static BaseEvent,
     pub variant: Option<&'static str>,
@@ -119,35 +109,21 @@ pub struct EventState {
     
 }
 
-impl PartialEq for EventState {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base)
-    }
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum ChestType {
-    Large,
-    Medium,
-    Small,
-    Boss
-}
-
-
-
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Creature {
     pub hp: u16,
     pub max_hp: u16,
-    pub position: u8,
     pub is_player: bool,
+    pub position: usize,
     pub buffs: HashMap<&'static str, Buff>,
     pub block: u16,
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct BattleState {
-    pub draw: Vec<Card>,
+    pub draw_top: Vec<Card>,
+    pub draw_unknown: Vec<Card>,
+    pub draw_bottom: Vec<Card>,
     pub discard: Vec<Card>,
     pub exhaust: Vec<Card>,
     pub hand: Vec<Card>,
@@ -160,13 +136,13 @@ pub struct BattleState {
     pub card_choice_type: CardChoiceType,
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum CardChoiceType {
     None,
     Scry,
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum BattleType {
     Common,
     Elite,
@@ -174,63 +150,45 @@ pub enum BattleType {
     Event
 }
 
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Orb {
     pub base: OrbType,
     pub n: u16,
 }
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Relic {
     pub base: &'static BaseRelic,
     pub vars: Vars,
+    pub enabled: bool,
 }
 
-impl PartialEq for Relic {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base) && self.vars.n == other.vars.n
-    }
-}
-
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Buff {
     pub base: &'static BaseBuff,
     pub vars: Vars,
+    pub stacked_vars: Vec<Vars>,
 }
 
-impl PartialEq for Buff {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base) && self.vars.n == other.vars.n
-    }
-}
-
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Vars {
-    pub n: u8,
-    pub n_reset: u8,
-    pub x: u8,
+    pub n: i16,
+    pub n_reset: i16,
+    pub x: i16,
 }
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Card {
     pub base: &'static BaseCard,
-    pub id: String,
     pub cost: u8,
     pub vars: Vars,
     pub upgrades: u8,
     pub bottled: bool,
 }
 
-impl PartialEq for Card {
-    fn eq(&self, other: &Self) -> bool {
-        std::ptr::eq(self.base, other.base)
-            && self.cost == other.cost
-            && self.upgrades == other.upgrades
-    }
-}
-
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct GameAction<'a> {
     pub is_attack: bool,
     pub creature: &'a Creature,
-    pub target: Option<u8>,
+    pub target: Option<usize>,
 }

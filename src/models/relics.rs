@@ -15,16 +15,17 @@ impl BaseRelic {
             class: Class::All,
             energy_relic: false,
             replaces_starter: false,
+            starting_x: 0,
         }
     }
 }
 
 pub fn by_name(name: &str) -> &'static BaseRelic {
-    RELICS.get(name).expect(format!("Unrecognized relic: {}", name).as_str())
+    RELICS.get(name).unwrap_or_else(|| panic!("Unrecognized relic: {}", name))
 }
 
 lazy_static! {
-    static ref RELICS: HashMap<&'static str, BaseRelic> = {
+    pub static ref RELICS: HashMap<&'static str, BaseRelic> = {
         let mut m = HashMap::new();
 
         for relic in all_relics() {
@@ -33,6 +34,7 @@ lazy_static! {
 
         m
     };
+    
 }
 
 fn all_relics() -> Vec<BaseRelic> {
@@ -142,8 +144,6 @@ fn all_relics() -> Vec<BaseRelic> {
         },
         BaseRelic {
             name: CERAMIC_FISH,
-            activation: Activation::Event(Event::AddToDeck(CardType::All)),
-            effect: Effect::AddGold(Fixed(9)),
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -180,7 +180,6 @@ fn all_relics() -> Vec<BaseRelic> {
             name: MAW_BANK,
             activation: Activation::Event(Event::RoomEnter(RoomType::All)),
             effect: Effect::AddGold(Fixed(12)),
-            disable_at: Event::SpendGold,
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -208,10 +207,7 @@ fn all_relics() -> Vec<BaseRelic> {
         },
         BaseRelic {
             name: OMAMORI,
-            activation: Activation::Uses {
-                use_when: Event::AddToDeck(CardType::Curse),
-                uses: 2,
-            },
+            starting_x: 2,
             effect: Effect::Custom,
             ..BaseRelic::default()
         },
@@ -362,8 +358,6 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: DARKSTONE_PERIAPT,
             rarity: Rarity::Uncommon,
-            activation: Activation::Event(Event::AddToDeck(CardType::Curse)),
-            effect: Effect::AddMaxHp(Fixed(6)),
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -376,8 +370,6 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: FROZEN_EGG,
             rarity: Rarity::Uncommon,
-            activation: Activation::Event(Event::AddToDeck(CardType::Power)),
-            effect: Effect::Custom,
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -466,8 +458,6 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: MOLTEN_EGG,
             rarity: Rarity::Uncommon,
-            activation: Activation::Event(Event::AddToDeck(CardType::Attack)),
-            effect: Effect::Custom,
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -561,8 +551,6 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: TOXIC_EGG,
             rarity: Rarity::Uncommon,
-            activation: Activation::Event(Event::AddToDeck(CardType::Skill)),
-            effect: Effect::Custom,
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -894,8 +882,6 @@ fn all_relics() -> Vec<BaseRelic> {
             name: MAGIC_FLOWER,
             class: Class::Ironclad,
             rarity: Rarity::Rare,
-            activation: Activation::Event(Event::Heal(Target::_Self)),
-            effect: Effect::Custom,
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -1362,8 +1348,6 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: BLOODY_IDOL,
             rarity: Rarity::Event,
-            activation: Activation::Event(Event::GainGold),
-            effect: Effect::Heal(Fixed(5), Target::_Self),
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -1393,8 +1377,6 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: GOLDEN_IDOL,
             rarity: Rarity::Event,
-            activation: Activation::Event(Event::GainGold),
-            effect: Effect::Custom,
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -1407,8 +1389,6 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: MARK_OF_THE_BLOOM,
             rarity: Rarity::Event,
-            activation: Activation::Event(Event::Heal(Target::_Self)),
-            effect: Effect::Custom,
             ..BaseRelic::default()
         },
         BaseRelic {

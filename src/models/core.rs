@@ -1,6 +1,6 @@
 // ------------------  Fundamental types  -------------------------
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Rarity {
     Starter,
     Common,
@@ -14,7 +14,7 @@ pub enum Rarity {
     Boss,
 }
 
-#[derive(Debug, PartialEq, Clone, strum_macros::Display)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, strum_macros::Display)]
 pub enum Class {
     All,
     None,
@@ -22,9 +22,10 @@ pub enum Class {
     Silent,
     Defect,
     Watcher,
+    Curse,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum OrbType {
     Lightning,
     Dark,
@@ -33,7 +34,7 @@ pub enum OrbType {
     Any,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Stance {
     Calm,
     Wrath,
@@ -42,7 +43,7 @@ pub enum Stance {
     All,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum RoomType {
     Rest,
     Shop,
@@ -56,7 +57,7 @@ pub enum RoomType {
     All,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Intent {
     Attack,
     AttackBuff,
@@ -75,16 +76,16 @@ pub enum Intent {
     Unknown,
 }
 
-pub struct Act {
-    pub easy_count: u8,
-    pub easy_fights: Vec<(u8, MonsterSet)>,
-    pub normal_fights: Vec<(u8, MonsterSet)>,
-    pub elites: Vec<MonsterSet>,
-    pub bosses: Vec<MonsterSet>,
-    pub events: Vec<&'static str>,
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub enum ChestType {
+    Large,
+    Medium,
+    Small,
+    Boss
 }
 
 // ------------------- Evalulation -------------------------------
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Amount {
     Fixed(i16),
     X,
@@ -102,6 +103,7 @@ pub enum Amount {
     Mult(Vec<Amount>),
 }
 
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum CardType {
     Attack,
     Skill,
@@ -112,13 +114,7 @@ pub enum CardType {
     All,
 }
 
-pub enum Upgradable {
-    Never,
-    Once,
-    Infinite,
-    Burn,
-}
-
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum CardModifier {
     None,
     SetZeroCombatCost,
@@ -127,6 +123,7 @@ pub enum CardModifier {
     Upgraded,
 }
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum CardReference {
     ByName(&'static str),
     CopyOf(CardLocation),
@@ -135,6 +132,7 @@ pub enum CardReference {
     RandomClass(Class),
 }
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum CardLocation {
     This,
     DeckPile(RelativePosition),
@@ -144,6 +142,7 @@ pub enum CardLocation {
     DiscardPile(RelativePosition),
 }
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Activation {
     Immediate,
     Event(Event),
@@ -166,12 +165,14 @@ pub enum Activation {
     Custom,
 }
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum MonsterSet {
     Fixed(Vec<&'static str>),
     ChooseN(u8, Vec<&'static str>),
     RandomSet(Vec<Vec<&'static str>>),
 }
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Move {
     If(Condition, Vec<Move>, Vec<Move>),
     Loop(Vec<Move>),
@@ -181,6 +182,7 @@ pub enum Move {
     AfterMove(Vec<(&'static str, Move)>),
 }
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct MonsterMove {
     pub name: &'static str,
     pub effects: Vec<Effect>,
@@ -188,6 +190,7 @@ pub struct MonsterMove {
 }
 
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Event {
     // Time-based
     BeforeHandDraw,
@@ -207,7 +210,6 @@ pub enum Event {
     HpLoss(Target),
     HpChange(Target),
     HalfHp(Target),
-    Heal(Target),
     Block(Target),
     Die(Target),
     AnyBuff(Target),
@@ -228,11 +230,8 @@ pub enum Event {
     // Non-fight
     ChestOpen,
     CardReward,
-    AddToDeck(CardType),
     Rest,
     RoomEnter(RoomType),
-    SpendGold,
-    GainGold,
     UsePotion,
 
     // Meta
@@ -241,6 +240,7 @@ pub enum Event {
     Custom,
 }
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum RelativePosition {
     Bottom,
     Top,
@@ -249,6 +249,7 @@ pub enum RelativePosition {
     All, // If in a card effect, does not include the card
 }
 
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Effect {
     //Targeted
     Block(Amount, Target),
@@ -345,21 +346,20 @@ pub enum Effect {
     Custom,
 }
 
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum RewardType {
     StandardCard,
     EliteCard,
-    BossCard,
     ColorlessCard,
     Relic(Rarity),
     RelicName(&'static str),
     RandomRelic,
-    PotionChance,
     RandomPotion,
     Gold(u8, u8),
     RandomBook,
 }
 
-#[derive(strum_macros::AsStaticStr)]
+#[derive(PartialEq, Eq, Clone, Debug, strum_macros::AsStaticStr)]
 pub enum Condition {
     Stance(Stance),
     MissingHp(Amount, Target),
@@ -385,7 +385,6 @@ pub enum Condition {
     HasDiscarded,
     MultipleAnd(Vec<Condition>),
     MultipleOr(Vec<Condition>),
-    DeckSize(u8),
     HasRelic(&'static str),
     HasGold(Amount),
     IsVariant(&'static str),  //Event variant
@@ -398,6 +397,7 @@ pub enum Condition {
     Custom,
 }
 
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Target {
     _Self,
     RandomEnemy,
@@ -410,7 +410,30 @@ pub enum Target {
 }
 
 //----------------------- Base Models ---------------------
+#[derive(Eq, Clone)]
+pub struct Act {
+    pub num: u8,
+    pub easy_count: u8,
+    pub easy_fights: Vec<(u8, MonsterSet)>,
+    pub normal_fights: Vec<(u8, MonsterSet)>,
+    pub elites: Vec<MonsterSet>,
+    pub bosses: Vec<MonsterSet>,
+    pub events: Vec<&'static str>,
+}
+impl std::fmt::Debug for Act {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("Act")
+            .field("act", &self.num)
+            .finish()
+    }
+}
+impl PartialEq for Act {
+    fn eq(&self, other: &Self) -> bool {
+        self.num == other.num
+    }
+}
 
+#[derive(Eq, Clone)]
 pub struct BaseBuff {
     pub name: &'static str,
     pub stacks: bool,
@@ -428,7 +451,13 @@ impl std::fmt::Debug for BaseBuff {
             .finish()
     }
 }
+impl PartialEq for BaseBuff {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
 
+#[derive(Eq, Clone)]
 pub struct BaseCard {
     pub cost: Amount,
     pub rarity: Rarity,
@@ -447,7 +476,6 @@ pub struct BaseCard {
     pub retain: Condition,
     pub targeted: Condition,
 }
-
 impl std::fmt::Debug for BaseCard {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("BaseCard")
@@ -455,8 +483,13 @@ impl std::fmt::Debug for BaseCard {
             .finish()
     }
 }
+impl PartialEq for BaseCard {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
 
-
+#[derive(Eq, Clone)]
 pub struct BaseEvent {
     pub name: &'static str,
     pub choices: Vec<BaseEventChoice>,
@@ -464,15 +497,13 @@ pub struct BaseEvent {
     pub variants: Vec<&'static str>,
     pub condition: Condition,
 }
-
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct BaseEventChoice {
     pub name: &'static str,
     pub effects: Vec<Effect>,
     pub condition: Condition,
     pub initial: bool,
 }
-
-
 impl std::fmt::Debug for BaseEvent {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("BaseEvent")
@@ -480,7 +511,13 @@ impl std::fmt::Debug for BaseEvent {
             .finish()
     }
 }
+impl PartialEq for BaseEvent {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
 
+#[derive(Eq, Clone)]
 pub struct BaseMonster {
     pub name: &'static str,
     pub hp_range: (u16, u16),
@@ -498,8 +535,13 @@ impl std::fmt::Debug for BaseMonster {
             .finish()
     }
 }
+impl PartialEq for BaseMonster {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
 
-
+#[derive(Eq, Clone)]
 pub struct BasePotion {
     pub name: &'static str,
     pub _class: Class,
@@ -514,8 +556,13 @@ impl std::fmt::Debug for BasePotion {
             .finish()
     }
 }
+impl PartialEq for BasePotion {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
 
-
+#[derive(Eq, Clone)]
 pub struct BaseRelic {
     pub name: &'static str,
     pub rarity: Rarity,
@@ -525,11 +572,17 @@ pub struct BaseRelic {
     pub class: Class,
     pub energy_relic: bool,
     pub replaces_starter: bool,
+    pub starting_x: i16,
 }
 impl std::fmt::Debug for BaseRelic {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("BaseRelic")
             .field("name", &self.name)
             .finish()
+    }
+}
+impl PartialEq for BaseRelic {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
     }
 }
