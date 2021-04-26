@@ -21,7 +21,9 @@ impl BaseRelic {
 }
 
 pub fn by_name(name: &str) -> &'static BaseRelic {
-    RELICS.get(name).unwrap_or_else(|| panic!("Unrecognized relic: {}", name))
+    RELICS
+        .get(name)
+        .unwrap_or_else(|| panic!("Unrecognized relic: {}", name))
 }
 
 lazy_static! {
@@ -34,7 +36,6 @@ lazy_static! {
 
         m
     };
-    
 }
 
 fn all_relics() -> Vec<BaseRelic> {
@@ -66,11 +67,11 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: PURE_WATER,
             activation: Activation::Event(Event::CombatStart),
-            effect: Effect::AddCard {
-                card: CardReference::ByName(cards::MIRACLE),
-                destination: CardLocation::PlayerHand(RelativePosition::Top),
-                copies: Fixed(1),
-                modifier: CardModifier::None,
+            effect: Effect::CreateCard {
+                name: cards::MIRACLE,
+                location: CardLocation::PlayerHand,
+                position: RelativePosition::Top,
+                then: vec![],
             },
             rarity: Rarity::Starter,
             class: Class::Watcher,
@@ -149,9 +150,7 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: DREAM_CATCHER,
             activation: Activation::Event(Event::Rest),
-            effect: Effect::ShowReward(vec![
-                RewardType::StandardCard
-            ]),
+            effect: Effect::ShowReward(vec![RewardType::StandardCard]),
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -464,10 +463,7 @@ fn all_relics() -> Vec<BaseRelic> {
             name: MUMMIFIED_HAND,
             rarity: Rarity::Uncommon,
             activation: Activation::Event(Event::PlayCard(CardType::Power)),
-            effect: Effect::SetCardModifier(
-                CardLocation::PlayerHand(RelativePosition::Random),
-                CardModifier::SetZeroTurnCost,
-            ),
+            effect: Effect::Custom,
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -584,12 +580,26 @@ fn all_relics() -> Vec<BaseRelic> {
             class: Class::Silent,
             rarity: Rarity::Uncommon,
             activation: Activation::Event(Event::CombatStart),
-            effect: Effect::AddCard {
-                card: CardReference::ByName(cards::SHIV),
-                destination: CardLocation::PlayerHand(RelativePosition::Top),
-                copies: Fixed(3),
-                modifier: CardModifier::None,
-            },
+            effect: Effect::Multiple(vec![
+                Effect::CreateCard {
+                    name: cards::SHIV,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Top,
+                    then: vec![],
+                },
+                Effect::CreateCard {
+                    name: cards::SHIV,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Top,
+                    then: vec![],
+                },
+                Effect::CreateCard {
+                    name: cards::SHIV,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Top,
+                    then: vec![],
+                },
+            ]),
             ..BaseRelic::default()
         },
         BaseRelic {
@@ -662,11 +672,13 @@ fn all_relics() -> Vec<BaseRelic> {
             name: DEAD_BRANCH,
             rarity: Rarity::Rare,
             activation: Activation::Event(Event::Exhaust),
-            effect: Effect::AddCard {
-                card: CardReference::RandomType(CardType::All, Fixed(1)),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Fixed(1),
-                modifier: CardModifier::None,
+            effect: Effect::CreateCardByType {
+                _type: CardType::All,
+                _rarity: Option::None,
+                _class: Option::None,
+                location: CardLocation::PlayerHand,
+                position: RelativePosition::Bottom,
+                then: vec![],
             },
             ..BaseRelic::default()
         },
@@ -1085,11 +1097,11 @@ fn all_relics() -> Vec<BaseRelic> {
             rarity: Rarity::Boss,
             activation: Activation::Immediate,
             effect: Effect::Multiple(vec![
-                Effect::AddCard {
-                    card: CardReference::ByName(cards::CURSE_OF_THE_BELL),
-                    destination: CardLocation::DeckPile(RelativePosition::Bottom),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                Effect::CreateCard {
+                    name: cards::CURSE_OF_THE_BELL,
+                    location: CardLocation::DeckPile,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
                 },
                 Effect::ShowReward(vec![
                     RewardType::RandomRelic,
@@ -1111,11 +1123,13 @@ fn all_relics() -> Vec<BaseRelic> {
             name: CURSED_KEY,
             rarity: Rarity::Boss,
             activation: Activation::Event(Event::ChestOpen),
-            effect: Effect::AddCard {
-                card: CardReference::RandomType(CardType::Curse, Fixed(1)),
-                destination: CardLocation::DeckPile(RelativePosition::Bottom),
-                copies: Fixed(1),
-                modifier: CardModifier::None,
+            effect: Effect::CreateCardByType {
+                _type: CardType::Curse,
+                _rarity: Option::None,
+                _class: Option::None,
+                location: CardLocation::DeckPile,
+                position: RelativePosition::Bottom,
+                then: vec![],
             },
             energy_relic: true,
             ..BaseRelic::default()
@@ -1211,7 +1225,7 @@ fn all_relics() -> Vec<BaseRelic> {
             activation: Activation::Immediate,
             effect: Effect::Multiple(vec![
                 Effect::AddMaxHp(Fixed(6)),
-                Effect::UpgradeCard(CardLocation::DeckPile(RelativePosition::Random)),
+                Effect::UpgradeRandomCard(1),
                 Effect::ShowReward(vec![
                     RewardType::RandomPotion,
                     RewardType::StandardCard,
@@ -1265,12 +1279,14 @@ fn all_relics() -> Vec<BaseRelic> {
             class: Class::Watcher,
             rarity: Rarity::Boss,
             activation: Activation::Event(Event::CombatStart),
-            effect: Effect::AddCard {
-                card: CardReference::ByName(cards::MIRACLE),
-                destination: CardLocation::PlayerHand(RelativePosition::Top),
-                copies: Fixed(3),
-                modifier: CardModifier::None,
-            },
+            effect: Effect::Repeat(Amount::Fixed(3), Box::new(
+                Effect::CreateCard {
+                    name: cards::MIRACLE,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Top,
+                    then: vec![]
+                }
+            )),
             replaces_starter: true,
             ..BaseRelic::default()
         },
@@ -1279,12 +1295,14 @@ fn all_relics() -> Vec<BaseRelic> {
             class: Class::Ironclad,
             rarity: Rarity::Boss,
             activation: Activation::Event(Event::CombatStart),
-            effect: Effect::AddCard {
-                card: CardReference::ByName(cards::WOUND),
-                destination: CardLocation::DeckPile(RelativePosition::Random),
-                copies: Fixed(2),
-                modifier: CardModifier::None,
-            },
+            effect: Effect::Repeat(Fixed(2), Box::new(
+                Effect::CreateCard {
+                    name: cards::WOUND,
+                    location: CardLocation::DeckPile,
+                    position: RelativePosition::Random,
+                    then: vec![],
+                }
+            )),
             energy_relic: true,
             ..BaseRelic::default()
         },
@@ -1359,11 +1377,15 @@ fn all_relics() -> Vec<BaseRelic> {
             name: ENCHIRIDION,
             rarity: Rarity::Event,
             activation: Activation::Event(Event::CombatStart),
-            effect: Effect::AddCard {
-                card: CardReference::RandomType(CardType::Power, Fixed(1)),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Fixed(1),
-                modifier: CardModifier::SetZeroTurnCost,
+            effect: Effect::CreateCardByType {
+                _type: CardType::Power,
+                _rarity: Option::None,
+                _class: Option::None,
+                location: CardLocation::PlayerHand,
+                position: RelativePosition::Bottom,
+                then: vec![
+                    CardEffect::ZeroTurnCost
+                ],
             },
             ..BaseRelic::default()
         },
@@ -1471,8 +1493,8 @@ fn all_relics() -> Vec<BaseRelic> {
         BaseRelic {
             name: WARPED_TONGS,
             rarity: Rarity::Event,
-            activation: Activation::Event(Event::BeforeHandDraw),
-            effect: Effect::UpgradeCard(CardLocation::PlayerHand(RelativePosition::Random)),
+            activation: Activation::Event(Event::AfterHandDraw),
+            effect: Effect::DoCardEffect(CardLocation::PlayerHand, RelativePosition::Random, CardEffect::Upgrade),
             ..BaseRelic::default()
         },
         BaseRelic {

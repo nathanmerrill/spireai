@@ -20,7 +20,9 @@ impl BaseMonster {
 }
 
 pub fn by_name(name: &str) -> &'static BaseMonster {
-    MONSTERS.get(name).unwrap_or_else(|| panic!("Unexpected monster: {}", name))
+    MONSTERS
+        .get(name)
+        .unwrap_or_else(|| panic!("Unexpected monster: {}", name))
 }
 
 lazy_static! {
@@ -50,11 +52,17 @@ fn all_monsters() -> Vec<BaseMonster> {
                     name: CORROSIVE_SPIT,
                     effects: vec![
                         Effect::AttackDamage(ByAsc(11, 12, 12), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::SLIMED),
-                            destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                            copies: Fixed(2),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::SLIMED,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
+                        },
+                        Effect::CreateCard {
+                            name: cards::SLIMED,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
                         },
                     ],
                     intent: Intent::AttackDebuff,
@@ -107,11 +115,11 @@ fn all_monsters() -> Vec<BaseMonster> {
                     name: CORROSIVE_SPIT,
                     effects: vec![
                         Effect::AttackDamage(ByAsc(7, 8, 8), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::SLIMED),
-                            destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                            copies: Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::SLIMED,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
                         },
                     ],
                     intent: Intent::AttackDebuff,
@@ -222,11 +230,11 @@ fn all_monsters() -> Vec<BaseMonster> {
                     name: SLUDGE,
                     effects: vec![
                         Effect::AttackDamage(Fixed(18), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::VOID),
-                            destination: CardLocation::DrawPile(RelativePosition::Random),
-                            copies: Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::VOID,
+                            location: CardLocation::DrawPile,
+                            position: RelativePosition::Random,
+                            then: vec![],
                         },
                     ],
                     intent: Intent::AttackDebuff,
@@ -621,35 +629,35 @@ fn all_monsters() -> Vec<BaseMonster> {
                         Effect::AddBuff(buffs::VULNERABLE, Fixed(2), Target::TargetEnemy),
                         Effect::AddBuff(buffs::WEAK, Fixed(2), Target::TargetEnemy),
                         Effect::AddBuff(buffs::FRAIL, Fixed(2), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::DAZED),
-                            destination: CardLocation::DrawPile(RelativePosition::Random),
-                            copies: Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::DAZED,
+                            location: CardLocation::DrawPile,
+                            position: RelativePosition::Random,
+                            then: vec![],
                         },
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::SLIMED),
-                            destination: CardLocation::DrawPile(RelativePosition::Random),
-                            copies: Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::SLIMED,
+                            location: CardLocation::DrawPile,
+                            position: RelativePosition::Random,
+                            then: vec![],
                         },
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::WOUND),
-                            destination: CardLocation::DrawPile(RelativePosition::Random),
-                            copies: Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::WOUND,
+                            location: CardLocation::DrawPile,
+                            position: RelativePosition::Random,
+                            then: vec![],
                         },
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::BURN),
-                            destination: CardLocation::DrawPile(RelativePosition::Random),
-                            copies: Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::BURN,
+                            location: CardLocation::DrawPile,
+                            position: RelativePosition::Random,
+                            then: vec![],
                         },
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::VOID),
-                            destination: CardLocation::DrawPile(RelativePosition::Random),
-                            copies: Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::VOID,
+                            location: CardLocation::DrawPile,
+                            position: RelativePosition::Random,
+                            then: vec![],
                         },
                     ],
                     intent: Intent::StrongDebuff,
@@ -737,11 +745,11 @@ fn all_monsters() -> Vec<BaseMonster> {
                     name: STAB,
                     effects: vec![
                         Effect::AttackDamage(Fixed(9), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::WOUND),
-                            destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                            copies: Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::WOUND,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
                         },
                     ],
                     intent: Intent::AttackDebuff,
@@ -860,11 +868,17 @@ fn all_monsters() -> Vec<BaseMonster> {
                     effects: vec![
                         Effect::AttackDamage(ByAsc(10, 12, 12), Target::TargetEnemy),
                         Effect::AttackDamage(ByAsc(10, 12, 12), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::DAZED),
-                            destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                            copies: Fixed(2),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::DAZED,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
+                        },
+                        Effect::CreateCard {
+                            name: cards::DAZED,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
                         },
                     ],
                     intent: Intent::AttackDebuff,
@@ -1052,7 +1066,7 @@ fn all_monsters() -> Vec<BaseMonster> {
                 Condition::Asc(17),
                 vec![Move::Probability(vec![(25, SPIT_WEB, 1), (75, BITE, 2)])],
                 vec![Move::Probability(vec![(25, SPIT_WEB, 2), (75, BITE, 2)])],
-            )])]
+            )])],
         },
         BaseMonster {
             name: GREMLIN_LEADER,
@@ -1211,11 +1225,23 @@ fn all_monsters() -> Vec<BaseMonster> {
                         Effect::AttackDamage(ByAsc(2, 3, 3), Target::TargetEnemy),
                         Effect::AttackDamage(ByAsc(2, 3, 3), Target::TargetEnemy),
                         Effect::AttackDamage(ByAsc(2, 3, 3), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::BURN),
-                            destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                            copies: Fixed(3),
-                            modifier: CardModifier::Upgraded,
+                        Effect::CreateCard {
+                            name: cards::BURN,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![]
+                        },
+                        Effect::CreateCard {
+                            name: cards::BURN,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![]
+                        },
+                        Effect::CreateCard {
+                            name: cards::BURN,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![]
                         },
                         Effect::Custom,
                     ],
@@ -1225,11 +1251,19 @@ fn all_monsters() -> Vec<BaseMonster> {
                     name: SEAR,
                     effects: vec![
                         Effect::AttackDamage(Fixed(6), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::BURN),
-                            destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                            copies: ByAsc(1, 1, 2),
-                            modifier: CardModifier::None,
+                        Effect::If(Condition::Asc(19), vec![
+                            Effect::CreateCard {
+                                name: cards::BURN,
+                                location: CardLocation::DiscardPile,
+                                position: RelativePosition::Bottom,
+                                then: vec![],
+                            },
+                        ], vec![]),
+                        Effect::CreateCard {
+                            name: cards::BURN,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
                         },
                     ],
                     intent: Intent::AttackDebuff,
@@ -1528,12 +1562,40 @@ fn all_monsters() -> Vec<BaseMonster> {
             moveset: vec![
                 MonsterMove {
                     name: DEBUFF,
-                    effects: vec![Effect::AddCard {
-                        card: CardReference::ByName(cards::BURN),
-                        destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                        copies: ByAsc(3, 3, 5),
-                        modifier: CardModifier::None,
-                    }],
+                    effects: vec![
+                        Effect::CreateCard {
+                            name: cards::BURN,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
+                        },
+                        Effect::CreateCard {
+                            name: cards::BURN,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
+                        },
+                        Effect::CreateCard {
+                            name: cards::BURN,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
+                        },
+                        Effect::If(Condition::Asc(18), vec![
+                            Effect::CreateCard {
+                                name: cards::BURN,
+                                location: CardLocation::DiscardPile,
+                                position: RelativePosition::Bottom,
+                                then: vec![],
+                            },
+                            Effect::CreateCard {
+                                name: cards::BURN,
+                                location: CardLocation::DiscardPile,
+                                position: RelativePosition::Bottom,
+                                then: vec![],
+                            },
+                        ], vec![])
+                    ],
                     intent: Intent::Debuff,
                 },
                 MonsterMove {
@@ -1574,17 +1636,17 @@ fn all_monsters() -> Vec<BaseMonster> {
                     name: LASER,
                     effects: vec![
                         Effect::AttackDamage(ByAsc(10, 11, 11), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::BURN),
-                            destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                            copies: Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::BURN,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
                         },
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::BURN),
-                            destination: CardLocation::DrawPile(RelativePosition::Random),
-                            copies: Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::BURN,
+                            location: CardLocation::DrawPile,
+                            position: RelativePosition::Random,
+                            then: vec![],
                         },
                     ],
                     intent: Intent::AttackDebuff,
@@ -1760,12 +1822,20 @@ fn all_monsters() -> Vec<BaseMonster> {
                 },
                 MonsterMove {
                     name: REPULSE,
-                    effects: vec![Effect::AddCard {
-                        card: CardReference::ByName(cards::DAZED),
-                        destination: CardLocation::DrawPile(RelativePosition::Random),
-                        copies: Fixed(2),
-                        modifier: CardModifier::None,
-                    }],
+                    effects: vec![
+                        Effect::CreateCard {
+                            name: cards::DAZED,
+                            location: CardLocation::DrawPile,
+                            position: RelativePosition::Random,
+                            then: vec![],
+                        },
+                        Effect::CreateCard {
+                            name: cards::DAZED,
+                            location: CardLocation::DrawPile,
+                            position: RelativePosition::Random,
+                            then: vec![],
+                        },
+                    ],
                     intent: Intent::AttackDebuff,
                 },
             ],
@@ -1821,12 +1891,16 @@ fn all_monsters() -> Vec<BaseMonster> {
                 },
                 MonsterMove {
                     name: BOLT,
-                    effects: vec![Effect::AddCard {
-                        card: CardReference::ByName(cards::DAZED),
-                        destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                        copies: ByAsc(2, 2, 3),
-                        modifier: CardModifier::None,
-                    }],
+                    effects: vec![
+                        Effect::Repeat(ByAsc(2, 2, 3), Box::new(
+                            Effect::CreateCard {
+                                name: cards::DAZED,
+                                location: CardLocation::DiscardPile,
+                                position: RelativePosition::Bottom,
+                                then: vec![],
+                            },
+                        ))                        
+                    ],
                     intent: Intent::AttackDebuff,
                 },
             ],
@@ -1931,12 +2005,16 @@ fn all_monsters() -> Vec<BaseMonster> {
             moveset: vec![
                 MonsterMove {
                     name: GOOP_SPRAY,
-                    effects: vec![Effect::AddCard {
-                        card: CardReference::ByName(cards::SLIMED),
-                        destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                        copies: ByAsc(3, 3, 5),
-                        modifier: CardModifier::None,
-                    }],
+                    effects: vec![
+                        Effect::Repeat(ByAsc(3, 3, 5), vec![
+                            Effect::CreateCard {
+                                name: cards::SLIMED,
+                                location: CardLocation::DiscardPile,
+                                position: RelativePosition::Bottom,
+                                then: vec![],
+                            },
+                        ])
+                    ],
                     intent: Intent::StrongDebuff,
                 },
                 MonsterMove {
@@ -2186,11 +2264,17 @@ fn all_monsters() -> Vec<BaseMonster> {
                     name: FLAME_TACKLE,
                     effects: vec![
                         Effect::AttackDamage(ByAsc(16, 18, 18), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::SLIMED),
-                            destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                            copies: Amount::Fixed(2),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::SLIMED,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
+                        },
+                        Effect::CreateCard {
+                            name: cards::SLIMED,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
                         },
                     ],
                     intent: Intent::AttackDebuff,
@@ -2236,11 +2320,11 @@ fn all_monsters() -> Vec<BaseMonster> {
                     name: FLAME_TACKLE,
                     effects: vec![
                         Effect::AttackDamage(ByAsc(8, 10, 10), Target::TargetEnemy),
-                        Effect::AddCard {
-                            card: CardReference::ByName(cards::SLIMED),
-                            destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                            copies: Amount::Fixed(1),
-                            modifier: CardModifier::None,
+                        Effect::CreateCard {
+                            name: cards::SLIMED,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
                         },
                     ],
                     intent: Intent::AttackDebuff,
@@ -2373,18 +2457,34 @@ fn all_monsters() -> Vec<BaseMonster> {
                         Effect::AttackDamage(ByAsc(5, 6, 6), Target::TargetEnemy),
                         Effect::If(
                             Condition::Asc(18),
-                            vec![Effect::AddCard {
-                                card: CardReference::ByName(cards::BURN),
-                                destination: CardLocation::DrawPile(RelativePosition::Top),
-                                copies: Fixed(2),
-                                modifier: CardModifier::None,
-                            }],
-                            vec![Effect::AddCard {
-                                card: CardReference::ByName(cards::BURN),
-                                destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                                copies: Fixed(2),
-                                modifier: CardModifier::None,
-                            }],
+                            vec![
+                                Effect::CreateCard {
+                                    name: cards::BURN,
+                                    location: CardLocation::DrawPile,
+                                    position: RelativePosition::Top,
+                                    then: vec![],
+                                },
+                                Effect::CreateCard {
+                                    name: cards::BURN,
+                                    location: CardLocation::DrawPile,
+                                    position: RelativePosition::Top,
+                                    then: vec![],
+                                },
+                            ],
+                            vec![
+                                Effect::CreateCard {
+                                    name: cards::BURN,
+                                    location: CardLocation::DiscardPile,
+                                    position: RelativePosition::Bottom,
+                                    then: vec![],
+                                },
+                                Effect::CreateCard {
+                                    name: cards::BURN,
+                                    location: CardLocation::DiscardPile,
+                                    position: RelativePosition::Bottom,
+                                    then: vec![],
+                                },
+                            ],
                         ),
                     ],
                     intent: Intent::AttackDebuff,
@@ -2436,12 +2536,14 @@ fn all_monsters() -> Vec<BaseMonster> {
                         vec![Effect::AddBuff(buffs::STRENGTH, Fixed(1), Target::_Self)],
                         vec![],
                     ),
-                    Effect::AddCard {
-                        card: CardReference::ByName(cards::WOUND),
-                        destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                        copies: ByAsc(1, 2, 3),
-                        modifier: CardModifier::None,
-                    },
+                    Effect::Repeat(ByAsc(1, 2, 3), Box::new(
+                        Effect::CreateCard {
+                            name: cards::WOUND,
+                            location: CardLocation::DiscardPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
+                        },
+                    )),
                 ],
                 intent: Intent::AttackDebuff,
             }],
@@ -3227,12 +3329,20 @@ fn all_monsters() -> Vec<BaseMonster> {
                         Effect::AddBuff(buffs::DRAW_REDUCTION, Fixed(2), Target::TargetEnemy),
                         Effect::If(
                             Condition::Asc(19),
-                            vec![Effect::AddCard {
-                                card: CardReference::ByName(cards::SLIMED),
-                                destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                                copies: Fixed(2),
-                                modifier: CardModifier::None,
-                            }],
+                            vec![
+                                Effect::CreateCard {
+                                    name: cards::SLIMED,
+                                    location: CardLocation::DiscardPile,
+                                    position: RelativePosition::Bottom,
+                                    then: vec![],
+                                },
+                                Effect::CreateCard {
+                                    name: cards::SLIMED,
+                                    location: CardLocation::DiscardPile,
+                                    position: RelativePosition::Bottom,
+                                    then: vec![],
+                                },
+                            ],
                             vec![],
                         ),
                     ],
@@ -3338,12 +3448,14 @@ fn all_monsters() -> Vec<BaseMonster> {
             moveset: vec![
                 MonsterMove {
                     name: IMPLANT,
-                    effects: vec![Effect::AddCard {
-                        card: CardReference::ByName(cards::PARASITE),
-                        destination: CardLocation::DeckPile(RelativePosition::Bottom),
-                        copies: Fixed(1),
-                        modifier: CardModifier::None,
-                    }],
+                    effects: vec![
+                        Effect::CreateCard {
+                            name: cards::PARASITE,
+                            location: CardLocation::DeckPile,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
+                        }
+                    ],
                     intent: Intent::Attack,
                 },
                 MonsterMove {

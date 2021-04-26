@@ -4,10 +4,9 @@ use std::collections::HashMap;
 use Amount::*;
 use CardLocation::*;
 use CardType::*;
-use Class::*;
+use Class::{Ironclad, Watcher, Silent, Defect};
 use Effect::*;
 use Rarity::{Rare, Starter, Uncommon};
-use RelativePosition::*;
 use Target::*;
 
 impl BaseCard {
@@ -39,7 +38,9 @@ impl BaseCard {
 }
 
 pub fn by_name(name: &str) -> &'static BaseCard {
-    ALL_CARDS.get(name).unwrap_or_else(|| panic!("Unrecognized card: {}", name))
+    ALL_CARDS
+        .get(name)
+        .unwrap_or_else(|| panic!("Unrecognized card: {}", name))
 }
 
 pub fn available_cards_by_class(class: Class) -> &'static Vec<&'static str> {
@@ -71,39 +72,39 @@ lazy_static! {
         .filter(|a| a._class != Class::Curse && a.rarity != Rarity::Starter && a.rarity != Rarity::Special)
         .map(|a| a.name)
         .collect();
-    static ref IRONCLAD_CARDS: Vec<&'static str> = 
+    static ref IRONCLAD_CARDS: Vec<&'static str> =
         ALL_CARDS.values()
         .filter(|a| a._class == Class::Ironclad && a.rarity != Rarity::Starter)
         .map(|a| a.name)
         .collect();
-    static ref SILENT_CARDS: Vec<&'static str> = 
+    static ref SILENT_CARDS: Vec<&'static str> =
         ALL_CARDS.values()
         .filter(|a| a._class == Class::Silent)
         .map(|a| a.name)
         .collect();
-    static ref DEFECT_CARDS: Vec<&'static str> = 
+    static ref DEFECT_CARDS: Vec<&'static str> =
         ALL_CARDS.values()
         .filter(|a| a._class == Class::Defect)
         .map(|a| a.name)
         .collect();
-    static ref WATCHER_CARDS: Vec<&'static str> = 
+    static ref WATCHER_CARDS: Vec<&'static str> =
         ALL_CARDS.values()
         .filter(|a| a._class == Class::Watcher)
         .map(|a| a.name)
         .collect();
 
-    static ref CURSES: Vec<&'static str> = 
+    static ref CURSES: Vec<&'static str> =
         ALL_CARDS.values()
         .filter(|a| a._type == CardType::Curse)
         .map(|a| a.name)
         .collect();
 
-    static ref COLORLESS_CARDS: Vec<&'static str> = 
+    static ref COLORLESS_CARDS: Vec<&'static str> =
         ALL_CARDS.values()
         .filter(|a| a._class == Class::None && a.rarity != Rarity::Special && a._type != CardType::Curse)
         .map(|a| a.name)
         .collect();
-    
+
 
 }
 
@@ -135,12 +136,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: ANGER,
             on_play: vec![
                 AttackDamage(Upgradable(6, 8), TargetEnemy),
-                AddCard {
-                    card: CardReference::CopyOf(This),
-                    destination: DiscardPile(Bottom),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
-                },
+                SelfEffect(CardEffect::CopyTo(CardLocation::DiscardPile, RelativePosition::Bottom, vec![])),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Ironclad, Attack)
@@ -151,8 +147,21 @@ fn all_cards() -> Vec<BaseCard> {
                 Block(Upgradable(5, 8), _Self),
                 If(
                     Condition::Upgraded,
-                    vec![UpgradeCard(PlayerHand(Random))],
-                    vec![UpgradeCard(PlayerHand(RelativePosition::All))],
+                    vec![
+                        ChooseCards {
+                            location: PlayerHand,
+                            then: CardEffect::Upgrade,
+                            min: Fixed(1),
+                            max: Fixed(1)
+                        }
+                    ],
+                    vec![
+                        DoCardEffect(
+                            PlayerHand, 
+                            RelativePosition::All, 
+                            CardEffect::Upgrade
+                        )
+                    ],
                 ),
             ],
             ..BaseCard::new(Ironclad, Skill)
@@ -196,7 +205,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: HAVOC,
-            on_play: vec![AutoPlayCard(DrawPile(Top))],
+            on_play: vec![DoCardEffect(DrawPile, RelativePosition::Top, CardEffect::AutoPlay)],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Ironclad, Skill)
         },
@@ -204,11 +213,12 @@ fn all_cards() -> Vec<BaseCard> {
             name: HEADBUTT,
             on_play: vec![
                 AttackDamage(Upgradable(9, 12), TargetEnemy),
-                MoveCard(
-                    DiscardPile(PlayerChoice(Fixed(1))),
-                    DrawPile(Top),
-                    CardModifier::None,
-                ),
+                ChooseCards {
+                    location: CardLocation::DiscardPile,
+                    then: CardEffect::MoveTo(CardLocation::DrawPile, RelativePosition::Top),
+                    min: Amount::Fixed(1),
+                    max: Amount::Fixed(1),
+                },
             ],
             ..BaseCard::new(Ironclad, Attack)
         },
@@ -276,8 +286,17 @@ fn all_cards() -> Vec<BaseCard> {
                 Block(Upgradable(7, 9), _Self),
                 If(
                     Condition::Upgraded,
-                    vec![ExhaustCard(PlayerHand(Random))],
-                    vec![ExhaustCard(PlayerHand(PlayerChoice(Fixed(1))))],
+                    vec![
+                        DoCardEffect(CardLocation::PlayerHand, RelativePosition::Random, CardEffect::Exhaust)
+                    ],
+                    vec![
+                        ChooseCards {
+                            location: CardLocation::PlayerHand,
+                            then: CardEffect::Exhaust,
+                            min: Fixed(1),
+                            max: Fixed(1)
+                        },
+                    ],
                 ),
             ],
             ..BaseCard::new(Ironclad, Skill)
@@ -294,12 +313,13 @@ fn all_cards() -> Vec<BaseCard> {
             name: WARCRY,
             on_play: vec![
                 Draw(Upgradable(1, 2)),
-                MoveCard(
-                    PlayerHand(PlayerChoice(Fixed(1))),
-                    DrawPile(Top),
-                    CardModifier::None,
-                ),
-                ExhaustCard(This),
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::MoveTo(CardLocation::DrawPile, RelativePosition::Top),
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Ironclad, Skill)
@@ -308,11 +328,11 @@ fn all_cards() -> Vec<BaseCard> {
             name: WILD_STRIKE,
             on_play: vec![
                 AttackDamage(Upgradable(12, 17), TargetEnemy),
-                AddCard {
-                    card: CardReference::ByName(WOUND),
-                    destination: DrawPile(Random),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: WOUND,
+                    location: CardLocation::DrawPile,
+                    position: RelativePosition::Random,
+                    then: vec![],
                 },
             ],
             ..BaseCard::new(Ironclad, Attack)
@@ -345,7 +365,12 @@ fn all_cards() -> Vec<BaseCard> {
             name: BURNING_PACT,
             rarity: Uncommon,
             on_play: vec![
-                ExhaustCard(PlayerHand(PlayerChoice(Fixed(1)))),
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::Exhaust,
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
                 Draw(Upgradable(2, 3)),
             ],
             ..BaseCard::new(Ironclad, Skill)
@@ -353,7 +378,9 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: CARNAGE,
             rarity: Uncommon,
-            on_turn_end: vec![ExhaustCard(This)],
+            on_turn_end: vec![
+                SelfEffect(CardEffect::Exhaust)
+            ],
             on_play: vec![AttackDamage(Upgradable(20, 28), TargetEnemy)],
             cost: Fixed(2),
             ..BaseCard::new(Ironclad, Attack)
@@ -377,7 +404,7 @@ fn all_cards() -> Vec<BaseCard> {
             targeted: Condition::Always,
             on_play: vec![
                 AddBuff(buffs::STRENGTH, Upgradable(-2, -3), TargetEnemy),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             ..BaseCard::new(Ironclad, Skill)
         },
@@ -397,12 +424,25 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: DUAL_WIELD,
             rarity: Uncommon,
-            on_play: vec![AddCard {
-                card: CardReference::CopyOf(PlayerHand(PlayerChoice(Fixed(1)))),
-                destination: PlayerHand(Bottom),
-                copies: Upgradable(1, 2),
-                modifier: CardModifier::None,
-            }],
+            on_play: vec![
+                If(Condition::Upgraded, vec![
+                    ChooseCards {
+                        location: CardLocation::PlayerHand,
+                        then: CardEffect::CopyTo(CardLocation::PlayerHand, RelativePosition::Bottom, vec![]),
+                        min: Fixed(1),
+                        max: Fixed(1)
+                    },
+                ], vec![
+                    ChooseCards {
+                        location: CardLocation::PlayerHand,
+                        then: CardEffect::CopyTo(CardLocation::PlayerHand, RelativePosition::Bottom, vec![
+                            CardEffect::CopyTo(CardLocation::PlayerHand, RelativePosition::Bottom, vec![])
+                        ]),
+                        min: Fixed(1),
+                        max: Fixed(1)
+                    },
+                ])
+            ],
             ..BaseCard::new(Ironclad, Skill)
         },
         BaseCard {
@@ -443,7 +483,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: GHOSTLY_ARMOR,
             rarity: Uncommon,
-            on_turn_end: vec![ExhaustCard(This)],
+            on_turn_end: vec![SelfEffect(CardEffect::Exhaust)],
             on_play: vec![Block(Upgradable(10, 13), _Self)],
             ..BaseCard::new(Ironclad, Skill)
         },
@@ -460,13 +500,17 @@ fn all_cards() -> Vec<BaseCard> {
             name: INFERNAL_BLADE,
             rarity: Uncommon,
             on_play: vec![
-                AddCard {
-                    card: CardReference::RandomType(Attack, Fixed(1)),
-                    destination: PlayerHand(Bottom),
-                    copies: Fixed(1),
-                    modifier: CardModifier::SetZeroTurnCost,
+                CreateCardByType {
+                    _type: CardType::Attack,
+                    _rarity: Option::None,
+                    _class: Option::None,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![
+                        CardEffect::ZeroTurnCost
+                    ],
                 },
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Ironclad, Attack)
@@ -483,7 +527,7 @@ fn all_cards() -> Vec<BaseCard> {
             _type: Power,
             on_play: vec![
                 AddBuff(buffs::WEAK, Upgradable(1, 2), AllEnemies),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Ironclad, Power)
@@ -498,11 +542,17 @@ fn all_cards() -> Vec<BaseCard> {
             name: POWER_THROUGH,
             rarity: Uncommon,
             on_play: vec![
-                AddCard {
-                    card: CardReference::ByName(WOUND),
-                    destination: PlayerHand(Bottom),
-                    copies: Fixed(2),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: WOUND,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
+                },
+                CreateCard {
+                    name: WOUND,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
                 },
                 Block(Upgradable(15, 20), _Self),
             ],
@@ -521,7 +571,7 @@ fn all_cards() -> Vec<BaseCard> {
                     vec![AttackDamage(Fixed(2), TargetEnemy)],
                     vec![],
                 ),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             ..BaseCard::new(Ironclad, Attack)
         },
@@ -543,11 +593,11 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 AttackDamage(Upgradable(7, 10), TargetEnemy),
-                AddCard {
-                    card: CardReference::ByName(DAZED),
-                    destination: DrawPile(Random),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: DAZED,
+                    location: CardLocation::DrawPile,
+                    position: RelativePosition::Random,
+                    then: vec![],
                 },
             ],
             ..BaseCard::new(Ironclad, Attack)
@@ -574,7 +624,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: SEEING_RED,
             rarity: Uncommon,
-            on_play: vec![AddEnergy(Fixed(2)), ExhaustCard(This)],
+            on_play: vec![AddEnergy(Fixed(2)), SelfEffect(CardEffect::Exhaust)],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Ironclad, Skill)
         },
@@ -602,7 +652,7 @@ fn all_cards() -> Vec<BaseCard> {
             on_play: vec![
                 AddBuff(buffs::VULNERABLE, Upgradable(3, 5), AllEnemies),
                 AddBuff(buffs::WEAK, Upgradable(3, 5), AllEnemies),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(2),
             ..BaseCard::new(Ironclad, Skill)
@@ -696,12 +746,13 @@ fn all_cards() -> Vec<BaseCard> {
             name: EXHUME,
             rarity: Rare,
             on_play: vec![
-                MoveCard(
-                    ExhaustPile(PlayerChoice(Fixed(1))),
-                    PlayerHand(Bottom),
-                    CardModifier::None,
-                ),
-                ExhaustCard(This),
+                ChooseCards {
+                    location: CardLocation::ExhaustPile,
+                    then: CardEffect::MoveTo(CardLocation::PlayerHand, RelativePosition::Bottom),
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Ironclad, Skill)
@@ -715,33 +766,35 @@ fn all_cards() -> Vec<BaseCard> {
                     TargetEnemy,
                     vec![AddMaxHp(Upgradable(3, 4))],
                 ),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             ..BaseCard::new(Ironclad, Attack)
         },
         BaseCard {
             name: FIEND_FIRE,
             rarity: Rare,
-            on_play: vec![Effect::Custom, ExhaustCard(This)],
+            on_play: vec![Effect::Custom, SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(2),
             ..BaseCard::new(Ironclad, Attack)
         },
         BaseCard {
             name: IMMOLATE,
             rarity: Rare,
-            on_play: vec![AddCard {
-                card: CardReference::ByName(BURN),
-                destination: DiscardPile(Bottom),
-                copies: Fixed(1),
-                modifier: CardModifier::None,
-            }],
+            on_play: vec![
+                CreateCard {
+                    name: BURN,
+                    location: CardLocation::DiscardPile,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
+                },
+            ],
             cost: Fixed(2),
             ..BaseCard::new(Ironclad, Attack)
         },
         BaseCard {
             name: IMPERVIOUS,
             rarity: Rare,
-            on_play: vec![Block(Upgradable(30, 40), _Self), ExhaustCard(This)],
+            on_play: vec![Block(Upgradable(30, 40), _Self), SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(2),
             ..BaseCard::new(Ironclad, Skill)
         },
@@ -757,7 +810,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             on_play: vec![
                 AddBuff(buffs::STRENGTH, Amount::Custom, _Self),
-                If(Condition::Upgraded, vec![], vec![ExhaustCard(This)]),
+                If(Condition::Upgraded, vec![], vec![SelfEffect(CardEffect::Exhaust)]),
             ],
             ..BaseCard::new(Ironclad, Skill)
         },
@@ -768,7 +821,7 @@ fn all_cards() -> Vec<BaseCard> {
                 LoseHp(Fixed(6), _Self),
                 AddEnergy(Fixed(2)),
                 Draw(Upgradable(3, 5)),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Ironclad, Skill)
@@ -776,7 +829,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: REAPER,
             rarity: Rare,
-            on_play: vec![Effect::Custom, ExhaustCard(This)],
+            on_play: vec![Effect::Custom, SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Ironclad, Attack)
         },
@@ -795,7 +848,12 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Starter,
             on_play: vec![
                 Block(Upgradable(8, 11), _Self),
-                DiscardCard(PlayerHand(PlayerChoice(Fixed(1)))),
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::Discard,
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
             ],
             ..BaseCard::new(Silent, Skill)
         },
@@ -803,7 +861,12 @@ fn all_cards() -> Vec<BaseCard> {
             name: ACROBATICS,
             on_play: vec![
                 Draw(Upgradable(3, 4)),
-                DiscardCard(PlayerHand(PlayerChoice(Fixed(1)))),
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::Discard,
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
             ],
             ..BaseCard::new(Silent, Skill)
         },
@@ -826,24 +889,54 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: BLADE_DANCE,
-            on_play: vec![AddCard {
-                card: CardReference::ByName(SHIV),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Upgradable(3, 4),
-                modifier: CardModifier::None,
-            }],
+            on_play: vec![
+                CreateCard {
+                    name: SHIV,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
+                },
+                CreateCard {
+                    name: SHIV,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
+                },
+                CreateCard {
+                    name: SHIV,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
+                },
+                If(Condition::Upgraded, vec![
+                    CreateCard {
+                        name: SHIV,
+                        location: CardLocation::PlayerHand,
+                        position: RelativePosition::Bottom,
+                        then: vec![],
+                    },
+                ], vec![])
+            ],
             ..BaseCard::new(Silent, Skill)
         },
         BaseCard {
             name: CLOAK_AND_DAGGER,
             on_play: vec![
                 Block(Fixed(6), _Self),
-                AddCard {
-                    card: CardReference::ByName(SHIV),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: Upgradable(1, 2),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: SHIV,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
                 },
+                If(Condition::Upgraded, vec![
+                    CreateCard {
+                        name: SHIV,
+                        location: CardLocation::PlayerHand,
+                        position: RelativePosition::Bottom,
+                        then: vec![],
+                    },
+                ], vec![])
             ],
             ..BaseCard::new(Silent, Skill)
         },
@@ -860,7 +953,12 @@ fn all_cards() -> Vec<BaseCard> {
             on_play: vec![
                 AttackDamage(Upgradable(9, 12), TargetEnemy),
                 Draw(Fixed(1)),
-                DiscardCard(PlayerHand(PlayerChoice(Fixed(1)))),
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::Discard,
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
             ],
             ..BaseCard::new(Silent, Attack)
         },
@@ -899,7 +997,7 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: PIERCING_WAIL,
-            on_play: vec![LoseStr(Upgradable(6, 8), AllEnemies), ExhaustCard(This)],
+            on_play: vec![LoseStr(Upgradable(6, 8), AllEnemies), SelfEffect(CardEffect::Exhaust)],
             ..BaseCard::new(Silent, Skill)
         },
         BaseCard {
@@ -914,7 +1012,12 @@ fn all_cards() -> Vec<BaseCard> {
             name: PREPARED,
             on_play: vec![
                 Draw(Upgradable(1, 2)),
-                DiscardCard(PlayerHand(PlayerChoice(Upgradable(1, 2)))),
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::Discard,
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
             ],
             cost: Fixed(0),
             ..BaseCard::new(Silent, Skill)
@@ -959,7 +1062,7 @@ fn all_cards() -> Vec<BaseCard> {
             targeted: Condition::Never,
             on_play: vec![
                 AttackDamage(Upgradable(10, 14), AllEnemies),
-                DiscardCard(PlayerHand(Random)),
+                DoCardEffect(CardLocation::PlayerHand, RelativePosition::Random, CardEffect::Discard),
             ],
             ..BaseCard::new(Silent, Attack)
         },
@@ -968,7 +1071,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 AttackDamage(Upgradable(11, 15), TargetEnemy),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             innate: Condition::Always,
             ..BaseCard::new(Silent, Attack)
@@ -1002,7 +1105,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 Effect::Custom,
-                If(Condition::Upgraded, vec![], vec![ExhaustCard(This)]),
+                If(Condition::Upgraded, vec![], vec![SelfEffect(CardEffect::Exhaust)]),
             ],
             ..BaseCard::new(Silent, Skill)
         },
@@ -1018,7 +1121,7 @@ fn all_cards() -> Vec<BaseCard> {
             targeted: Condition::Always,
             on_play: vec![
                 AddBuff(buffs::POISON, Amount::Custom, TargetEnemy),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             ..BaseCard::new(Silent, Skill)
         },
@@ -1036,7 +1139,12 @@ fn all_cards() -> Vec<BaseCard> {
             name: CONCENTRATE,
             rarity: Uncommon,
             on_play: vec![
-                DiscardCard(PlayerHand(PlayerChoice(Upgradable(3, 2)))),
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::Discard,
+                    min: Upgradable(3, 2),
+                    max: Upgradable(3, 2)
+                },
                 AddEnergy(Fixed(2)),
             ],
             cost: Fixed(0),
@@ -1048,7 +1156,7 @@ fn all_cards() -> Vec<BaseCard> {
             on_play: vec![
                 AddBuff(buffs::POISON, Upgradable(4, 7), AllEnemies),
                 AddBuff(buffs::WEAK, Fixed(2), AllEnemies),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(2),
             ..BaseCard::new(Silent, Skill)
@@ -1067,13 +1175,17 @@ fn all_cards() -> Vec<BaseCard> {
             name: DISTRACTION,
             rarity: Uncommon,
             on_play: vec![
-                AddCard {
-                    card: CardReference::RandomType(CardType::Skill, Fixed(1)),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: Fixed(1),
-                    modifier: CardModifier::SetZeroTurnCost,
+                CreateCardByType {
+                    _type: CardType::Skill,
+                    _rarity: Option::None,
+                    _class: Option::None,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![
+                        CardEffect::ZeroTurnCost
+                    ],
                 },
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Silent, Skill)
@@ -1081,15 +1193,12 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: ENDLESS_AGONY,
             rarity: Uncommon,
-            on_draw: vec![AddCard {
-                card: CardReference::CopyOf(CardLocation::This),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Fixed(1),
-                modifier: CardModifier::None,
-            }],
+            on_draw: vec![
+                SelfEffect(CardEffect::CopyTo(CardLocation::PlayerHand, RelativePosition::Bottom, vec![]))
+            ],
             on_play: vec![
                 AttackDamage(Upgradable(4, 6), TargetEnemy),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Silent, Attack)
@@ -1224,11 +1333,14 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: SETUP,
             rarity: Uncommon,
-            on_play: vec![MoveCard(
-                CardLocation::PlayerHand(RelativePosition::PlayerChoice(Fixed(1))),
-                CardLocation::DrawPile(RelativePosition::Top),
-                CardModifier::SetZeroCostUntilPlayed,
-            )],
+            on_play: vec![
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::Multiple(vec![CardEffect::MoveTo(CardLocation::DrawPile, RelativePosition::Top), CardEffect::ZeroCostUntilPlayed]),
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
+            ],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Silent, Skill)
         },
@@ -1256,7 +1368,7 @@ fn all_cards() -> Vec<BaseCard> {
             targeted: Condition::Always,
             on_play: vec![
                 AddBuff(buffs::VULNERABLE, Fixed(99), TargetEnemy),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Silent, Skill)
@@ -1280,7 +1392,7 @@ fn all_cards() -> Vec<BaseCard> {
             on_play: vec![
                 AddEnergy(Upgradable(1, 2)),
                 Draw(Fixed(2)),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Silent, Skill)
@@ -1302,10 +1414,13 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: BULLET_TIME,
             rarity: Rare,
-            on_play: vec![SetCardModifier(
-                CardLocation::PlayerHand(RelativePosition::All),
-                CardModifier::SetZeroTurnCost,
-            )],
+            on_play: vec![
+                DoCardEffect(
+                    CardLocation::PlayerHand,
+                    RelativePosition::All,
+                    CardEffect::ZeroTurnCost,
+                )
+            ],
             cost: Upgradable(3, 2),
             ..BaseCard::new(Silent, Skill)
         },
@@ -1392,7 +1507,7 @@ fn all_cards() -> Vec<BaseCard> {
                     TargetEnemy,
                 ),
                 AddBuff(buffs::WEAK, Sum(vec![X, Upgradable(0, 1)]), TargetEnemy),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: X,
             ..BaseCard::new(Silent, Skill)
@@ -1400,7 +1515,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: NIGHTMARE,
             rarity: Rare,
-            on_play: vec![Effect::Custom, ExhaustCard(This)],
+            on_play: vec![Effect::Custom, SelfEffect(CardEffect::Exhaust)],
             cost: Upgradable(3, 2),
             ..BaseCard::new(Silent, Skill)
         },
@@ -1409,7 +1524,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             on_play: vec![
                 AddBuff(buffs::PHANTASMAL, Fixed(1), _Self),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Silent, Skill)
@@ -1498,11 +1613,9 @@ fn all_cards() -> Vec<BaseCard> {
         },
         BaseCard {
             name: CLAW,
-            effects: vec![
-                (Event::CombatStart, SetN(Fixed(0))),
-                (Event::PlayCard(CardType::ByName(CLAW)), AddN(Fixed(2))),
+            on_play: vec![
+                AttackDamage(Amount::Custom, TargetEnemy),
             ],
-            on_play: vec![AttackDamage(Sum(vec![N, Upgradable(3, 5)]), TargetEnemy)],
             cost: Fixed(0),
             ..BaseCard::new(Defect, Attack)
         },
@@ -1537,12 +1650,13 @@ fn all_cards() -> Vec<BaseCard> {
             name: HOLOGRAM,
             on_play: vec![
                 Block(Upgradable(3, 5), _Self),
-                MoveCard(
-                    CardLocation::DiscardPile(RelativePosition::PlayerChoice(Fixed(1))),
-                    CardLocation::PlayerHand(RelativePosition::Bottom),
-                    CardModifier::None,
-                ),
-                If(Condition::Upgraded, vec![], vec![ExhaustCard(This)]),
+                ChooseCards {
+                    location: CardLocation::DiscardPile,
+                    then: CardEffect::MoveTo(CardLocation::PlayerHand, RelativePosition::Bottom),
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
+                If(Condition::Upgraded, vec![], vec![SelfEffect(CardEffect::Exhaust)]),
             ],
             ..BaseCard::new(Defect, Skill)
         },
@@ -1601,11 +1715,11 @@ fn all_cards() -> Vec<BaseCard> {
             name: TURBO,
             on_play: vec![
                 AddEnergy(Upgradable(2, 3)),
-                AddCard {
-                    card: CardReference::ByName(VOID),
-                    destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: VOID,
+                    location: CardLocation::DiscardPile,
+                    position: RelativePosition::Bottom,
+                    then: vec![]
                 },
             ],
             ..BaseCard::new(Defect, Skill)
@@ -1641,7 +1755,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: BOOT_SEQUENCE,
             rarity: Uncommon,
             innate: Condition::Always,
-            on_play: vec![Block(Upgradable(10, 13), _Self), ExhaustCard(This)],
+            on_play: vec![Block(Upgradable(10, 13), _Self), SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Defect, Skill)
         },
@@ -1675,7 +1789,7 @@ fn all_cards() -> Vec<BaseCard> {
             innate: Condition::Upgraded,
             on_play: vec![
                 Repeat(Amount::EnemyCount, Box::new(ChannelOrb(OrbType::Frost))),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Defect, Skill)
@@ -1821,11 +1935,11 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 Draw(Upgradable(2, 3)),
-                AddCard {
-                    card: CardReference::ByName(BURN),
-                    destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: BURN,
+                    location: CardLocation::DiscardPile,
+                    position: RelativePosition::Bottom,
+                    then: vec![]
                 },
             ],
             ..BaseCard::new(Defect, Skill)
@@ -1914,7 +2028,7 @@ fn all_cards() -> Vec<BaseCard> {
                     Amount::Sum(vec![X, Upgradable(0, 1)]),
                     Box::new(ChannelOrb(OrbType::Lightning)),
                 ),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: X,
             ..BaseCard::new(Defect, Skill)
@@ -1922,12 +2036,18 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: WHITE_NOISE,
             rarity: Uncommon,
-            on_play: vec![AddCard {
-                card: CardReference::RandomType(CardType::Power, Fixed(1)),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Fixed(1),
-                modifier: CardModifier::SetZeroTurnCost,
-            }],
+            on_play: vec![
+                CreateCardByType {
+                    _type: CardType::Power,
+                    _rarity: Option::None,
+                    _class: Option::None,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![
+                        CardEffect::ZeroTurnCost
+                    ],
+                }
+            ],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Defect, Skill)
         },
@@ -1982,7 +2102,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: ECHO_FORM,
             rarity: Rare,
-            on_turn_end: vec![If(Condition::Upgraded, vec![], vec![ExhaustCard(This)])],
+            on_turn_end: vec![If(Condition::Upgraded, vec![], vec![SelfEffect(CardEffect::Exhaust)])],
             on_play: vec![AddBuff(buffs::ECHO_FORM, Fixed(1), _Self)],
             cost: Fixed(3),
             ..BaseCard::new(Defect, Power)
@@ -2000,7 +2120,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: FISSION,
             rarity: Rare,
-            on_play: vec![Effect::Custom, ExhaustCard(This)],
+            on_play: vec![Effect::Custom, SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Defect, Skill)
         },
@@ -2048,7 +2168,7 @@ fn all_cards() -> Vec<BaseCard> {
                 ChannelOrb(OrbType::Lightning),
                 ChannelOrb(OrbType::Frost),
                 ChannelOrb(OrbType::Dark),
-                If(Condition::Upgraded, vec![], vec![ExhaustCard(This)]),
+                If(Condition::Upgraded, vec![], vec![SelfEffect(CardEffect::Exhaust)]),
             ],
             cost: Fixed(2),
             ..BaseCard::new(Defect, Skill)
@@ -2057,19 +2177,11 @@ fn all_cards() -> Vec<BaseCard> {
             name: REBOOT,
             rarity: Rare,
             on_play: vec![
-                MoveCard(
-                    CardLocation::PlayerHand(RelativePosition::All),
-                    CardLocation::DrawPile(RelativePosition::Bottom),
-                    CardModifier::None,
-                ),
-                MoveCard(
-                    CardLocation::DiscardPile(RelativePosition::All),
-                    CardLocation::DrawPile(RelativePosition::Bottom),
-                    CardModifier::None,
-                ),
+                DoCardEffect(CardLocation::PlayerHand, RelativePosition::All, CardEffect::MoveTo(CardLocation::DrawPile, RelativePosition::Bottom)),
+                DoCardEffect(CardLocation::DiscardPile, RelativePosition::All, CardEffect::MoveTo(CardLocation::DrawPile, RelativePosition::Bottom)),
                 Shuffle,
                 Draw(Upgradable(4, 6)),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Defect, Skill)
@@ -2078,12 +2190,13 @@ fn all_cards() -> Vec<BaseCard> {
             name: SEEK,
             rarity: Rare,
             on_play: vec![
-                MoveCard(
-                    CardLocation::DrawPile(RelativePosition::PlayerChoice(Upgradable(1, 2))),
-                    CardLocation::PlayerHand(RelativePosition::Bottom),
-                    CardModifier::None,
-                ),
-                ExhaustCard(This),
+                ChooseCards {
+                    location: CardLocation::DrawPile,
+                    then: CardEffect::MoveTo(CardLocation::PlayerHand, RelativePosition::Bottom),
+                    min: Upgradable(1, 2),
+                    max: Upgradable(1, 2)
+                },
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Defect, Skill)
@@ -2137,7 +2250,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: CRESCENDO,
             retain: Condition::Always,
-            on_play: vec![SetStance(Stance::Wrath), ExhaustCard(This)],
+            on_play: vec![SetStance(Stance::Wrath), SelfEffect(CardEffect::Exhaust)],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Watcher, Attack)
         },
@@ -2183,29 +2296,17 @@ fn all_cards() -> Vec<BaseCard> {
             name: EVALUATE,
             on_play: vec![
                 Block(Upgradable(6, 10), _Self),
-                AddCard {
-                    card: CardReference::ByName(INSIGHT),
-                    destination: CardLocation::DrawPile(RelativePosition::Random),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: INSIGHT,
+                    location: CardLocation::DrawPile,
+                    position: RelativePosition::Random,
+                    then: vec![]
                 },
             ],
             ..BaseCard::new(Watcher, Skill)
         },
         BaseCard {
             name: FLURRY_OF_BLOWS,
-            effects: vec![(
-                Event::StanceChange(Stance::All, Stance::All),
-                If(
-                    Condition::Custom,
-                    vec![MoveCard(
-                        CardLocation::This,
-                        CardLocation::PlayerHand(RelativePosition::Bottom),
-                        CardModifier::None,
-                    )],
-                    vec![],
-                ),
-            )],
             on_play: vec![AttackDamage(Upgradable(4, 6), TargetEnemy)],
             cost: Fixed(0),
             ..BaseCard::new(Watcher, Attack)
@@ -2299,7 +2400,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: TRANQUILITY,
             retain: Condition::Always,
-            on_play: vec![SetStance(Stance::Calm), ExhaustCard(This)],
+            on_play: vec![SetStance(Stance::Calm), SelfEffect(CardEffect::Exhaust)],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Watcher, Skill)
         },
@@ -2315,11 +2416,11 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 AttackDamage(Upgradable(6, 10), TargetEnemy),
-                AddCard {
-                    card: CardReference::ByName(SMITE),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: SMITE,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
                 },
             ],
             ..BaseCard::new(Watcher, Attack)
@@ -2327,7 +2428,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: COLLECT,
             rarity: Uncommon,
-            on_play: vec![AddBuff(buffs::COLLECT, X, _Self), ExhaustCard(This)],
+            on_play: vec![AddBuff(buffs::COLLECT, X, _Self), SelfEffect(CardEffect::Exhaust)],
             cost: X,
             ..BaseCard::new(Watcher, Skill)
         },
@@ -2343,11 +2444,11 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 Block(Upgradable(4, 7), _Self),
-                AddCard {
-                    card: CardReference::ByName(SAFETY),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: SAFETY,
+                    location: CardLocation::PlayerHand, 
+                    position: RelativePosition::Bottom,
+                    then: vec![]
                 },
             ],
             ..BaseCard::new(Watcher, Skill)
@@ -2387,20 +2488,30 @@ fn all_cards() -> Vec<BaseCard> {
             on_play: vec![
                 If(
                     Condition::Upgraded,
-                    vec![AddCard {
-                        card: CardReference::RandomClass(Class::All),
-                        destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                        copies: Fixed(1),
-                        modifier: CardModifier::None,
-                    }],
-                    vec![AddCard {
-                        card: CardReference::RandomClass(Class::All),
-                        destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                        copies: Fixed(1),
-                        modifier: CardModifier::SetZeroTurnCost,
-                    }],
+                    vec![
+                        CreateCardByType {
+                            _type: CardType::All,
+                            _rarity: Option::None,
+                            _class: Some(Class::All),
+                            location: CardLocation::PlayerHand,
+                            position: RelativePosition::Bottom,
+                            then: vec![
+                                CardEffect::ZeroTurnCost
+                            ],
+                        }
+                    ],
+                    vec![
+                        CreateCardByType {
+                            _type: CardType::All,
+                            _rarity: Option::None,
+                            _class: Some(Class::All),
+                            location: CardLocation::PlayerHand,
+                            position: RelativePosition::Bottom,
+                            then: vec![],
+                        }
+                    ],
                 ),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Watcher, Skill)
@@ -2473,11 +2584,11 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 Effect::AddBuff(buffs::MANTRA, Upgradable(3, 4), _Self),
-                Effect::AddCard {
-                    card: CardReference::ByName(INSIGHT),
-                    destination: CardLocation::DrawPile(RelativePosition::Random),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                Effect::CreateCard {
+                    name: INSIGHT,
+                    location: CardLocation::DrawPile, 
+                    position: RelativePosition::Random,
+                    then: vec![]
                 },
             ],
             ..BaseCard::new(Watcher, Skill)
@@ -2487,11 +2598,11 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 AttackDamage(Upgradable(10, 15), TargetEnemy),
-                Effect::AddCard {
-                    card: CardReference::ByName(THROUGH_VIOLENCE),
-                    destination: CardLocation::DrawPile(RelativePosition::Random),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                Effect::CreateCard {
+                    name: THROUGH_VIOLENCE,
+                    location: CardLocation::DrawPile, 
+                    position: RelativePosition::Random,
+                    then: vec![]
                 },
             ],
             cost: Fixed(2),
@@ -2518,7 +2629,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: SANDS_OF_TIME,
             rarity: Uncommon,
             retain: Condition::Always,
-            on_retain: vec![AddCardCost(This, Fixed(-1))],
+            on_retain: vec![SelfEffect(CardEffect::ReduceCost(Amount::Fixed(1)))],
             on_play: vec![AttackDamage(Upgradable(20, 26), TargetEnemy)],
             cost: Fixed(4),
             ..BaseCard::new(Watcher, Attack)
@@ -2555,7 +2666,7 @@ fn all_cards() -> Vec<BaseCard> {
             on_play: vec![
                 AttackDamage(Upgradable(5, 7), TargetEnemy),
                 AddBuff(buffs::BLOCK_RETURN, Upgradable(2, 3), TargetEnemy),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             ..BaseCard::new(Watcher, Attack)
         },
@@ -2567,7 +2678,7 @@ fn all_cards() -> Vec<BaseCard> {
                     Upgradable(3, 4),
                     Box::new(AttackDamage(Fixed(3), TargetEnemy)),
                 ),
-                MoveCard(This, DrawPile(RelativePosition::Random), CardModifier::None),
+                SelfEffect(CardEffect::MoveTo(DrawPile, RelativePosition::Bottom)),
                 SetStance(Stance::Wrath),
             ],
             ..BaseCard::new(Watcher, Attack)
@@ -2597,14 +2708,6 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: WEAVE,
             rarity: Uncommon,
-            effects: vec![(
-                Event::Scry,
-                MoveCard(
-                    CardLocation::This,
-                    PlayerHand(RelativePosition::Bottom),
-                    CardModifier::None,
-                ),
-            )],
             on_play: vec![AddBuff(
                 buffs::WAVE_OF_THE_HAND,
                 Upgradable(1, 2),
@@ -2651,13 +2754,13 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             innate: Condition::Upgraded,
             on_play: vec![
-                AddCard {
-                    card: CardReference::ByName(BETA),
-                    destination: CardLocation::DrawPile(RelativePosition::Random),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: BETA,
+                    location: CardLocation::DrawPile,
+                    position: RelativePosition::Random,
+                    then: vec![],
                 },
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             ..BaseCard::new(Watcher, Skill)
         },
@@ -2668,7 +2771,7 @@ fn all_cards() -> Vec<BaseCard> {
             on_play: vec![
                 SetStance(Stance::Divinity),
                 AddBuff(buffs::BLASPHEMER, Fixed(1), _Self),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             ..BaseCard::new(Watcher, Skill)
         },
@@ -2693,13 +2796,27 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             playable_if: Condition::Never,
             on_draw: vec![
-                AddCard {
-                    card: CardReference::ByName(MIRACLE),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: Upgradable(2, 3),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: MIRACLE,
+                    location: CardLocation::PlayerHand, 
+                    position: RelativePosition::Bottom,
+                    then: vec![],
                 },
-                ExhaustCard(This),
+                CreateCard {
+                    name: MIRACLE,
+                    location: CardLocation::PlayerHand, 
+                    position: RelativePosition::Bottom,
+                    then: vec![],
+                },
+                If(Condition::Upgraded, vec![
+                    CreateCard {
+                        name: MIRACLE,
+                        location: CardLocation::PlayerHand, 
+                        position: RelativePosition::Bottom,
+                        then: vec![],
+                    },
+                ], vec![]),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Watcher, Skill)
@@ -2707,7 +2824,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: DEVA_FORM,
             rarity: Rare,
-            on_turn_end: vec![If(Condition::Upgraded, vec![], vec![ExhaustCard(This)])],
+            on_turn_end: vec![If(Condition::Upgraded, vec![], vec![SelfEffect(CardEffect::Exhaust)])],
             on_play: vec![AddBuff(buffs::DEVA, Fixed(1), _Self)],
             cost: Fixed(3),
             ..BaseCard::new(Watcher, Power)
@@ -2744,9 +2861,9 @@ fn all_cards() -> Vec<BaseCard> {
                 AttackDamageIfFatal(
                     Upgradable(10, 12),
                     TargetEnemy,
-                    vec![UpgradeCard(DeckPile(Random))],
+                    vec![UpgradeRandomCard(1)],
                 ),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(2),
             ..BaseCard::new(Watcher, Attack)
@@ -2761,7 +2878,18 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: OMNISCIENCE,
             rarity: Rare,
-            on_play: vec![Effect::Custom, ExhaustCard(This)],
+            on_play: vec![
+                ChooseCards {
+                    location: CardLocation::DeckPile,
+                    then: CardEffect::Multiple(vec![
+                        CardEffect::AutoPlay,
+                        CardEffect::AutoPlay
+                    ]),
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
+                SelfEffect(CardEffect::Exhaust)
+            ],
             cost: Upgradable(4, 3),
             ..BaseCard::new(Watcher, Skill)
         },
@@ -2778,7 +2906,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: SCRAWL,
             rarity: Rare,
-            on_play: vec![Draw(Amount::Custom), ExhaustCard(This)],
+            on_play: vec![Draw(Amount::Custom), SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(3),
             ..BaseCard::new(Watcher, Skill)
         },
@@ -2795,7 +2923,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: VAULT,
             rarity: Rare,
-            on_play: vec![Effect::Custom, ExhaustCard(This)],
+            on_play: vec![Effect::Custom, SelfEffect(CardEffect::Exhaust)],
             cost: Upgradable(3, 2),
             ..BaseCard::new(Watcher, Skill)
         },
@@ -2809,7 +2937,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: BANDAGE_UP,
             rarity: Uncommon,
-            on_play: vec![Heal(Upgradable(4, 6), _Self), ExhaustCard(This)],
+            on_play: vec![Heal(Upgradable(4, 6), _Self), SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
         },
@@ -2829,7 +2957,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: DARK_SHACKLES,
             rarity: Uncommon,
             targeted: Condition::Always,
-            on_play: vec![LoseStr(Upgradable(9, 15), TargetEnemy), ExhaustCard(This)],
+            on_play: vec![LoseStr(Upgradable(9, 15), TargetEnemy), SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
         },
@@ -2837,11 +2965,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: DEEP_BREATH,
             rarity: Uncommon,
             on_play: vec![
-                MoveCard(
-                    DiscardPile(RelativePosition::All),
-                    DrawPile(RelativePosition::All),
-                    CardModifier::None,
-                ),
+                DoCardEffect(CardLocation::DiscardPile, RelativePosition::All, CardEffect::MoveTo(DrawPile, RelativePosition::Bottom)),
                 Shuffle,
                 Draw(Upgradable(1, 2)),
             ],
@@ -2852,13 +2976,18 @@ fn all_cards() -> Vec<BaseCard> {
             name: DISCOVERY,
             rarity: Uncommon,
             on_play: vec![
-                AddCard {
-                    card: CardReference::RandomType(CardType::All, Fixed(3)),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: Fixed(1),
-                    modifier: CardModifier::SetZeroTurnCost,
+                ChooseCardByType {
+                    _type: CardType::All,
+                    _rarity: Option::None,
+                    _class: Option::None,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![
+                        CardEffect::ZeroTurnCost
+                    ],
+                    choices: Fixed(3),
                 },
-                If(Condition::Upgraded, vec![], vec![ExhaustCard(This)]),
+                If(Condition::Upgraded, vec![], vec![SelfEffect(CardEffect::Exhaust)]),
             ],
             ..BaseCard::new(Class::None, Skill)
         },
@@ -2869,7 +2998,7 @@ fn all_cards() -> Vec<BaseCard> {
             targeted: Condition::Never,
             on_play: vec![
                 AttackDamage(Upgradable(8, 12), AllEnemies),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Attack)
@@ -2879,14 +3008,12 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![If(
                 Condition::Upgraded,
-                vec![SetCardModifier(
-                    CardLocation::PlayerHand(RelativePosition::All),
-                    CardModifier::SetZeroTurnCost,
-                )],
-                vec![SetCardModifier(
-                    CardLocation::PlayerHand(RelativePosition::All),
-                    CardModifier::SetZeroCombatCost,
-                )],
+                vec![
+                    DoCardEffect(CardLocation::PlayerHand, RelativePosition::All, CardEffect::ZeroTurnCost),
+                ],
+                vec![
+                    DoCardEffect(CardLocation::PlayerHand, RelativePosition::All, CardEffect::ZeroCombatCost),
+                ],
             )],
             ..BaseCard::new(Class::None, Skill)
         },
@@ -2907,19 +3034,17 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: FORETHOUGHT,
             rarity: Uncommon,
-            on_play: vec![If(
-                Condition::Upgraded,
-                vec![MoveCard(
-                    CardLocation::PlayerHand(RelativePosition::PlayerChoice(Fixed(1))),
-                    CardLocation::DrawPile(RelativePosition::Bottom),
-                    CardModifier::SetZeroCostUntilPlayed,
-                )],
-                vec![MoveCard(
-                    CardLocation::PlayerHand(RelativePosition::PlayerChoice(Any)),
-                    CardLocation::DrawPile(RelativePosition::Bottom),
-                    CardModifier::SetZeroCostUntilPlayed,
-                )],
-            )],
+            on_play: vec![
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::Multiple(vec![
+                        CardEffect::MoveTo(CardLocation::DrawPile, RelativePosition::Bottom),
+                        CardEffect::ZeroCostUntilPlayed,
+                    ]),
+                    min: Fixed(1),
+                    max: Upgradable(1, 10)
+                }
+            ],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
         },
@@ -2934,7 +3059,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: IMPATIENCE,
             rarity: Uncommon,
             playable_if: Condition::Not(Box::new(Condition::HasCard(
-                CardLocation::PlayerHand(RelativePosition::All),
+                CardLocation::PlayerHand,
                 CardType::Attack,
             ))),
             on_play: vec![Draw(Upgradable(2, 3))],
@@ -2945,13 +3070,15 @@ fn all_cards() -> Vec<BaseCard> {
             name: JACK_OF_ALL_TRADES,
             rarity: Uncommon,
             on_play: vec![
-                AddCard {
-                    card: CardReference::RandomClass(Class::None),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: Upgradable(1, 2),
-                    modifier: CardModifier::None,
+                CreateCardByType {
+                    _type: CardType::All,
+                    _rarity: Option::None,
+                    _class: Some(Class::None),
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
                 },
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
@@ -2960,11 +3087,12 @@ fn all_cards() -> Vec<BaseCard> {
             name: MADNESS,
             rarity: Uncommon,
             on_play: vec![
-                SetCardModifier(
-                    CardLocation::PlayerHand(RelativePosition::Random),
-                    CardModifier::SetZeroCombatCost,
+                DoCardEffect(
+                    CardLocation::PlayerHand, 
+                    RelativePosition::Random,
+                    CardEffect::ZeroCombatCost,
                 ),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Upgradable(1, 0),
             ..BaseCard::new(Class::None, Skill)
@@ -2983,7 +3111,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Uncommon,
             on_play: vec![
                 AddBuff(buffs::ARTIFACT, Upgradable(1, 2), _Self),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
@@ -2994,7 +3122,7 @@ fn all_cards() -> Vec<BaseCard> {
             on_play: vec![
                 Block(Upgradable(30, 40), _Self),
                 AddBuff(buffs::NO_BLOCK, Fixed(2), _Self),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
@@ -3003,10 +3131,13 @@ fn all_cards() -> Vec<BaseCard> {
             name: PURITY,
             rarity: Uncommon,
             on_play: vec![
-                ExhaustCard(CardLocation::PlayerHand(RelativePosition::PlayerChoice(
-                    Upgradable(3, 5),
-                ))),
-                ExhaustCard(This),
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::Exhaust,
+                    min: Fixed(0),
+                    max: Upgradable(3, 5)
+                },
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
@@ -3021,7 +3152,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: TRIP,
             rarity: Uncommon,
-            targeted:  Condition::Not(Box::new(Condition::Upgraded)),
+            targeted: Condition::Not(Box::new(Condition::Upgraded)),
             on_play: vec![If(
                 Condition::Upgraded,
                 vec![AddBuff(buffs::VULNERABLE, Fixed(2), TargetEnemy)],
@@ -3034,9 +3165,9 @@ fn all_cards() -> Vec<BaseCard> {
             name: APOTHEOSIS,
             rarity: Rare,
             on_play: vec![
-                UpgradeCard(CardLocation::DrawPile(RelativePosition::All)),
-                UpgradeCard(CardLocation::DiscardPile(RelativePosition::All)),
-                UpgradeCard(CardLocation::PlayerHand(RelativePosition::All)),
+                DoCardEffect(CardLocation::DrawPile, RelativePosition::Bottom, CardEffect::Upgrade),
+                DoCardEffect(CardLocation::DiscardPile, RelativePosition::Bottom, CardEffect::Upgrade),
+                DoCardEffect(CardLocation::PlayerHand, RelativePosition::Bottom, CardEffect::Upgrade),
             ],
             cost: Upgradable(2, 1),
             ..BaseCard::new(Class::None, Skill)
@@ -3046,11 +3177,15 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             on_play: vec![Repeat(
                 Upgradable(3, 5),
-                Box::new(AddCard {
-                    card: CardReference::RandomType(CardType::Skill, Fixed(1)),
-                    destination: CardLocation::DrawPile(RelativePosition::Random),
-                    copies: Fixed(1),
-                    modifier: CardModifier::SetZeroCombatCost,
+                Box::new(CreateCardByType {
+                    _type: CardType::Skill,
+                    _rarity: Option::None,
+                    _class: Option::None,
+                    location: CardLocation::DrawPile,
+                    position: RelativePosition::Random,
+                    then: vec![
+                        CardEffect::ZeroCombatCost
+                    ],
                 }),
             )],
             cost: Fixed(2),
@@ -3077,7 +3212,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: MASTER_OF_STRATEGY,
             rarity: Rare,
-            on_play: vec![Draw(Upgradable(3, 4)), ExhaustCard(This)],
+            on_play: vec![Draw(Upgradable(3, 4)), SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
         },
@@ -3093,11 +3228,15 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             on_play: vec![Repeat(
                 Upgradable(3, 5),
-                Box::new(AddCard {
-                    card: CardReference::RandomType(CardType::Attack, Fixed(1)),
-                    destination: CardLocation::DrawPile(RelativePosition::Random),
-                    copies: Fixed(1),
-                    modifier: CardModifier::SetZeroCombatCost,
+                Box::new(CreateCardByType {
+                    _type: CardType::Attack,
+                    _rarity: Option::None,
+                    _class: Option::None,
+                    location: CardLocation::DrawPile,
+                    position: RelativePosition::Random,
+                    then: vec![
+                        CardEffect::ZeroCombatCost
+                    ],
                 }),
             )],
             cost: Fixed(2),
@@ -3120,14 +3259,14 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: SECRET_TECHIQUE,
             rarity: Rare,
-            on_play: vec![Effect::Custom, ExhaustCard(This)],
+            on_play: vec![Effect::Custom, SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
         },
         BaseCard {
             name: SECRET_WEAPON,
             rarity: Rare,
-            on_play: vec![Effect::Custom, ExhaustCard(This)],
+            on_play: vec![Effect::Custom, SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
         },
@@ -3143,12 +3282,13 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rare,
             on_play: vec![
                 Draw(Fixed(2)),
-                MoveCard(
-                    PlayerHand(PlayerChoice(Fixed(1))),
-                    DrawPile(Top),
-                    CardModifier::None,
-                ),
-                If(Condition::Upgraded, vec![], vec![ExhaustCard(This)]),
+                ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::MoveTo(CardLocation::DrawPile, RelativePosition::Top),
+                    min: Fixed(1),
+                    max: Fixed(1)
+                },
+                If(Condition::Upgraded, vec![], vec![SelfEffect(CardEffect::Exhaust)]),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
@@ -3157,31 +3297,37 @@ fn all_cards() -> Vec<BaseCard> {
             name: TRANSMUTATION,
             rarity: Rare,
             on_play: vec![
-                Draw(Fixed(2)),
-                MoveCard(
-                    PlayerHand(PlayerChoice(Fixed(1))),
-                    DrawPile(Top),
-                    CardModifier::None,
-                ),
-                If(Condition::Upgraded, vec![], vec![ExhaustCard(This)]),
+                Repeat(X, vec![
+                    CreateCardByType {
+                        _type: CardType::All,
+                        _rarity: Option::None,
+                        _class: Option::Some(Class::None),
+                        location: CardLocation::PlayerHand,
+                        position: RelativePosition::Bottom,
+                        then: vec![
+                            CardEffect::ZeroTurnCost
+                        ],
+                    },
+                ]),
+                SelfEffect(CardEffect::Exhaust),
             ],
-            cost: Fixed(0),
+            cost: X,
             ..BaseCard::new(Class::None, Skill)
         },
         BaseCard {
             name: VIOLENCE,
             rarity: Rare,
-            on_play: vec![Effect::Custom, ExhaustCard(This)],
+            on_play: vec![Effect::Custom, SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
         },
         BaseCard {
             name: APPARITION,
             rarity: Rarity::Special,
-            on_turn_end: vec![If(Condition::Upgraded, vec![], vec![ExhaustCard(This)])],
+            on_turn_end: vec![If(Condition::Upgraded, vec![], vec![SelfEffect(CardEffect::Exhaust)])],
             on_play: vec![
                 AddBuff(buffs::INTANGIBLE, Fixed(1), _Self),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             ..BaseCard::new(Class::None, Skill)
         },
@@ -3189,13 +3335,13 @@ fn all_cards() -> Vec<BaseCard> {
             name: BETA,
             rarity: Rarity::Special,
             on_play: vec![
-                AddCard {
-                    card: CardReference::ByName(OMEGA),
-                    destination: CardLocation::DrawPile(RelativePosition::Random),
-                    copies: Fixed(1),
-                    modifier: CardModifier::None,
+                CreateCard {
+                    name: OMEGA,
+                    location: CardLocation::DrawPile, 
+                    position: RelativePosition::Random,
+                    then: vec![],
                 },
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Upgradable(2, 1),
             ..BaseCard::new(Class::None, Skill)
@@ -3222,7 +3368,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: INSIGHT,
             rarity: Rarity::Special,
             retain: Condition::Always,
-            on_play: vec![Draw(Upgradable(2, 3)), ExhaustCard(This)],
+            on_play: vec![Draw(Upgradable(2, 3)), SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Skill)
         },
@@ -3260,7 +3406,7 @@ fn all_cards() -> Vec<BaseCard> {
                     TargetEnemy,
                     vec![AddN(Upgradable(3, 5))],
                 ),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             ..BaseCard::new(Class::None, Attack)
         },
@@ -3268,7 +3414,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: SAFETY,
             rarity: Rarity::Special,
             retain: Condition::Always,
-            on_play: vec![Block(Upgradable(12, 16), _Self), ExhaustCard(This)],
+            on_play: vec![Block(Upgradable(12, 16), _Self), SelfEffect(CardEffect::Exhaust)],
             ..BaseCard::new(Class::None, Skill)
         },
         BaseCard {
@@ -3276,7 +3422,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rarity::Special,
             on_play: vec![
                 AttackDamage(Upgradable(4, 6), TargetEnemy),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Attack)
@@ -3286,7 +3432,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rarity::Special,
             on_play: vec![
                 AttackDamage(Upgradable(12, 16), TargetEnemy),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             ..BaseCard::new(Class::None, Attack)
         },
@@ -3295,7 +3441,7 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rarity::Special,
             on_play: vec![
                 AttackDamage(Upgradable(20, 30), TargetEnemy),
-                ExhaustCard(This),
+                SelfEffect(CardEffect::Exhaust),
             ],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Attack)
@@ -3304,7 +3450,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: BURN,
             rarity: Rarity::Status,
             playable_if: Condition::Never,
-            on_turn_end: vec![Damage(Upgradable(2, 4), _Self), DiscardCard(This)],
+            on_turn_end: vec![Damage(Upgradable(2, 4), _Self), SelfEffect(CardEffect::Discard)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Status)
         },
@@ -3312,7 +3458,7 @@ fn all_cards() -> Vec<BaseCard> {
             name: DAZED,
             rarity: Rarity::Status,
             playable_if: Condition::Never,
-            on_turn_end: vec![ExhaustCard(This)],
+            on_turn_end: vec![SelfEffect(CardEffect::Exhaust)],
             cost: Fixed(0),
             ..BaseCard::new(Class::None, Status)
         },
@@ -3326,7 +3472,7 @@ fn all_cards() -> Vec<BaseCard> {
         BaseCard {
             name: SLIMED,
             rarity: Rarity::Status,
-            on_play: vec![ExhaustCard(This)],
+            on_play: vec![SelfEffect(CardEffect::Exhaust)],
             ..BaseCard::new(Class::None, Status)
         },
         BaseCard {
@@ -3334,21 +3480,21 @@ fn all_cards() -> Vec<BaseCard> {
             rarity: Rarity::Status,
             playable_if: Condition::Never,
             on_draw: vec![AddEnergy(Fixed(-1))],
-            on_turn_end: vec![ExhaustCard(This)],
+            on_turn_end: vec![SelfEffect(CardEffect::Exhaust)],
             ..BaseCard::new(Class::None, Status)
         },
         BaseCard {
             name: ASCENDERS_BANE,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            on_turn_end: vec![ExhaustCard(This)],
+            on_turn_end: vec![SelfEffect(CardEffect::Exhaust)],
             ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: CLUMSY,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            on_turn_end: vec![ExhaustCard(This)],
+            on_turn_end: vec![SelfEffect(CardEffect::Exhaust)],
             ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
@@ -3361,14 +3507,14 @@ fn all_cards() -> Vec<BaseCard> {
             name: DECAY,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            on_turn_end: vec![Damage(Fixed(2), _Self), DiscardCard(This)],
+            on_turn_end: vec![Damage(Fixed(2), _Self), SelfEffect(CardEffect::Discard)],
             ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: DOUBT,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            on_turn_end: vec![AddBuff(buffs::WEAK, Fixed(1), _Self), DiscardCard(This)],
+            on_turn_end: vec![AddBuff(buffs::WEAK, Fixed(1), _Self), SelfEffect(CardEffect::Discard)],
             ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
@@ -3381,12 +3527,14 @@ fn all_cards() -> Vec<BaseCard> {
             name: NECRONOMICURSE,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            on_exhaust: vec![AddCard {
-                card: CardReference::ByName(NECRONOMICURSE),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Fixed(1),
-                modifier: CardModifier::None,
-            }],
+            on_exhaust: vec![
+                CreateCard {
+                    name: NECRONOMICURSE,
+                    location: CardLocation::PlayerHand, 
+                    position: RelativePosition::Bottom,
+                    then: vec![]
+                }
+            ],
             ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
@@ -3418,20 +3566,22 @@ fn all_cards() -> Vec<BaseCard> {
             name: PRIDE,
             rarity: Rarity::Curse,
             innate: Condition::Always,
-            on_turn_end: vec![AddCard {
-                card: CardReference::ByName(PRIDE),
-                destination: CardLocation::DrawPile(RelativePosition::Top),
-                copies: Fixed(1),
-                modifier: CardModifier::None,
-            }],
-            on_play: vec![ExhaustCard(This)],
+            on_turn_end: vec![
+                CreateCard {
+                    name: PRIDE,
+                    location: CardLocation::DrawPile, 
+                    position: RelativePosition::Top,
+                    then: vec![]
+                }
+            ],
+            on_play: vec![SelfEffect(CardEffect::Exhaust)],
             ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {
             name: SHAME,
             rarity: Rarity::Curse,
             playable_if: Condition::Never,
-            on_turn_end: vec![AddBuff(buffs::FRAIL, Fixed(1), _Self), DiscardCard(This)],
+            on_turn_end: vec![AddBuff(buffs::FRAIL, Fixed(1), _Self), SelfEffect(CardEffect::Discard)],
             ..BaseCard::new(Class::Curse, CardType::Curse)
         },
         BaseCard {

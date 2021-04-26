@@ -125,10 +125,10 @@ pub struct GameOver {
     rename_all = "SCREAMING_SNAKE_CASE"
 )]
 pub enum ScreenState {
-    None{},
+    None {},
     Event(Event),
     Chest(Chest),
-    ShopRoom{},
+    ShopRoom {},
     Rest(Rest),
     CardReward(CardReward),
     CombatReward(CombatRewards),
@@ -138,12 +138,12 @@ pub enum ScreenState {
     Grid(Grid),
     HandSelect(HandSelect),
     GameOver(GameOver),
-    Complete{},
+    Complete {},
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct CombatRewards {
-    pub rewards: Vec<RewardType>
+    pub rewards: Vec<RewardType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]

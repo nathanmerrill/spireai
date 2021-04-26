@@ -19,7 +19,9 @@ impl BaseBuff {
 }
 
 pub fn by_name(name: &str) -> &'static BaseBuff {
-    BUFFS.get(name).unwrap_or_else(|| panic!("Unrecognized buff: {}", name))
+    BUFFS
+        .get(name)
+        .unwrap_or_else(|| panic!("Unrecognized buff: {}", name))
 }
 
 lazy_static! {
@@ -38,10 +40,6 @@ fn all_buffs() -> Vec<BaseBuff> {
     vec![
         BaseBuff {
             name: ACCURACY,
-            effects: vec![(
-                Event::PlayCard(CardType::ByName(cards::SHIV)),
-                Effect::Boost(X),
-            )],
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -54,7 +52,6 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: AMPLIFY,
-            effects: vec![(Event::PlayCard(CardType::Power), Effect::Duplicate)],
             expire_at: Event::BeforeEnemyMove,
             reduce_at: Event::PlayCard(CardType::Power),
             ..BaseBuff::default()
@@ -69,10 +66,6 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: ARTIFACT,
-            effects: vec![(
-                Event::AnyBuff(Target::_Self),
-                Effect::Cancel,
-            )],
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -82,10 +75,7 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: BARRICADE,
-            effects: vec![(
-                Event::AfterEnemyMove,
-                Effect::RetainBlock(PlayerBlock),
-            )],
+            effects: vec![(Event::AfterEnemyMove, Effect::RetainBlock(PlayerBlock))],
             is_additive: false,
             ..BaseBuff::default()
         },
@@ -93,11 +83,12 @@ fn all_buffs() -> Vec<BaseBuff> {
             name: BATTLE_HYMN,
             effects: vec![(
                 Event::BeforeHandDraw,
-                Effect::AddCard {
-                    card: CardReference::ByName(cards::SMITE),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: X,
-                    modifier: CardModifier::None,
+                Effect::CreateCard {
+                    name: cards::SMITE,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
+                    
                 },
             )],
             ..BaseBuff::default()
@@ -145,10 +136,7 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: BLUR,
-            effects: vec![(
-                Event::AfterEnemyMove,
-                Effect::RetainBlock(PlayerBlock),
-            )],
+            effects: vec![(Event::AfterEnemyMove, Effect::RetainBlock(PlayerBlock))],
             reduce_at: Event::BeforeHandDraw,
             ..BaseBuff::default()
         },
@@ -162,12 +150,10 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: BUFFER,
-            effects: vec![(Event::HpLoss(Target::_Self), Effect::Multiple(vec![Effect::Cancel, Effect::AddX(Amount::Fixed(-1))]))],
             ..BaseBuff::default()
         },
         BaseBuff {
             name: BURST,
-            effects: vec![(Event::PlayCard(CardType::Skill), Effect::Duplicate)],
             reduce_at: Event::PlayCard(CardType::Skill),
             ..BaseBuff::default()
         },
@@ -185,11 +171,11 @@ fn all_buffs() -> Vec<BaseBuff> {
             name: COLLECT,
             effects: vec![(
                 Event::BeforeHandDraw,
-                Effect::AddCard {
-                    card: CardReference::ByName(cards::COLLECT),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: Fixed(1),
-                    modifier: CardModifier::Upgraded,
+                Effect::CreateCard {
+                    name: cards::COLLECT,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![CardEffect::Upgrade],
                 },
             )],
             reduce_at: Event::BeforeHandDraw,
@@ -212,10 +198,7 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: CONFUSED,
-            effects: vec![
-                (Event::DrawCard(CardType::All),
-                Effect::RandomizeCost(CardLocation::This)),
-            ],
+            effects: vec![],
             is_additive: false,
             is_buff: false,
             ..BaseBuff::default()
@@ -228,10 +211,10 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: CORPSE_EXPLOSION,
-            effects: vec![
-                (Event::Die(Target::_Self),
-                Effect::Damage(Amount::Mult(vec![X, MaxHp]), Target::AnyFriendly)),
-            ],
+            effects: vec![(
+                Event::Die(Target::_Self),
+                Effect::Damage(Amount::Mult(vec![X, MaxHp]), Target::AnyFriendly),
+            )],
             is_buff: false,
             ..BaseBuff::default()
         },
@@ -244,12 +227,16 @@ fn all_buffs() -> Vec<BaseBuff> {
             name: CREATIVE_AI,
             effects: vec![(
                 Event::BeforeHandDraw,
-                Effect::AddCard {
-                    card: CardReference::RandomType(CardType::Power, Fixed(1)),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: X,
-                    modifier: CardModifier::None,
-                },
+                Effect::Repeat(X, Box::new(
+                    Effect::CreateCardByType {
+                        _type: CardType::Power,
+                        _class: None,
+                        _rarity: None,
+                        location: CardLocation::PlayerHand,
+                        position: RelativePosition::Bottom,
+                        then: vec![],
+                    }
+                ))
             )],
             ..BaseBuff::default()
         },
@@ -300,7 +287,7 @@ fn all_buffs() -> Vec<BaseBuff> {
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: DEXTERITY, //TODO
+            name: DEXTERITY, 
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -314,19 +301,11 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: DOUBLE_DAMAGE,
-            effects: vec![(
-                Event::AttackDamage(Target::AllEnemies),
-                Effect::BoostMult(Fixed(100)),
-            )],
             reduce_at: Event::BeforeEnemyMove,
             ..BaseBuff::default()
         },
         BaseBuff {
             name: DOUBLE_TAP,
-            effects: vec![(
-                Event::PlayCard(CardType::Attack),
-                Effect::Duplicate,
-            )],
             reduce_at: Event::PlayCard(CardType::Attack),
             ..BaseBuff::default()
         },
@@ -345,24 +324,11 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: DUPLICATION,
-            effects: vec![(
-                Event::PlayCard(CardType::All),
-                Effect::Duplicate,
-            )],
             reduce_at: Event::PlayCard(CardType::All),
             ..BaseBuff::default()
         },
         BaseBuff {
             name: ECHO_FORM,
-            effects: vec![
-                (Event::BeforeHandDraw, Effect::SetN(Fixed(0))),
-                (Event::PlayCard(CardType::Attack), Effect::If(Condition::LessThan(N, X), vec![
-                    Effect::AddN(Fixed(1)),
-                    Effect::Duplicate,
-                ], vec![
-                    Effect::AddN(Fixed(1)),
-                ]))
-            ],
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -401,17 +367,15 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: EQUILIBRIUM,
-            effects: vec![
-                (Event::BeforeHandDiscard, Effect::RetainCard(CardLocation::PlayerHand(RelativePosition::All))),
-            ],
+            effects: vec![(
+                Event::BeforeHandDiscard,
+                Effect::DoCardEffect(CardLocation::PlayerHand, RelativePosition::All, CardEffect::Retain),
+            )],
             reduce_at: Event::BeforeHandDiscard,
             ..BaseBuff::default()
         },
         BaseBuff {
             name: ESTABLISHMENT,
-            effects: vec![
-                (Event::RetainCard(CardType::All), Effect::AddCardCost(CardLocation::This, Fixed(-1))),
-            ],
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -466,25 +430,10 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: FLYING,
-            effects: vec![
-                (Event::AfterEnemyMove, Effect::Multiple(vec![
-                    Effect::AddX(N),
-                    Effect::SetN(Fixed(0)),
-                ])),
-                (Event::AttackDamage(Target::_Self), Effect::Multiple(vec![
-                    Effect::BoostMult(Fixed(-50)),
-                    Effect::If(Condition::Equals(X, Fixed(1)), vec![
-                        Effect::SetN(Fixed(0))
-                    ], vec![
-                        Effect::AddN(Fixed(-1))
-                    ]),
-                    Effect::AddX(Fixed(-1))
-                ])),
-            ],
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: FOCUS,  //TODO
+            name: FOCUS, 
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -494,14 +443,11 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: FRAIL,
-            effects: vec![
-                (Event::Block(Target::_Self), Effect::BoostMult(Fixed(-25)))
-            ],
             is_buff: false,
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: FREE_ATTACK_POWER,  //TODO
+            name: FREE_ATTACK_POWER, 
             reduce_at: Event::PlayCard(CardType::Attack),
             ..BaseBuff::default()
         },
@@ -514,12 +460,14 @@ fn all_buffs() -> Vec<BaseBuff> {
             name: HELLO,
             effects: vec![(
                 Event::BeforeHandDraw,
-                Effect::AddCard {
-                    card: CardReference::RandomRarity(Rarity::Common),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: X,
-                    modifier: CardModifier::None,
-                },
+                Effect::Repeat(X, Box::new(Effect::CreateCardByType {
+                    _type: CardType::All,
+                    _rarity: Some(Rarity::Common),
+                    _class: None,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
+                }))
             )],
             ..BaseBuff::default()
         },
@@ -533,12 +481,14 @@ fn all_buffs() -> Vec<BaseBuff> {
                     Event::PlayCard(CardType::Skill),
                     Event::PlayCard(CardType::Status),
                 ]),
-                Effect::AddCard {
-                    card: CardReference::ByName(cards::DAZED),
-                    destination: CardLocation::DrawPile(RelativePosition::Random),
-                    copies: X,
-                    modifier: CardModifier::None,
-                },
+                Effect::Repeat(X, Box::new(
+                    Effect::CreateCard {
+                        name: cards::DAZED,
+                        location: CardLocation::DrawPile,
+                        position: RelativePosition::Random,
+                        then: vec![],
+                    },
+                ))
             )],
             ..BaseBuff::default()
         },
@@ -546,34 +496,30 @@ fn all_buffs() -> Vec<BaseBuff> {
             name: INFINITE_BLADES,
             effects: vec![(
                 Event::BeforeHandDraw,
-                Effect::AddCard {
-                    card: CardReference::ByName(cards::SHIV),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: X,
-                    modifier: CardModifier::None,
-                },
+                Effect::Repeat(X, Box::new(
+                    Effect::CreateCard {
+                        name: cards::SHIV,
+                        location: CardLocation::PlayerHand,
+                        position: RelativePosition::Bottom,
+                        then: vec![],
+                    },
+                ))
             )],
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: INNATE_THIEVERY,  //TODO
+            name: INNATE_THIEVERY, 
             effects: vec![(Event::Damage(Target::TargetEnemy), Effect::Custom)],
             ..BaseBuff::default()
         },
         BaseBuff {
             name: INTANGIBLE,
-            effects: vec![
-                (Event::Damage(Target::_Self), Effect::Cap(Fixed(1))),
-                (Event::HpLoss(Target::_Self), Effect::Cap(Fixed(1))),
-            ],
             reduce_at: Event::BeforeHandDraw,
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: INVINCIBLE, //TODO
-            effects: vec![
-                (Event::HpLoss(Target::_Self), Effect::Custom)
-            ],
+            name: INVINCIBLE, 
+            effects: vec![(Event::HpLoss(Target::_Self), Effect::Custom)],
             ..BaseBuff::default()
         },
         BaseBuff {
@@ -586,13 +532,14 @@ fn all_buffs() -> Vec<BaseBuff> {
         },
         BaseBuff {
             name: LIFE_LINK,
-            effects: vec![(Event::Die(Target::_Self),
-                Effect::If(Condition::HasFriendlies(1), vec![
-                    Effect::FakeDie,
-                ], vec![
-                    Effect::Die(Target::AnyFriendly)
-                ])),
-            ],
+            effects: vec![(
+                Event::Die(Target::_Self),
+                Effect::If(
+                    Condition::HasFriendlies(1),
+                    vec![Effect::FakeDie],
+                    vec![Effect::Die(Target::AnyFriendly)],
+                ),
+            )],
             is_additive: false,
             ..BaseBuff::default()
         },
@@ -611,7 +558,6 @@ fn all_buffs() -> Vec<BaseBuff> {
         BaseBuff {
             name: LOCK_ON,
             is_buff: false,
-            effects: vec![(Event::OrbDamage(Target::_Self), Effect::BoostMult(Fixed(50)))],
             reduce_at: Event::BeforeHandDraw,
             ..BaseBuff::default()
         },
@@ -629,12 +575,16 @@ fn all_buffs() -> Vec<BaseBuff> {
             name: MAGNETISM,
             effects: vec![(
                 Event::BeforeHandDraw,
-                Effect::AddCard {
-                    card: CardReference::RandomClass(Class::None),
-                    destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                    copies: X,
-                    modifier: CardModifier::None,
-                },
+                Effect::Repeat(X, Box::new(
+                    Effect::CreateCardByType {
+                        _type: CardType::All,
+                        _rarity: None,
+                        _class: Some(Class::None),
+                        location: CardLocation::PlayerHand,
+                        position: RelativePosition::Bottom,
+                        then: vec![],
+                    },
+                ))
             )],
             ..BaseBuff::default()
         },
@@ -642,14 +592,17 @@ fn all_buffs() -> Vec<BaseBuff> {
             name: MALLEABLE,
             effects: vec![
                 (Event::BeforeHandDraw, Effect::SetX(Fixed(3))),
-                (Event::AttackDamage(Target::_Self), Effect::Multiple(vec![
-                    Effect::AddN(X),
-                    Effect::AddX(Fixed(1)),
-                ])),
-                (Event::PlayCard(CardType::Attack), Effect::Multiple(vec![
-                    Effect::Block(N, Target::_Self),
-                    Effect::SetN(Fixed(0)),
-                ])),
+                (
+                    Event::AttackDamage(Target::_Self),
+                    Effect::Multiple(vec![Effect::AddN(X), Effect::AddX(Fixed(1))]),
+                ),
+                (
+                    Event::PlayCard(CardType::Attack),
+                    Effect::Multiple(vec![
+                        Effect::Block(N, Target::_Self),
+                        Effect::SetN(Fixed(0)),
+                    ]),
+                ),
             ],
             ..BaseBuff::default()
         },
@@ -675,7 +628,7 @@ fn all_buffs() -> Vec<BaseBuff> {
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: MASTER_REALITY,  //TODO
+            name: MASTER_REALITY, 
             is_additive: false,
             ..BaseBuff::default()
         },
@@ -683,7 +636,9 @@ fn all_buffs() -> Vec<BaseBuff> {
             name: MAYHEM,
             effects: vec![(
                 Event::AfterHandDraw,
-                Effect::AutoPlayCard(CardLocation::DrawPile(RelativePosition::Top)),
+                Effect::Repeat(X, Box::new(
+                    Effect::DoCardEffect(CardLocation::DrawPile, RelativePosition::Top, CardEffect::AutoPlay)
+                ))
             )],
             ..BaseBuff::default()
         },
@@ -731,7 +686,7 @@ fn all_buffs() -> Vec<BaseBuff> {
             ..BaseBuff::default()
         },
         BaseBuff {
-            name: NO_BLOCK, //TODO
+            name: NO_BLOCK, 
             is_buff: false,
             reduce_at: Event::BeforeEnemyMove,
             ..BaseBuff::default()
@@ -755,24 +710,11 @@ fn all_buffs() -> Vec<BaseBuff> {
             name: PAINFUL_STABS,
             effects: vec![(
                 Event::UnblockedDamage(Target::TargetEnemy),
-                Effect::AddCard {
-                    card: CardReference::ByName(cards::WOUND),
-                    destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                    copies: X,
-                    modifier: CardModifier::None,
-                },
-            )],
-            ..BaseBuff::default()
-        },
-        BaseBuff {
-            name: PAINFUL_STABS,
-            effects: vec![(
-                Event::UnblockedDamage(Target::TargetEnemy),
-                Effect::AddCard {
-                    card: CardReference::ByName(cards::WOUND),
-                    destination: CardLocation::DiscardPile(RelativePosition::Bottom),
-                    copies: X,
-                    modifier: CardModifier::None,
+                Effect::CreateCard {
+                    name: cards::WOUND,
+                    location: CardLocation::DiscardPile,
+                    position: RelativePosition::Bottom,
+                    then: vec![],
                 },
             )],
             ..BaseBuff::default()
@@ -989,11 +931,11 @@ fn all_buffs() -> Vec<BaseBuff> {
             name: STUDY,
             effects: vec![(
                 Event::BeforeEnemyMove,
-                Effect::AddCard {
-                    card: CardReference::ByName(cards::INSIGHT),
-                    destination: CardLocation::DrawPile(RelativePosition::Random),
-                    copies: X,
-                    modifier: CardModifier::None,
+                Effect::CreateCard {
+                    name: cards::INSIGHT,
+                    location: CardLocation::DrawPile,
+                    position: RelativePosition::Random,
+                    then: vec![],
                 },
             )],
             ..BaseBuff::default()
@@ -1040,9 +982,12 @@ fn all_buffs() -> Vec<BaseBuff> {
                 (Event::AfterHandDraw, Effect::Draw(X)),
                 (
                     Event::AfterHandDraw,
-                    Effect::DiscardCard(CardLocation::PlayerHand(RelativePosition::PlayerChoice(
-                        Fixed(1),
-                    ))),
+                    Effect::ChooseCards {
+                        location: CardLocation::PlayerHand,
+                        then: CardEffect::Discard,
+                        min: Amount::X,
+                        max: Amount::X
+                    }
                 ),
             ],
             ..BaseBuff::default()

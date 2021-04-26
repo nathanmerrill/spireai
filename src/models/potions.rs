@@ -1,11 +1,13 @@
 use crate::models::buffs;
-use crate::models::cards;
 use crate::models::core::*;
+use crate::models::cards;
 use std::collections::HashMap;
 use Amount::*;
 
 pub fn by_name(name: &str) -> &'static BasePotion {
-    POTIONS.get(name).unwrap_or_else(|| panic!("Potion {} not found", name))
+    POTIONS
+        .get(name)
+        .unwrap_or_else(|| panic!("Potion {} not found", name))
 }
 
 lazy_static! {
@@ -45,21 +47,29 @@ fn all_potions() -> Vec<BasePotion> {
             _class: Class::None,
             rarity: Rarity::Common,
             targeted: Condition::Never,
-            on_drink: vec![Effect::AddCard {
-                card: CardReference::RandomType(CardType::Attack, Fixed(3)),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Upgradable(1, 2),
-                modifier: CardModifier::SetZeroTurnCost,
-            }],
+            on_drink: vec![
+                Effect::ChooseCardByType {
+                    _type: CardType::Attack,
+                    _rarity: None,
+                    _class: None,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![
+                        CardEffect::ZeroTurnCost,
+                        CardEffect::Custom
+                    ],
+                    choices: Fixed(3),
+                }
+            ],
         },
         BasePotion {
             name: BLESSING_OF_THE_FORGE,
             _class: Class::None,
             rarity: Rarity::Common,
             targeted: Condition::Never,
-            on_drink: vec![Effect::UpgradeCard(CardLocation::PlayerHand(
-                RelativePosition::All,
-            ))],
+            on_drink: vec![
+                Effect::DoCardEffect(CardLocation::PlayerHand, RelativePosition::All, CardEffect::Upgrade),
+            ],
         },
         BasePotion {
             name: BLOCK_POTION,
@@ -80,24 +90,36 @@ fn all_potions() -> Vec<BasePotion> {
             _class: Class::Watcher,
             rarity: Rarity::Common,
             targeted: Condition::Never,
-            on_drink: vec![Effect::AddCard {
-                card: CardReference::ByName(cards::MIRACLE),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Upgradable(2, 4),
-                modifier: CardModifier::None,
-            }],
+            on_drink: vec![
+                Effect::Repeat(Upgradable(2, 4), vec![
+                    Effect::CreateCard {
+                        name: cards::MIRACLE,
+                        location: CardLocation::PlayerHand,
+                        position: RelativePosition::Bottom,
+                        then: vec![],
+                    }
+                ]),
+            ],
         },
         BasePotion {
             name: COLORLESS_POTION,
             _class: Class::None,
             rarity: Rarity::Common,
             targeted: Condition::Never,
-            on_drink: vec![Effect::AddCard {
-                card: CardReference::RandomClass(Class::None),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Upgradable(1, 2),
-                modifier: CardModifier::SetZeroTurnCost,
-            }],
+            on_drink: vec![
+                Effect::ChooseCardByType {
+                    _type: CardType::All,
+                    _rarity: None,
+                    _class: Some(Class::None),
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![
+                        CardEffect::ZeroTurnCost,
+                        CardEffect::Custom
+                    ],
+                    choices: Fixed(3),
+                },
+            ],
         },
         BasePotion {
             name: CULTIST_POTION,
@@ -115,12 +137,16 @@ fn all_potions() -> Vec<BasePotion> {
             _class: Class::Silent,
             rarity: Rarity::Uncommon,
             targeted: Condition::Never,
-            on_drink: vec![Effect::AddCard {
-                card: CardReference::ByName(cards::SHIV),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Upgradable(3, 6),
-                modifier: CardModifier::None,
-            }],
+            on_drink: vec![
+                Effect::Repeat(Amount::Upgradable(3, 6), vec![
+                    Effect::CreateCard {
+                        name: cards::SHIV,
+                        location: CardLocation::PlayerHand,
+                        position: RelativePosition::Bottom,
+                        then: vec![],
+                    }
+                ])
+            ],
         },
         BasePotion {
             name: DEXTERITY_POTION,
@@ -140,9 +166,9 @@ fn all_potions() -> Vec<BasePotion> {
             targeted: Condition::Never,
             on_drink: vec![Effect::Repeat(
                 Upgradable(3, 6),
-                Box::new(Effect::AutoPlayCard(CardLocation::DrawPile(
-                    RelativePosition::Top,
-                ))),
+                Box::new(
+                    Effect::DoCardEffect(CardLocation::DrawPile, RelativePosition::Top, CardEffect::AutoPlay)
+                )
             )],
         },
         BasePotion {
@@ -161,9 +187,14 @@ fn all_potions() -> Vec<BasePotion> {
             _class: Class::Ironclad,
             rarity: Rarity::Uncommon,
             targeted: Condition::Never,
-            on_drink: vec![Effect::ExhaustCard(CardLocation::PlayerHand(
-                RelativePosition::PlayerChoice(Amount::Any),
-            ))],
+            on_drink: vec![
+                Effect::ChooseCards {
+                    location: CardLocation::PlayerHand,
+                    then: CardEffect::Exhaust,
+                    min: Fixed(0),
+                    max: Fixed(10)
+                },
+            ],
         },
         BasePotion {
             name: ENERGY_POTION,
@@ -295,11 +326,17 @@ fn all_potions() -> Vec<BasePotion> {
             _class: Class::None,
             rarity: Rarity::Uncommon,
             targeted: Condition::Never,
-            on_drink: vec![Effect::MoveCard(
-                CardLocation::DiscardPile(RelativePosition::PlayerChoice(Fixed(2))),
-                CardLocation::PlayerHand(RelativePosition::Bottom),
-                CardModifier::SetZeroTurnCost,
-            )],
+            on_drink: vec![
+                Effect::ChooseCards {
+                    location: CardLocation::DiscardPile,
+                    then: CardEffect::Multiple(vec![
+                        CardEffect::MoveTo(CardLocation::PlayerHand, RelativePosition::Bottom),
+                        CardEffect::ZeroTurnCost
+                    ]),
+                    min: Upgradable(1, 2),
+                    max: Upgradable(1, 2)
+                },
+            ],
         },
         BasePotion {
             name: POISON_POTION,
@@ -324,12 +361,20 @@ fn all_potions() -> Vec<BasePotion> {
             _class: Class::None,
             rarity: Rarity::Common,
             targeted: Condition::Never,
-            on_drink: vec![Effect::AddCard {
-                card: CardReference::RandomType(CardType::Power, Fixed(3)),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Upgradable(1, 2),
-                modifier: CardModifier::SetZeroTurnCost,
-            }],
+            on_drink: vec![
+                Effect::ChooseCardByType {
+                    _type: CardType::Power,
+                    _rarity: None,
+                    _class: None,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![
+                        CardEffect::ZeroTurnCost,
+                        CardEffect::Custom
+                    ],
+                    choices: Fixed(3),
+                },
+            ],
         },
         BasePotion {
             name: REGEN_POTION,
@@ -347,12 +392,20 @@ fn all_potions() -> Vec<BasePotion> {
             _class: Class::None,
             rarity: Rarity::Common,
             targeted: Condition::Never,
-            on_drink: vec![Effect::AddCard {
-                card: CardReference::RandomType(CardType::Skill, Fixed(3)),
-                destination: CardLocation::PlayerHand(RelativePosition::Bottom),
-                copies: Upgradable(1, 2),
-                modifier: CardModifier::SetZeroTurnCost,
-            }],
+            on_drink: vec![
+                Effect::ChooseCardByType {
+                    _type: CardType::Skill,
+                    _rarity: None,
+                    _class: None,
+                    location: CardLocation::PlayerHand,
+                    position: RelativePosition::Bottom,
+                    then: vec![
+                        CardEffect::ZeroTurnCost,
+                        CardEffect::Custom
+                    ],
+                    choices: Fixed(3),
+                },
+            ],
         },
         BasePotion {
             name: SMOKE_BOMB,

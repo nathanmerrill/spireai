@@ -81,7 +81,7 @@ pub enum ChestType {
     Large,
     Medium,
     Small,
-    Boss
+    Boss,
 }
 
 // ------------------- Evalulation -------------------------------
@@ -110,7 +110,6 @@ pub enum CardType {
     Power,
     Status,
     Curse,
-    ByName(&'static str),
     All,
 }
 
@@ -134,12 +133,11 @@ pub enum CardReference {
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum CardLocation {
-    This,
-    DeckPile(RelativePosition),
-    DrawPile(RelativePosition),
-    PlayerHand(RelativePosition),
-    ExhaustPile(RelativePosition),
-    DiscardPile(RelativePosition),
+    DeckPile,
+    DrawPile,
+    PlayerHand,
+    ExhaustPile,
+    DiscardPile,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -189,7 +187,6 @@ pub struct MonsterMove {
     pub intent: Intent,
 }
 
-
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Event {
     // Time-based
@@ -223,8 +220,8 @@ pub enum Event {
     Scry,
     Shuffle,
     StanceChange(Stance, Stance),
-    PlayCard(CardType), // Sets This to be the card played
-    DrawCard(CardType), // Sets This to be the card drawn
+    PlayCard(CardType),   // Sets This to be the card played
+    DrawCard(CardType),   // Sets This to be the card drawn
     RetainCard(CardType), // Sets This to be the card retained
 
     // Non-fight
@@ -245,7 +242,6 @@ pub enum RelativePosition {
     Bottom,
     Top,
     Random,
-    PlayerChoice(Amount),
     All, // If in a card effect, does not include the card
 }
 
@@ -281,7 +277,7 @@ pub enum Effect {
     AddEnergy(Amount),
     AddMaxHp(Amount),
     ReduceMaxHpPercentage(Amount),
-    
+
     Heal(Amount, Target),
     SetStance(Stance),
     ChannelOrb(OrbType),
@@ -291,23 +287,44 @@ pub enum Effect {
     AddOrbSlot(Amount),
     EvokeOrb(Amount),
 
-    // Card Manipulation
-    ExhaustCard(CardLocation),
-    DiscardCard(CardLocation),
-    Shuffle,
-    MoveCard(CardLocation, CardLocation, CardModifier),
-    SetCardModifier(CardLocation, CardModifier),
-    AddCard {
-        card: CardReference,
-        destination: CardLocation,
-        copies: Amount,
-        modifier: CardModifier,
+    ChooseCards {
+        location: CardLocation,
+        then: CardEffect,
+        min: Amount,
+        max: Amount
     },
-    UpgradeCard(CardLocation),
-    AutoPlayCard(CardLocation),
-    AddCardCost(CardLocation, Amount),
-    RandomizeCost(CardLocation),
-    RetainCard(CardLocation),
+
+
+
+    // Card Manipulation
+    Shuffle,
+    DoCardEffect(CardLocation, RelativePosition, CardEffect),
+    SelfEffect(CardEffect),
+    CreateCard {
+        name: &'static str,
+        location: CardLocation,
+        position: RelativePosition,
+        then: Vec<CardEffect>,
+    },
+
+    CreateCardByType {
+        _type: CardType,
+        _rarity: Option<Rarity>,
+        _class: Option<Class>,
+        location: CardLocation,
+        position: RelativePosition,
+        then: Vec<CardEffect>,
+    },
+
+    ChooseCardByType {
+        _type: CardType,
+        _rarity: Option<Rarity>,
+        _class: Option<Class>,
+        location: CardLocation,
+        position: RelativePosition,
+        then: Vec<CardEffect>,
+        choices: Amount,
+    },
 
     // Meta-scaling
     AddRelic(&'static str),
@@ -319,6 +336,8 @@ pub enum Effect {
     TransformRandomCard(u8),
     DuplicateCard,
     RandomPotion,
+    UpgradeRandomCard(u8),
+    UpgradeCard,
 
     // Monster
     Split(&'static str, &'static str),
@@ -327,13 +346,7 @@ pub enum Effect {
         count: Amount,
     },
     FakeDie,
-    
-    // Event-related
-    Duplicate,
-    Boost(Amount),
-    BoostMult(Amount), // Adds/subtracts to the multiplier. In percentage units
-    Cap(Amount),
-    Cancel,
+
     Fight(Vec<&'static str>, RoomType),
     ShowChoices(Vec<&'static str>),
 
@@ -344,6 +357,25 @@ pub enum Effect {
     Repeat(Amount, Box<Effect>),
     None,
     Custom,
+}
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum CardEffect {
+    Exhaust,
+    Discard,
+    MoveTo(CardLocation, RelativePosition),
+    Multiple(Vec<CardEffect>),
+    Upgrade,
+    ZeroCombatCost,
+    ZeroTurnCost,
+    ZeroCostUntilPlayed,
+    CopyTo(CardLocation, RelativePosition, Vec<CardEffect>),
+    AutoPlay,
+    SetCost(Amount),
+    RandomizeCost,
+    Retain,
+    ReduceCost(Amount),
+    Custom
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
@@ -387,7 +419,7 @@ pub enum Condition {
     MultipleOr(Vec<Condition>),
     HasRelic(&'static str),
     HasGold(Amount),
-    IsVariant(&'static str),  //Event variant
+    IsVariant(&'static str), //Event variant
     Always,
     Class(Class),
     HasUpgradableCard,
@@ -422,9 +454,7 @@ pub struct Act {
 }
 impl std::fmt::Debug for Act {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("Act")
-            .field("act", &self.num)
-            .finish()
+        f.debug_struct("Act").field("act", &self.num).finish()
     }
 }
 impl PartialEq for Act {

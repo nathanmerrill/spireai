@@ -54,11 +54,11 @@ pub enum FloorState {
     CardReward(Vec<(&'static str, bool)>), // true if upgraded
     ShopEntrance,
     Shop {
-        cards: Vec<(&'static str, u16)>, 
-        potions: Vec<(&'static str, u16)>, 
-        relics: Vec<(&'static str, u16)>, 
-        purge_cost: u16
-     } // Last u8 is remove
+        cards: Vec<(&'static str, u16)>,
+        potions: Vec<(&'static str, u16)>,
+        relics: Vec<(&'static str, u16)>,
+        purge_cost: u16,
+    }, // Last u8 is remove
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -83,7 +83,7 @@ pub struct MapNode {
     pub floor: i8,
     pub x: i8,
     pub next: Vec<i8>,
-    pub icon: MapNodeIcon
+    pub icon: MapNodeIcon,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -106,7 +106,6 @@ pub struct EventState {
     pub variant_relic: Option<&'static str>,
     pub variant_amount: Option<u16>,
     pub available_choices: Vec<&'static str>,
-    
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -147,7 +146,7 @@ pub enum BattleType {
     Common,
     Elite,
     Boss,
-    Event
+    Event,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]

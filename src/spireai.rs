@@ -1,12 +1,12 @@
 use crate::models;
-use models::state::GameState;
 use models::choices::Choice;
+use models::state::GameState;
 use rand::Rng;
 
-pub mod evaluator;
-pub mod enumerator;
-pub mod predictor;
 pub mod appraiser;
+pub mod enumerator;
+pub mod evaluator;
+pub mod predictor;
 
 pub struct SpireAi {
     expected_state: Option<GamePossibilitySet>,
@@ -16,7 +16,7 @@ pub struct SpireAi {
 impl SpireAi {
     pub fn new() -> SpireAi {
         SpireAi {
-            expected_state: None
+            expected_state: None,
         }
     }
 

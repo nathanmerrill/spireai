@@ -1,6 +1,6 @@
 use crate::models::core::*;
-use crate::models::monsters::*;
 use crate::models::events;
+use crate::models::monsters::*;
 
 lazy_static! {
     static ref ACTS: Vec<Act> = vec![
