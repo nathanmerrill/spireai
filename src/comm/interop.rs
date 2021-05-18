@@ -1,5 +1,6 @@
 use crate::comm::request as old;
 use crate::models::core as new_core;
+use crate::models::monsters::Intent as NewIntent;
 use crate::models::state as new;
 use std::collections::HashMap;
 
@@ -98,23 +99,23 @@ pub fn convert_relics(relics: &[old::Relic]) -> Vec<new::Relic> {
     relics.iter().map(convert_relic).collect()
 }
 
-pub fn convert_intent(intent: &old::Intent) -> new_core::Intent {
+pub fn convert_intent(intent: &old::Intent) -> NewIntent {
     match intent {
-        old::Intent::Attack => new_core::Intent::Attack,
-        old::Intent::AttackBuff => new_core::Intent::AttackBuff,
-        old::Intent::AttackDebuff => new_core::Intent::AttackDebuff,
-        old::Intent::AttackDefend => new_core::Intent::AttackDefend,
-        old::Intent::Buff => new_core::Intent::Buff,
-        old::Intent::Debuff => new_core::Intent::Debuff,
-        old::Intent::StrongDebuff => new_core::Intent::StrongDebuff,
-        old::Intent::Defend => new_core::Intent::Defend,
-        old::Intent::DefendDebuff => new_core::Intent::DefendDebuff,
-        old::Intent::DefendBuff => new_core::Intent::DefendBuff,
-        old::Intent::Escape => new_core::Intent::Escape,
-        old::Intent::None => new_core::Intent::None,
-        old::Intent::Sleep => new_core::Intent::Sleep,
-        old::Intent::Stun => new_core::Intent::Stun,
-        old::Intent::Unknown => new_core::Intent::Unknown,
+        old::Intent::Attack => NewIntent::Attack,
+        old::Intent::AttackBuff => NewIntent::AttackBuff,
+        old::Intent::AttackDebuff => NewIntent::AttackDebuff,
+        old::Intent::AttackDefend => NewIntent::AttackDefend,
+        old::Intent::Buff => NewIntent::Buff,
+        old::Intent::Debuff => NewIntent::Debuff,
+        old::Intent::StrongDebuff => NewIntent::StrongDebuff,
+        old::Intent::Defend => NewIntent::Defend,
+        old::Intent::DefendDebuff => NewIntent::DefendDebuff,
+        old::Intent::DefendBuff => NewIntent::DefendBuff,
+        old::Intent::Escape => NewIntent::Escape,
+        old::Intent::None => NewIntent::None,
+        old::Intent::Sleep => NewIntent::Sleep,
+        old::Intent::Stun => NewIntent::Stun,
+        old::Intent::Unknown => NewIntent::Unknown,
         old::Intent::Debug | old::Intent::Magic => panic!("Unrecognized intent: {:?}", intent),
     }
 }

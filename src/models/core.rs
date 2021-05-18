@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-// ------------------  Fundamental types  -------------------------
-
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Rarity {
     Starter,
@@ -76,25 +74,6 @@ pub enum RoomType {
     All,
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
-pub enum Intent {
-    Attack,
-    AttackBuff,
-    AttackDebuff,
-    AttackDefend,
-    Buff,
-    Debuff,
-    StrongDebuff,
-    Defend,
-    DefendDebuff,
-    DefendBuff,
-    Escape,
-    None,
-    Sleep,
-    Stun,
-    Unknown,
-}
-
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum ChestType {
     Large,
@@ -136,6 +115,16 @@ impl Default for Amount {
     }
 }
 
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub enum CardLocation {
+    DeckPile,
+    DrawPile,
+    PlayerHand,
+    ExhaustPile,
+    DiscardPile,
+}
+
+
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum CardType {
     Attack,
@@ -152,83 +141,6 @@ impl Default for CardType {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub enum CardLocation {
-    DeckPile,
-    DrawPile,
-    PlayerHand,
-    ExhaustPile,
-    DiscardPile,
-}
-
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub enum Activation {
-    Immediate,
-    Event(Event),
-    Counter {
-        increment: Event,
-        reset: Event,
-        auto_reset: bool,
-        target: u8,
-    },
-    Uses {
-        use_when: Event,
-        uses: u8,
-    },
-    WhenEnabled {
-        //Activation is triggered before any enable/disable checks
-        activated_at: Event,
-        enabled_at: Event,
-        disabled_at: Event,
-    },
-    Custom,
-}
-
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub enum MonsterSet {
-    Fixed(Vec<String>),
-    ChooseN { n: u8, choices: Vec<String> },
-    RandomSet(Vec<Vec<String>>),
-}
-
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub struct ProbabilisticMove {
-    #[serde(default = "one", skip_serializing_if = "is_one")]
-    pub weight: u8,
-    pub name: String,
-    #[serde(default = "one", skip_serializing_if = "is_one")]
-    pub max_repeats: u8,
-}
-
-fn one() -> u8 {
-    1
-}
-
-fn is_one(weight: &u8) -> bool {
-    weight == &1
-}
-
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub enum Move {
-    If {
-        condition: Condition,
-        then: Vec<Move>,
-        _else: Vec<Move>,
-    },
-    Loop(Vec<Move>),
-    InOrder(String),
-    Probability(Vec<ProbabilisticMove>), // Weight, name, repeats
-    Event(Event),
-    AfterMove(Vec<(String, Move)>),
-}
-
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub struct MonsterMove {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub effects: Vec<Effect>,
-    pub intent: Intent,
-}
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub enum Event {
@@ -584,6 +496,29 @@ pub enum RewardType {
     RandomBook,
 }
 
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub enum Target {
+    _Self,
+    RandomEnemy,
+    TargetEnemy,
+    AllEnemies,
+    Attacker,
+    AnyFriendly,    // Includes self
+    RandomFriendly, // Self if only remaining
+    Friendly(String),
+}
+
+impl Default for Target {
+    fn default() -> Self {
+        Target::_Self
+    }
+}
+#[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
+pub struct EventEffect {
+    pub event: Event,
+    pub effect: EffectGroup,
+}
+
 #[derive(PartialEq, Eq, Clone, Debug, strum_macros::AsStaticStr, Deserialize, Serialize)]
 pub enum Condition {
     Stance(Stance),
@@ -655,158 +590,21 @@ pub enum Condition {
 }
 
 impl Condition {
-    fn never() -> Self {
+    pub fn never() -> Self {
         Condition::Never
     }
-    fn always() -> Self {
+    pub fn always() -> Self {
         Condition::Always
     }
-    fn is_never(a: &Condition) -> bool {
+    pub fn is_never(a: &Condition) -> bool {
         a == &Condition::Never
     }
-    fn is_always(a: &Condition) -> bool {
+    pub fn is_always(a: &Condition) -> bool {
         a == &Condition::Always
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub enum Target {
-    _Self,
-    RandomEnemy,
-    TargetEnemy,
-    AllEnemies,
-    Attacker,
-    AnyFriendly,    // Includes self
-    RandomFriendly, // Self if only remaining
-    Friendly(String),
-}
-
-impl Default for Target {
-    fn default() -> Self {
-        Target::_Self
-    }
-}
-
-#[derive(Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct ProbabilisticFight {
-    pub probability: u8,
-    pub set: MonsterSet,
-}
-
-//----------------------- Base Models ---------------------
-#[derive(Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct Act {
-    pub num: u8,
-    pub easy_count: u8,
-    pub easy_fights: Vec<ProbabilisticFight>,
-    pub normal_fights: Vec<ProbabilisticFight>,
-    pub elites: Vec<MonsterSet>,
-    pub bosses: Vec<MonsterSet>,
-    pub events: Vec<String>,
-}
-impl std::fmt::Debug for Act {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("Act").field("act", &self.num).finish()
-    }
-}
-
-#[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
-pub struct EventEffect {
-    pub event: Event,
-    pub effect: EffectGroup,
-}
-
-#[derive(Clone, Eq, Deserialize, Serialize)]
-pub struct BaseBuff {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub repeats: bool,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub singular: bool,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub debuff: bool,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub on_add: EffectGroup,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub reduce_at: Event,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub expire_at: Event,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub effects: Vec<EventEffect>,
-}
-impl std::fmt::Debug for BaseBuff {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BaseBuff")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-impl PartialEq for BaseBuff {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-#[derive(Eq, Clone, Deserialize, Serialize)]
-pub struct BaseCard {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub _type: CardType,
-    #[serde(rename = "class")]
-    pub _class: Class,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub cost: Amount,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub rarity: Rarity,
-    #[serde(
-        default = "Condition::always",
-        skip_serializing_if = "Condition::is_always"
-    )]
-    pub playable_if: Condition,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub on_start: Vec<Effect>,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub on_play: Vec<Effect>,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub on_discard: Vec<Effect>,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub on_draw: Vec<Effect>,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub on_exhaust: Vec<Effect>,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub on_retain: Vec<Effect>,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub on_turn_end: Vec<Effect>, //Happens if card is in hand, before cards are discarded
-    #[serde(
-        default = "Condition::never",
-        skip_serializing_if = "Condition::is_never"
-    )]
-    pub innate: Condition,
-    #[serde(
-        default = "Condition::never",
-        skip_serializing_if = "Condition::is_never"
-    )]
-    pub retain: Condition,
-    #[serde(
-        default = "Condition::never",
-        skip_serializing_if = "Condition::is_never"
-    )]
-    pub targeted: Condition,
-}
-impl std::fmt::Debug for BaseCard {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BaseCard")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-impl PartialEq for BaseCard {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-fn is_default<T>(a: &T) -> bool
+pub fn is_default<T>(a: &T) -> bool
 where
     T: Default + PartialEq<T>,
 {
@@ -814,150 +612,18 @@ where
     &def == a
 }
 
-fn _true() -> bool {
+pub fn _true() -> bool {
     true
 }
 
-fn is_true(a: &bool) -> bool {
+pub fn is_true(a: &bool) -> bool {
     a == &true
 }
 
-#[derive(Eq, Clone, Serialize, Deserialize)]
-pub struct BaseEvent {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub choices: Vec<BaseEventChoice>,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub shrine: bool,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub variants: Vec<String>,
-    #[serde(
-        default = "Condition::always",
-        skip_serializing_if = "Condition::is_always"
-    )]
-    pub condition: Condition,
-}
-#[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
-pub struct BaseEventChoice {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub effects: Vec<Effect>,
-    #[serde(
-        default = "Condition::always",
-        skip_serializing_if = "Condition::is_always"
-    )]
-    pub condition: Condition,
-    #[serde(default = "_true", skip_serializing_if = "is_true")]
-    pub initial: bool,
-}
-impl std::fmt::Debug for BaseEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BaseEvent")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-impl PartialEq for BaseEvent {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
+pub fn one() -> u8 {
+    1
 }
 
-#[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct Range {
-    pub min: Amount,
-    pub max: Amount,
-}
-
-#[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
-pub struct SimpleRange {
-    pub min: u16,
-    pub max: u16,
-}
-
-#[derive(Eq, Clone, Serialize, Deserialize)]
-pub struct BaseMonster {
-    pub name: String,
-    pub hp_range: SimpleRange,
-    pub hp_range_asc: SimpleRange,
-    pub moveset: Vec<MonsterMove>,
-    pub move_order: Vec<Move>,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub n_range: Option<Range>,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub x_range: Option<Range>,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub effects: Vec<EventEffect>,
-}
-impl std::fmt::Debug for BaseMonster {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BaseMonster")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-impl PartialEq for BaseMonster {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-#[derive(Eq, Clone, Serialize, Deserialize)]
-pub struct BasePotion {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub _class: Class,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub rarity: Rarity,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub on_drink: Vec<Effect>,
-    #[serde(
-        default = "Condition::never",
-        skip_serializing_if = "Condition::is_never"
-    )]
-    pub targeted: Condition,
-}
-impl std::fmt::Debug for BasePotion {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BasePotion")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-impl PartialEq for BasePotion {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-#[derive(Eq, Clone, Serialize, Deserialize)]
-pub struct BaseRelic {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub rarity: Rarity,
-    pub activation: Activation,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub effect: EffectGroup,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub disable_at: Event,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub class: Class,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub energy_relic: bool,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub replaces_starter: bool,
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub starting_x: i16,
-}
-impl std::fmt::Debug for BaseRelic {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("BaseRelic")
-            .field("name", &self.name)
-            .finish()
-    }
-}
-impl PartialEq for BaseRelic {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
+pub fn is_one(weight: &u8) -> bool {
+    weight == &1
 }

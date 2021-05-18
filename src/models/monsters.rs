@@ -1,7 +1,94 @@
 use ron::de::from_reader;
 use std::{collections::HashMap, fs::File, path::Path};
+use serde::{Deserialize, Serialize};
 
-use super::core::BaseMonster;
+use super::core::{Amount, Condition, Effect, Event, EventEffect, is_default, one, is_one};
+
+#[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct BaseMonster {
+    pub name: String,
+    pub hp_range: SimpleRange,
+    pub hp_range_asc: SimpleRange,
+    pub moveset: Vec<MonsterMove>,
+    pub move_order: Vec<Move>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub n_range: Option<Range>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub x_range: Option<Range>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub effects: Vec<EventEffect>,
+}
+impl std::fmt::Debug for BaseMonster {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseMonster")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub struct MonsterMove {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub effects: Vec<Effect>,
+    pub intent: Intent,
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum Intent {
+    Attack,
+    AttackBuff,
+    AttackDebuff,
+    AttackDefend,
+    Buff,
+    Debuff,
+    StrongDebuff,
+    Defend,
+    DefendDebuff,
+    DefendBuff,
+    Escape,
+    None,
+    Sleep,
+    Stun,
+    Unknown,
+}
+
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub enum Move {
+    If {
+        condition: Condition,
+        then: Vec<Move>,
+        _else: Vec<Move>,
+    },
+    Loop(Vec<Move>),
+    InOrder(String),
+    Probability(Vec<ProbabilisticMove>), // Weight, name, repeats
+    Event(Event),
+    AfterMove(Vec<(String, Move)>),
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub struct ProbabilisticMove {
+    #[serde(default = "one", skip_serializing_if = "is_one")]
+    pub weight: u8,
+    pub name: String,
+    #[serde(default = "one", skip_serializing_if = "is_one")]
+    pub max_repeats: u8,
+}
+
+#[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct Range {
+    pub min: Amount,
+    pub max: Amount,
+}
+
+#[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct SimpleRange {
+    pub min: u16,
+    pub max: u16,
+}
+
 
 pub fn by_name(name: &str) -> &'static BaseMonster {
     MONSTERS

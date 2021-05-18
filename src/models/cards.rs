@@ -1,8 +1,64 @@
 use ron::de::from_reader;
+use serde::{Deserialize, Serialize};
 
 use std::{collections::HashMap, fs::File, path::Path};
 
-use super::core::{BaseCard, CardType, Class, Rarity};
+use super::core::{Amount, CardType, Class, Condition, Effect, Rarity, is_default};
+
+
+#[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
+pub struct BaseCard {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub _type: CardType,
+    #[serde(rename = "class")]
+    pub _class: Class,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub cost: Amount,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub rarity: Rarity,
+    #[serde(
+        default = "Condition::always",
+        skip_serializing_if = "Condition::is_always"
+    )]
+    pub playable_if: Condition,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub on_start: Vec<Effect>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub on_play: Vec<Effect>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub on_discard: Vec<Effect>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub on_draw: Vec<Effect>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub on_exhaust: Vec<Effect>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub on_retain: Vec<Effect>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub on_turn_end: Vec<Effect>, //Happens if card is in hand, before cards are discarded
+    #[serde(
+        default = "Condition::never",
+        skip_serializing_if = "Condition::is_never"
+    )]
+    pub innate: Condition,
+    #[serde(
+        default = "Condition::never",
+        skip_serializing_if = "Condition::is_never"
+    )]
+    pub retain: Condition,
+    #[serde(
+        default = "Condition::never",
+        skip_serializing_if = "Condition::is_never"
+    )]
+    pub targeted: Condition,
+}
+impl std::fmt::Debug for BaseCard {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("BaseCard")
+            .field("name", &self.name)
+            .finish()
+    }
+}
 
 pub fn by_name(name: &str) -> &'static BaseCard {
     ALL_CARDS
@@ -78,3 +134,13 @@ fn all_cards() -> Vec<BaseCard> {
     let file = File::open(filepath).unwrap();
     from_reader(file).unwrap()
 }
+/*
+pub fn rewrite() {
+    let cards = all_cards();
+    let filepath = Path::new("data").join("cards.ron");
+    let file = File::open(filepath).unwrap();
+    let mut config = PrettyConfig::new();
+    config.indentor = "  ";
+    config.separate_tuple_members = false;
+    ron::ser::to_writer_pretty(file, cards, config)
+} */

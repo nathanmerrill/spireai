@@ -1,4 +1,4 @@
-use crate::models;
+use crate::models::{self, monsters::Intent};
 use crate::spireai::GamePossibilitySet;
 use models::core::*;
 use models::state::*;

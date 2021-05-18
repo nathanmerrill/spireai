@@ -23,7 +23,9 @@ lazy_static! {
     static ref LAST_STATE: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
 }
 
+
 fn main() {
+    crate::models::cards::by_name("Bash");
     let last_action_clone = Arc::clone(&LAST_ACTION);
     let last_state_clone = Arc::clone(&LAST_STATE);
     std::panic::set_hook(Box::new(move |_info| {

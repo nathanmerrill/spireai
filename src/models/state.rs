@@ -1,6 +1,8 @@
 use crate::models::core::*;
 use std::collections::{HashMap, HashSet};
 
+use super::{buffs::BaseBuff, cards::BaseCard, events::BaseEvent, monsters::{BaseMonster, Intent}, potions::BasePotion, relics::BaseRelic};
+
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct GameState {
     pub class: Class,
