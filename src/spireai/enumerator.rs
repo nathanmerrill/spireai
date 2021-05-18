@@ -31,7 +31,7 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
 
                 CardChoiceType::None => {
                     choices.push(Choice::End);
-                    for (card_index, card) in battle_state.hand.iter().enumerate() {
+                    for card_index in 0 .. battle_state.hand.len() {
                         let card_ref = evaluator::CardReference::Hand(card_index);
                         if evaluator::card_playable(card_ref, battle_state, state) {
                             if evaluator::card_targeted(card_ref, state) {
@@ -56,8 +56,13 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
 
                     for (potion_index, potion_slot) in state.potions.iter().enumerate() {
                         match potion_slot {
-                            Some(potion) => {
-                                if evaluator::potion_targeted(evaluator::PotionReference{potion: potion_index}, state) {
+                            Some(_) => {
+                                if evaluator::potion_targeted(
+                                    evaluator::PotionReference {
+                                        potion: potion_index,
+                                    },
+                                    state,
+                                ) {
                                     choices.extend(
                                         battle_state
                                             .monsters
@@ -187,7 +192,7 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                 let relic = state
                     .relics
                     .iter()
-                    .find(|relic| relic.base.name == String::from("Girya"))
+                    .find(|relic| relic.base.name == "Girya")
                     .unwrap();
                 if relic.vars.x < 3 {
                     choices.push(Choice::Lift)

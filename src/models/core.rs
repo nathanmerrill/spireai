@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde;
 
 // ------------------  Fundamental types  -------------------------
 
@@ -107,16 +106,16 @@ pub enum ChestType {
 // ------------------- Evalulation -------------------------------
 #[derive(PartialEq, Eq, Clone, Debug, strum_macros::ToString, Serialize, Deserialize)]
 pub enum Amount {
-    ByAsc{
-        #[serde(rename="base")]
-        amount: i16, 
-        low: i16, 
-        high: i16
+    ByAsc {
+        #[serde(rename = "base")]
+        amount: i16,
+        low: i16,
+        high: i16,
     },
-    Upgradable{
-        #[serde(rename="base")]
-        amount: i16, 
-        upgraded: i16
+    Upgradable {
+        #[serde(rename = "base")]
+        amount: i16,
+        upgraded: i16,
     },
     Fixed(i16),
     Sum(Vec<Amount>),
@@ -128,7 +127,7 @@ pub enum Amount {
     EnemyCount,
     PlayerBlock,
     MaxHp,
-    Custom
+    Custom,
 }
 
 impl Default for Amount {
@@ -136,7 +135,6 @@ impl Default for Amount {
         Amount::Fixed(1)
     }
 }
-
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum CardType {
@@ -189,19 +187,16 @@ pub enum Activation {
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub enum MonsterSet {
     Fixed(Vec<String>),
-    ChooseN{
-        n: u8, 
-        choices: Vec<String>
-    },
+    ChooseN { n: u8, choices: Vec<String> },
     RandomSet(Vec<Vec<String>>),
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct ProbabilisticMove {
-    #[serde(default="one", skip_serializing_if = "is_one")]
+    #[serde(default = "one", skip_serializing_if = "is_one")]
     pub weight: u8,
     pub name: String,
-    #[serde(default="one", skip_serializing_if = "is_one")]
+    #[serde(default = "one", skip_serializing_if = "is_one")]
     pub max_repeats: u8,
 }
 
@@ -213,10 +208,13 @@ fn is_one(weight: &u8) -> bool {
     weight == &1
 }
 
-
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub enum Move {
-    If{condition: Condition, then: Vec<Move>, _else: Vec<Move>},
+    If {
+        condition: Condition,
+        then: Vec<Move>,
+        _else: Vec<Move>,
+    },
     Loop(Vec<Move>),
     InOrder(String),
     Probability(Vec<ProbabilisticMove>), // Weight, name, repeats
@@ -245,37 +243,37 @@ pub enum Event {
     CombatStart,
 
     // Targeted
-    OnAttackDamage{
+    OnAttackDamage {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    OnUnblockedDamage{
+    OnUnblockedDamage {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    OnHpLoss{
+    OnHpLoss {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    OnHpChange{
+    OnHpChange {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
     OnHalfHp,
-    OnBlock{
+    OnBlock {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    OnDie{
+    OnDie {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    OnBuff{
+    OnBuff {
         buff: String,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    OnUnBuff{
+    OnUnBuff {
         buff: String,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
@@ -286,11 +284,11 @@ pub enum Event {
     Exhaust,
     Scry,
     Shuffle,
-    StanceChange{
+    StanceChange {
         #[serde(default, skip_serializing_if = "is_default")]
-        from: Stance, 
+        from: Stance,
         #[serde(default, skip_serializing_if = "is_default")]
-        to: Stance
+        to: Stance,
     },
     PlayCard(CardType),
     DrawCard(CardType),
@@ -331,19 +329,19 @@ impl Default for RelativePosition {
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub enum Effect {
     //Targeted
-    Block{
+    Block {
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    Damage{
+    Damage {
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    AttackDamage{
+    AttackDamage {
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
@@ -351,37 +349,37 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         if_fatal: Vec<Effect>,
     },
-    LoseHp{
+    LoseHp {
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    Unbuff{
+    Unbuff {
         buff: String,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    AddBuff{
+    AddBuff {
         buff: String,
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    HealPercentage{
+    HealPercentage {
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
     DamagePercentage(Amount),
-    RemoveDebuffs{
+    RemoveDebuffs {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
     RetainBlock,
-    Die{
+    Die {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
@@ -401,7 +399,7 @@ pub enum Effect {
     AddMaxHp(Amount),
     ReduceMaxHpPercentage(Amount),
 
-    Heal{
+    Heal {
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
@@ -421,12 +419,16 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         min: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
-        max: Amount
+        max: Amount,
     },
 
     // Card Manipulation
     Shuffle,
-    DoCardEffect{location: CardLocation, position: RelativePosition, effect: CardEffect},
+    DoCardEffect {
+        location: CardLocation,
+        position: RelativePosition,
+        effect: CardEffect,
+    },
     SelfEffect(CardEffect),
     CreateCard {
         name: String,
@@ -439,7 +441,7 @@ pub enum Effect {
 
     CreateCardByType {
         location: CardLocation,
-        #[serde(rename="type")]
+        #[serde(rename = "type")]
         _type: CardType,
         #[serde(default, skip_serializing_if = "is_default")]
         _rarity: Option<Rarity>,
@@ -453,7 +455,7 @@ pub enum Effect {
 
     ChooseCardByType {
         location: CardLocation,
-        #[serde(rename="type")]
+        #[serde(rename = "type")]
         _type: CardType,
         #[serde(default, skip_serializing_if = "is_default")]
         _rarity: Option<Rarity>,
@@ -489,36 +491,34 @@ pub enum Effect {
     },
     FakeDie,
 
-    Fight{
-        monsters: Vec<String>, 
-        room: RoomType
+    Fight {
+        monsters: Vec<String>,
+        room: RoomType,
     },
 
     ShowChoices(Vec<String>),
 
     //Meta
-    If{
-        condition: Condition, 
+    If {
+        condition: Condition,
         #[serde(default, skip_serializing_if = "is_default")]
-        then: EffectGroup, 
+        then: EffectGroup,
         #[serde(default, skip_serializing_if = "is_default")]
-        _else: EffectGroup
+        _else: EffectGroup,
     },
     RandomChance(Vec<EffectChance>),
     Repeat {
-        n: Amount, 
-        effect: EffectGroup
+        n: Amount,
+        effect: EffectGroup,
     },
     Custom,
 }
 
-
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct EffectChance {
     pub amount: Amount,
-    pub effect: EffectGroup
+    pub effect: EffectGroup,
 }
-
 
 #[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
 pub enum CardEffectGroup {
@@ -549,26 +549,26 @@ impl Default for EffectGroup {
 pub enum CardEffect {
     Exhaust,
     Discard,
-    MoveTo{
+    MoveTo {
         location: CardLocation,
         #[serde(default, skip_serializing_if = "is_default")]
-        position: RelativePosition
+        position: RelativePosition,
     },
     Upgrade,
     ZeroCombatCost,
     ZeroTurnCost,
     ZeroCostUntilPlayed,
-    CopyTo{
-        location: CardLocation, 
+    CopyTo {
+        location: CardLocation,
         #[serde(default, skip_serializing_if = "is_default")]
-        position: RelativePosition, 
+        position: RelativePosition,
         #[serde(default, skip_serializing_if = "is_default")]
-        then: CardEffectGroup
+        then: CardEffectGroup,
     },
     AutoPlay,
     Retain,
     ReduceCost(Amount),
-    Custom
+    Custom,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
@@ -580,39 +580,36 @@ pub enum RewardType {
     RelicName(String),
     RandomRelic,
     RandomPotion,
-    Gold{
-        min:u8, 
-        max:u8
-    },
+    Gold { min: u8, max: u8 },
     RandomBook,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, strum_macros::AsStaticStr, Deserialize, Serialize)]
 pub enum Condition {
     Stance(Stance),
-    RemainingHp{
+    RemainingHp {
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
     HalfHp,
-    Status{
+    Status {
         #[serde(default, skip_serializing_if = "is_default")]
-        target: Target, 
-        status: String
+        target: Target,
+        status: String,
     },
     NoBlock,
-    Attacking{
+    Attacking {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    Buff{
+    Buff {
         buff: String,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    BuffX{
+    BuffX {
         buff: String,
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
@@ -623,7 +620,7 @@ pub enum Condition {
     LessThan(Amount, Amount),
     Asc(u8),
     Act(u8),
-    Dead{
+    Dead {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
@@ -631,9 +628,9 @@ pub enum Condition {
     HasFriendlies(usize), //Does not include fake deaths
     Not(Box<Condition>),
     LastCard(CardType),
-    HasCard{
-        location: CardLocation, 
-        card: CardType
+    HasCard {
+        location: CardLocation,
+        card: CardType,
     },
     Upgraded,
     HasOrbSlot,
@@ -646,11 +643,11 @@ pub enum Condition {
     Always,
     Class(Class),
     HasUpgradableCard,
-    HasRemoveableCards{
+    HasRemoveableCards {
         #[serde(default = "one", skip_serializing_if = "is_one")]
-        count: u8, 
+        count: u8,
         #[serde(default, skip_serializing_if = "is_default")]
-        card_type: CardType
+        card_type: CardType,
     },
     OnFloor(u8),
     Never,
@@ -665,10 +662,10 @@ impl Condition {
         Condition::Always
     }
     fn is_never(a: &Condition) -> bool {
-        return a == &Condition::Never
+        a == &Condition::Never
     }
     fn is_always(a: &Condition) -> bool {
-        return a == &Condition::Always
+        a == &Condition::Always
     }
 }
 
@@ -693,7 +690,7 @@ impl Default for Target {
 #[derive(Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct ProbabilisticFight {
     pub probability: u8,
-    pub set: MonsterSet
+    pub set: MonsterSet,
 }
 
 //----------------------- Base Models ---------------------
@@ -716,7 +713,7 @@ impl std::fmt::Debug for Act {
 #[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
 pub struct EventEffect {
     pub event: Event,
-    pub effect: EffectGroup
+    pub effect: EffectGroup,
 }
 
 #[derive(Clone, Eq, Deserialize, Serialize)]
@@ -753,15 +750,18 @@ impl PartialEq for BaseBuff {
 #[derive(Eq, Clone, Deserialize, Serialize)]
 pub struct BaseCard {
     pub name: String,
-    #[serde(rename="type")]
+    #[serde(rename = "type")]
     pub _type: CardType,
-    #[serde(rename="class")]
+    #[serde(rename = "class")]
     pub _class: Class,
     #[serde(default, skip_serializing_if = "is_default")]
     pub cost: Amount,
     #[serde(default, skip_serializing_if = "is_default")]
     pub rarity: Rarity,
-    #[serde(default = "Condition::always", skip_serializing_if = "Condition::is_always")]
+    #[serde(
+        default = "Condition::always",
+        skip_serializing_if = "Condition::is_always"
+    )]
     pub playable_if: Condition,
     #[serde(default, skip_serializing_if = "is_default")]
     pub on_start: Vec<Effect>,
@@ -777,11 +777,20 @@ pub struct BaseCard {
     pub on_retain: Vec<Effect>,
     #[serde(default, skip_serializing_if = "is_default")]
     pub on_turn_end: Vec<Effect>, //Happens if card is in hand, before cards are discarded
-    #[serde(default = "Condition::never", skip_serializing_if = "Condition::is_never")]
+    #[serde(
+        default = "Condition::never",
+        skip_serializing_if = "Condition::is_never"
+    )]
     pub innate: Condition,
-    #[serde(default = "Condition::never", skip_serializing_if = "Condition::is_never")]
+    #[serde(
+        default = "Condition::never",
+        skip_serializing_if = "Condition::is_never"
+    )]
     pub retain: Condition,
-    #[serde(default = "Condition::never", skip_serializing_if = "Condition::is_never")]
+    #[serde(
+        default = "Condition::never",
+        skip_serializing_if = "Condition::is_never"
+    )]
     pub targeted: Condition,
 }
 impl std::fmt::Debug for BaseCard {
@@ -798,7 +807,8 @@ impl PartialEq for BaseCard {
 }
 
 fn is_default<T>(a: &T) -> bool
-    where T: Default + PartialEq<T>
+where
+    T: Default + PartialEq<T>,
 {
     let def: T = Default::default();
     &def == a
@@ -812,7 +822,6 @@ fn is_true(a: &bool) -> bool {
     a == &true
 }
 
-
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BaseEvent {
     pub name: String,
@@ -822,7 +831,10 @@ pub struct BaseEvent {
     pub shrine: bool,
     #[serde(default, skip_serializing_if = "is_default")]
     pub variants: Vec<String>,
-    #[serde(default = "Condition::always", skip_serializing_if = "Condition::is_always")]
+    #[serde(
+        default = "Condition::always",
+        skip_serializing_if = "Condition::is_always"
+    )]
     pub condition: Condition,
 }
 #[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
@@ -830,7 +842,10 @@ pub struct BaseEventChoice {
     pub name: String,
     #[serde(default, skip_serializing_if = "is_default")]
     pub effects: Vec<Effect>,
-    #[serde(default = "Condition::always", skip_serializing_if = "Condition::is_always")]
+    #[serde(
+        default = "Condition::always",
+        skip_serializing_if = "Condition::is_always"
+    )]
     pub condition: Condition,
     #[serde(default = "_true", skip_serializing_if = "is_true")]
     pub initial: bool,
@@ -896,7 +911,10 @@ pub struct BasePotion {
     pub rarity: Rarity,
     #[serde(default, skip_serializing_if = "is_default")]
     pub on_drink: Vec<Effect>,
-    #[serde(default = "Condition::never", skip_serializing_if = "Condition::is_never")]
+    #[serde(
+        default = "Condition::never",
+        skip_serializing_if = "Condition::is_never"
+    )]
     pub targeted: Condition,
 }
 impl std::fmt::Debug for BasePotion {

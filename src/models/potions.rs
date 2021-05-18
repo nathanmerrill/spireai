@@ -1,9 +1,9 @@
-use std::{collections::HashMap, fs::File, path::Path};
 use ron::de::from_reader;
+use std::{collections::HashMap, fs::File, path::Path};
 
 use super::core::BasePotion;
 
-pub fn by_name(name: &String) -> &'static BasePotion {
+pub fn by_name(name: &str) -> &'static BasePotion {
     POTIONS
         .get(name)
         .unwrap_or_else(|| panic!("Potion {} not found", name))

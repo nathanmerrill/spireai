@@ -138,7 +138,7 @@ pub fn predict_outcome(state: &GameState, choice: &Choice) -> GamePossibilitySet
             evaluator::eval_effects(
                 &potion.base.on_drink,
                 &mut possibility_set,
-                evaluator::Binding::Potion(evaluator::PotionReference{ potion: *slot }),
+                evaluator::Binding::Potion(evaluator::PotionReference { potion: *slot }),
                 &Some(GameAction {
                     creature: &state.player,
                     is_attack: false,
@@ -224,18 +224,20 @@ fn remove_card_from_deck(position: usize, state: &mut GameState) {
 fn spend_money(amount: u16, at_shop: bool, state: &mut GameState) {
     state.gold -= amount;
 
-    if at_shop{
-        evaluator::find_relic(&String::from("Maw Bank"), state).map(|relic| relic.enabled = false);
+    if at_shop {
+        if let Some(relic) = evaluator::find_relic(&String::from("Maw Bank"), state) {
+            relic.enabled = false;
+        }
     }
 }
 
-fn add_relic(name: &String, state: &mut GameState) {
+fn add_relic(name: &str, state: &mut GameState) {
     let relic = evaluator::create_relic(name);
     state.relic_names.insert(relic.base.name.to_string());
     state.relics.push(relic);
 }
 
-fn add_potion(name: &String, state: &mut GameState) {
+fn add_potion(name: &str, state: &mut GameState) {
     let potion = evaluator::create_potion(name);
     *state
         .potions

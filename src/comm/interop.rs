@@ -176,12 +176,7 @@ pub fn convert_floor_state(state: &old::GameState) -> new::FloorState {
             reward
                 .cards
                 .iter()
-                .map(|a| {
-                    (
-                        a.name.to_string(),
-                        a.upgrades > 0,
-                    )
-                })
+                .map(|a| (a.name.to_string(), a.upgrades > 0))
                 .collect(),
         ),
         old::ScreenState::ShopRoom {} => new::FloorState::ShopEntrance,
@@ -316,7 +311,8 @@ fn convert_event(event: &old::Event) -> new::EventState {
                     .unwrap_or_else(|| {
                         panic!("No option found that matches label: {}", option.label)
                     })
-                    .name.to_string()
+                    .name
+                    .to_string()
             })
             .collect(),
     }

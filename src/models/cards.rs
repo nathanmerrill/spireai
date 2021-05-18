@@ -2,9 +2,9 @@ use ron::de::from_reader;
 
 use std::{collections::HashMap, fs::File, path::Path};
 
-use super::core::{BaseCard, Class, Rarity, CardType};
+use super::core::{BaseCard, CardType, Class, Rarity};
 
-pub fn by_name(name: &String) -> &'static BaseCard {
+pub fn by_name(name: &str) -> &'static BaseCard {
     ALL_CARDS
         .get(name)
         .unwrap_or_else(|| panic!("Unrecognized card: {}", name))
@@ -73,9 +73,8 @@ lazy_static! {
         .collect();
 }
 
-pub fn all_cards() -> Vec<BaseCard> {
+fn all_cards() -> Vec<BaseCard> {
     let filepath = Path::new("data").join("cards.ron");
     let file = File::open(filepath).unwrap();
     from_reader(file).unwrap()
 }
-

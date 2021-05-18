@@ -1,9 +1,9 @@
-use std::{collections::HashMap, fs::File, path::Path};
 use ron::de::from_reader;
+use std::{collections::HashMap, fs::File, path::Path};
 
 use super::core::BaseMonster;
 
-pub fn by_name(name: &String) -> &'static BaseMonster {
+pub fn by_name(name: &str) -> &'static BaseMonster {
     MONSTERS
         .get(name)
         .unwrap_or_else(|| panic!("Unexpected monster: {}", name))
@@ -21,7 +21,7 @@ lazy_static! {
     };
 }
 
-pub fn all_monsters() -> Vec<BaseMonster> {
+fn all_monsters() -> Vec<BaseMonster> {
     let filepath = Path::new("data").join("monsters.ron");
     let file = File::open(filepath).unwrap();
     from_reader(file).unwrap()

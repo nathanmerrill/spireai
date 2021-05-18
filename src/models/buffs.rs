@@ -3,7 +3,7 @@ use ron::de::from_reader;
 use super::core::BaseBuff;
 use std::{collections::HashMap, fs::File, path::Path};
 
-pub fn by_name(name: &String) -> &'static BaseBuff {
+pub fn by_name(name: &str) -> &'static BaseBuff {
     BUFFS
         .get(name)
         .unwrap_or_else(|| panic!("Unrecognized buff: {}", name))
@@ -21,7 +21,7 @@ lazy_static! {
     };
 }
 
-pub fn all_buffs() -> Vec<BaseBuff> {
+fn all_buffs() -> Vec<BaseBuff> {
     let filepath = Path::new("data").join("buffs.ron");
     let file = File::open(filepath).unwrap();
     from_reader(file).unwrap()

@@ -4,7 +4,7 @@ use ron::de::from_reader;
 
 use super::core::BaseEvent;
 
-pub fn by_name(name: &String) -> &'static BaseEvent {
+pub fn by_name(name: &str) -> &'static BaseEvent {
     EVENTS
         .get(name)
         .unwrap_or_else(|| panic!("Unrecognized event: {}", name))
@@ -22,7 +22,7 @@ lazy_static! {
     };
 }
 
-pub fn all_events() -> Vec<BaseEvent> {
+fn all_events() -> Vec<BaseEvent> {
     let filepath = Path::new("data").join("events.ron");
     let file = File::open(filepath).unwrap();
     from_reader(file).unwrap()
