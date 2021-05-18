@@ -2,7 +2,6 @@ use crate::models;
 use crate::spireai::*;
 use models::choices::Choice;
 use models::core::*;
-use models::relics::*;
 use models::state::*;
 use rand::seq::SliceRandom;
 
