@@ -32,8 +32,9 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                 CardChoiceType::None => {
                     choices.push(Choice::End);
                     for (card_index, card) in battle_state.hand.iter().enumerate() {
-                        if evaluator::card_playable(card, battle_state, state) {
-                            if evaluator::card_targeted(card, state) {
+                        let card_ref = evaluator::CardReference::Hand(card_index);
+                        if evaluator::card_playable(card_ref, battle_state, state) {
+                            if evaluator::card_targeted(card_ref, state) {
                                 choices.extend(
                                     battle_state
                                         .monsters
@@ -56,7 +57,7 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                     for (potion_index, potion_slot) in state.potions.iter().enumerate() {
                         match potion_slot {
                             Some(potion) => {
-                                if evaluator::potion_targeted(potion, state) {
+                                if evaluator::potion_targeted(evaluator::PotionReference{potion: potion_index}, state) {
                                     choices.extend(
                                         battle_state
                                             .monsters
@@ -81,10 +82,11 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                 }
             }
         }
-        FloorState::Event(event_state) => {
-            for available_choice in &event_state.available_choices {
-                choices.push(Choice::EventChoice(available_choice))
-            }
+        FloorState::Event => {
+            unimplemented!()
+            // for available_choice in &event_state.available_choices {
+            //     choices.push(Choice::EventChoice(available_choice))
+            // }
         }
         FloorState::Map => {
             let map = &state.map;
@@ -115,9 +117,10 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
         FloorState::CardReward(card_choices) => {
             choices.push(Choice::Skip);
             for (card, _) in card_choices {
-                choices.push(Choice::SelectCard(card))
+                choices.push(Choice::SelectCard(card.to_string()))
             }
-            if state.relic_names.contains(models::relics::SINGING_BOWL) {
+
+            if state.relic_names.contains(&String::from("Singing Bowl")) {
                 choices.push(Choice::SingingBowl)
             }
         }
@@ -133,20 +136,20 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
         } => {
             for (card, cost) in cards {
                 if *cost <= state.gold {
-                    choices.push(Choice::BuyCard(card))
+                    choices.push(Choice::BuyCard(card.to_string()))
                 }
             }
 
             for (relic, cost) in relics {
                 if *cost <= state.gold {
-                    choices.push(Choice::BuyRelic(relic))
+                    choices.push(Choice::BuyRelic(relic.to_string()))
                 }
             }
 
             if state.potions.iter().any(|a| a.is_none()) {
                 for (potion, cost) in potions {
                     if *cost <= state.gold {
-                        choices.push(Choice::BuyPotion(potion))
+                        choices.push(Choice::BuyPotion(potion.to_string()))
                     }
                 }
             }
@@ -163,14 +166,14 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
             }
         }
         FloorState::Rest => {
-            if !state.relic_names.contains(models::relics::COFFEE_DRIPPER) {
-                if state.relic_names.contains(models::relics::DREAM_CATCHER) {
+            if !state.relic_names.contains(&String::from("Coffee Dripper")) {
+                if state.relic_names.contains(&String::from("Dream Catcher")) {
                     choices.push(Choice::RestDreamCatcher)
                 } else {
                     choices.push(Choice::Rest)
                 }
             }
-            if !state.relic_names.contains(models::relics::FUSION_HAMMER) {
+            if !state.relic_names.contains(&String::from("Fusion Hammer")) {
                 choices.extend(
                     state
                         .deck
@@ -180,20 +183,20 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                         .map(|(position, _)| Choice::Smith(position)),
                 );
             }
-            if state.relic_names.contains(models::relics::GIRYA) {
+            if state.relic_names.contains(&String::from("Girya")) {
                 let relic = state
                     .relics
                     .iter()
-                    .find(|relic| relic.base.name == models::relics::GIRYA)
+                    .find(|relic| relic.base.name == String::from("Girya"))
                     .unwrap();
                 if relic.vars.x < 3 {
                     choices.push(Choice::Lift)
                 }
             }
-            if state.relic_names.contains(models::relics::SHOVEL) {
+            if state.relic_names.contains(&String::from("Shovel")) {
                 choices.push(Choice::Dig)
             }
-            if state.relic_names.contains(models::relics::PEACE_PIPE) {
+            if state.relic_names.contains(&String::from("Peace Pipe")) {
                 choices.extend(
                     state
                         .deck

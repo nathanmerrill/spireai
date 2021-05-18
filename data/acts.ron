@@ -1,0 +1,773 @@
+[
+    (
+        num: 1,
+        easy_count: 3,
+        easy_fights: [
+            (
+                probability: 1,
+                set: Fixed([
+                    "Cultist",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Jaw Worm",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: ChooseN(
+                    n: 2,
+                    choices: [
+                        "Red Louse",
+                        "Red Louse",
+                        "Green Louse",
+                        "Green Louse",
+                    ],
+                ),
+            ),
+            (
+                probability: 1,
+                set: RandomSet([
+                    [
+                        "Acid Slime M",
+                        "Acid Slime S",
+                    ],
+                    [
+                        "Acid Slime M",
+                        "Spike Slime S",
+                    ],
+                    [
+                        "Spike Slime M",
+                        "Acid Slime S",
+                    ],
+                    [
+                        "Spike Slime M",
+                        "Spike Slime S",
+                    ],
+                ]),
+            ),
+        ],
+        normal_fights: [
+            (
+                probability: 2,
+                set: ChooseN(
+                    n: 4,
+                    choices: [
+                        "Mad Gremlin",
+                        "Mad Gremlin",
+                        "Sneaky Gremlin",
+                        "Sneaky Gremlin",
+                        "Fat Gremlin",
+                        "Fat Gremlin",
+                        "Gremlin Wizard",
+                        "Shield Gremlin",
+                    ],
+                ),
+            ),
+            (
+                probability: 4,
+                set: ChooseN(
+                    n: 1,
+                    choices: [
+                        "Acid Slime L",
+                        "Spike Slime L",
+                    ],
+                ),
+            ),
+            (
+                probability: 2,
+                set: Fixed([
+                    "Spike Slime S",
+                    "Spike Slime S",
+                    "Spike Slime S",
+                    "Acid Slime S",
+                    "Acid Slime S",
+                ]),
+            ),
+            (
+                probability: 4,
+                set: Fixed([
+                    "Blue Slaver",
+                ]),
+            ),
+            (
+                probability: 2,
+                set: Fixed([
+                    "Red Slaver",
+                ]),
+            ),
+            (
+                probability: 4,
+                set: ChooseN(
+                    n: 3,
+                    choices: [
+                        "Red Louse",
+                        "Red Louse",
+                        "Red Louse",
+                        "Green Louse",
+                        "Green Louse",
+                        "Green Louse",
+                    ],
+                ),
+            ),
+            (
+                probability: 4,
+                set: Fixed([
+                    "Fungi Beast",
+                    "Fungi Beast",
+                ]),
+            ),
+            (
+                probability: 3,
+                set: RandomSet([
+                    [
+                        "Red Louse",
+                        "Looter",
+                    ],
+                    [
+                        "Green Louse",
+                        "Looter",
+                    ],
+                    [
+                        "Acid Slime M",
+                        "Looter",
+                    ],
+                    [
+                        "Spike Slime M",
+                        "Looter",
+                    ],
+                    [
+                        "Red Louse",
+                        "Cultist",
+                    ],
+                    [
+                        "Green Louse",
+                        "Cultist",
+                    ],
+                    [
+                        "Acid Slime M",
+                        "Cultist",
+                    ],
+                    [
+                        "Spike Slime M",
+                        "Cultist",
+                    ],
+                    [
+                        "Red Louse",
+                        "Red Slaver",
+                    ],
+                    [
+                        "Green Louse",
+                        "Red Slaver",
+                    ],
+                    [
+                        "Acid Slime M",
+                        "Red Slaver",
+                    ],
+                    [
+                        "Spike Slime M",
+                        "Red Slaver",
+                    ],
+                    [
+                        "Red Louse",
+                        "Blue Slaver",
+                    ],
+                    [
+                        "Green Louse",
+                        "Blue Slaver",
+                    ],
+                    [
+                        "Acid Slime M",
+                        "Blue Slaver",
+                    ],
+                    [
+                        "Spike Slime M",
+                        "Blue Slaver",
+                    ],
+                ]),
+            ),
+            (
+                probability: 3,
+                set: RandomSet([
+                    [
+                        "Fungi Beast",
+                        "Red Louse",
+                    ],
+                    [
+                        "Jaw Worm",
+                        "Red Louse",
+                    ],
+                    [
+                        "Fungi Beast",
+                        "Green Louse",
+                    ],
+                    [
+                        "Jaw Worm",
+                        "Green Louse",
+                    ],
+                    [
+                        "Fungi Beast",
+                        "Acid Slime M",
+                    ],
+                    [
+                        "Jaw Worm",
+                        "Acid Slime M",
+                    ],
+                    [
+                        "Fungi Beast",
+                        "Spike Slime M",
+                    ],
+                    [
+                        "Jaw Worm",
+                        "Spike Slime M",
+                    ],
+                ]),
+            ),
+            (
+                probability: 4,
+                set: Fixed([
+                    "Looter",
+                ]),
+            ),
+        ],
+        elites: [
+            Fixed([
+                "Gremlin Nob",
+            ]),
+            Fixed([
+                "Lagavulin",
+            ]),
+            Fixed([
+                "Sentry",
+                "Sentry",
+                "Sentry",
+            ]),
+        ],
+        bosses: [
+            Fixed([
+                "Slime Boss",
+            ]),
+            Fixed([
+                "The Guardian",
+            ]),
+            Fixed([
+                "Hexaghost",
+            ]),
+        ],
+        events: [
+            "Big Fish",
+            "The Cleric",
+            "Dead Adventurer",
+            "Golden Idol",
+            "Living Wall",
+            "Mushrooms",
+            "Scrap Ooze",
+            "Shining Light",
+            "The Ssssserpent",
+            "Wing Statue",
+            "World Of Goop",
+            "Bonfire Spirits",
+            "The Divine Fountain",
+            "Face Trader",
+            "Golden Shrine",
+            "Lab",
+            "Match And Keep",
+            "A Note For Yourself",
+            "Ominous Forge",
+            "Purifier",
+            "Transmogrifier",
+            "Upgrade Shrine",
+            "We Meet Again",
+            "Wheel Of Change",
+            "The Woman In Blue",
+        ],
+    ),
+    (
+        num: 2,
+        easy_count: 2,
+        easy_fights: [
+            (
+                probability: 1,
+                set: Fixed([
+                    "Spheric Guardian",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Chosen",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Shelled Parasite",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Byrd",
+                    "Byrd",
+                    "Byrd",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Looter",
+                    "Mugger",
+                ]),
+            ),
+        ],
+        normal_fights: [
+            (
+                probability: 7,
+                set: Fixed([
+                    "Chosen",
+                    "Byrd",
+                ]),
+            ),
+            (
+                probability: 10,
+                set: Fixed([
+                    "Cultist",
+                    "Chosen",
+                ]),
+            ),
+            (
+                probability: 7,
+                set: Fixed([
+                    "Sentry",
+                    "Spheric Guardian",
+                ]),
+            ),
+            (
+                probability: 21,
+                set: Fixed([
+                    "Snake Plant",
+                ]),
+            ),
+            (
+                probability: 14,
+                set: Fixed([
+                    "Snecko",
+                ]),
+            ),
+            (
+                probability: 21,
+                set: Fixed([
+                    "Centurion",
+                    "Mystic",
+                ]),
+            ),
+            (
+                probability: 10,
+                set: Fixed([
+                    "Cultist",
+                    "Cultist",
+                    "Cultist",
+                ]),
+            ),
+            (
+                probability: 10,
+                set: Fixed([
+                    "Shelled Parasite",
+                    "Fungi Beast",
+                ]),
+            ),
+        ],
+        elites: [
+            Fixed([
+                "Book Of Stabbing",
+            ]),
+            RandomSet([
+                [
+                    "Gremlin Leader",
+                    "Fat Gremlin",
+                    "Fat Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Fat Gremlin",
+                    "Mad Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Fat Gremlin",
+                    "Shield Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Fat Gremlin",
+                    "Sneaky Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Fat Gremlin",
+                    "Gremlin Wizard",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Mad Gremlin",
+                    "Fat Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Mad Gremlin",
+                    "Mad Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Mad Gremlin",
+                    "Shield Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Mad Gremlin",
+                    "Sneaky Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Mad Gremlin",
+                    "Gremlin Wizard",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Shield Gremlin",
+                    "Fat Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Shield Gremlin",
+                    "Mad Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Shield Gremlin",
+                    "Shield Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Shield Gremlin",
+                    "Sneaky Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Shield Gremlin",
+                    "Gremlin Wizard",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Sneaky Gremlin",
+                    "Fat Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Sneaky Gremlin",
+                    "Mad Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Sneaky Gremlin",
+                    "Shield Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Sneaky Gremlin",
+                    "Sneaky Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Sneaky Gremlin",
+                    "Gremlin Wizard",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Gremlin Wizard",
+                    "Fat Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Gremlin Wizard",
+                    "Mad Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Gremlin Wizard",
+                    "Shield Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Gremlin Wizard",
+                    "Sneaky Gremlin",
+                ],
+                [
+                    "Gremlin Leader",
+                    "Gremlin Wizard",
+                    "Gremlin Wizard",
+                ],
+            ]),
+            Fixed([
+                "Blue Slaver",
+                "Taskmaster",
+                "Red Slaver",
+            ]),
+        ],
+        bosses: [
+            Fixed([
+                "Bronze Automaton",
+            ]),
+            Fixed([
+                "The Champ",
+            ]),
+            Fixed([
+                "The Collector",
+            ]),
+        ],
+        events: [
+            "Ancient Writing",
+            "Augmenter",
+            "The Colosseum",
+            "Council Of Ghosts",
+            "Cursed Tome",
+            "Forgotten Altar",
+            "The Library",
+            "Masked Bandits",
+            "The Mausoleum",
+            "The Nest",
+            "Pleading Vagrant",
+            "Old Beggar",
+            "Vampires",
+            "Bonfire Spirits",
+            "The Divine Fountain",
+            "Designer Inspire",
+            "Duplicator",
+            "Face Trader",
+            "Golden Shrine",
+            "The Joust",
+            "Knowing Skull",
+            "Lab",
+            "Match And Keep",
+            "A Note For Yourself",
+            "Nloth",
+            "Ominous Forge",
+            "Purifier",
+            "Transmogrifier",
+            "Upgrade Shrine",
+            "We Meet Again",
+            "Wheel Of Change",
+            "The Woman In Blue",
+        ],
+    ),
+    (
+        num: 3,
+        easy_count: 2,
+        easy_fights: [
+            (
+                probability: 1,
+                set: Fixed([
+                    "Darkling",
+                    "Darkling",
+                    "Darkling",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Orb Walker",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: ChooseN(
+                    n: 3,
+                    choices: [
+                        "Repulsor",
+                        "Repulsor",
+                        "Spiker",
+                        "Spiker",
+                        "Exploder",
+                        "Exploder",
+                    ],
+                ),
+            ),
+        ],
+        normal_fights: [
+            (
+                probability: 1,
+                set: ChooseN(
+                    n: 4,
+                    choices: [
+                        "Repulsor",
+                        "Repulsor",
+                        "Spiker",
+                        "Spiker",
+                        "Exploder",
+                        "Exploder",
+                    ],
+                ),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "The Maw",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: RandomSet([
+                    [
+                        "Spheric Guardian",
+                        "Repulsor",
+                        "Repulsor",
+                    ],
+                    [
+                        "Spheric Guardian",
+                        "Repulsor",
+                        "Spiker",
+                    ],
+                    [
+                        "Spheric Guardian",
+                        "Repulsor",
+                        "Exploder",
+                    ],
+                    [
+                        "Spheric Guardian",
+                        "Spiker",
+                        "Repulsor",
+                    ],
+                    [
+                        "Spheric Guardian",
+                        "Spiker",
+                        "Spiker",
+                    ],
+                    [
+                        "Spheric Guardian",
+                        "Spiker",
+                        "Exploder",
+                    ],
+                    [
+                        "Spheric Guardian",
+                        "Exploder",
+                        "Repulsor",
+                    ],
+                    [
+                        "Spheric Guardian",
+                        "Exploder",
+                        "Spiker",
+                    ],
+                    [
+                        "Spheric Guardian",
+                        "Exploder",
+                        "Exploder",
+                    ],
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Darkling",
+                    "Darkling",
+                    "Darkling",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Writhing Mass",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Jaw Worm",
+                    "Jaw Worm",
+                    "Jaw Worm",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Spire Growth",
+                ]),
+            ),
+            (
+                probability: 1,
+                set: Fixed([
+                    "Transient",
+                ]),
+            ),
+        ],
+        elites: [
+            Fixed([
+                "Giant Head",
+            ]),
+            Fixed([
+                "Nemesis",
+            ]),
+            Fixed([
+                "Reptomancer",
+                "Dagger",
+                "Dagger",
+            ]),
+        ],
+        bosses: [
+            Fixed([
+                "Awakened One",
+            ]),
+            Fixed([
+                "Time Eater",
+            ]),
+            Fixed([
+                "Deca",
+                "Donu",
+            ]),
+        ],
+        events: [
+            "Falling",
+            "Mind Bloom",
+            "The Moai Head",
+            "Mysterious Sphere",
+            "Sensory Stone",
+            "Tomb Of Lord Red Mask",
+            "Winding Halls",
+            "Bonfire Spirits",
+            "Designer Inspire",
+            "The Divine Fountain",
+            "Duplicator",
+            "Golden Shrine",
+            "Lab",
+            "Match And Keep",
+            "A Note For Yourself",
+            "Ominous Forge",
+            "Purifier",
+            "Secret Portal",
+            "Transmogrifier",
+            "Upgrade Shrine",
+            "We Meet Again",
+            "Wheel Of Change",
+            "The Woman In Blue",
+        ],
+    ),
+    (
+        num: 4,
+        easy_count: 0,
+        easy_fights: [],
+        normal_fights: [],
+        elites: [
+            Fixed([
+                "Spire Shield",
+                "Spire Spear",
+            ]),
+        ],
+        bosses: [
+            Fixed([
+                "Corrupt Heart",
+            ]),
+        ],
+        events: [],
+    ),
+]

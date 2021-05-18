@@ -1,0 +1,1358 @@
+[
+    (
+        name: "Burning Blood",
+        rarity: Starter,
+        activation: Event(CombatEnd),
+        effect: Single(Heal(
+            amount: Fixed(6),
+        )),
+        class: Ironclad,
+    ),
+    (
+        name: "Ring Of The Snake",
+        rarity: Starter,
+        activation: Event(CombatStart),
+        effect: Single(Draw(Fixed(2))),
+        class: Silent,
+    ),
+    (
+        name: "Cracked Core",
+        rarity: Starter,
+        activation: Event(CombatStart),
+        effect: Single(ChannelOrb(Lightning)),
+        class: Defect,
+    ),
+    (
+        name: "Pure Water",
+        rarity: Starter,
+        activation: Event(CombatStart),
+        effect: Single(CreateCard(
+            name: "Miracle",
+            location: PlayerHand,
+            position: Top,
+        )),
+        class: Watcher,
+    ),
+    (
+        name: "Akabeko",
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Vigor",
+            amount: Fixed(8),
+        )),
+    ),
+    (
+        name: "Anchor",
+        activation: WhenEnabled(
+            activated_at: TurnEnd,
+            enabled_at: CombatStart,
+            disabled_at: TurnEnd,
+        ),
+        effect: Single(Block(
+            amount: Fixed(10),
+        )),
+    ),
+    (
+        name: "Ancient Tea Set",
+        activation: WhenEnabled(
+            activated_at: CombatStart,
+            enabled_at: RoomEnter(Battle),
+            disabled_at: CombatStart,
+        ),
+        effect: Single(AddEnergy(Fixed(2))),
+    ),
+    (
+        name: "Art Of War",
+        activation: WhenEnabled(
+            activated_at: CombatStart,
+            enabled_at: CombatStart,
+            disabled_at: PlayCard(Attack),
+        ),
+        effect: Single(AddEnergy(Fixed(1))),
+    ),
+    (
+        name: "Bag Of Marbles",
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Vulnerable",
+            target: AllEnemies,
+        )),
+    ),
+    (
+        name: "Bag Of Preparation",
+        activation: Event(CombatStart),
+        effect: Single(Draw(Fixed(2))),
+    ),
+    (
+        name: "Blood Vial",
+        activation: Event(CombatStart),
+        effect: Single(Heal(
+            amount: Fixed(2),
+        )),
+    ),
+    (
+        name: "Bronze Scales",
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Thorns",
+            amount: Fixed(3),
+        )),
+    ),
+    (
+        name: "Centennial Puzzle",
+        activation: Event(OnHpLoss()),
+        effect: Single(Draw(Fixed(3))),
+    ),
+    (
+        name: "Ceramic Fish",
+        activation: Custom,
+    ),
+    (
+        name: "Dream Catcher",
+        activation: Event(Rest),
+        effect: Single(ShowReward([
+            StandardCard,
+        ])),
+    ),
+    (
+        name: "Happy Flower",
+        activation: Counter(
+            increment: BeforeHandDraw,
+            reset: Never,
+            auto_reset: true,
+            target: 3,
+        ),
+        effect: Single(AddEnergy(Fixed(1))),
+    ),
+    (
+        name: "Juzu Bracelet",
+        activation: Custom,
+    ),
+    (
+        name: "Lantern",
+        activation: Event(CombatStart),
+        effect: Single(AddEnergy(Fixed(1))),
+    ),
+    (
+        name: "Maw Bank",
+        activation: Event(RoomEnter(All)),
+        effect: Single(AddGold(Fixed(12))),
+    ),
+    (
+        name: "Meal Ticket",
+        activation: Event(RoomEnter(Shop)),
+        effect: Single(Heal(
+            amount: Fixed(15),
+        )),
+    ),
+    (
+        name: "Nunchaku",
+        activation: Counter(
+            increment: PlayCard(Attack),
+            reset: Never,
+            auto_reset: true,
+            target: 10,
+        ),
+        effect: Single(Heal(
+            amount: Fixed(15),
+        )),
+    ),
+    (
+        name: "Oddly Smooth Stone",
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Dexterity",
+        )),
+    ),
+    (
+        name: "Omamori",
+        activation: Custom,
+        starting_x: 2,
+    ),
+    (
+        name: "Orichalcum",
+        activation: Event(TurnEnd),
+        effect: Single(If(
+            condition: NoBlock,
+            then: Single(Block(
+                amount: Fixed(6),
+            )),
+        )),
+    ),
+    (
+        name: "Pen Nib",
+        activation: Counter(
+            increment: PlayCard(Attack),
+            reset: Never,
+            auto_reset: true,
+            target: 10,
+        ),
+    ),
+    (
+        name: "Potion Belt",
+        activation: Immediate,
+        effect: Single(AddPotionSlot(Fixed(2))),
+    ),
+    (
+        name: "Preserved Insect",
+        activation: Event(RoomEnter(Elite)),
+    ),
+    (
+        name: "Regal Pillow",
+        activation: Event(Rest),
+        effect: Single(Heal(
+            amount: Fixed(15),
+        )),
+    ),
+    (
+        name: "Smiling Mask",
+        activation: Custom,
+    ),
+    (
+        name: "Strawberry",
+        activation: Immediate,
+        effect: Single(AddMaxHp(Fixed(7))),
+    ),
+    (
+        name: "The Boot",
+        activation: Custom,
+    ),
+    (
+        name: "Tiny Chest",
+        activation: Counter(
+            increment: RoomEnter(Question),
+            reset: Never,
+            auto_reset: true,
+            target: 4,
+        ),
+    ),
+    (
+        name: "Toy Ornithopter",
+        activation: Event(UsePotion),
+        effect: Single(Heal(
+            amount: Fixed(5),
+        )),
+    ),
+    (
+        name: "Vajra",
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Strength",
+        )),
+    ),
+    (
+        name: "War Paint",
+        activation: Immediate,
+    ),
+    (
+        name: "Whetstone",
+        activation: Immediate,
+    ),
+    (
+        name: "Damaru",
+        activation: Event(BeforeHandDraw),
+        effect: Single(AddBuff(
+            buff: "Mantra",
+        )),
+        class: Watcher,
+    ),
+    (
+        name: "Data Disk",
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Focus",
+        )),
+        class: Defect,
+    ),
+    (
+        name: "Red Skull",
+        activation: Event(OnHpChange()),
+        effect: Single(AddBuff(
+            buff: "Strength",
+            amount: Custom,
+        )),
+        class: Ironclad,
+    ),
+    (
+        name: "Snecko Skull",
+        activation: Custom,
+        class: Silent,
+    ),
+    (
+        name: "Blue Candle",
+        rarity: Uncommon,
+        activation: Custom,
+    ),
+    (
+        name: "Bottled Flame",
+        rarity: Uncommon,
+        activation: Immediate,
+    ),
+    (
+        name: "Bottled Lightning",
+        rarity: Uncommon,
+        activation: Immediate,
+    ),
+    (
+        name: "Bottled Tornado",
+        rarity: Uncommon,
+        activation: Immediate,
+    ),
+    (
+        name: "Darkstone Periapt",
+        rarity: Uncommon,
+        activation: Custom,
+    ),
+    (
+        name: "Eternal Feather",
+        rarity: Uncommon,
+        activation: Event(RoomEnter(Rest)),
+    ),
+    (
+        name: "Frozen Egg",
+        rarity: Uncommon,
+        activation: Custom,
+    ),
+    (
+        name: "Gremlin Horn",
+        rarity: Uncommon,
+        activation: Event(OnDie(
+            target: AllEnemies,
+        )),
+        effect: Multiple([
+            AddEnergy(Fixed(1)),
+            Draw(Fixed(1)),
+        ]),
+    ),
+    (
+        name: "Horn Cleat",
+        rarity: Uncommon,
+        activation: Counter(
+            increment: TurnEnd,
+            reset: CombatStart,
+            auto_reset: false,
+            target: 2,
+        ),
+        effect: Single(Block(
+            amount: Fixed(14),
+        )),
+    ),
+    (
+        name: "Ink Bottle",
+        rarity: Uncommon,
+        activation: Counter(
+            increment: PlayCard(All),
+            reset: Never,
+            auto_reset: true,
+            target: 10,
+        ),
+        effect: Single(Draw(Fixed(1))),
+    ),
+    (
+        name: "Kunai",
+        rarity: Uncommon,
+        activation: Counter(
+            increment: PlayCard(Attack),
+            reset: BeforeHandDraw,
+            auto_reset: true,
+            target: 3,
+        ),
+        effect: Single(AddBuff(
+            buff: "Dexterity",
+        )),
+    ),
+    (
+        name: "Letter Opener",
+        rarity: Uncommon,
+        activation: Counter(
+            increment: PlayCard(Skill),
+            reset: BeforeHandDraw,
+            auto_reset: true,
+            target: 3,
+        ),
+        effect: Single(Damage(
+            amount: Fixed(5),
+            target: AllEnemies,
+        )),
+    ),
+    (
+        name: "Matryoshka",
+        rarity: Uncommon,
+        activation: Uses(
+            use_when: ChestOpen,
+            uses: 2,
+        ),
+    ),
+    (
+        name: "Meat On The Bone",
+        rarity: Uncommon,
+        activation: Event(CombatEnd),
+        effect: Single(If(
+            condition: HalfHp,
+            then: Single(Heal(
+                amount: Fixed(12),
+            )),
+        )),
+    ),
+    (
+        name: "Mercury Hourglass",
+        rarity: Uncommon,
+        activation: Event(BeforeHandDraw),
+        effect: Single(Damage(
+            amount: Fixed(3),
+            target: AllEnemies,
+        )),
+    ),
+    (
+        name: "Molten Egg",
+        rarity: Uncommon,
+        activation: Custom,
+    ),
+    (
+        name: "Mummified Hand",
+        rarity: Uncommon,
+        activation: Event(PlayCard(Power)),
+    ),
+    (
+        name: "Ornamental Fan",
+        rarity: Uncommon,
+        activation: Counter(
+            increment: PlayCard(Attack),
+            reset: BeforeHandDraw,
+            auto_reset: true,
+            target: 3,
+        ),
+        effect: Single(Block(
+            amount: Fixed(4),
+        )),
+    ),
+    (
+        name: "Pantograph",
+        rarity: Uncommon,
+        activation: Event(RoomEnter(Boss)),
+        effect: Single(Heal(
+            amount: Fixed(25),
+        )),
+    ),
+    (
+        name: "Pear",
+        rarity: Uncommon,
+        activation: Immediate,
+        effect: Single(AddMaxHp(Fixed(10))),
+    ),
+    (
+        name: "Question Card",
+        rarity: Uncommon,
+        activation: Event(CardReward),
+    ),
+    (
+        name: "Shuriken",
+        rarity: Uncommon,
+        activation: Counter(
+            increment: PlayCard(Attack),
+            reset: BeforeHandDraw,
+            auto_reset: true,
+            target: 3,
+        ),
+        effect: Single(AddBuff(
+            buff: "Strength",
+        )),
+    ),
+    (
+        name: "Singing Bowl",
+        rarity: Uncommon,
+        activation: Event(CardReward),
+    ),
+    (
+        name: "Strike Dummy",
+        rarity: Uncommon,
+        activation: Event(PlayCard(Attack)),
+    ),
+    (
+        name: "Sundial",
+        rarity: Uncommon,
+        activation: Counter(
+            increment: Shuffle,
+            reset: Never,
+            auto_reset: true,
+            target: 3,
+        ),
+        effect: Single(AddEnergy(Fixed(2))),
+    ),
+    (
+        name: "The Courier",
+        rarity: Uncommon,
+        activation: Custom,
+    ),
+    (
+        name: "Toxic Egg",
+        rarity: Uncommon,
+        activation: Custom,
+    ),
+    (
+        name: "White Beast Statue",
+        rarity: Uncommon,
+        activation: Event(CardReward),
+    ),
+    (
+        name: "Duality",
+        rarity: Uncommon,
+        activation: Event(PlayCard(Attack)),
+        effect: Multiple([
+            AddBuff(
+                buff: "Dexterity",
+            ),
+            AddBuff(
+                buff: "Dexterity Down",
+            ),
+        ]),
+        class: Watcher,
+    ),
+    (
+        name: "Gold Plated Cables",
+        rarity: Uncommon,
+        activation: Custom,
+        class: Defect,
+    ),
+    (
+        name: "Ninja Scroll",
+        rarity: Uncommon,
+        activation: Event(CombatStart),
+        effect: Multiple([
+            CreateCard(
+                name: "Shiv",
+                location: PlayerHand,
+                position: Top,
+            ),
+            CreateCard(
+                name: "Shiv",
+                location: PlayerHand,
+                position: Top,
+            ),
+            CreateCard(
+                name: "Shiv",
+                location: PlayerHand,
+                position: Top,
+            ),
+        ]),
+        class: Silent,
+    ),
+    (
+        name: "Paper Krane",
+        rarity: Uncommon,
+        activation: Custom,
+        class: Silent,
+    ),
+    (
+        name: "Paper Phrog",
+        rarity: Uncommon,
+        activation: Custom,
+        class: Ironclad,
+    ),
+    (
+        name: "Self Forming Clay",
+        rarity: Uncommon,
+        activation: Event(OnHpLoss()),
+        effect: Single(AddBuff(
+            buff: "Next Turn Block",
+            amount: Fixed(3),
+        )),
+        class: Ironclad,
+    ),
+    (
+        name: "Symbiotic Virus",
+        rarity: Uncommon,
+        activation: Event(CombatStart),
+        effect: Single(ChannelOrb(Dark)),
+        class: Defect,
+    ),
+    (
+        name: "Teardrop Locket",
+        rarity: Uncommon,
+        activation: Event(CombatStart),
+        effect: Single(SetStance(Calm)),
+        class: Watcher,
+    ),
+    (
+        name: "Bird Faced Urn",
+        rarity: Rare,
+        activation: Event(PlayCard(Power)),
+        effect: Single(Heal(
+            amount: Fixed(2),
+        )),
+    ),
+    (
+        name: "Calipers",
+        rarity: Rare,
+        activation: Custom,
+    ),
+    (
+        name: "Captains Wheel",
+        rarity: Uncommon,
+        activation: Counter(
+            increment: TurnEnd,
+            reset: CombatStart,
+            auto_reset: false,
+            target: 3,
+        ),
+        effect: Single(Block(
+            amount: Fixed(18),
+        )),
+    ),
+    (
+        name: "Dead Branch",
+        rarity: Rare,
+        activation: Event(Exhaust),
+        effect: Single(CreateCardByType(
+            location: PlayerHand,
+            type: All,
+        )),
+    ),
+    (
+        name: "Du Vu Doll",
+        rarity: Rare,
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Strength",
+            amount: Custom,
+        )),
+    ),
+    (
+        name: "Fossilized Helix",
+        rarity: Rare,
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Buffer",
+        )),
+    ),
+    (
+        name: "Gambling Chip",
+        rarity: Rare,
+        activation: WhenEnabled(
+            activated_at: AfterHandDraw,
+            enabled_at: CombatStart,
+            disabled_at: AfterHandDraw,
+        ),
+    ),
+    (
+        name: "Ginger",
+        rarity: Rare,
+        activation: Event(OnBuff(
+            buff: "Weak",
+        )),
+    ),
+    (
+        name: "Girya",
+        rarity: Rare,
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Strength",
+            amount: X,
+        )),
+    ),
+    (
+        name: "Ice Cream",
+        rarity: Rare,
+        activation: Custom,
+    ),
+    (
+        name: "Incense Burner",
+        rarity: Rare,
+        activation: Counter(
+            increment: BeforeHandDraw,
+            reset: Never,
+            auto_reset: true,
+            target: 6,
+        ),
+        effect: Single(AddBuff(
+            buff: "Intangible",
+        )),
+    ),
+    (
+        name: "Lizard Tail",
+        rarity: Rare,
+        activation: Uses(
+            use_when: OnDie(),
+            uses: 1,
+        ),
+        effect: Single(HealPercentage(
+            amount: Fixed(50),
+        )),
+    ),
+    (
+        name: "Mango",
+        rarity: Rare,
+        activation: Immediate,
+        effect: Single(AddMaxHp(Fixed(14))),
+    ),
+    (
+        name: "Old Coin",
+        rarity: Rare,
+        activation: Immediate,
+        effect: Single(AddGold(Fixed(300))),
+    ),
+    (
+        name: "Peace Pipe",
+        rarity: Rare,
+        activation: Custom,
+    ),
+    (
+        name: "Pocketwatch",
+        rarity: Rare,
+        activation: Custom,
+        effect: Single(Draw(Fixed(3))),
+    ),
+    (
+        name: "Prayer Wheel",
+        rarity: Rare,
+        activation: Event(CardReward),
+    ),
+    (
+        name: "Shovel",
+        rarity: Rare,
+        activation: Custom,
+    ),
+    (
+        name: "Stone Calendar",
+        rarity: Rare,
+        activation: Counter(
+            increment: BeforeEnemyMove,
+            reset: CombatStart,
+            auto_reset: false,
+            target: 7,
+        ),
+        effect: Single(Damage(
+            amount: Fixed(50),
+            target: AllEnemies,
+        )),
+    ),
+    (
+        name: "Thread And Needle",
+        rarity: Rare,
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Plated Armor",
+            amount: Fixed(4),
+        )),
+    ),
+    (
+        name: "Torii",
+        rarity: Rare,
+        activation: Event(OnUnblockedDamage()),
+    ),
+    (
+        name: "Tungsten Rod",
+        rarity: Rare,
+        activation: Event(OnHpLoss()),
+    ),
+    (
+        name: "Turnip",
+        rarity: Rare,
+        activation: Event(OnBuff(
+            buff: "Frail",
+        )),
+    ),
+    (
+        name: "Unceasing Top",
+        rarity: Rare,
+        activation: Custom,
+        effect: Single(Draw(Fixed(1))),
+    ),
+    (
+        name: "Wing Boots",
+        rarity: Rare,
+        activation: Custom,
+    ),
+    (
+        name: "Champion Belt",
+        rarity: Rare,
+        activation: Event(OnBuff(
+            buff: "Vulnerable",
+            target: AllEnemies,
+        )),
+        class: Ironclad,
+    ),
+    (
+        name: "Charons Ashes",
+        rarity: Rare,
+        activation: Event(Exhaust),
+        effect: Single(Damage(
+            amount: Fixed(3),
+            target: AllEnemies,
+        )),
+        class: Ironclad,
+    ),
+    (
+        name: "Emotion Chip",
+        rarity: Rare,
+        activation: WhenEnabled(
+            activated_at: BeforeHandDraw,
+            enabled_at: OnHpLoss(),
+            disabled_at: BeforeHandDraw,
+        ),
+        class: Defect,
+    ),
+    (
+        name: "Cloak Clasp",
+        rarity: Rare,
+        activation: Event(TurnEnd),
+        class: Watcher,
+    ),
+    (
+        name: "Golden Eye",
+        rarity: Rare,
+        activation: Event(Scry),
+        class: Watcher,
+    ),
+    (
+        name: "Magic Flower",
+        rarity: Rare,
+        activation: Custom,
+        class: Ironclad,
+    ),
+    (
+        name: "The Specimen",
+        rarity: Rare,
+        activation: Event(OnDie(
+            target: AllEnemies,
+        )),
+        class: Silent,
+    ),
+    (
+        name: "Tingsha",
+        rarity: Rare,
+        activation: Event(Discard),
+        effect: Single(Damage(
+            amount: Fixed(3),
+            target: RandomEnemy,
+        )),
+        class: Silent,
+    ),
+    (
+        name: "Tough Bandages",
+        rarity: Rare,
+        activation: Event(Discard),
+        effect: Single(Block(
+            amount: Fixed(3),
+        )),
+        class: Silent,
+    ),
+    (
+        name: "Cauldron",
+        rarity: Shop,
+        activation: Immediate,
+    ),
+    (
+        name: "Chemical X",
+        rarity: Shop,
+        activation: Event(PlayCard(All)),
+    ),
+    (
+        name: "Clockwork Souvenir",
+        rarity: Shop,
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Artifact",
+        )),
+    ),
+    (
+        name: "Dollys Mirror",
+        rarity: Shop,
+        activation: Immediate,
+    ),
+    (
+        name: "Frozen Eye",
+        rarity: Shop,
+        activation: Immediate,
+    ),
+    (
+        name: "Hand Drill",
+        rarity: Shop,
+        activation: Custom,
+    ),
+    (
+        name: "Lees Waffle",
+        rarity: Shop,
+        activation: Immediate,
+        effect: Multiple([
+            HealPercentage(
+                amount: Fixed(100),
+            ),
+            AddMaxHp(Fixed(7)),
+        ]),
+    ),
+    (
+        name: "Medical Kit",
+        rarity: Shop,
+        activation: Custom,
+    ),
+    (
+        name: "Membership Card",
+        rarity: Shop,
+        activation: Custom,
+    ),
+    (
+        name: "Orange Pellets",
+        rarity: Shop,
+        activation: Custom,
+        effect: Single(RemoveDebuffs()),
+    ),
+    (
+        name: "Orrery",
+        rarity: Shop,
+        activation: Immediate,
+    ),
+    (
+        name: "Prismatic Shard",
+        rarity: Shop,
+        activation: Event(CardReward),
+    ),
+    (
+        name: "Sling Of Courage",
+        rarity: Shop,
+        activation: Event(RoomEnter(Elite)),
+        effect: Single(AddBuff(
+            buff: "Strength",
+            amount: Fixed(2),
+        )),
+    ),
+    (
+        name: "Strange Spoon",
+        rarity: Shop,
+        activation: Event(Exhaust),
+    ),
+    (
+        name: "The Abacus",
+        rarity: Shop,
+        activation: Event(Shuffle),
+        effect: Single(Block(
+            amount: Fixed(6),
+        )),
+    ),
+    (
+        name: "Toolbox",
+        rarity: Shop,
+        activation: Event(CombatStart),
+    ),
+    (
+        name: "Brimstone",
+        rarity: Shop,
+        activation: Event(BeforeHandDraw),
+        effect: Multiple([
+            AddBuff(
+                buff: "Strength",
+                amount: Fixed(2),
+            ),
+            AddBuff(
+                buff: "Strength",
+                target: AllEnemies,
+            ),
+        ]),
+        class: Ironclad,
+    ),
+    (
+        name: "Melange",
+        rarity: Shop,
+        activation: Event(Shuffle),
+        effect: Single(Scry(Fixed(3))),
+        class: Watcher,
+    ),
+    (
+        name: "Runic Capacitor",
+        rarity: Shop,
+        activation: Event(CombatStart),
+        effect: Single(AddOrbSlot(Fixed(3))),
+        class: Defect,
+    ),
+    (
+        name: "Twisted Funnel",
+        rarity: Shop,
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Poison",
+            amount: Fixed(4),
+            target: AllEnemies,
+        )),
+        class: Defect,
+    ),
+    (
+        name: "Astrolabe",
+        rarity: Boss,
+        activation: Immediate,
+    ),
+    (
+        name: "Black Star",
+        rarity: Boss,
+        activation: Event(CardReward),
+    ),
+    (
+        name: "Busted Crown",
+        rarity: Boss,
+        activation: Event(CardReward),
+        energy_relic: true,
+    ),
+    (
+        name: "Calling Bell",
+        rarity: Boss,
+        activation: Immediate,
+        effect: Multiple([
+            CreateCard(
+                name: "Curse Of The Bell",
+                location: DeckPile,
+            ),
+            ShowReward([
+                RandomRelic,
+                RandomRelic,
+                RandomRelic,
+            ]),
+        ]),
+    ),
+    (
+        name: "Coffee Dripper",
+        rarity: Boss,
+        activation: Event(RoomEnter(Rest)),
+        energy_relic: true,
+    ),
+    (
+        name: "Cursed Key",
+        rarity: Boss,
+        activation: Event(ChestOpen),
+        effect: Single(CreateCardByType(
+            location: DeckPile,
+            type: Curse,
+        )),
+        energy_relic: true,
+    ),
+    (
+        name: "Ectoplasm",
+        rarity: Boss,
+        activation: Custom,
+        energy_relic: true,
+    ),
+    (
+        name: "Empty Cage",
+        rarity: Boss,
+        activation: Immediate,
+    ),
+    (
+        name: "Fusion Hammer",
+        rarity: Boss,
+        activation: Event(RoomEnter(Rest)),
+        energy_relic: true,
+    ),
+    (
+        name: "Pandoras Box",
+        rarity: Boss,
+        activation: Immediate,
+    ),
+    (
+        name: "Philosophers Stone",
+        rarity: Boss,
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Strength",
+            target: AllEnemies,
+        )),
+        energy_relic: true,
+    ),
+    (
+        name: "Runic Dome",
+        rarity: Boss,
+        activation: Custom,
+        energy_relic: true,
+    ),
+    (
+        name: "Runic Pyramid",
+        rarity: Boss,
+        activation: Custom,
+    ),
+    (
+        name: "Sacred Bark",
+        rarity: Boss,
+        activation: Event(UsePotion),
+    ),
+    (
+        name: "Slavers Collar",
+        rarity: Boss,
+        activation: Event(Multiple([
+            RoomEnter(Boss),
+            RoomEnter(Elite),
+        ])),
+    ),
+    (
+        name: "Snecko Eye",
+        rarity: Boss,
+        activation: Custom,
+    ),
+    (
+        name: "Sozu",
+        rarity: Boss,
+        activation: Custom,
+        energy_relic: true,
+    ),
+    (
+        name: "Tiny House",
+        rarity: Boss,
+        activation: Immediate,
+        effect: Multiple([
+            AddMaxHp(Fixed(6)),
+            UpgradeRandomCard(1),
+            ShowReward([
+                RandomPotion,
+                StandardCard,
+                Gold(
+                    min: 50,
+                    max: 50,
+                ),
+            ]),
+        ]),
+    ),
+    (
+        name: "Velvet Choker",
+        rarity: Boss,
+        activation: Counter(
+            increment: PlayCard(All),
+            reset: BeforeHandDraw,
+            auto_reset: false,
+            target: 6,
+        ),
+        energy_relic: true,
+    ),
+    (
+        name: "Black Blood",
+        rarity: Boss,
+        activation: Event(CombatEnd),
+        effect: Single(Heal(
+            amount: Fixed(12),
+        )),
+        class: Ironclad,
+        replaces_starter: true,
+    ),
+    (
+        name: "Ring Of The Serpent",
+        rarity: Boss,
+        activation: Event(BeforeHandDraw),
+        effect: Single(Draw(Fixed(1))),
+        class: Silent,
+        replaces_starter: true,
+    ),
+    (
+        name: "Frozen Core",
+        rarity: Boss,
+        activation: Event(BeforeEnemyMove),
+        class: Defect,
+        replaces_starter: true,
+    ),
+    (
+        name: "Holy Water",
+        rarity: Boss,
+        activation: Event(CombatStart),
+        effect: Single(Repeat(
+            n: Fixed(3),
+            effect: Single(CreateCard(
+                name: "Miracle",
+                location: PlayerHand,
+                position: Top,
+            )),
+        )),
+        class: Watcher,
+        replaces_starter: true,
+    ),
+    (
+        name: "Mark Of Pain",
+        rarity: Boss,
+        activation: Event(CombatStart),
+        effect: Single(Repeat(
+            n: Fixed(2),
+            effect: Single(CreateCard(
+                name: "Wound",
+                location: DeckPile,
+                position: Random,
+            )),
+        )),
+        class: Ironclad,
+        energy_relic: true,
+    ),
+    (
+        name: "Runic Cube",
+        rarity: Boss,
+        activation: Event(OnHpLoss()),
+        effect: Single(Draw(Fixed(1))),
+        class: Ironclad,
+    ),
+    (
+        name: "Wrist Blade",
+        rarity: Boss,
+        activation: Event(PlayCard(Attack)),
+        class: Silent,
+    ),
+    (
+        name: "Hovering Kite",
+        rarity: Boss,
+        activation: WhenEnabled(
+            activated_at: Discard,
+            enabled_at: BeforeHandDraw,
+            disabled_at: Discard,
+        ),
+        effect: Single(AddEnergy(Fixed(1))),
+        class: Silent,
+    ),
+    (
+        name: "Inserter",
+        rarity: Boss,
+        activation: Counter(
+            increment: BeforeHandDraw,
+            reset: Never,
+            auto_reset: true,
+            target: 2,
+        ),
+        effect: Single(AddOrbSlot(Fixed(1))),
+        class: Defect,
+    ),
+    (
+        name: "Nuclear Battery",
+        rarity: Boss,
+        activation: Event(CombatStart),
+        effect: Single(ChannelOrb(Plasma)),
+        class: Defect,
+    ),
+    (
+        name: "Violet Lotus",
+        rarity: Boss,
+        activation: Event(StanceChange(
+            from: Calm,
+        )),
+        effect: Single(AddEnergy(Fixed(1))),
+        class: Defect,
+    ),
+    (
+        name: "Bloody Idol",
+        rarity: Event,
+        activation: Custom,
+    ),
+    (
+        name: "Cultist Headpiece",
+        rarity: Event,
+        activation: Custom,
+    ),
+    (
+        name: "Enchiridion",
+        rarity: Event,
+        activation: Event(CombatStart),
+        effect: Single(CreateCardByType(
+            location: PlayerHand,
+            type: Power,
+            then: Single(ZeroTurnCost),
+        )),
+    ),
+    (
+        name: "Face Of Cleric",
+        rarity: Event,
+        activation: Event(CombatEnd),
+        effect: Single(AddMaxHp(Fixed(1))),
+    ),
+    (
+        name: "Golden Idol",
+        rarity: Event,
+        activation: Custom,
+    ),
+    (
+        name: "Gremlin Visage",
+        rarity: Event,
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Weak",
+        )),
+    ),
+    (
+        name: "Mark Of The Bloom",
+        rarity: Event,
+        activation: Custom,
+    ),
+    (
+        name: "Mutagenic Strength",
+        rarity: Event,
+        activation: Event(CombatStart),
+        effect: Multiple([
+            AddBuff(
+                buff: "Strength",
+                amount: Fixed(3),
+            ),
+            AddBuff(
+                buff: "Strength Down",
+                amount: Fixed(3),
+            ),
+        ]),
+    ),
+    (
+        name: "Nloths Gift",
+        rarity: Event,
+        activation: Event(CardReward),
+    ),
+    (
+        name: "Nloths Hungry Face",
+        rarity: Event,
+        activation: Uses(
+            use_when: ChestOpen,
+            uses: 1,
+        ),
+    ),
+    (
+        name: "Necronomicon",
+        rarity: Event,
+        activation: Custom,
+    ),
+    (
+        name: "Neows Lament",
+        rarity: Event,
+        activation: Uses(
+            use_when: CombatStart,
+            uses: 3,
+        ),
+    ),
+    (
+        name: "Nilrys Codex",
+        rarity: Event,
+        activation: Event(BeforeEnemyMove),
+    ),
+    (
+        name: "Odd Mushroom",
+        rarity: Event,
+        activation: Custom,
+    ),
+    (
+        name: "Red Mask",
+        rarity: Event,
+        activation: Event(CombatStart),
+        effect: Single(AddBuff(
+            buff: "Weak",
+            target: AllEnemies,
+        )),
+    ),
+    (
+        name: "Spirit Poop",
+        rarity: Event,
+        activation: Custom,
+    ),
+    (
+        name: "Ssserpent Head",
+        rarity: Event,
+        activation: Event(RoomEnter(Question)),
+        effect: Single(AddGold(Fixed(50))),
+    ),
+    (
+        name: "Warped Tongs",
+        rarity: Event,
+        activation: Event(AfterHandDraw),
+        effect: Single(DoCardEffect(
+            location: PlayerHand,
+            position: Random,
+            effect: Upgrade,
+        )),
+    ),
+    (
+        name: "Circlet",
+        rarity: Special,
+        activation: Custom,
+    ),
+]

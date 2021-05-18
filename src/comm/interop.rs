@@ -25,18 +25,20 @@ pub fn convert_state(state: &old::GameState) -> new::GameState {
                 .map(|a| a.player.block)
                 .unwrap_or(0) as u16,
         },
+        event_state: None,
         battle_state: state
             .combat_state
             .as_ref()
             .map(|a| convert_battle_state(a, state)),
         gold: state.gold as u16,
+        floor: state.floor as u8,
         floor_state: convert_floor_state(state),
         deck: convert_cards(&state.deck),
         map: convert_map(state),
         potions: convert_potions(&state.potions),
         act: state.act as u8,
         asc: state.ascension_level as u8,
-        relic_names: relics.iter().map(|a| a.base.name).collect(),
+        relic_names: relics.iter().map(|a| a.base.name.to_string()).collect(),
         relics,
         keys: None,
     }
@@ -122,12 +124,15 @@ pub fn convert_battle_state(
     game_state: &old::GameState,
 ) -> new::BattleState {
     new::BattleState {
-        draw_unknown: convert_cards(&state.draw_pile),
-        draw_top: vec![],
-        draw_bottom: vec![],
+        draw: convert_cards(&state.draw_pile),
+        discard_count: state.cards_discarded_this_turn as u8,
+        draw_bottom_known: 0,
+        draw_top_known: 0,
         discard: convert_cards(&state.discard_pile),
         exhaust: convert_cards(&state.exhaust_pile),
         hand: convert_cards(&state.hand),
+        last_card_played: None,
+        orb_slots: 0,
         monsters: convert_monsters(&state.monsters),
         energy: state.player.energy as u8,
         orbs: convert_orbs(&state.player.orbs),
@@ -162,7 +167,7 @@ pub fn convert_floor_state(state: &old::GameState) -> new::FloorState {
             old::RoomPhase::Combat => new::FloorState::Battle,
             _ => panic!("Expected Battle in None state"),
         },
-        old::ScreenState::Event(event) => new::FloorState::Event(convert_event(event)),
+        old::ScreenState::Event(_) => new::FloorState::Event,
         old::ScreenState::Map(_) => new::FloorState::Map,
         old::ScreenState::CombatReward(rewards) => {
             new::FloorState::Rewards(convert_rewards(rewards))
@@ -173,7 +178,7 @@ pub fn convert_floor_state(state: &old::GameState) -> new::FloorState {
                 .iter()
                 .map(|a| {
                     (
-                        crate::models::cards::by_name(a.name.as_str()).name,
+                        a.name.to_string(),
                         a.upgrades > 0,
                     )
                 })
@@ -230,7 +235,7 @@ fn convert_shop(shop: &old::ShopScreen) -> new::FloorState {
         .iter()
         .map(|a| {
             (
-                crate::models::cards::by_name(a.name.as_str()).name,
+                a.name.to_string(),
                 a.price.expect("No price on card") as u16,
             )
         })
@@ -240,7 +245,7 @@ fn convert_shop(shop: &old::ShopScreen) -> new::FloorState {
         .iter()
         .map(|a| {
             (
-                crate::models::relics::by_name(a.name.as_str()).name,
+                a.name.to_string(),
                 a.price.expect("No price on relic") as u16,
             )
         })
@@ -250,7 +255,7 @@ fn convert_shop(shop: &old::ShopScreen) -> new::FloorState {
         .iter()
         .map(|a| {
             (
-                crate::models::potions::by_name(a.name.as_str()).name,
+                a.name.to_string(),
                 a.price.expect("No price on potion") as u16,
             )
         })
@@ -286,7 +291,7 @@ fn convert_rewards(rewards: &old::CombatRewards) -> Vec<new::Reward> {
 }
 
 fn convert_event(event: &old::Event) -> new::EventState {
-    let base_event = crate::models::events::by_name(event.event_name.as_str());
+    let base_event = crate::models::events::by_name(&event.event_name);
 
     new::EventState {
         base: base_event,
@@ -294,6 +299,11 @@ fn convert_event(event: &old::Event) -> new::EventState {
         variant_cards: vec![],
         variant_relic: Option::None,
         variant_amount: Option::None,
+        vars: new::Vars {
+            n: 0,
+            x: 0,
+            n_reset: 0,
+        },
         available_choices: event
             .options
             .iter()
@@ -306,7 +316,7 @@ fn convert_event(event: &old::Event) -> new::EventState {
                     .unwrap_or_else(|| {
                         panic!("No option found that matches label: {}", option.label)
                     })
-                    .name
+                    .name.to_string()
             })
             .collect(),
     }
@@ -332,7 +342,7 @@ fn convert_monsters(monsters: &[old::Monster]) -> Vec<new::Monster> {
         .iter()
         .enumerate()
         .map(|(index, monster)| new::Monster {
-            base: crate::models::monsters::by_name(monster.id.as_str()),
+            base: crate::models::monsters::by_name(&monster.id),
             creature: new::Creature {
                 hp: monster.current_hp as u16,
                 max_hp: monster.max_hp as u16,
@@ -352,11 +362,11 @@ fn convert_monsters(monsters: &[old::Monster]) -> Vec<new::Monster> {
         .collect()
 }
 
-fn convert_buffs(buffs: &[old::Power]) -> HashMap<&'static str, new::Buff> {
+fn convert_buffs(buffs: &[old::Power]) -> HashMap<String, new::Buff> {
     buffs
         .iter()
         .map(|buff| new::Buff {
-            base: crate::models::buffs::by_name(buff.name.as_str()),
+            base: crate::models::buffs::by_name(&buff.name),
             vars: new::Vars {
                 n: buff.amount as i16,
                 x: 0,
@@ -364,13 +374,13 @@ fn convert_buffs(buffs: &[old::Power]) -> HashMap<&'static str, new::Buff> {
             },
             stacked_vars: vec![],
         })
-        .map(|buff| (buff.base.name, buff))
+        .map(|buff| (buff.base.name.to_string(), buff))
         .collect()
 }
 
 fn convert_potion(potion: &old::Potion) -> new::Potion {
     new::Potion {
-        base: crate::models::potions::by_name(potion.name.as_str()),
+        base: crate::models::potions::by_name(&potion.name),
     }
 }
 
@@ -398,7 +408,7 @@ fn convert_card(card: &old::Card) -> new::Card {
         card.name.as_str()
     };
     new::Card {
-        base: crate::models::cards::by_name(name),
+        base: crate::models::cards::by_name(&String::from(name)),
         vars: new::Vars {
             n: 0,
             n_reset: 0,

@@ -2,7 +2,10 @@ use crate::comm::request::GameState;
 use crate::models::choices::Choice;
 use comm::request::Request;
 use comm::response::Response;
-use std::error::Error;
+use models::core::Act;
+use ron::ser::PrettyConfig;
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use std::{collections::HashMap, error::Error, path::{Path, PathBuf}};
 use std::fs::File;
 use std::io::stdin;
 use std::io::Write;
@@ -23,7 +26,65 @@ lazy_static! {
     static ref LAST_STATE: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
 }
 
+
+fn write_models<'a, T>(models: Vec<T>, data_name: &str)
+    where T: Serialize + DeserializeOwned + Eq
+{   
+    let pretty_config = PrettyConfig::new();
+    let serialized = ron::ser::to_string_pretty(&models, pretty_config).unwrap();
+    let verification_models: Vec<T> = ron::from_str(serialized.as_str()).unwrap();
+
+    for (original, verification) in models.iter().zip(verification_models) {
+        if original != &verification {
+            panic!("Models do not match")
+         }
+    }
+
+    let folder = Path::new("data");
+    let filepath = folder.join(format!("{}{}",data_name,".ron"));
+    std::fs::create_dir_all(folder).unwrap();
+    let mut file = std::fs::File::create(filepath).unwrap();
+    file.write_all(serialized.as_bytes()).unwrap();
+    
+}
+
+fn write_acts() {
+    write_models(models::acts::all_acts(),"acts");
+}
+
+fn write_buffs() {
+    write_models(models::buffs::all_buffs(), "buffs");
+}
+
+fn write_cards() {
+    write_models(models::cards::all_cards(), "cards");
+}
+
+fn write_events() {
+    write_models(models::events::all_events(), "events");
+}
+
+fn write_monsters() {
+    write_models(models::monsters::all_monsters(), "monsters");
+}
+
+fn write_potions() {
+    write_models(models::potions::all_potions(), "potions");
+}
+
+fn write_relics() {
+    write_models(models::relics::all_relics(), "relics");
+}
+
 fn main() {
+    write_acts();
+    write_buffs();
+    write_cards();
+    write_events();
+    write_monsters();
+    write_potions();
+    write_relics();
+
     let last_action_clone = Arc::clone(&LAST_ACTION);
     let last_state_clone = Arc::clone(&LAST_STATE);
     std::panic::set_hook(Box::new(move |_info| {

@@ -1,0 +1,6316 @@
+[
+    (
+        name: "Defend",
+        type: Skill,
+        class: All,
+        rarity: Starter,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 8,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Strike",
+        type: Attack,
+        class: All,
+        rarity: Starter,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 9,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Bash",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Starter,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 10,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Vulnerable",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Anger",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(0),
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 8,
+                ),
+                target: TargetEnemy,
+            ),
+            SelfEffect(CopyTo(
+                location: DiscardPile,
+            )),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Armaments",
+        type: Skill,
+        class: Ironclad,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 8,
+                ),
+            ),
+            If(
+                condition: Upgraded,
+                then: Single(ChooseCards(
+                    location: PlayerHand,
+                    then: Single(Upgrade),
+                )),
+                _else: Single(DoCardEffect(
+                    location: PlayerHand,
+                    position: All,
+                    effect: Upgrade,
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Body Slam",
+        type: Attack,
+        class: Ironclad,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        on_play: [
+            Block(
+                amount: Custom,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Clash",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(0),
+        playable_if: Custom,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 14,
+                    upgraded: 18,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Cleave",
+        type: Attack,
+        class: Ironclad,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 11,
+                ),
+                target: AllEnemies,
+            ),
+        ],
+    ),
+    (
+        name: "Clothesline",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(2),
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 12,
+                    upgraded: 14,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Weak",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Flex",
+        type: Skill,
+        class: Ironclad,
+        cost: Fixed(0),
+        on_play: [
+            AddBuff(
+                buff: "Strength",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 4,
+                ),
+            ),
+            AddBuff(
+                buff: "Strength Down",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 4,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Havoc",
+        type: Skill,
+        class: Ironclad,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        on_play: [
+            DoCardEffect(
+                location: DrawPile,
+                position: Top,
+                effect: AutoPlay,
+            ),
+        ],
+    ),
+    (
+        name: "Headbutt",
+        type: Attack,
+        class: Ironclad,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 9,
+                    upgraded: 12,
+                ),
+                target: TargetEnemy,
+            ),
+            ChooseCards(
+                location: DiscardPile,
+                then: Single(MoveTo(
+                    location: DrawPile,
+                    position: Top,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Heavy Blade",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(2),
+        on_play: [
+            AttackDamage(
+                amount: Custom,
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Iron Wave",
+        type: Attack,
+        class: Ironclad,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 7,
+                ),
+                target: TargetEnemy,
+            ),
+            Block(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 7,
+                ),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Perfected Strike",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(2),
+        on_play: [
+            AttackDamage(
+                amount: Custom,
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Pommel Strike",
+        type: Attack,
+        class: Ironclad,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 9,
+                    upgraded: 10,
+                ),
+                target: TargetEnemy,
+            ),
+            Draw(Upgradable(
+                base: 1,
+                upgraded: 2,
+            )),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Shrug It Off",
+        type: Skill,
+        class: Ironclad,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 11,
+                ),
+            ),
+            Draw(Fixed(1)),
+        ],
+    ),
+    (
+        name: "Sword Boomerang",
+        type: Attack,
+        class: Ironclad,
+        on_play: [
+            AttackDamage(
+                amount: Fixed(3),
+                target: RandomEnemy,
+            ),
+            AttackDamage(
+                amount: Fixed(3),
+                target: RandomEnemy,
+            ),
+            AttackDamage(
+                amount: Fixed(3),
+                target: RandomEnemy,
+            ),
+            If(
+                condition: Upgraded,
+                then: Single(AttackDamage(
+                    amount: Fixed(3),
+                    target: RandomEnemy,
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Thunderclap",
+        type: Attack,
+        class: Ironclad,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 7,
+                ),
+                target: AllEnemies,
+            ),
+            AddBuff(
+                buff: "Vulnerable",
+                target: AllEnemies,
+            ),
+        ],
+    ),
+    (
+        name: "True Grit",
+        type: Skill,
+        class: Ironclad,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 9,
+                ),
+            ),
+            If(
+                condition: Upgraded,
+                then: Single(DoCardEffect(
+                    location: PlayerHand,
+                    position: Random,
+                    effect: Exhaust,
+                )),
+                _else: Single(ChooseCards(
+                    location: PlayerHand,
+                    then: Single(Exhaust),
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Twin Strike",
+        type: Attack,
+        class: Ironclad,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 7,
+                ),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 7,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Warcry",
+        type: Skill,
+        class: Ironclad,
+        cost: Fixed(0),
+        on_play: [
+            Draw(Upgradable(
+                base: 1,
+                upgraded: 2,
+            )),
+            ChooseCards(
+                location: PlayerHand,
+                then: Single(MoveTo(
+                    location: DrawPile,
+                    position: Top,
+                )),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Wild Strike",
+        type: Attack,
+        class: Ironclad,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 12,
+                    upgraded: 17,
+                ),
+                target: TargetEnemy,
+            ),
+            CreateCard(
+                name: "Wound",
+                location: DrawPile,
+                position: Random,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Battle Trance",
+        type: Skill,
+        class: Ironclad,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            Draw(Upgradable(
+                base: 3,
+                upgraded: 4,
+            )),
+            AddBuff(
+                buff: "No Draw",
+            ),
+        ],
+    ),
+    (
+        name: "Blood For Blood",
+        type: Attack,
+        class: Ironclad,
+        cost: Custom,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 18,
+                    upgraded: 22,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Bloodletting",
+        type: Skill,
+        class: Ironclad,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            LoseHp(
+                amount: Fixed(3),
+            ),
+            AddEnergy(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+        ],
+    ),
+    (
+        name: "Burning Pact",
+        type: Skill,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            ChooseCards(
+                location: PlayerHand,
+                then: Single(Exhaust),
+            ),
+            Draw(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+        ],
+    ),
+    (
+        name: "Carnage",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 20,
+                    upgraded: 28,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        on_turn_end: [
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Combust",
+        type: Power,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Combust",
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 7,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Dark Embrace",
+        type: Power,
+        class: Ironclad,
+        cost: Upgradable(
+            base: 2,
+            upgraded: 1,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Dark Embrace",
+            ),
+        ],
+    ),
+    (
+        name: "Disarm",
+        type: Skill,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Strength",
+                amount: Upgradable(
+                    base: -2,
+                    upgraded: -3,
+                ),
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Dropkick",
+        type: Attack,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 8,
+                ),
+                target: TargetEnemy,
+            ),
+            If(
+                condition: Status(
+                    target: TargetEnemy,
+                    status: "Vulnerable",
+                ),
+                then: Multiple([
+                    AddEnergy(Fixed(1)),
+                    Draw(Fixed(1)),
+                ]),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Dual Wield",
+        type: Skill,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            If(
+                condition: Upgraded,
+                then: Single(ChooseCards(
+                    location: PlayerHand,
+                    then: Single(CopyTo(
+                        location: PlayerHand,
+                    )),
+                )),
+                _else: Single(ChooseCards(
+                    location: PlayerHand,
+                    then: Single(CopyTo(
+                        location: PlayerHand,
+                        then: Single(CopyTo(
+                            location: PlayerHand,
+                        )),
+                    )),
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Entrench",
+        type: Skill,
+        class: Ironclad,
+        cost: Upgradable(
+            base: 2,
+            upgraded: 1,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Custom,
+            ),
+        ],
+    ),
+    (
+        name: "Evolve",
+        type: Power,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Evolve",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Feel No Pain",
+        type: Power,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Feel No Pain",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Fire Breathing",
+        type: Power,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Fire Breathing",
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 10,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Flame Barrier",
+        type: Skill,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 12,
+                    upgraded: 16,
+                ),
+            ),
+            AddBuff(
+                buff: "Flame Barrier",
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Ghostly Armor",
+        type: Skill,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 13,
+                ),
+            ),
+        ],
+        on_turn_end: [
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Hemokinesis",
+        type: Attack,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            LoseHp(
+                amount: Fixed(2),
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 15,
+                    upgraded: 20,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Infernal Blade",
+        type: Attack,
+        class: Ironclad,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            CreateCardByType(
+                location: PlayerHand,
+                type: Attack,
+                then: Single(ZeroTurnCost),
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Inflame",
+        type: Power,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Strength",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Intimidate",
+        type: Power,
+        class: Ironclad,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Weak",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+                target: AllEnemies,
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Metallicize",
+        type: Power,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Metallicize",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Power Through",
+        type: Skill,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            CreateCard(
+                name: "Wound",
+                location: PlayerHand,
+            ),
+            CreateCard(
+                name: "Wound",
+                location: PlayerHand,
+            ),
+            Block(
+                amount: Upgradable(
+                    base: 15,
+                    upgraded: 20,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Pummel",
+        type: Attack,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Fixed(2),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Fixed(2),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Fixed(2),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Fixed(2),
+                target: TargetEnemy,
+            ),
+            If(
+                condition: Upgraded,
+                then: Single(AttackDamage(
+                    amount: Fixed(2),
+                    target: TargetEnemy,
+                )),
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Rage",
+        type: Skill,
+        class: Ironclad,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Rage",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 5,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Rampage",
+        type: Attack,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Custom,
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Reckless Charge",
+        type: Attack,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 10,
+                ),
+                target: TargetEnemy,
+            ),
+            CreateCard(
+                name: "Dazed",
+                location: DrawPile,
+                position: Random,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Rupture",
+        type: Power,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Rupture",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Searing Blow",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Custom,
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Second Wind",
+        type: Skill,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            Custom,
+        ],
+    ),
+    (
+        name: "Seeing Red",
+        type: Skill,
+        class: Ironclad,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            AddEnergy(Fixed(2)),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Sentinel",
+        type: Skill,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 8,
+                ),
+            ),
+        ],
+        on_exhaust: [
+            AddEnergy(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+        ],
+    ),
+    (
+        name: "Sever Soul",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            Custom,
+            AttackDamage(
+                amount: Upgradable(
+                    base: 16,
+                    upgraded: 20,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Shockwave",
+        type: Skill,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Vulnerable",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 5,
+                ),
+                target: AllEnemies,
+            ),
+            AddBuff(
+                buff: "Weak",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 5,
+                ),
+                target: AllEnemies,
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Spot Weakness",
+        type: Skill,
+        class: Ironclad,
+        rarity: Uncommon,
+        on_play: [
+            If(
+                condition: Attacking(
+                    target: TargetEnemy,
+                ),
+                then: Single(AddBuff(
+                    buff: "Strength",
+                    amount: Upgradable(
+                        base: 3,
+                        upgraded: 4,
+                    ),
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Uppercut",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Fixed(13),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Weak",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Vulnerable",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Whirlwind",
+        type: Attack,
+        class: Ironclad,
+        cost: X,
+        rarity: Uncommon,
+        on_play: [
+            Repeat(
+                n: X,
+                effect: Single(AttackDamage(
+                    amount: Upgradable(
+                        base: 5,
+                        upgraded: 8,
+                    ),
+                    target: AllEnemies,
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Barricade",
+        type: Power,
+        class: Ironclad,
+        cost: Upgradable(
+            base: 3,
+            upgraded: 2,
+        ),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Barricade",
+            ),
+        ],
+    ),
+    (
+        name: "Berserk",
+        type: Power,
+        class: Ironclad,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Vulnerable",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 1,
+                ),
+            ),
+            AddBuff(
+                buff: "Berserk",
+            ),
+        ],
+    ),
+    (
+        name: "Bludgeon",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(3),
+        rarity: Rare,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 32,
+                    upgraded: 42,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Brutality",
+        type: Power,
+        class: Ironclad,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Brutality",
+            ),
+        ],
+        innate: Upgraded,
+    ),
+    (
+        name: "Corruption",
+        type: Power,
+        class: Ironclad,
+        cost: Upgradable(
+            base: 3,
+            upgraded: 2,
+        ),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Corruption",
+            ),
+        ],
+    ),
+    (
+        name: "Demon Form",
+        type: Power,
+        class: Ironclad,
+        cost: Fixed(3),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Demon Form",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Double Tap",
+        type: Skill,
+        class: Ironclad,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Double Tap",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Exhume",
+        type: Skill,
+        class: Ironclad,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Rare,
+        on_play: [
+            ChooseCards(
+                location: ExhaustPile,
+                then: Single(MoveTo(
+                    location: PlayerHand,
+                )),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Feed",
+        type: Attack,
+        class: Ironclad,
+        rarity: Rare,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 2,
+                ),
+                target: TargetEnemy,
+                if_fatal: [
+                    AddMaxHp(Upgradable(
+                        base: 3,
+                        upgraded: 4,
+                    )),
+                ],
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Fiend Fire",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            Custom,
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Immolate",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            CreateCard(
+                name: "Burn",
+                location: DiscardPile,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Impervious",
+        type: Skill,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 30,
+                    upgraded: 40,
+                ),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Juggernaut",
+        type: Power,
+        class: Ironclad,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Juggernaut",
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 7,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Limit Break",
+        type: Skill,
+        class: Ironclad,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Strength",
+                amount: Custom,
+            ),
+            If(
+                condition: Upgraded,
+                _else: Single(SelfEffect(Exhaust)),
+            ),
+        ],
+    ),
+    (
+        name: "Offering",
+        type: Skill,
+        class: Ironclad,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            LoseHp(
+                amount: Fixed(6),
+            ),
+            AddEnergy(Fixed(2)),
+            Draw(Upgradable(
+                base: 3,
+                upgraded: 5,
+            )),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Reaper",
+        type: Attack,
+        class: Ironclad,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            Custom,
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Neutralize",
+        type: Attack,
+        class: Silent,
+        cost: Fixed(0),
+        rarity: Starter,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Weak",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Survivor",
+        type: Skill,
+        class: Silent,
+        rarity: Starter,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 11,
+                ),
+            ),
+            ChooseCards(
+                location: PlayerHand,
+                then: Single(Discard),
+            ),
+        ],
+    ),
+    (
+        name: "Acrobatics",
+        type: Skill,
+        class: Silent,
+        on_play: [
+            Draw(Upgradable(
+                base: 3,
+                upgraded: 4,
+            )),
+            ChooseCards(
+                location: PlayerHand,
+                then: Single(Discard),
+            ),
+        ],
+    ),
+    (
+        name: "Backflip",
+        type: Skill,
+        class: Silent,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 8,
+                ),
+            ),
+            Draw(Fixed(2)),
+        ],
+    ),
+    (
+        name: "Bane",
+        type: Attack,
+        class: Silent,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 10,
+                ),
+                target: TargetEnemy,
+            ),
+            If(
+                condition: Buff(
+                    buff: "Poison",
+                    target: TargetEnemy,
+                ),
+                then: Single(AttackDamage(
+                    amount: Upgradable(
+                        base: 7,
+                        upgraded: 10,
+                    ),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Blade Dance",
+        type: Skill,
+        class: Silent,
+        on_play: [
+            CreateCard(
+                name: "Shiv",
+                location: PlayerHand,
+            ),
+            CreateCard(
+                name: "Shiv",
+                location: PlayerHand,
+            ),
+            CreateCard(
+                name: "Shiv",
+                location: PlayerHand,
+            ),
+            If(
+                condition: Upgraded,
+                then: Single(CreateCard(
+                    name: "Shiv",
+                    location: PlayerHand,
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Cloak And Dagger",
+        type: Skill,
+        class: Silent,
+        on_play: [
+            Block(
+                amount: Fixed(6),
+            ),
+            CreateCard(
+                name: "Shiv",
+                location: PlayerHand,
+            ),
+            If(
+                condition: Upgraded,
+                then: Single(CreateCard(
+                    name: "Shiv",
+                    location: PlayerHand,
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Dagger Spray",
+        type: Attack,
+        class: Silent,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Dagger Throw",
+        type: Attack,
+        class: Silent,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 9,
+                    upgraded: 12,
+                ),
+                target: TargetEnemy,
+            ),
+            Draw(Fixed(1)),
+            ChooseCards(
+                location: PlayerHand,
+                then: Single(Discard),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Deadly Poison",
+        type: Skill,
+        class: Silent,
+        on_play: [
+            AddBuff(
+                buff: "Poison",
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 7,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Deflect",
+        type: Skill,
+        class: Silent,
+        cost: Fixed(0),
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 7,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Dodge And Roll",
+        type: Skill,
+        class: Silent,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+            ),
+            AddBuff(
+                buff: "Next Turn Block",
+                amount: Custom,
+            ),
+        ],
+    ),
+    (
+        name: "Flying Knee",
+        type: Attack,
+        class: Silent,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 11,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Energized",
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Outmaneuver",
+        type: Skill,
+        class: Silent,
+        on_play: [
+            AddBuff(
+                buff: "Energized",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Piercing Wail",
+        type: Skill,
+        class: Silent,
+        on_play: [
+            AddBuff(
+                buff: "Temp Lose Strength",
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 8,
+                ),
+                target: AllEnemies,
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Poisoned Stab",
+        type: Attack,
+        class: Silent,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 8,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Poison",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Prepared",
+        type: Skill,
+        class: Silent,
+        cost: Fixed(0),
+        on_play: [
+            Draw(Upgradable(
+                base: 1,
+                upgraded: 2,
+            )),
+            ChooseCards(
+                location: PlayerHand,
+                then: Single(Discard),
+            ),
+        ],
+    ),
+    (
+        name: "Quick Slash",
+        type: Attack,
+        class: Silent,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 12,
+                ),
+                target: TargetEnemy,
+            ),
+            Draw(Fixed(1)),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Slice",
+        type: Attack,
+        class: Silent,
+        cost: Fixed(0),
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 9,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Sneaky Strike",
+        type: Attack,
+        class: Silent,
+        cost: Fixed(2),
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 12,
+                    upgraded: 16,
+                ),
+                target: TargetEnemy,
+            ),
+            If(
+                condition: HasDiscarded,
+                then: Single(AddEnergy(Fixed(2))),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Sucker Punch",
+        type: Attack,
+        class: Silent,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 8,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Weak",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Accuracy",
+        type: Power,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Accuracy",
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "All Out Attack",
+        type: Attack,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 14,
+                ),
+                target: AllEnemies,
+            ),
+            DoCardEffect(
+                location: PlayerHand,
+                position: Random,
+                effect: Discard,
+            ),
+        ],
+    ),
+    (
+        name: "Backstab",
+        type: Attack,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 11,
+                    upgraded: 15,
+                ),
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        innate: Always,
+        targeted: Always,
+    ),
+    (
+        name: "Blur",
+        type: Skill,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 8,
+                ),
+            ),
+            AddBuff(
+                buff: "Blur",
+            ),
+        ],
+    ),
+    (
+        name: "Bouncing Flask",
+        type: Skill,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Poison",
+                amount: Fixed(3),
+                target: RandomEnemy,
+            ),
+            AddBuff(
+                buff: "Poison",
+                amount: Fixed(3),
+                target: RandomEnemy,
+            ),
+            AddBuff(
+                buff: "Poison",
+                amount: Fixed(3),
+                target: RandomEnemy,
+            ),
+            If(
+                condition: Upgraded,
+                then: Single(AddBuff(
+                    buff: "Poison",
+                    amount: Fixed(3),
+                    target: RandomEnemy,
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Calculated Gamble",
+        type: Skill,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            Custom,
+            If(
+                condition: Upgraded,
+                _else: Single(SelfEffect(Exhaust)),
+            ),
+        ],
+    ),
+    (
+        name: "Caltrops",
+        type: Power,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Thorns",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 5,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Catalyst",
+        type: Skill,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Poison",
+                amount: Custom,
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Choke",
+        type: Attack,
+        class: Silent,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Fixed(12),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Choked",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 5,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Concentrate",
+        type: Skill,
+        class: Silent,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            ChooseCards(
+                location: PlayerHand,
+                then: Single(Discard),
+                min: Upgradable(
+                    base: 3,
+                    upgraded: 2,
+                ),
+                max: Upgradable(
+                    base: 3,
+                    upgraded: 2,
+                ),
+            ),
+            AddEnergy(Fixed(2)),
+        ],
+    ),
+    (
+        name: "Crippling Cloud",
+        type: Skill,
+        class: Silent,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Poison",
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 7,
+                ),
+                target: AllEnemies,
+            ),
+            AddBuff(
+                buff: "Weak",
+                amount: Fixed(2),
+                target: AllEnemies,
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Dash",
+        type: Attack,
+        class: Silent,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 13,
+                ),
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 13,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Distraction",
+        type: Skill,
+        class: Silent,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            CreateCardByType(
+                location: PlayerHand,
+                type: Skill,
+                then: Single(ZeroTurnCost),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Endless Agony",
+        type: Attack,
+        class: Silent,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        on_draw: [
+            SelfEffect(CopyTo(
+                location: PlayerHand,
+            )),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Escape Plan",
+        type: Skill,
+        class: Silent,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            Custom,
+        ],
+    ),
+    (
+        name: "Eviscerate",
+        type: Attack,
+        class: Silent,
+        cost: Custom,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 9,
+                ),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 9,
+                ),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 9,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Expertise",
+        type: Skill,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            Draw(Custom),
+        ],
+    ),
+    (
+        name: "Finisher",
+        type: Attack,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            Repeat(
+                n: Custom,
+                effect: Single(AttackDamage(
+                    amount: Upgradable(
+                        base: 6,
+                        upgraded: 8,
+                    ),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Flechettes",
+        type: Attack,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            Repeat(
+                n: Custom,
+                effect: Single(AttackDamage(
+                    amount: Upgradable(
+                        base: 4,
+                        upgraded: 6,
+                    ),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Footwork",
+        type: Power,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Dexterity",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Heel Hook",
+        type: Attack,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 8,
+                ),
+                target: TargetEnemy,
+            ),
+            If(
+                condition: Buff(
+                    buff: "Weak",
+                    target: TargetEnemy,
+                ),
+                then: Multiple([
+                    AddEnergy(Fixed(1)),
+                    Draw(Fixed(1)),
+                ]),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Infinite Blades",
+        type: Power,
+        class: Silent,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Infinite Blades",
+            ),
+        ],
+    ),
+    (
+        name: "Leg Sweep",
+        type: Skill,
+        class: Silent,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Weak",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+                target: TargetEnemy,
+            ),
+            Block(
+                amount: Upgradable(
+                    base: 11,
+                    upgraded: 14,
+                ),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Masterful Stab",
+        type: Attack,
+        class: Silent,
+        cost: Custom,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 12,
+                    upgraded: 16,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Noxious Fumes",
+        type: Power,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Noxious Fumes",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Predator",
+        type: Attack,
+        class: Silent,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 15,
+                    upgraded: 20,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Draw Card",
+                amount: Fixed(2),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Reflex",
+        type: Skill,
+        class: Silent,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        playable_if: Never,
+        on_discard: [
+            Draw(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+        ],
+    ),
+    (
+        name: "Riddle With Holes",
+        type: Attack,
+        class: Silent,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Setup",
+        type: Skill,
+        class: Silent,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            ChooseCards(
+                location: PlayerHand,
+                then: Multiple([
+                    MoveTo(
+                        location: DrawPile,
+                        position: Top,
+                    ),
+                    ZeroCostUntilPlayed,
+                ]),
+            ),
+        ],
+    ),
+    (
+        name: "Skewer",
+        type: Attack,
+        class: Silent,
+        cost: X,
+        rarity: Uncommon,
+        on_play: [
+            Repeat(
+                n: X,
+                effect: Single(AttackDamage(
+                    amount: Upgradable(
+                        base: 7,
+                        upgraded: 10,
+                    ),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Tactician",
+        type: Skill,
+        class: Silent,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        playable_if: Never,
+        on_discard: [
+            AddEnergy(Upgradable(
+                base: 1,
+                upgraded: 2,
+            )),
+        ],
+    ),
+    (
+        name: "Terror",
+        type: Skill,
+        class: Silent,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Vulnerable",
+                amount: Fixed(99),
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Well Laid Plans",
+        type: Power,
+        class: Silent,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Well Laid Plans",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "A Thousand Cuts",
+        type: Power,
+        class: Silent,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Thousand Cuts",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Adrenaline",
+        type: Skill,
+        class: Silent,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            AddEnergy(Upgradable(
+                base: 1,
+                upgraded: 2,
+            )),
+            Draw(Fixed(2)),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "After Image",
+        type: Power,
+        class: Silent,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "After Image",
+            ),
+        ],
+        innate: Upgraded,
+    ),
+    (
+        name: "Alchemize",
+        type: Skill,
+        class: Silent,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Rare,
+        on_play: [
+            Custom,
+        ],
+    ),
+    (
+        name: "Bullet Time",
+        type: Skill,
+        class: Silent,
+        cost: Upgradable(
+            base: 3,
+            upgraded: 2,
+        ),
+        rarity: Rare,
+        on_play: [
+            DoCardEffect(
+                location: PlayerHand,
+                position: All,
+                effect: ZeroTurnCost,
+            ),
+        ],
+    ),
+    (
+        name: "Burst",
+        type: Skill,
+        class: Silent,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Burst",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Corpse Explosion",
+        type: Skill,
+        class: Silent,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Poison",
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 9,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Corpse Explosion",
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Die Die Die",
+        type: Attack,
+        class: Silent,
+        rarity: Rare,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 13,
+                    upgraded: 17,
+                ),
+                target: AllEnemies,
+            ),
+        ],
+    ),
+    (
+        name: "Doppelganger",
+        type: Skill,
+        class: Silent,
+        cost: X,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Draw Card",
+                amount: Sum([
+                    X,
+                    Upgradable(
+                        base: 0,
+                        upgraded: 1,
+                    ),
+                ]),
+            ),
+            AddBuff(
+                buff: "Energized",
+                amount: Sum([
+                    X,
+                    Upgradable(
+                        base: 0,
+                        upgraded: 1,
+                    ),
+                ]),
+            ),
+        ],
+    ),
+    (
+        name: "Envenom",
+        type: Attack,
+        class: Silent,
+        cost: Upgradable(
+            base: 2,
+            upgraded: 1,
+        ),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Envenom",
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Glass Knife",
+        type: Attack,
+        class: Silent,
+        rarity: Rare,
+        on_start: [
+            SetN(Upgradable(
+                base: 8,
+                upgraded: 12,
+            )),
+        ],
+        on_play: [
+            AttackDamage(
+                amount: N,
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: N,
+                target: TargetEnemy,
+            ),
+            AddN(Fixed(-2)),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Grand Finale",
+        type: Attack,
+        class: Silent,
+        cost: Fixed(0),
+        rarity: Rare,
+        playable_if: Custom,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 50,
+                    upgraded: 60,
+                ),
+                target: AllEnemies,
+            ),
+        ],
+    ),
+    (
+        name: "Malaise",
+        type: Skill,
+        class: Silent,
+        cost: X,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Strength",
+                amount: Sum([
+                    NegX,
+                    Upgradable(
+                        base: 0,
+                        upgraded: -1,
+                    ),
+                ]),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Weak",
+                amount: Sum([
+                    X,
+                    Upgradable(
+                        base: 0,
+                        upgraded: 1,
+                    ),
+                ]),
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Nightmare",
+        type: Skill,
+        class: Silent,
+        cost: Upgradable(
+            base: 3,
+            upgraded: 2,
+        ),
+        rarity: Rare,
+        on_play: [
+            Custom,
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Phantasmal Killer",
+        type: Skill,
+        class: Silent,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Phantasmal",
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Storm Of Steel",
+        type: Skill,
+        class: Silent,
+        rarity: Rare,
+        on_play: [
+            Custom,
+        ],
+    ),
+    (
+        name: "Tools Of The Trade",
+        type: Power,
+        class: Silent,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Tools Of The Trade",
+            ),
+        ],
+    ),
+    (
+        name: "Unload",
+        type: Attack,
+        class: Silent,
+        rarity: Rare,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 14,
+                    upgraded: 18,
+                ),
+                target: TargetEnemy,
+            ),
+            Custom,
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Wraith Form",
+        type: Power,
+        class: Silent,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Intangible",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+            AddBuff(
+                buff: "Wraith Form",
+            ),
+        ],
+    ),
+    (
+        name: "Dualcast",
+        type: Skill,
+        class: Defect,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Starter,
+        on_play: [
+            EvokeOrb(Fixed(2)),
+        ],
+    ),
+    (
+        name: "Zap",
+        type: Skill,
+        class: Defect,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Starter,
+        on_play: [
+            ChannelOrb(Lightning),
+        ],
+    ),
+    (
+        name: "Ball Lightning",
+        type: Attack,
+        class: Defect,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 10,
+                ),
+                target: TargetEnemy,
+            ),
+            ChannelOrb(Lightning),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Barrage",
+        type: Attack,
+        class: Defect,
+        on_play: [
+            Repeat(
+                n: OrbCount,
+                effect: Single(AttackDamage(
+                    amount: Upgradable(
+                        base: 4,
+                        upgraded: 6,
+                    ),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Beam Cell",
+        type: Attack,
+        class: Defect,
+        cost: Fixed(0),
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Vulnerable",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Charge Battery",
+        type: Skill,
+        class: Defect,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 10,
+                ),
+            ),
+            AddBuff(
+                buff: "Energized",
+            ),
+        ],
+    ),
+    (
+        name: "Claw",
+        type: Attack,
+        class: Defect,
+        cost: Fixed(0),
+        on_play: [
+            AttackDamage(
+                amount: Custom,
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Cold Snap",
+        type: Attack,
+        class: Defect,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 9,
+                ),
+                target: TargetEnemy,
+            ),
+            ChannelOrb(Frost),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Compile Driver",
+        type: Attack,
+        class: Defect,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 10,
+                ),
+                target: TargetEnemy,
+            ),
+            Draw(OrbCount),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Coolheaded",
+        type: Skill,
+        class: Defect,
+        on_play: [
+            ChannelOrb(Frost),
+            Draw(Upgradable(
+                base: 1,
+                upgraded: 2,
+            )),
+        ],
+    ),
+    (
+        name: "Go For The Eyes",
+        type: Attack,
+        class: Defect,
+        cost: Fixed(0),
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Weak",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Hologram",
+        type: Skill,
+        class: Defect,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 5,
+                ),
+            ),
+            ChooseCards(
+                location: DiscardPile,
+                then: Single(MoveTo(
+                    location: PlayerHand,
+                )),
+            ),
+            If(
+                condition: Upgraded,
+                _else: Single(SelfEffect(Exhaust)),
+            ),
+        ],
+    ),
+    (
+        name: "Leap",
+        type: Skill,
+        class: Defect,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 9,
+                    upgraded: 12,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Rebound",
+        type: Attack,
+        class: Defect,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 9,
+                    upgraded: 12,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Rebound",
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Recursion",
+        type: Skill,
+        class: Defect,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        on_play: [
+            Custom,
+        ],
+    ),
+    (
+        name: "Stack",
+        type: Skill,
+        class: Defect,
+        on_play: [
+            Block(
+                amount: Sum([
+                    Custom,
+                    Upgradable(
+                        base: 0,
+                        upgraded: 3,
+                    ),
+                ]),
+            ),
+        ],
+    ),
+    (
+        name: "Steam Barrier",
+        type: Skill,
+        class: Defect,
+        cost: Fixed(0),
+        on_start: [
+            SetN(Upgradable(
+                base: 6,
+                upgraded: 8,
+            )),
+        ],
+        on_play: [
+            Block(
+                amount: N,
+            ),
+            AddN(Fixed(-1)),
+        ],
+    ),
+    (
+        name: "Streamline",
+        type: Attack,
+        class: Defect,
+        cost: N,
+        on_start: [
+            SetN(Fixed(2)),
+        ],
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 15,
+                    upgraded: 20,
+                ),
+            ),
+            If(
+                condition: Equals(N, Fixed(0)),
+                _else: Single(AddN(Fixed(-1))),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Sweeping Beam",
+        type: Attack,
+        class: Defect,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 9,
+                ),
+                target: AllEnemies,
+            ),
+            Draw(Fixed(1)),
+        ],
+    ),
+    (
+        name: "Turbo",
+        type: Skill,
+        class: Defect,
+        on_play: [
+            AddEnergy(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+            CreateCard(
+                name: "Void",
+                location: DiscardPile,
+            ),
+        ],
+    ),
+    (
+        name: "Aggregate",
+        type: Skill,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddEnergy(Custom),
+        ],
+    ),
+    (
+        name: "Auto Shields",
+        type: Skill,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            If(
+                condition: NoBlock,
+                then: Single(Block(
+                    amount: Upgradable(
+                        base: 11,
+                        upgraded: 15,
+                    ),
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Blizzard",
+        type: Attack,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Custom,
+                target: AllEnemies,
+            ),
+        ],
+    ),
+    (
+        name: "Boot Sequence",
+        type: Skill,
+        class: Defect,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 13,
+                ),
+            ),
+            SelfEffect(Exhaust),
+        ],
+        innate: Always,
+    ),
+    (
+        name: "Bullseye",
+        type: Attack,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 11,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Lock On",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Capacitor",
+        type: Power,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddOrbSlot(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+        ],
+    ),
+    (
+        name: "Chaos",
+        type: Skill,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            ChannelOrb(Any),
+            If(
+                condition: Upgraded,
+                then: Single(ChannelOrb(Any)),
+            ),
+        ],
+    ),
+    (
+        name: "Chill",
+        type: Skill,
+        class: Defect,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            Repeat(
+                n: EnemyCount,
+                effect: Single(ChannelOrb(Frost)),
+            ),
+            SelfEffect(Exhaust),
+        ],
+        innate: Upgraded,
+    ),
+    (
+        name: "Consume",
+        type: Skill,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Focus",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+            AddOrbSlot(Fixed(-1)),
+        ],
+    ),
+    (
+        name: "Darkness",
+        type: Skill,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            ChannelOrb(Dark),
+            If(
+                condition: Upgraded,
+                then: Single(Custom),
+            ),
+        ],
+    ),
+    (
+        name: "Defragment",
+        type: Power,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Focus",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Doom And Gloom",
+        type: Attack,
+        class: Defect,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 14,
+                ),
+                target: AllEnemies,
+            ),
+            ChannelOrb(Dark),
+        ],
+    ),
+    (
+        name: "Double Energy",
+        type: Skill,
+        class: Defect,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            AddEnergy(Custom),
+        ],
+    ),
+    (
+        name: "Equilibrium",
+        type: Skill,
+        class: Defect,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 13,
+                    upgraded: 16,
+                ),
+            ),
+            AddBuff(
+                buff: "Equilibrium",
+            ),
+        ],
+    ),
+    (
+        name: "Ftl",
+        type: Attack,
+        class: Defect,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 6,
+                ),
+                target: TargetEnemy,
+            ),
+            If(
+                condition: Custom,
+                then: Single(Draw(Fixed(1))),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Force Field",
+        type: Skill,
+        class: Defect,
+        cost: Custom,
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 12,
+                    upgraded: 16,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Fusion",
+        type: Skill,
+        class: Defect,
+        cost: Upgradable(
+            base: 2,
+            upgraded: 1,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            ChannelOrb(Plasma),
+        ],
+    ),
+    (
+        name: "Genetic Algorithm",
+        type: Skill,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Sum([
+                    Fixed(1),
+                    N,
+                ]),
+            ),
+            AddN(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+        ],
+    ),
+    (
+        name: "Glacier",
+        type: Skill,
+        class: Defect,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 10,
+                ),
+            ),
+            ChannelOrb(Frost),
+            ChannelOrb(Frost),
+        ],
+    ),
+    (
+        name: "Heatsinks",
+        type: Power,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Heatsink",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Hello World",
+        type: Power,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Hello",
+            ),
+        ],
+        innate: Upgraded,
+    ),
+    (
+        name: "Loop",
+        type: Power,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Loop",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Melter",
+        type: Attack,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            Custom,
+            AttackDamage(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 14,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Overclock",
+        type: Skill,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            Draw(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+            CreateCard(
+                name: "Burn",
+                location: DiscardPile,
+            ),
+        ],
+    ),
+    (
+        name: "Recycle",
+        type: Skill,
+        class: Defect,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            Custom,
+        ],
+    ),
+    (
+        name: "Reinforced Body",
+        type: Skill,
+        class: Defect,
+        cost: X,
+        rarity: Uncommon,
+        on_play: [
+            Repeat(
+                n: X,
+                effect: Single(Block(
+                    amount: Upgradable(
+                        base: 7,
+                        upgraded: 9,
+                    ),
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Reprogram",
+        type: Skill,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Focus",
+                amount: Upgradable(
+                    base: -1,
+                    upgraded: -2,
+                ),
+            ),
+            AddBuff(
+                buff: "Strength",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+            AddBuff(
+                buff: "Dexterity",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Rip And Tear",
+        type: Attack,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 9,
+                ),
+                target: RandomEnemy,
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 9,
+                ),
+                target: RandomEnemy,
+            ),
+        ],
+    ),
+    (
+        name: "Scrape",
+        type: Attack,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 10,
+                ),
+                target: TargetEnemy,
+            ),
+            Custom,
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Self Repair",
+        type: Power,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Repair",
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 10,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Skim",
+        type: Skill,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            Draw(Upgradable(
+                base: 3,
+                upgraded: 4,
+            )),
+        ],
+    ),
+    (
+        name: "Static Discharge",
+        type: Power,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Static Discharge",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Storm",
+        type: Power,
+        class: Defect,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Storm",
+            ),
+        ],
+        innate: Upgraded,
+    ),
+    (
+        name: "Sunder",
+        type: Attack,
+        class: Defect,
+        cost: Fixed(3),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 24,
+                    upgraded: 32,
+                ),
+                target: TargetEnemy,
+                if_fatal: [
+                    AddEnergy(Fixed(3)),
+                ],
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Tempest",
+        type: Skill,
+        class: Defect,
+        cost: X,
+        rarity: Uncommon,
+        on_play: [
+            Repeat(
+                n: Sum([
+                    X,
+                    Upgradable(
+                        base: 0,
+                        upgraded: 1,
+                    ),
+                ]),
+                effect: Single(ChannelOrb(Lightning)),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "White Noise",
+        type: Skill,
+        class: Defect,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            CreateCardByType(
+                location: PlayerHand,
+                type: Power,
+                then: Single(ZeroTurnCost),
+            ),
+        ],
+    ),
+    (
+        name: "All For One",
+        type: Attack,
+        class: Defect,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 14,
+                ),
+                target: TargetEnemy,
+            ),
+            Custom,
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Amplify",
+        type: Skill,
+        class: Defect,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Amplify",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Biased Cognition",
+        type: Power,
+        class: Defect,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Focus",
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 5,
+                ),
+            ),
+            AddBuff(
+                buff: "Bias",
+            ),
+        ],
+    ),
+    (
+        name: "Buffer",
+        type: Power,
+        class: Defect,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Buffer",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Core Surge",
+        type: Attack,
+        class: Defect,
+        rarity: Rare,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 11,
+                    upgraded: 15,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Artifact",
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Creative Ai",
+        type: Power,
+        class: Defect,
+        cost: Upgradable(
+            base: 3,
+            upgraded: 2,
+        ),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Creative Ai",
+            ),
+        ],
+    ),
+    (
+        name: "Echo Form",
+        type: Power,
+        class: Defect,
+        cost: Fixed(3),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Echo Form",
+            ),
+        ],
+        on_turn_end: [
+            If(
+                condition: Upgraded,
+                _else: Single(SelfEffect(Exhaust)),
+            ),
+        ],
+    ),
+    (
+        name: "Electodynamics",
+        type: Power,
+        class: Defect,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Electro",
+            ),
+            Repeat(
+                n: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+                effect: Single(ChannelOrb(Lightning)),
+            ),
+        ],
+    ),
+    (
+        name: "Fission",
+        type: Skill,
+        class: Defect,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            Custom,
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Hyperbeam",
+        type: Attack,
+        class: Defect,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 26,
+                    upgraded: 34,
+                ),
+                target: AllEnemies,
+            ),
+            AddBuff(
+                buff: "Focus",
+                amount: Fixed(-3),
+            ),
+        ],
+    ),
+    (
+        name: "Machine Learning",
+        type: Power,
+        class: Defect,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Machine Learning",
+            ),
+        ],
+        innate: Upgraded,
+    ),
+    (
+        name: "Meteor Strike",
+        type: Attack,
+        class: Defect,
+        cost: Fixed(5),
+        rarity: Rare,
+        on_play: [
+            Damage(
+                amount: Upgradable(
+                    base: 24,
+                    upgraded: 30,
+                ),
+                target: TargetEnemy,
+            ),
+            ChannelOrb(Plasma),
+            ChannelOrb(Plasma),
+            ChannelOrb(Plasma),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Multi Cast",
+        type: Skill,
+        class: Defect,
+        cost: X,
+        rarity: Rare,
+        on_play: [
+            EvokeOrb(Sum([
+                X,
+                Upgradable(
+                    base: 0,
+                    upgraded: 1,
+                ),
+            ])),
+        ],
+    ),
+    (
+        name: "Rainbow",
+        type: Skill,
+        class: Defect,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            ChannelOrb(Lightning),
+            ChannelOrb(Frost),
+            ChannelOrb(Dark),
+            If(
+                condition: Upgraded,
+                _else: Single(SelfEffect(Exhaust)),
+            ),
+        ],
+    ),
+    (
+        name: "Reboot",
+        type: Skill,
+        class: Defect,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            DoCardEffect(
+                location: PlayerHand,
+                position: All,
+                effect: MoveTo(
+                    location: DrawPile,
+                ),
+            ),
+            DoCardEffect(
+                location: DiscardPile,
+                position: All,
+                effect: MoveTo(
+                    location: DrawPile,
+                ),
+            ),
+            Shuffle,
+            Draw(Upgradable(
+                base: 4,
+                upgraded: 6,
+            )),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Seek",
+        type: Skill,
+        class: Defect,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            ChooseCards(
+                location: DrawPile,
+                then: Single(MoveTo(
+                    location: PlayerHand,
+                )),
+                min: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+                max: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Thunder Strike",
+        type: Attack,
+        class: Defect,
+        cost: Fixed(3),
+        rarity: Rare,
+        on_play: [
+            Repeat(
+                n: Custom,
+                effect: Single(AttackDamage(
+                    amount: Upgradable(
+                        base: 7,
+                        upgraded: 9,
+                    ),
+                    target: RandomEnemy,
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Eruption",
+        type: Attack,
+        class: Watcher,
+        cost: Upgradable(
+            base: 2,
+            upgraded: 1,
+        ),
+        rarity: Starter,
+        on_play: [
+            AttackDamage(
+                amount: Fixed(9),
+                target: TargetEnemy,
+            ),
+            SetStance(Wrath),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Vigilance",
+        type: Skill,
+        class: Watcher,
+        cost: Fixed(2),
+        rarity: Starter,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 12,
+                ),
+            ),
+            SetStance(Calm),
+        ],
+    ),
+    (
+        name: "Bowling Bash",
+        type: Attack,
+        class: Watcher,
+        on_play: [
+            Repeat(
+                n: EnemyCount,
+                effect: Single(AttackDamage(
+                    amount: Upgradable(
+                        base: 7,
+                        upgraded: 10,
+                    ),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Consecrate",
+        type: Attack,
+        class: Watcher,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 8,
+                ),
+                target: AllEnemies,
+            ),
+        ],
+    ),
+    (
+        name: "Crescendo",
+        type: Attack,
+        class: Watcher,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        on_play: [
+            SetStance(Wrath),
+            SelfEffect(Exhaust),
+        ],
+        retain: Always,
+        targeted: Always,
+    ),
+    (
+        name: "Crush Joints",
+        type: Attack,
+        class: Watcher,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 11,
+                ),
+                target: TargetEnemy,
+            ),
+            If(
+                condition: LastCard(Skill),
+                then: Single(AddBuff(
+                    buff: "Vulnerable",
+                    amount: Upgradable(
+                        base: 1,
+                        upgraded: 2,
+                    ),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Cut Through Fate",
+        type: Attack,
+        class: Watcher,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 9,
+                ),
+                target: TargetEnemy,
+            ),
+            Scry(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+            Draw(Fixed(1)),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Empty Body",
+        type: Skill,
+        class: Watcher,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 10,
+                ),
+            ),
+            SetStance(None),
+        ],
+    ),
+    (
+        name: "Empty Fist",
+        type: Attack,
+        class: Watcher,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 9,
+                    upgraded: 14,
+                ),
+            ),
+            SetStance(None),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Evaluate",
+        type: Skill,
+        class: Watcher,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 10,
+                ),
+            ),
+            CreateCard(
+                name: "Insight",
+                location: DrawPile,
+                position: Random,
+            ),
+        ],
+    ),
+    (
+        name: "Flurry Of Blows",
+        type: Attack,
+        class: Watcher,
+        cost: Fixed(0),
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Flying Sleeves",
+        type: Attack,
+        class: Watcher,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+                target: TargetEnemy,
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        retain: Always,
+        targeted: Always,
+    ),
+    (
+        name: "Follow Up",
+        type: Attack,
+        class: Watcher,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 11,
+                ),
+                target: TargetEnemy,
+            ),
+            If(
+                condition: LastCard(Attack),
+                then: Single(AddEnergy(Fixed(1))),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Halt",
+        type: Skill,
+        class: Watcher,
+        cost: Fixed(0),
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+            ),
+            If(
+                condition: Stance(Wrath),
+                then: Single(Block(
+                    amount: Upgradable(
+                        base: 9,
+                        upgraded: 14,
+                    ),
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Just Lucky",
+        type: Attack,
+        class: Watcher,
+        cost: Fixed(0),
+        on_play: [
+            Scry(Upgradable(
+                base: 1,
+                upgraded: 2,
+            )),
+            Block(
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+            AttackDamage(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Pressure Points",
+        type: Skill,
+        class: Watcher,
+        on_play: [
+            AddBuff(
+                buff: "Mark",
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 11,
+                ),
+                target: TargetEnemy,
+            ),
+            Custom,
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Prostrate",
+        type: Skill,
+        class: Watcher,
+        cost: Fixed(0),
+        on_play: [
+            AddBuff(
+                buff: "Mantra",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+            Block(
+                amount: Fixed(4),
+            ),
+        ],
+    ),
+    (
+        name: "Protect",
+        type: Skill,
+        class: Watcher,
+        cost: Fixed(2),
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 12,
+                    upgraded: 16,
+                ),
+            ),
+        ],
+        retain: Always,
+    ),
+    (
+        name: "Sash Whip",
+        type: Attack,
+        class: Watcher,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 10,
+                ),
+                target: TargetEnemy,
+            ),
+            If(
+                condition: LastCard(Attack),
+                then: Single(AddBuff(
+                    buff: "Weak",
+                    amount: Upgradable(
+                        base: 1,
+                        upgraded: 2,
+                    ),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Third Eye",
+        type: Skill,
+        class: Watcher,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 9,
+                ),
+            ),
+            Scry(Upgradable(
+                base: 3,
+                upgraded: 5,
+            )),
+        ],
+    ),
+    (
+        name: "Tranquility",
+        type: Skill,
+        class: Watcher,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        on_play: [
+            SetStance(Calm),
+            SelfEffect(Exhaust),
+        ],
+        retain: Always,
+    ),
+    (
+        name: "Battle Hymn",
+        type: Power,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Battle Hymn",
+            ),
+        ],
+        innate: Upgraded,
+    ),
+    (
+        name: "Carve Reality",
+        type: Attack,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 10,
+                ),
+                target: TargetEnemy,
+            ),
+            CreateCard(
+                name: "Smite",
+                location: PlayerHand,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Collect",
+        type: Skill,
+        class: Watcher,
+        cost: X,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Collect",
+                amount: X,
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Conclude",
+        type: Attack,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            Damage(
+                amount: Upgradable(
+                    base: 12,
+                    upgraded: 16,
+                ),
+                target: AllEnemies,
+            ),
+            EndTurn,
+        ],
+    ),
+    (
+        name: "Deceive Reality",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 7,
+                ),
+            ),
+            CreateCard(
+                name: "Safety",
+                location: PlayerHand,
+            ),
+        ],
+    ),
+    (
+        name: "Empty Mind",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            Draw(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+            SetStance(None),
+        ],
+    ),
+    (
+        name: "Fasting",
+        type: Power,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Strength",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+            ),
+            AddBuff(
+                buff: "Dexterity",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+            ),
+            AddBuff(
+                buff: "Fasting",
+            ),
+        ],
+    ),
+    (
+        name: "Fear No Evil",
+        type: Attack,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            Damage(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 9,
+                ),
+                target: TargetEnemy,
+            ),
+            If(
+                condition: Attacking(
+                    target: TargetEnemy,
+                ),
+                then: Single(SetStance(Calm)),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Foreign Influence",
+        type: Skill,
+        class: Watcher,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            If(
+                condition: Upgraded,
+                then: Single(CreateCardByType(
+                    location: PlayerHand,
+                    type: All,
+                    _class: Some(All),
+                    then: Single(ZeroTurnCost),
+                )),
+                _else: Single(CreateCardByType(
+                    location: PlayerHand,
+                    type: All,
+                    _class: Some(All),
+                )),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Foresight",
+        type: Power,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Foresight",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Indignation",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            If(
+                condition: Stance(Wrath),
+                then: Single(AddBuff(
+                    buff: "Vulnerable",
+                    amount: Upgradable(
+                        base: 3,
+                        upgraded: 5,
+                    ),
+                    target: AllEnemies,
+                )),
+                _else: Single(SetStance(Wrath)),
+            ),
+        ],
+    ),
+    (
+        name: "Inner Peace",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            If(
+                condition: Stance(Calm),
+                then: Single(Draw(Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ))),
+                _else: Single(SetStance(Calm)),
+            ),
+        ],
+    ),
+    (
+        name: "Like Water",
+        type: Power,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Like Water",
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 7,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Meditate",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            Custom,
+        ],
+    ),
+    (
+        name: "Mental Fortress",
+        type: Power,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Mental Fortress",
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Nirvana",
+        type: Power,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Nirvana",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Perseverance",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_start: [
+            SetN(Fixed(0)),
+        ],
+        on_play: [
+            Block(
+                amount: Sum([
+                    N,
+                    Upgradable(
+                        base: 5,
+                        upgraded: 7,
+                    ),
+                ]),
+            ),
+        ],
+        on_retain: [
+            AddN(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+        ],
+        retain: Always,
+    ),
+    (
+        name: "Pray",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Mantra",
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+            ),
+            CreateCard(
+                name: "Insight",
+                location: DrawPile,
+                position: Random,
+            ),
+        ],
+    ),
+    (
+        name: "Reach Heaven",
+        type: Attack,
+        class: Watcher,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 15,
+                ),
+                target: TargetEnemy,
+            ),
+            CreateCard(
+                name: "Through Violence",
+                location: DrawPile,
+                position: Random,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Rushdown",
+        type: Power,
+        class: Watcher,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Rushdown",
+                amount: Fixed(2),
+            ),
+        ],
+    ),
+    (
+        name: "Sanctity",
+        type: Skill,
+        class: Watcher,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 9,
+                ),
+            ),
+            If(
+                condition: LastCard(Skill),
+                then: Single(Draw(Fixed(2))),
+            ),
+        ],
+    ),
+    (
+        name: "Sands Of Time",
+        type: Attack,
+        class: Watcher,
+        cost: Fixed(4),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 20,
+                    upgraded: 26,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        on_retain: [
+            SelfEffect(ReduceCost(Fixed(1))),
+        ],
+        retain: Always,
+        targeted: Always,
+    ),
+    (
+        name: "Signature Move",
+        type: Attack,
+        class: Watcher,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        playable_if: Custom,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 30,
+                    upgraded: 40,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Simmering Fury",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Simmering Rage",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Study",
+        type: Power,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Study",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 1,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Swivel",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 11,
+                ),
+            ),
+            Custom,
+        ],
+    ),
+    (
+        name: "Talk To The Hand",
+        type: Attack,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 7,
+                ),
+                target: TargetEnemy,
+            ),
+            AddBuff(
+                buff: "Block Return",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Tantrum",
+        type: Attack,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            Repeat(
+                n: Upgradable(
+                    base: 3,
+                    upgraded: 4,
+                ),
+                effect: Single(AttackDamage(
+                    amount: Fixed(3),
+                    target: TargetEnemy,
+                )),
+            ),
+            SelfEffect(MoveTo(
+                location: DrawPile,
+            )),
+            SetStance(Wrath),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Wallop",
+        type: Attack,
+        class: Watcher,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            Custom,
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Wave Of The Hand",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Wave Of The Hand",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Weave",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Wave Of The Hand",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+    ),
+    (
+        name: "Wheel Kick",
+        type: Attack,
+        class: Watcher,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 15,
+                    upgraded: 20,
+                ),
+                target: TargetEnemy,
+            ),
+            Draw(Fixed(2)),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Windmill Strike",
+        type: Attack,
+        class: Watcher,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_start: [
+            SetN(Fixed(0)),
+        ],
+        on_play: [
+            AttackDamage(
+                amount: Sum([
+                    N,
+                    Upgradable(
+                        base: 7,
+                        upgraded: 10,
+                    ),
+                ]),
+                target: TargetEnemy,
+            ),
+        ],
+        on_retain: [
+            AddN(Upgradable(
+                base: 4,
+                upgraded: 5,
+            )),
+        ],
+        retain: Always,
+        targeted: Always,
+    ),
+    (
+        name: "Worship",
+        type: Skill,
+        class: Watcher,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Mantra",
+                amount: Fixed(5),
+            ),
+        ],
+        retain: Upgraded,
+    ),
+    (
+        name: "Wreath Of Flame",
+        type: Skill,
+        class: Watcher,
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Vigor",
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 8,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Alpha",
+        type: Skill,
+        class: Watcher,
+        rarity: Rare,
+        on_play: [
+            CreateCard(
+                name: "Beta",
+                location: DrawPile,
+                position: Random,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        innate: Upgraded,
+    ),
+    (
+        name: "Blasphemy",
+        type: Skill,
+        class: Watcher,
+        rarity: Rare,
+        on_play: [
+            SetStance(Divinity),
+            AddBuff(
+                buff: "Blasphemer",
+            ),
+            SelfEffect(Exhaust),
+        ],
+        retain: Upgraded,
+    ),
+    (
+        name: "Brilliance",
+        type: Attack,
+        class: Watcher,
+        rarity: Rare,
+        on_play: [
+            AttackDamage(
+                amount: Sum([
+                    Upgradable(
+                        base: 12,
+                        upgraded: 16,
+                    ),
+                    Custom,
+                ]),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Conjure Blade",
+        type: Skill,
+        class: Watcher,
+        cost: X,
+        rarity: Rare,
+        on_play: [
+            Custom,
+        ],
+    ),
+    (
+        name: "Deus Ex Machina",
+        type: Skill,
+        class: Watcher,
+        cost: Fixed(0),
+        rarity: Rare,
+        playable_if: Never,
+        on_draw: [
+            CreateCard(
+                name: "Miracle",
+                location: PlayerHand,
+            ),
+            CreateCard(
+                name: "Miracle",
+                location: PlayerHand,
+            ),
+            If(
+                condition: Upgraded,
+                then: Single(CreateCard(
+                    name: "Miracle",
+                    location: PlayerHand,
+                )),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Deva Form",
+        type: Power,
+        class: Watcher,
+        cost: Fixed(3),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Deva",
+            ),
+        ],
+        on_turn_end: [
+            If(
+                condition: Upgraded,
+                _else: Single(SelfEffect(Exhaust)),
+            ),
+        ],
+    ),
+    (
+        name: "Devotion",
+        type: Power,
+        class: Watcher,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Devotion",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Establishment",
+        type: Power,
+        class: Watcher,
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Establishment",
+            ),
+        ],
+        innate: Upgraded,
+    ),
+    (
+        name: "Judgment",
+        type: Skill,
+        class: Watcher,
+        rarity: Rare,
+        on_play: [
+            If(
+                condition: RemainingHp(
+                    amount: Upgradable(
+                        base: 31,
+                        upgraded: 41,
+                    ),
+                    target: TargetEnemy,
+                ),
+                _else: Single(Die(
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        innate: Upgraded,
+        targeted: Always,
+    ),
+    (
+        name: "Lesson Learned",
+        type: Attack,
+        class: Watcher,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 12,
+                ),
+                target: TargetEnemy,
+                if_fatal: [
+                    UpgradeRandomCard(1),
+                ],
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Master Reality",
+        type: Power,
+        class: Watcher,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Master Reality",
+            ),
+        ],
+    ),
+    (
+        name: "Omniscience",
+        type: Skill,
+        class: Watcher,
+        cost: Upgradable(
+            base: 4,
+            upgraded: 3,
+        ),
+        rarity: Rare,
+        on_play: [
+            ChooseCards(
+                location: DeckPile,
+                then: Multiple([
+                    AutoPlay,
+                    AutoPlay,
+                ]),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Ragnarok",
+        type: Attack,
+        class: Watcher,
+        cost: Fixed(3),
+        rarity: Rare,
+        on_play: [
+            Repeat(
+                n: Upgradable(
+                    base: 5,
+                    upgraded: 6,
+                ),
+                effect: Single(AttackDamage(
+                    amount: Upgradable(
+                        base: 5,
+                        upgraded: 6,
+                    ),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Scrawl",
+        type: Skill,
+        class: Watcher,
+        cost: Fixed(3),
+        rarity: Rare,
+        on_play: [
+            Draw(Custom),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Spirit Shield",
+        type: Skill,
+        class: Watcher,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            Block(
+                amount: Mult([
+                    Custom,
+                    Upgradable(
+                        base: 3,
+                        upgraded: 4,
+                    ),
+                ]),
+            ),
+        ],
+    ),
+    (
+        name: "Vault",
+        type: Skill,
+        class: Watcher,
+        cost: Upgradable(
+            base: 3,
+            upgraded: 2,
+        ),
+        rarity: Rare,
+        on_play: [
+            Custom,
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Wish",
+        type: Skill,
+        class: Watcher,
+        cost: Fixed(3),
+        rarity: Rare,
+        on_play: [
+            Custom,
+        ],
+    ),
+    (
+        name: "Bandage Up",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            Heal(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Blind",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            If(
+                condition: Upgraded,
+                then: Single(AddBuff(
+                    buff: "Weak",
+                    amount: Fixed(2),
+                    target: AllEnemies,
+                )),
+                _else: Single(AddBuff(
+                    buff: "Weak",
+                    amount: Fixed(2),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Not(Upgraded),
+    ),
+    (
+        name: "Dark Shackles",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Temp Lose Strength",
+                amount: Upgradable(
+                    base: 9,
+                    upgraded: 15,
+                ),
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Deep Breath",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            DoCardEffect(
+                location: DiscardPile,
+                position: All,
+                effect: MoveTo(
+                    location: DrawPile,
+                ),
+            ),
+            Shuffle,
+            Draw(Upgradable(
+                base: 1,
+                upgraded: 2,
+            )),
+        ],
+    ),
+    (
+        name: "Discovery",
+        type: Skill,
+        class: None,
+        rarity: Uncommon,
+        on_play: [
+            ChooseCardByType(
+                location: PlayerHand,
+                type: All,
+                then: Single(ZeroTurnCost),
+                choices: Fixed(3),
+            ),
+            If(
+                condition: Upgraded,
+                _else: Single(SelfEffect(Exhaust)),
+            ),
+        ],
+    ),
+    (
+        name: "Dramatic Entrance",
+        type: Attack,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 8,
+                    upgraded: 12,
+                ),
+                target: AllEnemies,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        innate: Always,
+    ),
+    (
+        name: "Enlightenment",
+        type: Skill,
+        class: None,
+        rarity: Uncommon,
+        on_play: [
+            If(
+                condition: Upgraded,
+                then: Single(DoCardEffect(
+                    location: PlayerHand,
+                    position: All,
+                    effect: ZeroTurnCost,
+                )),
+                _else: Single(DoCardEffect(
+                    location: PlayerHand,
+                    position: All,
+                    effect: ZeroCombatCost,
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Finesse",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 4,
+                ),
+            ),
+            Draw(Fixed(1)),
+        ],
+    ),
+    (
+        name: "Flash Of Steel",
+        type: Attack,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 3,
+                    upgraded: 6,
+                ),
+                target: TargetEnemy,
+            ),
+            Draw(Fixed(1)),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Forethought",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            ChooseCards(
+                location: PlayerHand,
+                then: Multiple([
+                    MoveTo(
+                        location: DrawPile,
+                    ),
+                    ZeroCostUntilPlayed,
+                ]),
+                max: Upgradable(
+                    base: 1,
+                    upgraded: 10,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Good Instincts",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 6,
+                    upgraded: 9,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Impatience",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        playable_if: Not(HasCard(
+            location: PlayerHand,
+            card: Attack,
+        )),
+        on_play: [
+            Draw(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+        ],
+    ),
+    (
+        name: "Jack Of All Trades",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            CreateCardByType(
+                location: PlayerHand,
+                type: All,
+                _class: Some(None),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Madness",
+        type: Skill,
+        class: None,
+        cost: Upgradable(
+            base: 1,
+            upgraded: 0,
+        ),
+        rarity: Uncommon,
+        on_play: [
+            DoCardEffect(
+                location: PlayerHand,
+                position: Random,
+                effect: ZeroCombatCost,
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Mind Blast",
+        type: Attack,
+        class: None,
+        cost: Fixed(2),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Custom,
+                target: AllEnemies,
+            ),
+        ],
+        innate: Always,
+    ),
+    (
+        name: "Panacea",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            AddBuff(
+                buff: "Artifact",
+                amount: Upgradable(
+                    base: 1,
+                    upgraded: 2,
+                ),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Panic Button",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 30,
+                    upgraded: 40,
+                ),
+            ),
+            AddBuff(
+                buff: "No Block",
+                amount: Fixed(2),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Purity",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            ChooseCards(
+                location: PlayerHand,
+                then: Single(Exhaust),
+                min: Fixed(0),
+                max: Upgradable(
+                    base: 3,
+                    upgraded: 5,
+                ),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Swift Strike",
+        type: Attack,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 10,
+                ),
+                target: TargetEnemy,
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Trip",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Uncommon,
+        on_play: [
+            If(
+                condition: Upgraded,
+                then: Single(AddBuff(
+                    buff: "Vulnerable",
+                    amount: Fixed(2),
+                    target: TargetEnemy,
+                )),
+                _else: Single(AddBuff(
+                    buff: "Vulnerable",
+                    amount: Fixed(2),
+                    target: AllEnemies,
+                )),
+            ),
+        ],
+        targeted: Not(Upgraded),
+    ),
+    (
+        name: "Apotheosis",
+        type: Skill,
+        class: None,
+        cost: Upgradable(
+            base: 2,
+            upgraded: 1,
+        ),
+        rarity: Rare,
+        on_play: [
+            DoCardEffect(
+                location: DrawPile,
+                position: Bottom,
+                effect: Upgrade,
+            ),
+            DoCardEffect(
+                location: DiscardPile,
+                position: Bottom,
+                effect: Upgrade,
+            ),
+            DoCardEffect(
+                location: PlayerHand,
+                position: Bottom,
+                effect: Upgrade,
+            ),
+        ],
+    ),
+    (
+        name: "Chrysalis",
+        type: Skill,
+        class: None,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            Repeat(
+                n: Upgradable(
+                    base: 3,
+                    upgraded: 5,
+                ),
+                effect: Single(CreateCardByType(
+                    location: DrawPile,
+                    type: Skill,
+                    position: Random,
+                    then: Single(ZeroCombatCost),
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Hand Of Greed",
+        type: Attack,
+        class: None,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 20,
+                    upgraded: 25,
+                ),
+                target: TargetEnemy,
+                if_fatal: [
+                    AddGold(Upgradable(
+                        base: 20,
+                        upgraded: 25,
+                    )),
+                ],
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Magnetism",
+        type: Power,
+        class: None,
+        cost: Upgradable(
+            base: 2,
+            upgraded: 1,
+        ),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Magnetism",
+            ),
+        ],
+    ),
+    (
+        name: "Master Of Strategy",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            Draw(Upgradable(
+                base: 3,
+                upgraded: 4,
+            )),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Mayhem",
+        type: Power,
+        class: None,
+        cost: Upgradable(
+            base: 2,
+            upgraded: 1,
+        ),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Mayhem",
+            ),
+        ],
+    ),
+    (
+        name: "Metamorphosis",
+        type: Skill,
+        class: None,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            Repeat(
+                n: Upgradable(
+                    base: 3,
+                    upgraded: 5,
+                ),
+                effect: Single(CreateCardByType(
+                    location: DrawPile,
+                    type: Attack,
+                    position: Random,
+                    then: Single(ZeroCombatCost),
+                )),
+            ),
+        ],
+    ),
+    (
+        name: "Panache",
+        type: Power,
+        class: None,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Mayhem",
+                amount: Upgradable(
+                    base: 10,
+                    upgraded: 14,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Sadistic Nature",
+        type: Power,
+        class: None,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "Sadistic",
+                amount: Upgradable(
+                    base: 5,
+                    upgraded: 7,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Secret Techique",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            Custom,
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Secret Weapon",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            Custom,
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "The Bomb",
+        type: Skill,
+        class: None,
+        cost: Fixed(2),
+        rarity: Rare,
+        on_play: [
+            AddBuff(
+                buff: "The Bomb",
+                amount: Upgradable(
+                    base: 40,
+                    upgraded: 50,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Thinking Ahead",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            Draw(Fixed(2)),
+            ChooseCards(
+                location: PlayerHand,
+                then: Single(MoveTo(
+                    location: DrawPile,
+                    position: Top,
+                )),
+            ),
+            If(
+                condition: Upgraded,
+                _else: Single(SelfEffect(Exhaust)),
+            ),
+        ],
+    ),
+    (
+        name: "Transmutation",
+        type: Skill,
+        class: None,
+        cost: X,
+        rarity: Rare,
+        on_play: [
+            Repeat(
+                n: X,
+                effect: Single(CreateCardByType(
+                    location: PlayerHand,
+                    type: All,
+                    _class: Some(None),
+                    then: Single(ZeroTurnCost),
+                )),
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Violence",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Rare,
+        on_play: [
+            Custom,
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Apparition",
+        type: Skill,
+        class: None,
+        rarity: Special,
+        on_play: [
+            AddBuff(
+                buff: "Intangible",
+            ),
+            SelfEffect(Exhaust),
+        ],
+        on_turn_end: [
+            If(
+                condition: Upgraded,
+                _else: Single(SelfEffect(Exhaust)),
+            ),
+        ],
+    ),
+    (
+        name: "Beta",
+        type: Skill,
+        class: None,
+        cost: Upgradable(
+            base: 2,
+            upgraded: 1,
+        ),
+        rarity: Special,
+        on_play: [
+            CreateCard(
+                name: "Omega",
+                location: DrawPile,
+                position: Random,
+            ),
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Bite",
+        type: Attack,
+        class: None,
+        rarity: Special,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 7,
+                    upgraded: 8,
+                ),
+                target: TargetEnemy,
+            ),
+            Heal(
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Expunger",
+        type: Attack,
+        class: None,
+        rarity: Special,
+        on_play: [
+            Repeat(
+                n: N,
+                effect: Single(AttackDamage(
+                    amount: Upgradable(
+                        base: 9,
+                        upgraded: 15,
+                    ),
+                    target: TargetEnemy,
+                )),
+            ),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Insight",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Special,
+        on_play: [
+            Draw(Upgradable(
+                base: 2,
+                upgraded: 3,
+            )),
+            SelfEffect(Exhaust),
+        ],
+        retain: Always,
+    ),
+    (
+        name: "Jax",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Special,
+        on_play: [
+            LoseHp(
+                amount: Fixed(3),
+            ),
+            AddBuff(
+                buff: "Strength",
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 3,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Miracle",
+        type: Skill,
+        class: None,
+        cost: Fixed(0),
+        rarity: Special,
+        on_play: [
+            AddEnergy(Upgradable(
+                base: 1,
+                upgraded: 2,
+            )),
+        ],
+        retain: Always,
+    ),
+    (
+        name: "Omega",
+        type: Power,
+        class: None,
+        cost: Fixed(3),
+        rarity: Special,
+        on_play: [
+            AddBuff(
+                buff: "Omega",
+                amount: Upgradable(
+                    base: 50,
+                    upgraded: 60,
+                ),
+            ),
+        ],
+    ),
+    (
+        name: "Ritual Dagger",
+        type: Attack,
+        class: None,
+        rarity: Special,
+        on_play: [
+            AttackDamage(
+                amount: Sum([
+                    Fixed(15),
+                    N,
+                ]),
+                target: TargetEnemy,
+                if_fatal: [
+                    AddN(Upgradable(
+                        base: 3,
+                        upgraded: 5,
+                    )),
+                ],
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Safety",
+        type: Skill,
+        class: None,
+        rarity: Special,
+        on_play: [
+            Block(
+                amount: Upgradable(
+                    base: 12,
+                    upgraded: 16,
+                ),
+            ),
+            SelfEffect(Exhaust),
+        ],
+        retain: Always,
+    ),
+    (
+        name: "Shiv",
+        type: Attack,
+        class: None,
+        cost: Fixed(0),
+        rarity: Special,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 4,
+                    upgraded: 6,
+                ),
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Smite",
+        type: Attack,
+        class: None,
+        rarity: Special,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 12,
+                    upgraded: 16,
+                ),
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Through Violence",
+        type: Attack,
+        class: None,
+        cost: Fixed(0),
+        rarity: Special,
+        on_play: [
+            AttackDamage(
+                amount: Upgradable(
+                    base: 20,
+                    upgraded: 30,
+                ),
+                target: TargetEnemy,
+            ),
+            SelfEffect(Exhaust),
+        ],
+        targeted: Always,
+    ),
+    (
+        name: "Burn",
+        type: Status,
+        class: None,
+        cost: Fixed(0),
+        rarity: Status,
+        playable_if: Never,
+        on_turn_end: [
+            Damage(
+                amount: Upgradable(
+                    base: 2,
+                    upgraded: 4,
+                ),
+            ),
+            SelfEffect(Discard),
+        ],
+    ),
+    (
+        name: "Dazed",
+        type: Status,
+        class: None,
+        cost: Fixed(0),
+        rarity: Status,
+        playable_if: Never,
+        on_turn_end: [
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Wound",
+        type: Status,
+        class: None,
+        cost: Fixed(0),
+        rarity: Status,
+        playable_if: Never,
+    ),
+    (
+        name: "Slimed",
+        type: Status,
+        class: None,
+        rarity: Status,
+        on_play: [
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Void",
+        type: Status,
+        class: None,
+        rarity: Status,
+        playable_if: Never,
+        on_draw: [
+            AddEnergy(Fixed(-1)),
+        ],
+        on_turn_end: [
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Ascenders Bane",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+        on_turn_end: [
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Clumsy",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+        on_turn_end: [
+            SelfEffect(Exhaust),
+        ],
+    ),
+    (
+        name: "Curse Of The Bell",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+    ),
+    (
+        name: "Decay",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+        on_turn_end: [
+            Damage(
+                amount: Fixed(2),
+            ),
+            SelfEffect(Discard),
+        ],
+    ),
+    (
+        name: "Doubt",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+        on_turn_end: [
+            AddBuff(
+                buff: "Weak",
+            ),
+            SelfEffect(Discard),
+        ],
+    ),
+    (
+        name: "Injury",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+    ),
+    (
+        name: "Necronomicurse",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+        on_exhaust: [
+            CreateCard(
+                name: "Necronomicurse",
+                location: PlayerHand,
+            ),
+        ],
+    ),
+    (
+        name: "Normality",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+    ),
+    (
+        name: "Pain",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+    ),
+    (
+        name: "Parasite",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+    ),
+    (
+        name: "Regret",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+        on_turn_end: [
+            LoseHp(
+                amount: Custom,
+            ),
+        ],
+    ),
+    (
+        name: "Pride",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        on_play: [
+            SelfEffect(Exhaust),
+        ],
+        on_turn_end: [
+            CreateCard(
+                name: "Pride",
+                location: DrawPile,
+                position: Top,
+            ),
+        ],
+        innate: Always,
+    ),
+    (
+        name: "Shame",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+        on_turn_end: [
+            AddBuff(
+                buff: "Frail",
+            ),
+            SelfEffect(Discard),
+        ],
+    ),
+    (
+        name: "Writhe",
+        type: Curse,
+        class: Curse,
+        rarity: Curse,
+        playable_if: Never,
+        innate: Always,
+    ),
+]

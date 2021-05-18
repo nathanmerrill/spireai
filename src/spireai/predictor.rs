@@ -23,7 +23,7 @@ pub fn predict_outcome(state: &GameState, choice: &Choice) -> GamePossibilitySet
             };
 
             spend_money(cost, true, &mut new_state);
-            add_card_to_deck(name, false, &mut new_state);
+            evaluator::add_card_to_deck(name, false, &mut new_state);
             (new_state, 1.0)
         }
 
@@ -88,11 +88,10 @@ pub fn predict_outcome(state: &GameState, choice: &Choice) -> GamePossibilitySet
             let mut state_space: f64 = 1.0;
             let sets = positions.iter().map(|p| {
                 let card = &state.deck[*p];
-                let available_cards: Vec<&'static str> =
+                let available_cards: Vec<&String> =
                     models::cards::available_cards_by_class(card.base._class)
                         .iter()
-                        .copied()
-                        .filter(move |c| *c != card.base.name)
+                        .filter(move |c| **c != card.base.name)
                         .collect();
 
                 state_space *= available_cards.len() as f64;
@@ -107,7 +106,7 @@ pub fn predict_outcome(state: &GameState, choice: &Choice) -> GamePossibilitySet
                 let card = set
                     .choose(&mut rng)
                     .expect("No available cards to be chosen!");
-                add_card_to_deck(card, *should_upgrade, &mut new_state);
+                evaluator::add_card_to_deck(card, *should_upgrade, &mut new_state);
             }
 
             (new_state, 1.0 / state_space)
@@ -140,7 +139,7 @@ pub fn predict_outcome(state: &GameState, choice: &Choice) -> GamePossibilitySet
             evaluator::eval_effects(
                 &potion.base.on_drink,
                 &mut possibility_set,
-                &evaluator::Binding::Potion(potion),
+                evaluator::Binding::Potion(evaluator::PotionReference{ potion: *slot }),
                 &Some(GameAction {
                     creature: &state.player,
                     is_attack: false,
@@ -171,14 +170,14 @@ where
 
     let samples = *weight as f64;
 
-    let available_relics: Vec<&'static str> = models::relics::RELICS
+    let available_relics: Vec<&String> = models::relics::RELICS
         .values()
         .filter(|relic| {
             relic.rarity == *rarity
                 && (relic.class == state.0.class || relic.class == Class::All)
-                && !state.0.relic_names.contains(relic.name)
+                && !state.0.relic_names.contains(&relic.name)
         })
-        .map(|relic| relic.name)
+        .map(|relic| &relic.name)
         .collect();
 
     let relic = *available_relics
@@ -186,8 +185,8 @@ where
         .expect("No available relics to be chosen!");
     sample_space *= available_relics.len() as f64;
 
-    if relic == models::relics::WAR_PAINT || relic == models::relics::WHETSTONE {
-        let card_type = if relic == models::relics::WAR_PAINT {
+    if relic == "War Paint" || relic == "Whetstone" {
+        let card_type = if relic == "War Paint" {
             CardType::Skill
         } else {
             CardType::Attack
@@ -226,117 +225,24 @@ fn remove_card_from_deck(position: usize, state: &mut GameState) {
 fn spend_money(amount: u16, at_shop: bool, state: &mut GameState) {
     state.gold -= amount;
 
-    if at_shop && state.relic_names.contains(MAW_BANK) {
-        state
-            .relics
-            .iter_mut()
-            .find(|relic| relic.base.name == MAW_BANK)
-            .expect("Expected Maw Bank in relics")
-            .enabled = false;
+    if at_shop{
+        evaluator::find_relic(&String::from("Maw Bank"), state).map(|relic| relic.enabled = false);
     }
 }
 
-fn add_relic(name: &str, state: &mut GameState) {
+fn add_relic(name: &String, state: &mut GameState) {
     let relic = evaluator::create_relic(name);
-    state.relic_names.insert(relic.base.name);
+    state.relic_names.insert(relic.base.name.to_string());
     state.relics.push(relic);
 }
 
-fn add_potion(name: &str, state: &mut GameState) {
+fn add_potion(name: &String, state: &mut GameState) {
     let potion = evaluator::create_potion(name);
     *state
         .potions
         .iter_mut()
         .find(|a| a.is_none())
         .expect("Expected potion in potions") = Some(potion);
-}
-
-fn find_relic<'a>(name: &str, state: &'a mut GameState) -> Option<&'a mut Relic> {
-    if state.relic_names.contains(MAW_BANK) {
-        match state
-            .relics
-            .iter_mut()
-            .find(|relic| relic.base.name == MAW_BANK)
-        {
-            Some(relic) => Some(relic),
-            None => panic!("Expected to find {} in relics", name),
-        }
-    } else {
-        None
-    }
-}
-
-fn add_card_to_deck(name: &str, upgraded: bool, state: &mut GameState) {
-    let mut card = evaluator::create_card(name);
-    if card.base._type == CardType::Curse {
-        if let Some(relic) = find_relic(OMAMORI, state) {
-            if relic.vars.x > 0 {
-                relic.vars.x -= 1;
-                return;
-            }
-        }
-
-        if state.relic_names.contains(DARKSTONE_PERIAPT) {
-            add_max_hp(6, state);
-        }
-    }
-
-    let is_upgraded = upgraded
-        || match card.base._type {
-            CardType::Attack => state.relic_names.contains(MOLTEN_EGG),
-            CardType::Skill => state.relic_names.contains(TOXIC_EGG),
-            CardType::Power => state.relic_names.contains(FROZEN_EGG),
-            CardType::Curse => false,
-            CardType::Status => false,
-            CardType::All => panic!("Unexpected card type of All"),
-        };
-
-    if is_upgraded {
-        card.upgrades = 1;
-    }
-
-    if state.relic_names.contains(CERAMIC_FISH) {
-        add_gold(9, state);
-    }
-
-    state.deck.push(card);
-}
-
-fn add_gold(amount: u16, state: &mut GameState) {
-    if state.relic_names.contains(ECTOPLASM) {
-        return;
-    }
-
-    if state.relic_names.contains(BLOODY_IDOL) {
-        heal(5, state);
-    }
-
-    state.gold += amount;
-}
-
-fn add_max_hp(amount: u16, state: &mut GameState) {
-    state.player.max_hp += amount;
-    heal(amount, state)
-}
-
-fn heal(mut amount: u16, state: &mut GameState) {
-    if state.relic_names.contains(MARK_OF_THE_BLOOM) {
-        return;
-    }
-
-    if state.battle_state.is_some() && state.relic_names.contains(MAGIC_FLOWER) {
-        amount += div_up(amount, 2)
-    }
-
-    state.player.hp += amount;
-
-    if state.player.hp > state.player.max_hp {
-        state.player.hp = state.player.max_hp;
-    }
-}
-
-fn div_up(a: u16, b: u16) -> u16 {
-    (a + (b - 1)) / b
 }
 
 pub fn verify_prediction<'a>(
