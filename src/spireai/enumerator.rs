@@ -17,10 +17,7 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
 
     match &state.floor_state {
         FloorState::Battle => {
-            let battle_state: &BattleState = state
-                .battle_state
-                .as_ref()
-                .expect("Battle state not set when floor state is battle");
+            let battle_state: &BattleState = &state.battle_state;
 
             match battle_state.card_choice_type {
                 CardChoiceType::Scry => {

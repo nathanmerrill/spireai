@@ -44,7 +44,7 @@ impl std::fmt::Debug for BaseEvent {
 pub fn by_name(name: &str) -> &'static BaseEvent {
     EVENTS
         .get(name)
-        .unwrap_or_else(|| panic!("Unrecognized event: {}", name))
+        .unwrap_or_else(|| panic!("Unrecognized when: {}", name))
 }
 
 lazy_static! {

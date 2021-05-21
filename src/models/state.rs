@@ -1,5 +1,6 @@
-use crate::models::core::*;
-use std::collections::{HashMap, HashSet};
+use im::{HashMap, HashSet, Vector};
+
+use crate::{models::core::*, spireai::evaluator::CreatureReference};
 
 use super::{buffs::BaseBuff, cards::BaseCard, events::BaseEvent, monsters::{BaseMonster, Intent}, potions::BasePotion, relics::BaseRelic};
 
@@ -8,18 +9,26 @@ pub struct GameState {
     pub class: Class,
     pub map: MapState,
     pub floor_state: FloorState,
-    pub battle_state: Option<BattleState>,
+    pub battle_state: BattleState,
     pub event_state: Option<EventState>,
     pub floor: u8,
     pub act: u8,
     pub asc: u8,
-    pub deck: Vec<Card>,
-    pub potions: Vec<Option<Potion>>,
-    pub relics: Vec<Relic>,
+    pub deck: Vector<Card>,
+    pub potions: Vector<Option<Potion>>,
+    pub relics: Vector<Relic>,
     pub relic_names: HashSet<String>,
     pub player: Creature,
     pub gold: u16,
     pub keys: Option<KeyState>,
+    pub won: Option<bool>,
+    pub active_whens: HashMap<When, Vector<WhenState>>
+}
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct WhenState {
+    source: CreatureReference,
+    effects: EffectGroup
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -54,13 +63,13 @@ pub enum FloorState {
     Battle,
     Map,
     GameOver,
-    Rewards(Vec<Reward>),
-    CardReward(Vec<(String, bool)>), // true if upgraded
+    Rewards(Vector<Reward>),
+    CardReward(Vector<(String, bool)>), // true if upgraded
     ShopEntrance,
     Shop {
-        cards: Vec<(String, u16)>,
-        potions: Vec<(String, u16)>,
-        relics: Vec<(String, u16)>,
+        cards: Vector<(String, u16)>,
+        potions: Vector<(String, u16)>,
+        relics: Vector<(String, u16)>,
         purge_cost: u16,
     }, // Last u8 is remove
 }
@@ -125,22 +134,51 @@ pub struct Creature {
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct BattleState {
+    pub active: bool,
     pub draw_top_known: usize,
     pub draw_bottom_known: usize,
-    pub draw: Vec<Card>,
-    pub discard: Vec<Card>,
-    pub exhaust: Vec<Card>,
-    pub hand: Vec<Card>,
-    pub monsters: Vec<Monster>,
-    pub orbs: Vec<Orb>,
+    pub draw: Vector<Card>,
+    pub discard: Vector<Card>,
+    pub exhaust: Vector<Card>,
+    pub hand: Vector<Card>,
+    pub monsters: Vector<Monster>,
+    pub orbs: Vector<Orb>,
     pub orb_slots: u8,
     pub energy: u8,
     pub stance: Stance,
     pub battle_type: BattleType,
-    pub card_choices: Vec<Card>,
+    pub card_choices: Vector<Card>,
     pub card_choice_type: CardChoiceType,
     pub discard_count: u8,
+    pub play_count: u8,
     pub last_card_played: Option<CardType>,
+    pub active_whens: HashMap<&'static str, Vector<WhenState>>
+}
+
+impl Default for BattleState {
+    fn default() -> Self {
+        BattleState {
+            active: false,
+            draw_top_known: 0,
+            draw_bottom_known: 0,
+            draw: Vector::new(),
+            discard: Vector::new(),
+            exhaust: Vector::new(),
+            hand: Vector::new(),
+            monsters: Vector::new(),
+            orbs: Vector::new(),
+            orb_slots: 0,
+            energy: 0,
+            stance: Stance::None,
+            battle_type: BattleType::Common,
+            card_choices: Vector::new(),
+            card_choice_type: CardChoiceType::None,
+            discard_count: 0,
+            play_count: 0,
+            last_card_played: None,
+            active_whens: HashMap::new()
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -193,9 +231,9 @@ pub struct Card {
     pub bottled: bool,
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct GameAction<'a> {
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub struct GameAction {
     pub is_attack: bool,
-    pub creature: &'a Creature,
+    pub creature: CreatureReference,
     pub target: Option<usize>,
 }

@@ -1,9 +1,6 @@
-use crate::models::{self, monsters::Intent};
+use crate::models::{self, monsters::Intent, core::*, state::*};
 use crate::spireai::GamePossibilitySet;
-use models::core::*;
-use models::state::*;
-use rand::seq::SliceRandom;
-use rand::Rng;
+use im::Vector;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CardReference {
@@ -20,12 +17,12 @@ impl BindingReference for CardReference {
         match self {
             CardReference::Deck(position) => &state.deck[position],
             CardReference::Discard(position) => {
-                &state.battle_state.as_ref().unwrap().discard[position]
+                &state.battle_state.discard[position]
             }
-            CardReference::Draw(position) => &state.battle_state.as_ref().unwrap().draw[position],
-            CardReference::Hand(position) => &state.battle_state.as_ref().unwrap().hand[position],
+            CardReference::Draw(position) => &state.battle_state.draw[position],
+            CardReference::Hand(position) => &state.battle_state.hand[position],
             CardReference::Exhaust(position) => {
-                &state.battle_state.as_ref().unwrap().exhaust[position]
+                &state.battle_state.exhaust[position]
             }
         }
     }
@@ -34,22 +31,22 @@ impl BindingReference for CardReference {
         match self {
             CardReference::Deck(position) => &mut state.deck[position],
             CardReference::Discard(position) => {
-                &mut state.battle_state.as_mut().unwrap().discard[position]
+                &mut state.battle_state.discard[position]
             }
             CardReference::Draw(position) => {
-                &mut state.battle_state.as_mut().unwrap().draw[position]
+                &mut state.battle_state.draw[position]
             }
             CardReference::Hand(position) => {
-                &mut state.battle_state.as_mut().unwrap().hand[position]
+                &mut state.battle_state.hand[position]
             }
             CardReference::Exhaust(position) => {
-                &mut state.battle_state.as_mut().unwrap().exhaust[position]
+                &mut state.battle_state.exhaust[position]
             }
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Eq, Debug, Clone, Copy, PartialEq)]
 pub enum CreatureReference {
     Player,
     Creature(usize),
@@ -60,7 +57,7 @@ impl BindingReference for CreatureReference {
     fn get(self, state: &GameState) -> &Creature {
         match self {
             CreatureReference::Creature(position) => {
-                &state.battle_state.as_ref().unwrap().monsters[position].creature
+                &state.battle_state.monsters[position].creature
             }
             CreatureReference::Player => &state.player,
         }
@@ -71,8 +68,6 @@ impl BindingReference for CreatureReference {
             CreatureReference::Creature(position) => {
                 &mut state
                     .battle_state
-                    .as_mut()
-                    .unwrap()
                     .monsters
                     .get_mut(position)
                     .unwrap()
@@ -87,7 +82,7 @@ impl CreatureReference {
     fn get_monster(self, state: &GameState) -> Option<&Monster> {
         match self {
             CreatureReference::Creature(position) => {
-                Some(&state.battle_state.as_ref().unwrap().monsters[position])
+                Some(&state.battle_state.monsters[position])
             }
             CreatureReference::Player => None,
         }
@@ -97,8 +92,6 @@ impl CreatureReference {
         match self {
             CreatureReference::Creature(position) => state
                 .battle_state
-                .as_mut()
-                .unwrap()
                 .monsters
                 .get_mut(position),
             CreatureReference::Player => None,
@@ -261,87 +254,23 @@ pub enum ResolvedTarget {
 }
 
 impl ResolvedTarget {
-    fn to_creature<'a>(&'a self, state: &'a GameState) -> &'a Creature {
+    fn to_creatures(self, state: &mut GamePossibilitySet) -> Vec<CreatureReference> {
+        match self {
+            ResolvedTarget::Player => vec![CreatureReference::Player],
+            ResolvedTarget::Monster(idx) => vec![CreatureReference::Creature(idx)],
+            ResolvedTarget::AllMonsters => (0 .. state.state.battle_state.monsters.len()).map(CreatureReference::Creature).collect(),
+            ResolvedTarget::RandomMonster(options) => {
+                vec![CreatureReference::Creature(*state.choose(&options).unwrap())]
+            },
+            ResolvedTarget::None => vec![]
+        }
+    }
+
+    fn to_creature(self, state: &GameState) -> &Creature {
         match self {
             ResolvedTarget::Player => &state.player,
-            ResolvedTarget::Monster(idx) => {
-                &state
-                    .battle_state
-                    .as_ref()
-                    .expect("No battle state when resolving monster")
-                    .monsters[*idx]
-                    .creature
-            }
-            _ => panic!("Cannot resolve to a single creature: {:?}", self),
-        }
-    }
-
-    fn to_creature_mut<'a>(&'a self, state: &'a mut GameState) -> &'a mut Creature {
-        match self {
-            ResolvedTarget::Player => &mut state.player,
-            ResolvedTarget::Monster(idx) => {
-                &mut state
-                    .battle_state
-                    .as_mut()
-                    .expect("No battle state when resolving monster")
-                    .monsters[*idx]
-                    .creature
-            }
-            _ => panic!("Cannot resolve to a single creature: {:?}", self),
-        }
-    }
-
-    fn to_creature_rand_mut<'a, R>(
-        &'a self,
-        state: &'a mut GamePossibilitySet,
-        rng: &mut R,
-    ) -> &'a mut Creature
-    where
-        R: Rng + ?Sized,
-    {
-        match self {
-            ResolvedTarget::RandomMonster(choices) => {
-                let choice = *choices.choose(rng).unwrap();
-                state.1 /= choices.len() as f64;
-                &mut state
-                    .0
-                    .battle_state
-                    .as_mut()
-                    .expect("No battle state when resolving monster")
-                    .monsters[choice]
-                    .creature
-            }
-            _ => self.to_creature_mut(&mut state.0),
-        }
-    }
-
-    fn to_creatures_mut<'a>(&'a self, state: &'a mut GameState) -> Vec<&'a mut Creature> {
-        match self {
-            ResolvedTarget::AllMonsters => state
-                .battle_state
-                .as_mut()
-                .expect("No battle state when resolving monster")
-                .monsters
-                .iter_mut()
-                .map(|a| &mut a.creature)
-                .collect(),
-            _ => vec![self.to_creature_mut(state)],
-        }
-    }
-
-    fn to_creatures_rand_mut<'a, R>(
-        &'a self,
-        state: &'a mut GamePossibilitySet,
-        rng: &mut R,
-    ) -> Vec<&'a mut Creature>
-    where
-        R: Rng + ?Sized,
-    {
-        match self {
-            ResolvedTarget::RandomMonster(_) => {
-                vec![self.to_creature_rand_mut(state, rng)]
-            }
-            _ => self.to_creatures_mut(&mut state.0),
+            ResolvedTarget::Monster(idx) => &state.battle_state.monsters[idx].creature,
+            _ => panic!("Does not resolve to single creature")
         }
     }
 }
@@ -373,20 +302,16 @@ pub fn eval_target(
         },
         Target::Attacker => match action {
             Some(_action) => match _action.is_attack {
-                true => match _action.creature.is_player {
-                    true => ResolvedTarget::Player,
-                    false => ResolvedTarget::Monster(_action.creature.position),
+                true => match _action.creature {
+                    CreatureReference::Player => ResolvedTarget::Player,
+                    CreatureReference::Creature(index) => ResolvedTarget::Monster(index),
                 },
                 false => ResolvedTarget::None,
             },
             None => ResolvedTarget::None,
         },
         Target::Friendly(name) => {
-            let battle_state = state
-                .battle_state
-                .as_ref()
-                .expect("Battle state not found in Target::Friendly");
-            match battle_state.monsters.iter().find(|m| &m.base.name == name) {
+            match state.battle_state.monsters.iter().find(|m| &m.base.name == name) {
                 Some(monster) => ResolvedTarget::Monster(monster.creature.position),
                 None => ResolvedTarget::None,
             }
@@ -416,76 +341,202 @@ pub fn eval_target(
             }
         }
         Target::TargetEnemy => match action {
-            Some(_action) => match _action.creature.is_player {
-                true => ResolvedTarget::Monster(_action.creature.position),
-                false => ResolvedTarget::Player,
+            Some(_action) => match _action.creature {
+                CreatureReference::Creature(index) => ResolvedTarget::Monster(index),
+                CreatureReference::Player => ResolvedTarget::Player,
             },
             None => ResolvedTarget::None,
         },
     }
 }
 
-pub fn eval_effects<R>(
-    effects: &'static [Effect],
+
+pub fn eval_effects(
+    effect_group: &'static EffectGroup,
     state: &mut GamePossibilitySet,
     binding: Binding,
-    action: &Option<GameAction>,
-    rng: &mut R,
-) where
-    R: Rng + ?Sized,
-{
-    for effect in effects {
-        eval_effect(effect, state, binding, action, rng);
+    action: &Option<GameAction>
+){
+    match effect_group {
+        EffectGroup::Multiple(effects) => {
+            for effect in effects {
+                eval_effect(effect, state, binding, action);
+            }
+        }
+        EffectGroup::Single(effect) => {
+            eval_effect(effect, state, binding, action);
+        }
+        EffectGroup::None => {}
     }
 }
 
-pub fn eval_effect<R>(
+pub fn eval_effect(
     effect: &'static Effect,
     state: &mut GamePossibilitySet,
     binding: Binding,
-    action: &Option<GameAction>,
-    rng: &mut R,
-) where
-    R: Rng + ?Sized,
-{
+    action: &Option<GameAction>
+){
     match effect {
         Effect::AddBuff {
             buff: buff_name,
             amount: buff_amount,
             target,
         } => {
-            let immut_state: &GameState = &state.0;
-            let amount = eval_amount(buff_amount, immut_state, binding);
-            for creature in eval_target(target, immut_state, binding, action)
-                .to_creatures_rand_mut(state, rng)
-                .iter_mut()
+            let amount = eval_amount(buff_amount, state.into(), binding);
+            for creature in eval_target(target, state.into(), binding, action).to_creatures(state)
             {
-                add_buff(creature, buff_name, amount)
+                add_buff(creature.get_mut(state.into()), buff_name, amount)
             }
         }
         Effect::AddEnergy(energy_amount) => {
-            let amount = eval_amount(energy_amount, &state.0, binding) as u8;
-            state
-                .0
-                .battle_state
-                .as_mut()
-                .expect("No battle state!")
-                .energy += amount
+            let amount = eval_amount(energy_amount, state.into(), binding) as u8;
+            state.state.battle_state.energy += amount
         }
         Effect::AddGold(gold_amount) => {
-            let amount = eval_amount(gold_amount, &state.0, binding) as u16;
-            add_gold(amount, &mut state.0)
+            let amount = eval_amount(gold_amount, state.into(), binding) as u16;
+            add_gold(amount, state.into())
         }
         Effect::AddMaxHp(hp_amount) => {
-            let amount = eval_amount(hp_amount, &state.0, binding) as u16;
-            add_max_hp(amount, &mut state.0)
+            let amount = eval_amount(hp_amount, state.into(), binding) as u16;
+            add_max_hp(amount, state.into())
         }
         Effect::AddN(n_amount) => {
-            let amount = eval_amount(n_amount, &state.0, binding);
-            binding.get_mut_vars(&mut state.0).n += amount;
+            let amount = eval_amount(n_amount, state.into(), binding);
+            binding.get_mut_vars(state.into()).n += amount;
+        }
+        Effect::AddOrbSlot(amount) => {
+            let count = eval_amount(amount, state.into(), binding) as u8;
+            state.state.battle_state.orb_slots = std::cmp::min(count + state.state.battle_state.orb_slots, 10) - state.state.battle_state.orb_slots;            
+        }
+        Effect::AddPotionSlot(amount) => {
+            for _ in 0 .. *amount {
+                state.state.potions.push_back(None)
+            }
+        }
+        Effect::AddRelic(name) => {
+            add_relic(name, state.into());
+        }
+        Effect::AddX(amount ) => {
+            binding.get_mut_vars(state.into()).x += eval_amount(amount, state.into(), binding);
+        }
+        Effect::AttackDamage {amount, target, if_fatal} => {
+            let attack_amount = eval_amount(amount, state.into(), binding);
+            let attack_target = eval_target(target, state.into(), binding, action);
+            
+            for creature in attack_target.to_creatures(state) {
+                if damage(attack_amount as u16, creature, state.into()) {
+                    eval_effects(if_fatal, state, binding, action);
+                }
+            }
+        }
+        Effect::Block {amount, target} => {
+            let block_amount = eval_amount(amount, state.into(), binding) as u16;
+            let block_target = eval_target(target, state.into(), binding, action);
+
+            for creature in block_target.to_creatures(state) {
+                let mut_creature = creature.get_mut(state.into());
+                let new_block = std::cmp::min(mut_creature.block + block_amount, 999);
+                mut_creature.block = new_block;
+            }
+        }
+        Effect::ChannelOrb(orb_type) => {
+            if state.state.battle_state.orbs.len() == state.state.battle_state.orb_slots as usize {
+                unimplemented!();
+            }
         }
         _ => unimplemented!(),
     }
+}
+
+
+fn damage(amount: u16, creature_ref: CreatureReference, state: &mut GameState) -> bool {
+    let mut block = creature_ref.get(state).block;
+    if block < amount as u16 {
+        if lose_hp(amount - block, creature_ref, state) {
+            return true;
+        }
+        block = 0
+    } else {
+        block -= amount
+    }
+
+    creature_ref.get_mut(state).block = block;
+
+    false
+}
+
+fn lose_hp(amount: u16, creature_ref: CreatureReference, state: &mut GameState) -> bool {
+    let new_hp = std::cmp::max(creature_ref.get(state).hp - amount, 0);
+    creature_ref.get_mut(state).hp = new_hp;
+    if new_hp == 0 {
+        die(creature_ref, state)
+    } else {
+        false
+    }
+}
+
+fn die(creature_ref: CreatureReference, state: &mut GameState) -> bool {
+    match creature_ref {
+        CreatureReference::Player => {
+            let recovery: f64 = 
+            if let Some(idx) = find_potion("Fairy In A Bottle", state) {
+                state.potions[idx] = None;
+                if state.relic_names.contains("Sacred Bark") {
+                    0.6
+                } else {
+                    0.3
+                }
+            } else if let Some(relic) = find_relic("Lizard Tail", state) {
+                if relic.enabled {
+                    relic.enabled = false;
+                    0.5
+                } else {
+                    0.0
+                }
+            } else {
+                0.0
+            };
+
+            if recovery != 0.0 {
+                let max_hp = creature_ref.get(state).max_hp;
+                heal(max_hp as f64 * recovery, state);
+            }
+            
+            if state.player.hp == 0 {
+                state.won = Some(false);
+                true
+            } else {
+                false
+            }
+        }
+        CreatureReference::Creature(position) => {
+            let monster = state.battle_state.monsters[position];
+            let whens = state.active_whens.get(&When::OnDie);
+
+            match whens {
+                None => {}
+                Some(whens) => {
+                    for when in whens {
+                        when.
+                    }
+                    
+                }
+            }
+        }
+    }
+}
+
+fn find_potion(name: &str, state: &GameState) -> Option<usize>{
+    state.potions.iter().position(|p| match p {
+        Some(potion) => potion.base.name == name,
+        None => false
+    })
+}
+
+pub fn add_relic(name: &str, state: &mut GameState) {
+    let relic = create_relic(name);
+    state.relic_names.insert(relic.base.name.to_string());
+    state.relics.push_back(relic);
 }
 
 pub fn add_card_to_deck(name: &str, upgraded: bool, state: &mut GameState) {
@@ -524,7 +575,7 @@ pub fn add_card_to_deck(name: &str, upgraded: bool, state: &mut GameState) {
         add_gold(9, state);
     }
 
-    state.deck.push(card);
+    state.deck.push_back(card);
 }
 
 pub fn find_relic<'a>(name: &str, state: &'a mut GameState) -> Option<&'a mut Relic> {
@@ -544,10 +595,10 @@ pub fn find_relic<'a>(name: &str, state: &'a mut GameState) -> Option<&'a mut Re
 
 pub fn add_max_hp(amount: u16, state: &mut GameState) {
     state.player.max_hp += amount;
-    heal(amount, state)
+    heal(amount as f64, state)
 }
 
-pub fn heal(mut amount: u16, state: &mut GameState) {
+pub fn heal(mut amount: f64, state: &mut GameState) {
     if state
         .relic_names
         .contains(&String::from("Mark Of The Bloom"))
@@ -555,19 +606,11 @@ pub fn heal(mut amount: u16, state: &mut GameState) {
         return;
     }
 
-    if state.battle_state.is_some() && state.relic_names.contains(&String::from("Magic Flower")) {
-        amount += div_up(amount, 2)
+    if state.battle_state.active && state.relic_names.contains(&String::from("Magic Flower")) {
+        amount *= 1.5;
     }
 
-    state.player.hp += amount;
-
-    if state.player.hp > state.player.max_hp {
-        state.player.hp = state.player.max_hp;
-    }
-}
-
-fn div_up(a: u16, b: u16) -> u16 {
-    (a + (b - 1)) / b
+    state.player.hp = std::cmp::min((amount - 0.0001).ceil() as u16 + state.player.hp, state.player.max_hp);
 }
 
 pub fn add_gold(amount: u16, state: &mut GameState) {
@@ -576,7 +619,7 @@ pub fn add_gold(amount: u16, state: &mut GameState) {
     }
 
     if state.relic_names.contains(&String::from("Bloody Idol")) {
-        heal(5, state);
+        heal(5 as f64, state);
     }
 
     state.gold += amount;
@@ -700,21 +743,13 @@ pub fn card_playable(
 }
 
 fn get_monster_count(state: &GameState) -> usize {
-    let battle_state = state
-        .battle_state
-        .as_ref()
-        .expect("Battle state not found in get_monster_count");
-    battle_state.monsters.len()
+    state.battle_state.monsters.len()
 }
 
 pub fn eval_amount(amount: &Amount, state: &GameState, binding: Binding) -> i16 {
     match amount {
         Amount::ByAsc { amount, low, high } => {
-            let battle_state = state
-                .battle_state
-                .as_ref()
-                .expect("Unable to read battle state when in Amount::ByAsc");
-            match battle_state.battle_type {
+            match state.battle_state.battle_type {
                 BattleType::Common | BattleType::Event => {
                     if state.asc >= 17 {
                         *high
@@ -746,20 +781,12 @@ pub fn eval_amount(amount: &Amount, state: &GameState, binding: Binding) -> i16 
         }
         Amount::Custom => panic!("Unhandled custom amount: {:?}", binding),
         Amount::EnemyCount => {
-            let battle_state = state
-                .battle_state
-                .as_ref()
-                .expect("Unable to read battle state when in Amount::EnemyCount");
-            battle_state.monsters.len() as i16
+            state.battle_state.monsters.len() as i16
         }
         Amount::N => binding.get_vars(state).n as i16,
         Amount::NegX => -binding.get_vars(state).x as i16,
         Amount::OrbCount => {
-            let battle_state = state
-                .battle_state
-                .as_ref()
-                .expect("Unable to read battle state when in Amount::OrbCount");
-            battle_state.orbs.len() as i16
+            state.battle_state.orbs.len() as i16
         }
         Amount::MaxHp => binding.get_creature(state).max_hp as i16,
         Amount::X => binding.get_vars(state).x as i16,
@@ -797,13 +824,9 @@ pub fn eval_condition(
         Condition::Always => true,
         Condition::Asc(asc) => &state.asc >= asc,
         Condition::Attacking { target } => {
-            let battle_state = state
-                .battle_state
-                .as_ref()
-                .expect("Battle state not found in Condition::Attacking");
             match eval_target(target, state, binding, action) {
                 ResolvedTarget::Monster(idx) => matches!(
-                    battle_state.monsters[idx].intent,
+                    state.battle_state.monsters[idx].intent,
                     Intent::Attack
                         | Intent::AttackBuff
                         | Intent::AttackDebuff
@@ -857,19 +880,12 @@ pub fn eval_condition(
             .iter()
             .any(|c| c.base._type == *card),
         Condition::HasDiscarded => {
-            state
-                .battle_state
-                .as_ref()
-                .expect("No battle state!")
-                .discard_count
-                > 0
+            state.battle_state.discard_count > 0
         }
         Condition::HasFriendlies(count) => {
             let creature = binding.get_monster(state).expect("Monster did not resolve");
             state
                 .battle_state
-                .as_ref()
-                .expect("No battle state!")
                 .monsters
                 .iter()
                 .filter(|a| a.targetable && a.creature != creature.creature)
@@ -878,12 +894,7 @@ pub fn eval_condition(
         }
         Condition::HasGold(amount) => state.gold >= eval_amount(amount, state, binding) as u16,
         Condition::HasOrbSlot => {
-            state
-                .battle_state
-                .as_ref()
-                .expect("No battle state!")
-                .orb_slots
-                > 0
+            state.battle_state.orb_slots > 0
         }
         Condition::HasRelic(relic) => state.relic_names.contains(relic),
         Condition::HasRemoveableCards { count, card_type } => {
@@ -903,11 +914,7 @@ pub fn eval_condition(
             _ => panic!("Unexpected binding!"),
         },
         Condition::LastCard(_type) => {
-            match state
-                .battle_state
-                .as_ref()
-                .expect("No battle state!")
-                .last_card_played
+            match state.battle_state.last_card_played
             {
                 Some(last_type) => last_type == *_type,
                 None => false,
@@ -933,11 +940,7 @@ pub fn eval_condition(
             creature.hp >= hp as u16
         }
         Condition::Stance(stance) => {
-            let battle_state = state
-                .battle_state
-                .as_ref()
-                .expect("Battle state not found in Condition::Stance");
-            &battle_state.stance == stance
+            &state.battle_state.stance == stance
         }
         Condition::Status { target, status } => {
             let target_eval = eval_target(target, state, binding, action);
@@ -952,25 +955,17 @@ pub fn card_types_match(card: &Card, _type: &CardType) -> bool {
     *_type == CardType::All || card.base._type == *_type
 }
 
-pub fn eval_card_location<'a>(location: &CardLocation, state: &'a GameState) -> &'a Vec<Card> {
+pub fn eval_card_location<'a>(location: &CardLocation, state: &'a GameState) -> &'a Vector<Card> {
     match location {
         CardLocation::DeckPile => &state.deck,
         CardLocation::DiscardPile => {
-            &state
-                .battle_state
-                .as_ref()
-                .expect("No battle state!")
-                .discard
+            &state.battle_state.discard
         }
-        CardLocation::DrawPile => &state.battle_state.as_ref().expect("No battle state!").draw,
+        CardLocation::DrawPile => &state.battle_state.draw,
         CardLocation::ExhaustPile => {
-            &state
-                .battle_state
-                .as_ref()
-                .expect("No battle state!")
-                .exhaust
+            &state.battle_state.exhaust
         }
-        CardLocation::PlayerHand => &state.battle_state.as_ref().expect("No battle state!").hand,
+        CardLocation::PlayerHand => &state.battle_state.hand,
     }
 }
 

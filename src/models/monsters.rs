@@ -2,7 +2,7 @@ use ron::de::from_reader;
 use std::{collections::HashMap, fs::File, path::Path};
 use serde::{Deserialize, Serialize};
 
-use super::core::{Amount, Condition, Effect, Event, EventEffect, is_default, one, is_one};
+use super::core::{Amount, Condition, Effect, When, WhenEffect, is_default, one, is_one};
 
 #[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct BaseMonster {
@@ -16,7 +16,7 @@ pub struct BaseMonster {
     #[serde(default, skip_serializing_if = "is_default")]
     pub x_range: Option<Range>,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub effects: Vec<EventEffect>,
+    pub effects: Vec<WhenEffect>,
 }
 impl std::fmt::Debug for BaseMonster {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -58,14 +58,18 @@ pub enum Intent {
 pub enum Move {
     If {
         condition: Condition,
+        #[serde(default, skip_serializing_if = "is_default")]
         then: Vec<Move>,
+        #[serde(default, skip_serializing_if = "is_default")]
         _else: Vec<Move>,
     },
     Loop(Vec<Move>),
     InOrder(String),
     Probability(Vec<ProbabilisticMove>), // Weight, name, repeats
-    Event(Event),
+    When(When),
     AfterMove(Vec<(String, Move)>),
+    WhenMove(String),
+    WhenLoseBuff(String),
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]

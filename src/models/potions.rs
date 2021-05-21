@@ -2,7 +2,7 @@ use ron::de::from_reader;
 use std::{collections::HashMap, fs::File, path::Path};
 use serde::{Deserialize, Serialize};
 
-use super::core::{Class, Condition, Effect, Rarity, is_default};
+use super::core::{Class, Condition, EffectGroup, Rarity, is_default};
 
 #[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct BasePotion {
@@ -12,7 +12,7 @@ pub struct BasePotion {
     #[serde(default, skip_serializing_if = "is_default")]
     pub rarity: Rarity,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_drink: Vec<Effect>,
+    pub on_drink: EffectGroup,
     #[serde(
         default = "Condition::never",
         skip_serializing_if = "Condition::is_never"

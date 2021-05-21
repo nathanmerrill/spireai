@@ -3,15 +3,13 @@
         name: "Ambrosia",
         _class: Watcher,
         rarity: Rare,
-        on_drink: [
-            SetStance(Divinity),
-        ],
+        on_drink: Single(SetStance(Divinity)),
     ),
     (
         name: "Ancient Potion",
         _class: None,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Artifact",
                 amount: Upgradable(
@@ -19,12 +17,12 @@
                     upgraded: 2,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Attack Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             ChooseCardByType(
                 location: PlayerHand,
                 type: Attack,
@@ -34,47 +32,47 @@
                 ]),
                 choices: Fixed(3),
             ),
-        ],
+        ),
     ),
     (
         name: "Blessing Of The Forge",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             DoCardEffect(
                 location: PlayerHand,
                 position: All,
                 effect: Upgrade,
             ),
-        ],
+        ),
     ),
     (
         name: "Block Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             Block(
                 amount: Upgradable(
                     base: 12,
                     upgraded: 24,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Blood Potion",
         _class: Ironclad,
-        on_drink: [
+        on_drink: Single(
             HealPercentage(
                 amount: Upgradable(
                     base: 20,
                     upgraded: 40,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Bottled Miracle",
         _class: Watcher,
-        on_drink: [
+        on_drink: Single(
             Repeat(
                 n: Upgradable(
                     base: 2,
@@ -85,12 +83,12 @@
                     location: PlayerHand,
                 )),
             ),
-        ],
+        ),
     ),
     (
         name: "Colorless Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             ChooseCardByType(
                 location: PlayerHand,
                 type: All,
@@ -101,13 +99,13 @@
                 ]),
                 choices: Fixed(3),
             ),
-        ],
+        ),
     ),
     (
         name: "Cultist Potion",
         _class: None,
         rarity: Rare,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Ritual",
                 amount: Upgradable(
@@ -115,13 +113,13 @@
                     upgraded: 2,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Cunning Potion",
         _class: Silent,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             Repeat(
                 n: Upgradable(
                     base: 3,
@@ -132,12 +130,12 @@
                     location: PlayerHand,
                 )),
             ),
-        ],
+        ),
     ),
     (
         name: "Dexterity Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Ritual",
                 amount: Upgradable(
@@ -145,13 +143,13 @@
                     upgraded: 4,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Distilled Chaos",
         _class: None,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             Repeat(
                 n: Upgradable(
                     base: 3,
@@ -163,13 +161,13 @@
                     effect: AutoPlay,
                 )),
             ),
-        ],
+        ),
     ),
     (
         name: "Duplication Potion",
         _class: None,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Duplication",
                 amount: Upgradable(
@@ -177,44 +175,44 @@
                     upgraded: 2,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Elixir",
         _class: Ironclad,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             ChooseCards(
                 location: PlayerHand,
                 then: Single(Exhaust),
                 min: Fixed(0),
                 max: Fixed(10),
             ),
-        ],
+        ),
     ),
     (
         name: "Energy Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             AddEnergy(Upgradable(
                 base: 2,
                 upgraded: 4,
             )),
-        ],
+        ),
     ),
     (
         name: "Entropic Brew",
         _class: None,
         rarity: Rare,
-        on_drink: [
+        on_drink: Single(
             Custom,
-        ],
+        ),
     ),
     (
         name: "Essence Of Darkness",
         _class: Defect,
         rarity: Rare,
-        on_drink: [
+        on_drink: Single(
             Repeat(
                 n: Upgradable(
                     base: 1,
@@ -222,13 +220,13 @@
                 ),
                 effect: Single(ChannelOrb(Dark)),
             ),
-        ],
+        ),
     ),
     (
         name: "Essence Of Steel",
         _class: None,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Plated Armor",
                 amount: Upgradable(
@@ -236,12 +234,12 @@
                     upgraded: 8,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Explosive Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             Damage(
                 amount: Upgradable(
                     base: 10,
@@ -249,7 +247,7 @@
                 ),
                 target: AllEnemies,
             ),
-        ],
+        ),
     ),
     (
         name: "Fairy In A Bottle",
@@ -259,7 +257,7 @@
     (
         name: "Fear Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Vulnerable",
                 amount: Upgradable(
@@ -268,13 +266,13 @@
                 ),
                 target: TargetEnemy,
             ),
-        ],
+        ),
         targeted: Always,
     ),
     (
         name: "Fire Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             Damage(
                 amount: Upgradable(
                     base: 20,
@@ -282,13 +280,13 @@
                 ),
                 target: TargetEnemy,
             ),
-        ],
+        ),
         targeted: Always,
     ),
     (
         name: "Focus Potion",
         _class: Defect,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Focus",
                 amount: Upgradable(
@@ -296,32 +294,32 @@
                     upgraded: 4,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Fruit Juice",
         _class: None,
         rarity: Rare,
-        on_drink: [
+        on_drink: Single(
             AddMaxHp(Upgradable(
                 base: 5,
                 upgraded: 10,
             )),
-        ],
+        ),
     ),
     (
         name: "Gamblers Brew",
         _class: None,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             Custom,
-        ],
+        ),
     ),
     (
         name: "Ghost In A Jar",
         _class: Silent,
         rarity: Rare,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Intangible",
                 amount: Upgradable(
@@ -329,13 +327,13 @@
                     upgraded: 2,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Heart Of Iron",
         _class: Ironclad,
         rarity: Rare,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Metallicize",
                 amount: Upgradable(
@@ -343,13 +341,13 @@
                     upgraded: 12,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Liquid Bronze",
         _class: None,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Thorns",
                 amount: Upgradable(
@@ -357,13 +355,13 @@
                     upgraded: 6,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Liquid Memories",
         _class: None,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             ChooseCards(
                 location: DiscardPile,
                 then: Multiple([
@@ -381,12 +379,12 @@
                     upgraded: 2,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Poison Potion",
         _class: Silent,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Poison",
                 amount: Upgradable(
@@ -395,24 +393,24 @@
                 ),
                 target: TargetEnemy,
             ),
-        ],
+        ),
         targeted: Always,
     ),
     (
         name: "Potion Of Capacity",
         _class: Defect,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             AddOrbSlot(Upgradable(
                 base: 2,
                 upgraded: 4,
             )),
-        ],
+        ),
     ),
     (
         name: "Power Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             ChooseCardByType(
                 location: PlayerHand,
                 type: Power,
@@ -422,13 +420,13 @@
                 ]),
                 choices: Fixed(3),
             ),
-        ],
+        ),
     ),
     (
         name: "Regen Potion",
         _class: None,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Regeneration",
                 amount: Upgradable(
@@ -436,12 +434,12 @@
                     upgraded: 10,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Skill Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             ChooseCardByType(
                 location: PlayerHand,
                 type: Skill,
@@ -451,32 +449,32 @@
                 ]),
                 choices: Fixed(3),
             ),
-        ],
+        ),
     ),
     (
         name: "Smoke Bomb",
         _class: None,
         rarity: Rare,
-        on_drink: [
+        on_drink: Single(
             Custom,
-        ],
+        ),
     ),
     (
         name: "Snecko Oil",
         _class: None,
         rarity: Rare,
-        on_drink: [
+        on_drink: Single(
             Draw(Upgradable(
                 base: 5,
                 upgraded: 10,
             )),
             Custom,
-        ],
+        ),
     ),
     (
         name: "Speed Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Dexterity",
                 amount: Upgradable(
@@ -491,20 +489,20 @@
                     upgraded: 10,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Stance Potion",
         _class: Watcher,
         rarity: Uncommon,
-        on_drink: [
+        on_drink: Single(
             Custom,
-        ],
+        ),
     ),
     (
         name: "Flex Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Strength",
                 amount: Upgradable(
@@ -519,12 +517,12 @@
                     upgraded: 10,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Strength Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Strength",
                 amount: Upgradable(
@@ -532,22 +530,22 @@
                     upgraded: 4,
                 ),
             ),
-        ],
+        ),
     ),
     (
         name: "Swift Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             Draw(Upgradable(
                 base: 3,
                 upgraded: 6,
             )),
-        ],
+        ),
     ),
     (
         name: "Weak Potion",
         _class: None,
-        on_drink: [
+        on_drink: Single(
             AddBuff(
                 buff: "Weak",
                 amount: Upgradable(
@@ -556,7 +554,7 @@
                 ),
                 target: TargetEnemy,
             ),
-        ],
+        ),
         targeted: Always,
     ),
 ]

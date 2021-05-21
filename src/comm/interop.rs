@@ -1,8 +1,9 @@
+use im::{HashMap, Vector};
+
 use crate::comm::request as old;
 use crate::models::core as new_core;
 use crate::models::monsters::Intent as NewIntent;
 use crate::models::state as new;
-use std::collections::HashMap;
 
 pub fn convert_state(state: &old::GameState) -> new::GameState {
     let relics = convert_relics(&state.relics);
@@ -30,7 +31,8 @@ pub fn convert_state(state: &old::GameState) -> new::GameState {
         battle_state: state
             .combat_state
             .as_ref()
-            .map(|a| convert_battle_state(a, state)),
+            .map(|a| convert_battle_state(a, state))
+            .unwrap_or_else(|| new::BattleState::default()),
         gold: state.gold as u16,
         floor: state.floor as u8,
         floor_state: convert_floor_state(state),
@@ -42,6 +44,8 @@ pub fn convert_state(state: &old::GameState) -> new::GameState {
         relic_names: relics.iter().map(|a| a.base.name.to_string()).collect(),
         relics,
         keys: None,
+        won: None,
+        active_whens: HashMap::new()
     }
 }
 
@@ -95,7 +99,7 @@ pub fn convert_relic(relic: &old::Relic) -> new::Relic {
     }
 }
 
-pub fn convert_relics(relics: &[old::Relic]) -> Vec<new::Relic> {
+pub fn convert_relics(relics: &[old::Relic]) -> Vector<new::Relic> {
     relics.iter().map(convert_relic).collect()
 }
 
@@ -125,10 +129,12 @@ pub fn convert_battle_state(
     game_state: &old::GameState,
 ) -> new::BattleState {
     new::BattleState {
+        active: true,
         draw: convert_cards(&state.draw_pile),
         discard_count: state.cards_discarded_this_turn as u8,
         draw_bottom_known: 0,
         draw_top_known: 0,
+        play_count: 0,
         discard: convert_cards(&state.discard_pile),
         exhaust: convert_cards(&state.exhaust_pile),
         hand: convert_cards(&state.hand),
@@ -141,13 +147,14 @@ pub fn convert_battle_state(
         battle_type: new::BattleType::Common,
         card_choices: convert_card_choices(game_state),
         card_choice_type: convert_card_choice_type(game_state),
+        active_whens: HashMap::new()
     }
 }
 
-pub fn convert_card_choices(game_state: &old::GameState) -> Vec<new::Card> {
+pub fn convert_card_choices(game_state: &old::GameState) -> Vector<new::Card> {
     match &game_state.screen_state {
         old::ScreenState::Grid(grid) => convert_cards(&grid.cards),
-        _ => Vec::new(),
+        _ => Vector::new(),
     }
 }
 
@@ -270,7 +277,7 @@ fn convert_shop(shop: &old::ShopScreen) -> new::FloorState {
     }
 }
 
-fn convert_rewards(rewards: &old::CombatRewards) -> Vec<new::Reward> {
+fn convert_rewards(rewards: &old::CombatRewards) -> Vector<new::Reward> {
     rewards
         .rewards
         .iter()
@@ -319,7 +326,7 @@ fn convert_event(event: &old::Event) -> new::EventState {
     }
 }
 
-fn convert_orbs(orbs: &[old::OrbType]) -> Vec<new::Orb> {
+fn convert_orbs(orbs: &[old::OrbType]) -> Vector<new::Orb> {
     orbs.iter()
         .map(|orb| new::Orb {
             base: match orb.name.as_str() {
@@ -334,7 +341,7 @@ fn convert_orbs(orbs: &[old::OrbType]) -> Vec<new::Orb> {
         .collect()
 }
 
-fn convert_monsters(monsters: &[old::Monster]) -> Vec<new::Monster> {
+fn convert_monsters(monsters: &[old::Monster]) -> Vector<new::Monster> {
     monsters
         .iter()
         .enumerate()
@@ -381,7 +388,7 @@ fn convert_potion(potion: &old::Potion) -> new::Potion {
     }
 }
 
-fn convert_potions(potions: &[old::Potion]) -> Vec<Option<new::Potion>> {
+fn convert_potions(potions: &[old::Potion]) -> Vector<Option<new::Potion>> {
     potions
         .iter()
         .map(|potion| {
@@ -394,7 +401,7 @@ fn convert_potions(potions: &[old::Potion]) -> Vec<Option<new::Potion>> {
         .collect()
 }
 
-fn convert_cards(cards: &[old::Card]) -> Vec<new::Card> {
+fn convert_cards(cards: &[old::Card]) -> Vector<new::Card> {
     cards.iter().map(|card| convert_card(card)).collect()
 }
 

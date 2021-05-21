@@ -60,12 +60,11 @@ impl Default for Stance {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
 pub enum RoomType {
     Rest,
     Shop,
     Question,
-    Battle,
     HallwayFight,
     Event,
     Elite,
@@ -125,7 +124,7 @@ pub enum CardLocation {
 }
 
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
 pub enum CardType {
     Attack,
     Skill,
@@ -142,8 +141,8 @@ impl Default for CardType {
 }
 
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub enum Event {
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Hash)]
+pub enum When {
     // Time-based
     BeforeHandDraw,
     AfterHandDraw,
@@ -155,72 +154,37 @@ pub enum Event {
     CombatStart,
 
     // Targeted
-    OnAttackDamage {
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
-    OnUnblockedDamage {
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
-    OnHpLoss {
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
-    OnHpChange {
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
+    OnRecieveAttackDamage,
+    OnReceiveUnblockedDamage,
+    OnDealUnblockedDamage,
+    OnHpLoss,
+    OnHpChange,
     OnHalfHp,
-    OnBlock {
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
-    OnDie {
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
-    OnBuff {
-        buff: String,
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
-    OnUnBuff {
-        buff: String,
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
+    OnBlock,
+    OnDie,
+    OnEnemyDie,
 
     // Player
     Discard,
     Exhaust,
     Scry,
     Shuffle,
-    StanceChange {
-        #[serde(default, skip_serializing_if = "is_default")]
-        from: Stance,
-        #[serde(default, skip_serializing_if = "is_default")]
-        to: Stance,
-    },
     PlayCard(CardType),
     DrawCard(CardType),
 
     // Non-fight
-    ChestOpen,
-    CardReward,
     Rest,
     RoomEnter(RoomType),
     UsePotion,
 
     // Meta
     Never,
-    Multiple(Vec<Event>),
-    Custom,
+    Multiple(Vec<When>),
 }
 
-impl Default for Event {
+impl Default for When {
     fn default() -> Self {
-        Event::Never
+        When::Never
     }
 }
 
@@ -259,7 +223,7 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
         #[serde(default, skip_serializing_if = "is_default")]
-        if_fatal: Vec<Effect>,
+        if_fatal: EffectGroup,
     },
     LoseHp {
         #[serde(default, skip_serializing_if = "is_default")]
@@ -321,7 +285,7 @@ pub enum Effect {
     ChannelOrb(OrbType),
     AddGold(Amount),
     LoseAllGold,
-    AddPotionSlot(Amount),
+    AddPotionSlot(u8),
     AddOrbSlot(Amount),
     EvokeOrb(Amount),
 
@@ -514,8 +478,8 @@ impl Default for Target {
     }
 }
 #[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
-pub struct EventEffect {
-    pub event: Event,
+pub struct WhenEffect {
+    pub when: When,
     pub effect: EffectGroup,
 }
 
