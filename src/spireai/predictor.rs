@@ -76,16 +76,16 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibilitySet) {
             }
         }
         Choice::DeckTransform(positions, should_upgrade) => {
-            let sets: Vec<Vec<&'static String>> = positions.iter().map(|p| {
+            let sets: Vec<Vec<&&'static models::cards::BaseCard>> = positions.iter().map(|p| {
                 let (class, name) = {
                     let card = &state.state.deck[*p];
                     (card.base._class, card.base.name.to_string())
                 };
 
-                let available_cards: Vec<&'static String> =
+                let available_cards: Vec<&&'static models::cards::BaseCard> =
                     models::cards::available_cards_by_class(class)
-                        .iter()
-                        .filter(move |c| **c != name)
+                        .into_iter()
+                        .filter(move |c| c.name != name)
                         .collect();
 
                 available_cards
@@ -97,7 +97,7 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibilitySet) {
 
             for set in sets {
                 let card = state.choose(&set).unwrap();
-                evaluator::add_card_to_deck(card, *should_upgrade, &mut state.state);
+                evaluator::add_card_to_deck(&card.name, *should_upgrade, &mut state.state);
             }
         }
         Choice::DeckUpgrade(positions) => {
@@ -119,7 +119,7 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibilitySet) {
                 &potion.base.on_drink,
                 state,
                 evaluator::Binding::Potion(evaluator::PotionReference { potion: *slot }),
-                &Some(GameAction {
+                Some(GameAction {
                     creature: CreatureReference::Player,
                     is_attack: false,
                     target: *target_index,
@@ -144,7 +144,7 @@ fn add_random_relic(weights: (u8, u8, u8), state: &mut GamePossibilitySet) {
         .filter(|relic| {
             relic.rarity == *rarity
                 && (relic.class == state.state.class || relic.class == Class::All)
-                && !state.state.relic_names.contains(&relic.name)
+                && !state.state.relic_names.contains_key(&relic.name)
         })
         .map(|relic| &relic.name)
         .collect();
@@ -160,10 +160,9 @@ fn add_random_relic(weights: (u8, u8, u8), state: &mut GamePossibilitySet) {
         };
         let available_cards: Vec<usize> = state
             .state
-            .deck
-            .iter()
+            .cards()
             .enumerate()
-            .filter(|(_, card)| card.base._type == card_type && evaluator::card_upgradable(card))
+            .filter(|(_, card)| evaluator::card_types_match(*card, card_type, &state.state) && evaluator::card_upgradable(*card, &state.state))
             .map(|(p, _)| p)
             .collect();
 
@@ -187,7 +186,7 @@ fn spend_money(amount: u16, at_shop: bool, state: &mut GameState) {
     state.gold -= amount;
 
     if at_shop {
-        if let Some(relic) = evaluator::find_relic(&String::from("Maw Bank"), state) {
+        if let Some(relic) = evaluator::find_relic_mut(&String::from("Maw Bank"), state) {
             relic.enabled = false;
         }
     }

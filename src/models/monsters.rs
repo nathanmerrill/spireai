@@ -101,7 +101,7 @@ pub fn by_name(name: &str) -> &'static BaseMonster {
 }
 
 lazy_static! {
-    static ref MONSTERS: HashMap<String, BaseMonster> = {
+    pub static ref MONSTERS: HashMap<String, BaseMonster> = {
         let mut m = HashMap::new();
 
         for monster in all_monsters() {

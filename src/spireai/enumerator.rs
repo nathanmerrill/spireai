@@ -21,15 +21,17 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
 
             match battle_state.card_choice_type {
                 CardChoiceType::Scry => {
-                    (0..(battle_state.card_choices.len()))
+                    (0..(battle_state.card_choices.items.len()))
                         .powerset()
                         .for_each(|combination| choices.push(Choice::ScryDiscard(combination)));
                 }
 
+                CardChoiceType::AddToLocation(_, _, _) => unimplemented!(),
+
                 CardChoiceType::None => {
                     choices.push(Choice::End);
-                    for card_index in 0 .. battle_state.hand.len() {
-                        let card_ref = evaluator::CardReference::Hand(card_index);
+                    for (card_index, uuid) in  battle_state.hand.uuids.iter().enumerate() {
+                        let card_ref = evaluator::CardReference::Hand(*uuid);
                         if evaluator::card_playable(card_ref, battle_state, state) {
                             if evaluator::card_targeted(card_ref, state) {
                                 choices.extend(
@@ -39,7 +41,7 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                                         .filter(|monster| monster.targetable)
                                         .map(|monster| Choice::PlayCard {
                                             card_index,
-                                            target_index: Some(monster.creature.position),
+                                            target_index: Some(monster.position),
                                         }),
                                 );
                             } else {
@@ -122,7 +124,7 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                 choices.push(Choice::SelectCard(card.to_string()))
             }
 
-            if state.relic_names.contains(&String::from("Singing Bowl")) {
+            if state.relic_names.contains_key("Singing Bowl") {
                 choices.push(Choice::SingingBowl)
             }
         }
@@ -159,52 +161,44 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
             if *purge_cost != 0 && *purge_cost <= state.gold {
                 choices.extend(
                     state
-                        .deck
-                        .iter()
+                        .cards()
                         .enumerate()
-                        .filter(|(_, card)| evaluator::card_removable(&card))
+                        .filter(|(_, card)| evaluator::card_removable(*card, state))
                         .map(|(position, _)| Choice::BuyRemoveCard(position)),
                 );
             }
         }
         FloorState::Rest => {
-            if !state.relic_names.contains(&String::from("Coffee Dripper")) {
-                if state.relic_names.contains(&String::from("Dream Catcher")) {
+            if !state.relic_names.contains_key("Coffee Dripper") {
+                if state.relic_names.contains_key("Dream Catcher") {
                     choices.push(Choice::RestDreamCatcher)
                 } else {
                     choices.push(Choice::Rest)
                 }
             }
-            if !state.relic_names.contains(&String::from("Fusion Hammer")) {
+            if !state.relic_names.contains_key("Fusion Hammer") {
                 choices.extend(
                     state
-                        .deck
-                        .iter()
+                        .cards()
                         .enumerate()
-                        .filter(|(_, card)| evaluator::card_upgradable(card))
+                        .filter(|(_, card)| evaluator::card_upgradable(*card, state))
                         .map(|(position, _)| Choice::Smith(position)),
                 );
             }
-            if state.relic_names.contains(&String::from("Girya")) {
-                let relic = state
-                    .relics
-                    .iter()
-                    .find(|relic| relic.base.name == "Girya")
-                    .unwrap();
-                if relic.vars.x < 3 {
+            if let Some(uuid) = state.relic_names.get("Girya") {
+                if state.relics.get(*uuid).vars.x < 3 {
                     choices.push(Choice::Lift)
                 }
             }
-            if state.relic_names.contains(&String::from("Shovel")) {
+            if state.relic_names.contains_key("Shovel") {
                 choices.push(Choice::Dig)
             }
-            if state.relic_names.contains(&String::from("Peace Pipe")) {
+            if state.relic_names.contains_key("Peace Pipe") {
                 choices.extend(
                     state
-                        .deck
-                        .iter()
+                        .cards()
                         .enumerate()
-                        .filter(|(_, card)| evaluator::card_removable(card))
+                        .filter(|(_, card)| evaluator::card_removable(*card, state))
                         .map(|(position, _)| Choice::Toke(position)),
                 );
             }
@@ -219,10 +213,9 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
         }
         FloorState::EventRemove(count) => choices.extend(
             state
-                .deck
-                .iter()
+                .cards()
                 .enumerate()
-                .filter(|(_, card)| evaluator::card_removable(card))
+                .filter(|(_, card)| evaluator::card_removable(*card, state))
                 .map(|(position, _)| position)
                 .combinations((*count).into())
                 .map(Choice::DeckRemove),
@@ -230,10 +223,9 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
         FloorState::EventTransform(count, upgrade) => {
             choices.extend(
                 state
-                    .deck
-                    .iter()
+                    .cards()
                     .enumerate()
-                    .filter(|(_, card)| evaluator::card_removable(card))
+                    .filter(|(_, card)| evaluator::card_removable(*card, state))
                     .map(|(position, _)| position)
                     .combinations((*count).into())
                     .map(|combination| Choice::DeckTransform(combination, *upgrade)),
@@ -241,10 +233,9 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
         }
         FloorState::EventUpgrade(count) => choices.extend(
             state
-                .deck
-                .iter()
+                .cards()
                 .enumerate()
-                .filter(|(_, card)| evaluator::card_upgradable(card))
+                .filter(|(_, card)| evaluator::card_upgradable(*card, state))
                 .map(|(position, _)| position)
                 .combinations((*count).into())
                 .map(Choice::DeckUpgrade),

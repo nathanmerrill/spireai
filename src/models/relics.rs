@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use ron::de::from_reader;
 
-use super::core::{Class, EffectGroup, When, Rarity, is_default};
+use super::core::{Class, Effect, When, Rarity, is_default};
 
 
 
@@ -12,9 +12,10 @@ pub struct BaseRelic {
     pub name: String,
     #[serde(default, skip_serializing_if = "is_default")]
     pub rarity: Rarity,
+    #[serde(default, skip_serializing_if = "is_default")]
     pub activation: Activation,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub effect: EffectGroup,
+    pub effect: Vec<Effect>,
     #[serde(default, skip_serializing_if = "is_default")]
     pub disable_at: When,
     #[serde(default, skip_serializing_if = "is_default")]
@@ -38,7 +39,7 @@ impl PartialEq for BaseRelic {
         self.name == other.name
     }
 }
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Activation {
     Immediate,
     When(When),
@@ -59,6 +60,12 @@ pub enum Activation {
         disabled_at: When,
     },
     Custom,
+}
+
+impl Default for Activation {
+    fn default() -> Self {
+        Activation::Custom
+    }
 }
 
 pub fn by_name(name: &str) -> &'static BaseRelic {

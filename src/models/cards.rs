@@ -66,7 +66,7 @@ pub fn by_name(name: &str) -> &'static BaseCard {
         .unwrap_or_else(|| panic!("Unrecognized card: {}", name))
 }
 
-pub fn available_cards_by_class(class: Class) -> &'static Vec<String> {
+pub fn available_cards_by_class(class: Class) -> &'static Vec<&'static BaseCard> {
     match class {
         Class::All => &ANY_CLASS_CARDS,
         Class::Curse => &CURSES,
@@ -90,42 +90,42 @@ lazy_static! {
     };
 
     // Sets of cards available for transformations and shop inventory
-    static ref ANY_CLASS_CARDS: Vec<String> =
+    static ref ANY_CLASS_CARDS: Vec<&'static BaseCard> =
         ALL_CARDS.values()
         .filter(|a| a._class != Class::Curse && a.rarity != Rarity::Starter && a.rarity != Rarity::Special)
-        .map(|a| a.name.to_string())
+        //.map(|a| a.name.to_string())
         .collect();
-    static ref IRONCLAD_CARDS: Vec<String> =
+    static ref IRONCLAD_CARDS: Vec<&'static BaseCard> =
         ALL_CARDS.values()
         .filter(|a| a._class == Class::Ironclad && a.rarity != Rarity::Starter)
-        .map(|a| a.name.to_string())
+        //.map(|a| a.name.to_string())
         .collect();
-    static ref SILENT_CARDS: Vec<String> =
+    static ref SILENT_CARDS: Vec<&'static BaseCard> =
         ALL_CARDS.values()
         .filter(|a| a._class == Class::Silent)
-        .map(|a| a.name.to_string())
+        //.map(|a| a.name.to_string())
         .collect();
-    static ref DEFECT_CARDS: Vec<String> =
+    static ref DEFECT_CARDS: Vec<&'static BaseCard> =
         ALL_CARDS.values()
         .filter(|a| a._class == Class::Defect)
-        .map(|a| a.name.to_string())
+        //.map(|a| a.name.to_string())
         .collect();
-    static ref WATCHER_CARDS: Vec<String> =
+    static ref WATCHER_CARDS: Vec<&'static BaseCard> =
         ALL_CARDS.values()
         .filter(|a| a._class == Class::Watcher)
-        .map(|a| a.name.to_string())
+        //.map(|a| a.name.to_string())
         .collect();
 
-    static ref CURSES: Vec<String> =
+    static ref CURSES: Vec<&'static BaseCard> =
         ALL_CARDS.values()
         .filter(|a| a._type == CardType::Curse)
-        .map(|a| a.name.to_string())
+        //.map(|a| a.name.to_string())
         .collect();
 
-    static ref COLORLESS_CARDS: Vec<String> =
+    static ref COLORLESS_CARDS: Vec<&'static BaseCard> =
         ALL_CARDS.values()
         .filter(|a| a._class == Class::None && a.rarity != Rarity::Special && a._type != CardType::Curse)
-        .map(|a| a.name.to_string())
+        //.map(|a| a.name.to_string())
         .collect();
 }
 
@@ -134,13 +134,3 @@ fn all_cards() -> Vec<BaseCard> {
     let file = File::open(filepath).unwrap();
     from_reader(file).unwrap()
 }
-/*
-pub fn rewrite() {
-    let cards = all_cards();
-    let filepath = Path::new("data").join("cards.ron");
-    let file = File::open(filepath).unwrap();
-    let mut config = PrettyConfig::new();
-    config.indentor = "  ";
-    config.separate_tuple_members = false;
-    ron::ser::to_writer_pretty(file, cards, config)
-} */

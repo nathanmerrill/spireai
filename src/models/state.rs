@@ -1,6 +1,9 @@
-use im::{HashMap, HashSet, Vector};
+use std::ops::{Index, IndexMut};
 
-use crate::{models::core::*, spireai::evaluator::CreatureReference};
+use im::{HashMap, Vector};
+use uuid::Uuid;
+
+use crate::{models::core::*, spireai::evaluator::{CardReference, CreatureReference}};
 
 use super::{buffs::BaseBuff, cards::BaseCard, events::BaseEvent, monsters::{BaseMonster, Intent}, potions::BasePotion, relics::BaseRelic};
 
@@ -14,22 +17,84 @@ pub struct GameState {
     pub floor: u8,
     pub act: u8,
     pub asc: u8,
-    pub deck: Vector<Card>,
+    pub deck: UuidVector<Card>,
     pub potions: Vector<Option<Potion>>,
-    pub relics: Vector<Relic>,
-    pub relic_names: HashSet<String>,
+    pub relics: UuidVector<Relic>,
+    pub relic_whens: HashMap<When, Vector<Uuid>>,
+    pub relic_names: HashMap<String, Uuid>,
     pub player: Creature,
     pub gold: u16,
     pub keys: Option<KeyState>,
     pub won: Option<bool>,
-    pub active_whens: HashMap<When, Vector<WhenState>>
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct WhenState {
-    source: CreatureReference,
-    effects: EffectGroup
+impl GameState {
+    pub fn cards(&self) -> impl Iterator<Item=CardReference> + '_ {
+        self.deck.uuids.iter().map(|u| CardReference::Deck(*u))
+    }
 }
+
+pub trait Keyed {
+    fn get_key(&self) -> Uuid;
+}
+
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub struct UuidVector<A> 
+    where A: Clone + Keyed
+{
+    pub uuids: Vector<Uuid>,
+    pub items: HashMap<Uuid, A>
+}
+
+impl<A> UuidVector<A> 
+    where A: Clone + Keyed
+{
+    pub fn get(&self, uuid: Uuid) -> &A {
+        self.items.get(&uuid).unwrap()
+    }
+
+    pub fn get_mut(&mut self, uuid: Uuid) -> &mut A {
+        self.items.get_mut(&uuid).unwrap()
+    }
+
+    pub fn add(&mut self, item: A) {
+        let uuid = item.get_key();
+        self.uuids.push_back(uuid);
+        self.items.insert(uuid, item);
+    }
+
+    pub fn remove(&mut self, index: usize) -> A {
+        let uuid = self.uuids.remove(index);
+        self.items.remove(&uuid).unwrap()
+    }
+
+    pub fn new() -> UuidVector<A> {
+        UuidVector {
+            uuids: Vector::new(),
+            items: HashMap::new()
+        }
+    }
+}
+
+impl<A> Index<usize> for UuidVector<A> 
+    where A: Clone + Keyed
+{
+    type Output = A;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.items[&self.uuids[index]]
+    }
+}
+
+impl<A> IndexMut<usize> for UuidVector<A> 
+    where A: Clone + Keyed
+{
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.items[&self.uuids[index]]
+    }
+}
+
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct KeyState {
@@ -47,6 +112,7 @@ pub struct Potion {
 pub struct Monster {
     pub base: &'static BaseMonster,
     pub creature: Creature,
+    pub position: usize,
     pub targetable: bool,
     pub intent: Intent,
     pub vars: Vars,
@@ -127,56 +193,76 @@ pub struct Creature {
     pub hp: u16,
     pub max_hp: u16,
     pub is_player: bool,
-    pub position: usize,
-    pub buffs: HashMap<String, Buff>,
+    pub buffs_when: HashMap<When, Vector<Uuid>>,
+    pub buff_names: HashMap<String, Uuid>,
+    pub buffs: UuidVector<Buff>,
     pub block: u16,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct BattleState {
     pub active: bool,
-    pub draw_top_known: usize,
-    pub draw_bottom_known: usize,
-    pub draw: Vector<Card>,
-    pub discard: Vector<Card>,
-    pub exhaust: Vector<Card>,
-    pub hand: Vector<Card>,
+    pub draw_top_known: Vector<Uuid>,
+    pub draw_bottom_known: Vector<Uuid>,
+    pub draw: HashMap<Uuid, Card>,
+    pub discard: UuidVector<Card>,
+    pub exhaust: UuidVector<Card>,
+    pub hand: UuidVector<Card>,
     pub monsters: Vector<Monster>,
     pub orbs: Vector<Orb>,
     pub orb_slots: u8,
     pub energy: u8,
     pub stance: Stance,
     pub battle_type: BattleType,
-    pub card_choices: Vector<Card>,
+    pub card_choices: UuidVector<Card>,
     pub card_choice_type: CardChoiceType,
     pub discard_count: u8,
     pub play_count: u8,
     pub last_card_played: Option<CardType>,
-    pub active_whens: HashMap<&'static str, Vector<WhenState>>
+}
+
+impl<'a> BattleState {
+    pub fn discard(&'a self) -> impl Iterator<Item=CardReference> + 'a {
+        self.discard.uuids.iter().map(|u| CardReference::Discard(*u))
+    }
+    pub fn exhaust(&'a self) -> impl Iterator<Item=CardReference> + 'a {
+        self.discard.uuids.iter().map(|u| CardReference::Exhaust(*u))
+    }
+    pub fn hand(&'a self) -> impl Iterator<Item=CardReference> + 'a {
+        self.discard.uuids.iter().map(|u| CardReference::Hand(*u))
+    }
+    pub fn draw(&'a self) -> impl Iterator<Item=CardReference> + 'a {
+        self.draw.keys().map(|u| CardReference::Hand(*u))
+    }
+    pub fn available_monsters(&self) -> Vector<CreatureReference> {
+        self.monsters.iter()
+            .filter(|m| m.targetable)
+            .map(|m| CreatureReference::Creature(m.position))
+            .collect()
+    }
 }
 
 impl Default for BattleState {
     fn default() -> Self {
         BattleState {
             active: false,
-            draw_top_known: 0,
-            draw_bottom_known: 0,
-            draw: Vector::new(),
-            discard: Vector::new(),
-            exhaust: Vector::new(),
-            hand: Vector::new(),
+            draw_top_known: Vector::new(),
+            draw_bottom_known: Vector::new(),
+            draw: HashMap::new(),
+            discard: UuidVector::new(),
+            exhaust: UuidVector::new(),
+            hand: UuidVector::new(),
             monsters: Vector::new(),
             orbs: Vector::new(),
             orb_slots: 0,
             energy: 0,
             stance: Stance::None,
             battle_type: BattleType::Common,
-            card_choices: Vector::new(),
+            card_choices: UuidVector::new(),
             card_choice_type: CardChoiceType::None,
             discard_count: 0,
             play_count: 0,
-            last_card_played: None,
-            active_whens: HashMap::new()
+            last_card_played: None
         }
     }
 }
@@ -185,6 +271,7 @@ impl Default for BattleState {
 pub enum CardChoiceType {
     None,
     Scry,
+    AddToLocation(CardLocation, RelativePosition, Vec<CardEffect>)
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -204,15 +291,29 @@ pub struct Orb {
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Relic {
     pub base: &'static BaseRelic,
+    pub uuid: Uuid,
     pub vars: Vars,
     pub enabled: bool,
+}
+
+impl Keyed for Relic {
+    fn get_key(&self) -> Uuid {
+        self.uuid
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Buff {
     pub base: &'static BaseBuff,
+    pub uuid: Uuid,
     pub vars: Vars,
     pub stacked_vars: Vec<Vars>,
+}
+
+impl Keyed for Buff {
+    fn get_key(&self) -> Uuid {
+        self.uuid
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -226,9 +327,16 @@ pub struct Vars {
 pub struct Card {
     pub base: &'static BaseCard,
     pub cost: u8,
+    pub uuid: Uuid,
     pub vars: Vars,
     pub upgrades: u8,
     pub bottled: bool,
+}
+
+impl Keyed for Card {
+    fn get_key(&self) -> Uuid {
+        self.uuid
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]

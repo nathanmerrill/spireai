@@ -1,2036 +1,2170 @@
 [
-    (
-        name: "Neow",
-        choices: [
-            (
-                name: "Talk",
-                effects: [
-                    ShowChoices([
-                        "Neow One Hp",
-                        "Neow Six Hp",
-                        "Neow Seven Hp",
-                        "Neow Eight Hp",
-                    ]),
-                ],
-            ),
-            (
-                name: "Neow One Hp",
-                effects: [
-                    AddRelic("Neows Lament"),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-                initial: false,
-            ),
-            (
-                name: "Neow Six Hp",
-                effects: [
-                    AddMaxHp(Fixed(6)),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-                condition: Class(Silent),
-                initial: false,
-            ),
-            (
-                name: "Neow Seven Hp",
-                effects: [
-                    AddMaxHp(Fixed(7)),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-                condition: MultipleOr([
-                    Class(Defect),
-                    Class(Watcher),
-                ]),
-                initial: false,
-            ),
-            (
-                name: "Neow Eight Hp",
-                effects: [
-                    AddMaxHp(Fixed(8)),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-                condition: Class(Ironclad),
-                initial: false,
-            ),
-            (
-                name: "Leave",
-                initial: false,
-            ),
+  (
+    name: "A Note For Yourself",
+    choices: [
+      (
+        name: "Continue",
+        effects: [
+          ShowChoices([
+            "A Note For Yourself Take",
+            "A Note For Yourself Ignore",
+          ]),
         ],
-        variants: [
-            "Neow First Run",
-            "Neow Success Run",
+      ),
+      (
+        name: "A Note For Yourself Take",
+        effects: [
+          Custom,
         ],
-    ),
-    (
-        name: "Ancient Writing",
-        choices: [
-            (
-                name: "Elegance",
-                effects: [
-                    RemoveCard(1),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Simplicity",
-                effects: [
-                    Custom,
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Leave",
-                initial: false,
-            ),
+        initial: false,
+      ),
+      (
+        name: "A Note For Yourself Ignore",
+        initial: false,
+      ),
+    ],
+    shrine: true,
+    condition: Asc(15),
+  ),
+  (
+    name: "Ancient Writing",
+    choices: [
+      (
+        name: "Elegance",
+        effects: [
+          RemoveCard(1),
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-    ),
-    (
-        name: "Augmenter",
-        choices: [
-            (
-                name: "Test J.A.X.",
-                effects: [
-                    CreateCard(
-                        name: "Jax",
-                        location: DeckPile,
-                    ),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Become Test Subject",
-                effects: [
-                    TransformCard(2),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Ingest Mutagens",
-                effects: [
-                    AddRelic("Mutagenic Strength"),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Leave",
-                initial: false,
-            ),
+      ),
+      (
+        name: "Simplicity",
+        effects: [
+          Custom,
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-    ),
-    (
-        name: "Big Fish",
-        choices: [
-            (
-                name: "Banana",
-                effects: [
-                    HealPercentage(
-                        amount: Fixed(33),
-                    ),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Donut",
-                effects: [
-                    AddMaxHp(Fixed(5)),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Box",
-                effects: [
-                    CreateCard(
-                        name: "Regret",
-                        location: DeckPile,
-                    ),
-                    ShowReward([
-                        RandomRelic,
-                    ]),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Leave",
-                initial: false,
-            ),
-        ],
-    ),
-    (
-        name: "Bonfire Spirits",
-        choices: [
-            (
-                name: "Offer",
-                effects: [
-                    Custom,
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Leave",
-                initial: false,
-            ),
-        ],
-        shrine: true,
-    ),
-    (
-        name: "The Cleric",
-        choices: [
-            (
-                name: "Heal",
-                effects: [
-                    AddGold(Fixed(-35)),
-                    HealPercentage(
-                        amount: Fixed(25),
-                    ),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-                condition: HasGold(Fixed(35)),
-            ),
-            (
-                name: "Purify",
-                effects: [
-                    AddGold(ByAsc(
-                        base: -50,
-                        low: -75,
-                        high: -75,
-                    )),
-                    RemoveCard(1),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-                condition: HasGold(ByAsc(
-                    base: 50,
-                    low: 75,
-                    high: 75,
-                )),
-            ),
-            (
-                name: "Leave",
-            ),
-        ],
-        condition: HasGold(Fixed(35)),
-    ),
-    (
-        name: "The Colosseum",
-        choices: [
-            (
-                name: "Continue",
-                effects: [
-                    Fight(
-                        monsters: [
-                            "Blue Slaver",
-                            "Red Slaver",
-                        ],
-                        room: HallwayFight,
-                    ),
-                    ShowChoices([
-                        "The Colosseum Cowardace",
-                        "The Colosseum Victory",
-                    ]),
-                ],
-            ),
-            (
-                name: "The Colosseum Cowardace",
-                initial: false,
-            ),
-            (
-                name: "The Colosseum Victory",
-                effects: [
-                    Fight(
-                        monsters: [
-                            "Taskmaster",
-                            "Gremlin Nob",
-                        ],
-                        room: Elite,
-                    ),
-                    ShowReward([
-                        Gold(
-                            min: 100,
-                            max: 100,
-                        ),
-                        Relic(Rare),
-                        Relic(Uncommon),
-                        StandardCard,
-                    ]),
-                ],
-                initial: false,
-            ),
-        ],
-        condition: OnFloor(26),
-    ),
-    (
-        name: "Council Of Ghosts",
-        choices: [
-            (
-                name: "Accept",
-                effects: [
-                    ReduceMaxHpPercentage(Fixed(50)),
-                    Repeat(
-                        n: ByAsc(
-                            base: 5,
-                            low: 3,
-                            high: 3,
-                        ),
-                        effect: Single(CreateCard(
-                            name: "Apparition",
-                            location: DeckPile,
-                        )),
-                    ),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Refuse",
-            ),
-            (
-                name: "Leave",
-                initial: false,
-            ),
-        ],
-    ),
-    (
-        name: "Cursed Tome",
-        choices: [
-            (
-                name: "Read",
-                effects: [
-                    ShowChoices([
-                        "Cursed Tome Continue",
-                    ]),
-                ],
-            ),
-            (
-                name: "Cursed Tome Continue",
-                effects: [
-                    AddN(Fixed(1)),
-                    LoseHp(
-                        amount: N,
-                    ),
-                    If(
-                        condition: Equals(N, Fixed(3)),
-                        then: Single(ShowChoices([
-                            "Cursed Tome Continue",
-                        ])),
-                        _else: Single(ShowChoices([
-                            "Cursed Tome Take",
-                            "Cursed Tome Stop",
-                        ])),
-                    ),
-                ],
-                initial: false,
-            ),
-            (
-                name: "Cursed Tome Take",
-                effects: [
-                    LoseHp(
-                        amount: ByAsc(
-                            base: 10,
-                            low: 15,
-                            high: 15,
-                        ),
-                    ),
-                    ShowReward([
-                        RandomBook,
-                    ]),
-                ],
-                initial: false,
-            ),
-            (
-                name: "Cursed Tome Stop",
-                effects: [
-                    LoseHp(
-                        amount: Fixed(3),
-                    ),
-                ],
-                initial: false,
-            ),
-            (
-                name: "Leave",
-            ),
-        ],
-    ),
-    (
-        name: "Dead Adventurer",
-        choices: [
-            (
-                name: "Dead Adventurer Search",
-                effects: [
-                    If(
-                        condition: Equals(X, Fixed(0)),
-                        then: Single(SetX(ByAsc(
-                            base: 26,
-                            low: 42,
-                            high: 42,
-                        ))),
-                        _else: Single(If(
-                            condition: LessThan(X, Fixed(60)),
-                            then: Single(SetX(ByAsc(
-                                base: 78,
-                                low: 117,
-                                high: 117,
-                            ))),
-                            _else: Single(SetX(ByAsc(
-                                base: 243,
-                                low: 442,
-                                high: 442,
-                            ))),
-                        )),
-                    ),
-                    RandomChance([
-                        (
-                            amount: X,
-                            effect: Multiple([
-                                If(
-                                    condition: IsVariant("Dead Adventurer Gremlin Nob"),
-                                    then: Single(Fight(
-                                        monsters: [
-                                            "Gremlin Nob",
-                                        ],
-                                        room: Elite,
-                                    )),
-                                    _else: Single(If(
-                                        condition: IsVariant("Dead Adventurer Lagavulin"),
-                                        then: Single(Fight(
-                                            monsters: [
-                                                "Lagavulin",
-                                            ],
-                                            room: Elite,
-                                        )),
-                                        _else: Single(Fight(
-                                            monsters: [
-                                                "Sentry",
-                                                "Sentry",
-                                                "Sentry",
-                                            ],
-                                            room: Elite,
-                                        )),
-                                    )),
-                                ),
-                                If(
-                                    condition: LessThan(N, Fixed(2)),
-                                    then: Single(ShowReward([
-                                        RandomRelic,
-                                        Gold(
-                                            min: 55,
-                                            max: 65,
-                                        ),
-                                        EliteCard,
-                                    ])),
-                                    _else: Single(If(
-                                        condition: LessThan(N, Fixed(4)),
-                                        then: Single(ShowReward([
-                                            RandomRelic,
-                                            EliteCard,
-                                        ])),
-                                        _else: Single(If(
-                                            condition: LessThan(N, Fixed(6)),
-                                            then: Single(ShowReward([
-                                                Gold(
-                                                    min: 55,
-                                                    max: 65,
-                                                ),
-                                                EliteCard,
-                                            ])),
-                                            _else: Single(ShowReward([
-                                                EliteCard,
-                                            ])),
-                                        )),
-                                    )),
-                                ),
-                            ]),
-                        ),
-                        (
-                            amount: Fixed(78),
-                            effect: Multiple([
-                                If(
-                                    condition: Equals(N, Fixed(0)),
-                                    then: Single(RandomChance([
-                                        (
-                                            amount: Fixed(33),
-                                            effect: Single(AddN(Fixed(1))),
-                                        ),
-                                        (
-                                            amount: Fixed(33),
-                                            effect: Multiple([
-                                                AddGold(Fixed(30)),
-                                                AddN(Fixed(2)),
-                                            ]),
-                                        ),
-                                        (
-                                            amount: Fixed(33),
-                                            effect: Multiple([
-                                                RandomRelic,
-                                                AddN(Fixed(4)),
-                                            ]),
-                                        ),
-                                    ])),
-                                    _else: Single(If(
-                                        condition: Equals(N, Fixed(1)),
-                                        then: Single(RandomChance([
-                                            (
-                                                amount: Fixed(33),
-                                                effect: Multiple([
-                                                    AddGold(Fixed(30)),
-                                                    AddN(Fixed(2)),
-                                                ]),
-                                            ),
-                                            (
-                                                amount: Fixed(33),
-                                                effect: Multiple([
-                                                    RandomRelic,
-                                                    AddN(Fixed(4)),
-                                                ]),
-                                            ),
-                                        ])),
-                                        _else: Single(If(
-                                            condition: Equals(N, Fixed(2)),
-                                            then: Single(RandomChance([
-                                                (
-                                                    amount: Fixed(33),
-                                                    effect: Single(AddN(Fixed(1))),
-                                                ),
-                                                (
-                                                    amount: Fixed(33),
-                                                    effect: Multiple([
-                                                        RandomRelic,
-                                                        AddN(Fixed(4)),
-                                                    ]),
-                                                ),
-                                            ])),
-                                            _else: Single(If(
-                                                condition: Equals(N, Fixed(3)),
-                                                then: Multiple([
-                                                    RandomRelic,
-                                                    AddN(Fixed(4)),
-                                                ]),
-                                                _else: Single(If(
-                                                    condition: Equals(N, Fixed(4)),
-                                                    then: Single(RandomChance([
-                                                        (
-                                                            amount: Fixed(33),
-                                                            effect: Single(AddN(Fixed(1))),
-                                                        ),
-                                                        (
-                                                            amount: Fixed(33),
-                                                            effect: Multiple([
-                                                                AddGold(Fixed(30)),
-                                                                AddN(Fixed(2)),
-                                                            ]),
-                                                        ),
-                                                    ])),
-                                                    _else: Single(If(
-                                                        condition: Equals(N, Fixed(5)),
-                                                        then: Multiple([
-                                                            AddGold(Fixed(30)),
-                                                            AddN(Fixed(2)),
-                                                        ]),
-                                                        _else: Single(AddN(Fixed(1))),
-                                                    )),
-                                                )),
-                                            )),
-                                        )),
-                                    )),
-                                ),
-                                If(
-                                    condition: Equals(N, Fixed(7)),
-                                    _else: Single(ShowChoices([
-                                        "Leave",
-                                        "Dead Adventurer Search",
-                                    ])),
-                                ),
-                            ]),
-                        ),
-                    ]),
-                ],
-            ),
-            (
-                name: "Leave",
-            ),
-        ],
-        variants: [
-            "Dead Adventurer Lagavulin",
-            "Dead Adventurer Sentry",
-            "Dead Adventurer Gremlin Nob",
-        ],
-        condition: OnFloor(7),
-    ),
-    (
-        name: "Designer Inspire",
-        choices: [
-            (
-                name: "Adjustments",
-                effects: [
-                    AddGold(ByAsc(
-                        base: -40,
-                        low: -50,
-                        high: -50,
-                    )),
-                    If(
-                        condition: MultipleOr([
-                            IsVariant("Designer Inspire Base"),
-                            IsVariant("Designer Inspire Trans_2"),
-                        ]),
-                        then: Single(UpgradeCard),
-                        _else: Single(UpgradeRandomCard(2)),
-                    ),
-                ],
-                condition: MultipleAnd([
-                    HasUpgradableCard,
-                    HasGold(ByAsc(
-                        base: 40,
-                        low: 50,
-                        high: 50,
-                    )),
-                ]),
-            ),
-            (
-                name: "Clean Up",
-                effects: [
-                    AddGold(ByAsc(
-                        base: -60,
-                        low: -75,
-                        high: -75,
-                    )),
-                    If(
-                        condition: MultipleOr([
-                            IsVariant("Designer Inspire Base"),
-                            IsVariant("Designer Inspire Up_2"),
-                        ]),
-                        then: Single(RemoveCard(1)),
-                        _else: Single(TransformRandomCard(2)),
-                    ),
-                ],
-                condition: MultipleAnd([
-                    HasGold(ByAsc(
-                        base: 60,
-                        low: 75,
-                        high: 75,
-                    )),
-                    MultipleOr([
-                        MultipleAnd([
-                            MultipleOr([
-                                IsVariant("Designer Inspire Base"),
-                                IsVariant("Designer Inspire Up_2"),
-                            ]),
-                            HasRemoveableCards(),
-                        ]),
-                        MultipleAnd([
-                            MultipleOr([
-                                IsVariant("Designer Inspire Trans_2"),
-                                IsVariant("Designer Inspire Up_2_trans_2"),
-                            ]),
-                            HasRemoveableCards(
-                                count: 2,
-                            ),
-                        ]),
-                    ]),
-                ]),
-            ),
-            (
-                name: "Full Service",
-                effects: [
-                    AddGold(ByAsc(
-                        base: -90,
-                        low: -110,
-                        high: -110,
-                    )),
-                    RemoveCard(1),
-                    UpgradeRandomCard(1),
-                ],
-                condition: MultipleAnd([
-                    HasRemoveableCards(),
-                    HasGold(ByAsc(
-                        base: 90,
-                        low: 110,
-                        high: 110,
-                    )),
-                ]),
-            ),
-            (
-                name: "Punch",
-                effects: [
-                    LoseHp(
-                        amount: ByAsc(
-                            base: 3,
-                            low: 5,
-                            high: 5,
-                        ),
-                    ),
-                ],
-            ),
-        ],
-        shrine: true,
-        variants: [
-            "Designer Inspire Base",
-            "Designer Inspire Up_2",
-            "Designer Inspire Trans_2",
-            "Designer Inspire Up Trans_2",
-        ],
-        condition: HasGold(Fixed(75)),
-    ),
-    (
-        name: "The Divine Fountain",
-        choices: [
-            (
-                name: "Drink",
-                effects: [
-                    Custom,
-                ],
-            ),
-            (
-                name: "Leave",
-            ),
-        ],
-        shrine: true,
-        condition: HasCard(
+      ),
+      (
+        name: "Leave",
+        initial: false,
+      ),
+    ],
+  ),
+  (
+    name: "Augmenter",
+    choices: [
+      (
+        name: "Test J.A.X.",
+        effects: [
+          CreateCard(
+            name: "Jax",
             location: DeckPile,
-            card: Curse,
-        ),
-    ),
-    (
-        name: "Duplicator",
-        choices: [
-            (
-                name: "Pray",
-                effects: [
-                    DuplicateCard,
-                ],
-            ),
-            (
-                name: "Leave",
-            ),
+          ),
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-        shrine: true,
-    ),
-    (
-        name: "Face Trader",
-        choices: [
-            (
-                name: "Touch",
-                effects: [
-                    DamagePercentage(Fixed(10)),
-                    If(
-                        condition: Asc(15),
-                        then: Single(AddGold(Fixed(50))),
-                        _else: Single(AddGold(Fixed(75))),
-                    ),
-                ],
-            ),
-            (
-                name: "Trade",
-                effects: [
-                    RandomChance([
-                        (
-                            amount: Fixed(20),
-                            effect: Single(AddRelic("Cultist Headpiece")),
-                        ),
-                        (
-                            amount: Fixed(20),
-                            effect: Single(AddRelic("Face Of Cleric")),
-                        ),
-                        (
-                            amount: Fixed(20),
-                            effect: Single(AddRelic("Gremlin Visage")),
-                        ),
-                        (
-                            amount: Fixed(20),
-                            effect: Single(AddRelic("Nloths Hungry Face")),
-                        ),
-                        (
-                            amount: Fixed(20),
-                            effect: Single(AddRelic("Ssserpent Head")),
-                        ),
-                    ]),
-                ],
-            ),
-            (
-                name: "Leave",
-            ),
+      ),
+      (
+        name: "Become Test Subject",
+        effects: [
+          TransformCard(2),
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-        shrine: true,
-    ),
-    (
-        name: "Falling",
-        choices: [
-            (
-                name: "Land",
-                effects: [
-                    Custom,
-                ],
-                condition: HasRemoveableCards(
-                    card_type: Skill,
-                ),
-            ),
-            (
-                name: "Channel",
-                effects: [
-                    Custom,
-                ],
-                condition: HasRemoveableCards(
-                    card_type: Power,
-                ),
-            ),
-            (
-                name: "Attack",
-                effects: [
-                    Custom,
-                ],
-                condition: HasRemoveableCards(
-                    card_type: Attack,
-                ),
-            ),
-            (
-                name: "Land gracefully",
-                condition: MultipleAnd([
-                    Not(HasRemoveableCards(
-                        card_type: Skill,
-                    )),
-                    Not(HasRemoveableCards(
-                        card_type: Attack,
-                    )),
-                    Not(HasRemoveableCards(
-                        card_type: Power,
-                    )),
-                ]),
-            ),
+      ),
+      (
+        name: "Ingest Mutagens",
+        effects: [
+          AddRelic("Mutagenic Strength"),
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-    ),
-    (
-        name: "Forgotten Altar",
-        choices: [
-            (
-                name: "Offer",
-                effects: [
-                    RemoveRelic("Golden Idol"),
-                    AddRelic("Bloody Idol"),
-                ],
-                condition: HasRelic("Golden Idol"),
-            ),
-            (
-                name: "Sacrifice",
-                effects: [
-                    DamagePercentage(ByAsc(
-                        base: 25,
-                        low: 35,
-                        high: 35,
-                    )),
-                    AddMaxHp(Fixed(5)),
-                ],
-            ),
-            (
-                name: "Desecrate",
-                effects: [
-                    CreateCard(
-                        name: "Decay",
-                        location: DeckPile,
-                    ),
-                ],
-            ),
+      ),
+      (
+        name: "Leave",
+        initial: false,
+      ),
+    ],
+  ),
+  (
+    name: "Big Fish",
+    choices: [
+      (
+        name: "Banana",
+        effects: [
+          HealPercentage(
+            amount: Fixed(33),
+          ),
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-    ),
-    (
-        name: "Golden Idol",
-        choices: [
-            (
-                name: "Take",
-                effects: [
-                    AddRelic("Golden Idol"),
-                    ShowChoices([
-                        "Golden Idol Hide",
-                        "Golden Idol Outrun",
-                        "Golden Idol Smash",
-                    ]),
-                ],
-            ),
-            (
-                name: "Golden Idol Outrun",
-                effects: [
-                    CreateCard(
-                        name: "Injury",
-                        location: DeckPile,
-                    ),
-                ],
-                initial: false,
-            ),
-            (
-                name: "Golden Idol Smash",
-                effects: [
-                    DamagePercentage(ByAsc(
-                        base: 25,
-                        low: 35,
-                        high: 35,
-                    )),
-                ],
-                initial: false,
-            ),
-            (
-                name: "Golden Idol Hide",
-                effects: [
-                    ReduceMaxHpPercentage(ByAsc(
-                        base: 8,
-                        low: 10,
-                        high: 10,
-                    )),
-                ],
-                initial: false,
-            ),
-            (
-                name: "Leave",
-            ),
+      ),
+      (
+        name: "Donut",
+        effects: [
+          AddMaxHp(Fixed(5)),
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-    ),
-    (
-        name: "Golden Shrine",
-        choices: [
-            (
-                name: "Pray",
-                effects: [
-                    AddGold(ByAsc(
-                        base: 100,
-                        low: 50,
-                        high: 50,
-                    )),
-                ],
-            ),
-            (
-                name: "Desecrate",
-                effects: [
-                    AddGold(Fixed(275)),
-                    CreateCard(
-                        name: "Regret",
-                        location: DeckPile,
-                    ),
-                ],
-            ),
-            (
-                name: "Leave",
-            ),
+      ),
+      (
+        name: "Box",
+        effects: [
+          CreateCard(
+            name: "Regret",
+            location: DeckPile,
+          ),
+          ShowReward([
+            RandomRelic,
+          ]),
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-        shrine: true,
-    ),
-    (
-        name: "The Joust",
-        choices: [
-            (
-                name: "Bet on Murderer",
-                effects: [
-                    AddGold(Fixed(-50)),
-                    RandomChance([
-                        (
-                            amount: Fixed(70),
-                            effect: Single(AddGold(Fixed(100))),
-                        ),
-                        (
-                            amount: Fixed(30),
-                            effect: None,
-                        ),
-                    ]),
-                ],
-            ),
-            (
-                name: "Bet on Owner",
-                effects: [
-                    AddGold(Fixed(-50)),
-                    RandomChance([
-                        (
-                            amount: Fixed(30),
-                            effect: Single(AddGold(Fixed(250))),
-                        ),
-                        (
-                            amount: Fixed(70),
-                            effect: None,
-                        ),
-                    ]),
-                ],
-            ),
+      ),
+      (
+        name: "Leave",
+        initial: false,
+      ),
+    ],
+  ),
+  (
+    name: "Bonfire Spirits",
+    choices: [
+      (
+        name: "Offer",
+        effects: [
+          Custom,
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-        shrine: true,
-        condition: HasGold(Fixed(50)),
-    ),
-    (
-        name: "Knowing Skull",
-        choices: [
-            (
-                name: "Knowing Skull Success",
-                effects: [
-                    LoseHp(
-                        amount: Sum([
-                            Fixed(6),
-                            Custom,
-                        ]),
-                    ),
-                    CreateCardByType(
-                        location: DeckPile,
-                        type: All,
-                        _class: Some(None),
-                    ),
-                    ShowChoices([
-                        "Knowing Skull Success",
-                        "Knowing Skull Pick Me Up",
-                        "Knowing Skull Riches",
-                        "Knowing Skull Leave",
-                    ]),
-                ],
+      ),
+      (
+        name: "Leave",
+        initial: false,
+      ),
+    ],
+    shrine: true,
+  ),
+  (
+    name: "Council Of Ghosts",
+    choices: [
+      (
+        name: "Accept",
+        effects: [
+          ReduceMaxHpPercentage(Fixed(50)),
+          Repeat(
+            n: ByAsc(
+              base: 5,
+              low: 3,
+              high: 3,
             ),
-            (
-                name: "Knowing Skull Pick Me Up",
-                effects: [
-                    LoseHp(
-                        amount: Sum([
-                            Fixed(6),
-                            Custom,
-                        ]),
-                    ),
-                    RandomPotion,
-                    ShowChoices([
-                        "Knowing Skull Success",
-                        "Knowing Skull Pick Me Up",
-                        "Knowing Skull Riches",
-                        "Knowing Skull Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Knowing Skull Riches",
-                effects: [
-                    LoseHp(
-                        amount: Sum([
-                            Fixed(6),
-                            Custom,
-                        ]),
-                    ),
-                    AddGold(Fixed(90)),
-                    ShowChoices([
-                        "Knowing Skull Success",
-                        "Knowing Skull Pick Me Up",
-                        "Knowing Skull Riches",
-                        "Knowing Skull Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Knowing Skull Leave",
-                effects: [
-                    LoseHp(
-                        amount: Fixed(6),
-                    ),
-                ],
-            ),
+            effect: [
+              CreateCard(
+                name: "Apparition",
+                location: DeckPile,
+              ),
+            ],
+          ),
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-        shrine: true,
-        condition: RemainingHp(
-            amount: Fixed(12),
-        ),
-    ),
-    (
-        name: "Lab",
-        choices: [
-            (
-                name: "Find Some Potions!",
-                effects: [
-                    If(
-                        condition: Asc(15),
-                        then: Single(ShowReward([
-                            RandomPotion,
-                            RandomPotion,
-                        ])),
-                        _else: Single(ShowReward([
-                            RandomPotion,
-                            RandomPotion,
-                            RandomPotion,
-                        ])),
-                    ),
-                ],
-            ),
+      ),
+      (
+        name: "Refuse",
+      ),
+      (
+        name: "Leave",
+        initial: false,
+      ),
+    ],
+  ),
+  (
+    name: "Cursed Tome",
+    choices: [
+      (
+        name: "Read",
+        effects: [
+          ShowChoices([
+            "Cursed Tome Continue",
+          ]),
         ],
-        shrine: true,
-    ),
-    (
-        name: "The Library",
-        choices: [
-            (
-                name: "Read",
-                effects: [
-                    ChooseCardByType(
-                        location: DeckPile,
-                        type: All,
-                        choices: Fixed(20),
-                    ),
-                ],
-            ),
-            (
-                name: "Sleep",
-                effects: [
-                    HealPercentage(
-                        amount: ByAsc(
-                            base: 33,
-                            low: 20,
-                            high: 20,
-                        ),
-                    ),
-                ],
-            ),
+      ),
+      (
+        name: "Cursed Tome Continue",
+        effects: [
+          AddN(Fixed(1)),
+          LoseHp(
+            amount: N,
+          ),
+          If(
+            condition: Equals(N, Fixed(3)),
+            then: [
+              ShowChoices([
+                "Cursed Tome Continue",
+              ]),
+            ],
+            _else: [
+              ShowChoices([
+                "Cursed Tome Take",
+                "Cursed Tome Stop",
+              ]),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Living Wall",
-        choices: [
-            (
-                name: "Forget",
-                effects: [
-                    RemoveCard(1),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
+        initial: false,
+      ),
+      (
+        name: "Cursed Tome Take",
+        effects: [
+          LoseHp(
+            amount: ByAsc(
+              base: 10,
+              low: 15,
+              high: 15,
             ),
-            (
-                name: "Change",
-                effects: [
-                    TransformCard(1),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Grow",
-                effects: [
-                    UpgradeCard,
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-                condition: HasUpgradableCard,
-            ),
-            (
-                name: "Leave",
-                initial: false,
-            ),
+          ),
+          ShowReward([
+            RandomBook,
+          ]),
         ],
-    ),
-    (
-        name: "Masked Bandits",
-        choices: [
-            (
-                name: "Pay",
-                effects: [
-                    LoseAllGold,
+        initial: false,
+      ),
+      (
+        name: "Cursed Tome Stop",
+        effects: [
+          LoseHp(
+            amount: Fixed(3),
+          ),
+        ],
+        initial: false,
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "Dead Adventurer",
+    choices: [
+      (
+        name: "Dead Adventurer Search",
+        effects: [
+          If(
+            condition: Equals(X, Fixed(0)),
+            then: [
+              SetX(ByAsc(
+                base: 26,
+                low: 42,
+                high: 42,
+              )),
+            ],
+            _else: [
+              If(
+                condition: LessThan(X, Fixed(60)),
+                then: [
+                  SetX(ByAsc(
+                    base: 78,
+                    low: 117,
+                    high: 117,
+                  )),
                 ],
-            ),
+                _else: [
+                  SetX(ByAsc(
+                    base: 243,
+                    low: 442,
+                    high: 442,
+                  )),
+                ],
+              ),
+            ],
+          ),
+          RandomChance([
             (
-                name: "Fight",
-                effects: [
+              amount: X,
+              effect: [
+                If(
+                  condition: IsVariant("Dead Adventurer Gremlin Nob"),
+                  then: [
                     Fight(
-                        monsters: [
-                            "Pointy",
-                            "Romeo",
-                            "Bear",
-                        ],
-                        room: HallwayFight,
+                      monsters: [
+                        "Gremlin Nob",
+                      ],
+                      room: Elite,
                     ),
+                  ],
+                  _else: [
+                    If(
+                      condition: IsVariant("Dead Adventurer Lagavulin"),
+                      then: [
+                        Fight(
+                          monsters: [
+                            "Lagavulin",
+                          ],
+                          room: Elite,
+                        ),
+                      ],
+                      _else: [
+                        Fight(
+                          monsters: [
+                            "Sentry",
+                            "Sentry",
+                            "Sentry",
+                          ],
+                          room: Elite,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                If(
+                  condition: LessThan(N, Fixed(2)),
+                  then: [
                     ShowReward([
-                        RelicName("Red Mask"),
-                        Gold(
-                            min: 25,
-                            max: 35,
-                        ),
-                        StandardCard,
+                      RandomRelic,
+                      Gold(
+                        min: 55,
+                        max: 65,
+                      ),
+                      EliteCard,
                     ]),
-                ],
-            ),
-        ],
-    ),
-    (
-        name: "Match And Keep",
-        shrine: true,
-    ),
-    (
-        name: "The Mausoleum",
-        choices: [
-            (
-                name: "Open Coffin",
-                effects: [
-                    RandomChance([
-                        (
-                            amount: ByAsc(
-                                base: 50,
-                                low: 100,
-                                high: 100,
-                            ),
-                            effect: Single(CreateCard(
-                                name: "Writhe",
-                                location: DeckPile,
-                            )),
-                        ),
-                        (
-                            amount: ByAsc(
-                                base: 50,
-                                low: 0,
-                                high: 0,
-                            ),
-                            effect: None,
-                        ),
-                    ]),
-                    RandomRelic,
-                ],
-            ),
-            (
-                name: "Leave",
-            ),
-        ],
-    ),
-    (
-        name: "Mind Bloom",
-        choices: [
-            (
-                name: "I am War",
-                effects: [
-                    RandomChance([
-                        (
-                            amount: Fixed(33),
-                            effect: Single(Fight(
-                                monsters: [
-                                    "Slime Boss",
-                                ],
-                                room: Boss,
-                            )),
-                        ),
-                        (
-                            amount: Fixed(33),
-                            effect: Single(Fight(
-                                monsters: [
-                                    "The Guardian",
-                                ],
-                                room: Boss,
-                            )),
-                        ),
-                        (
-                            amount: Fixed(33),
-                            effect: Single(Fight(
-                                monsters: [
-                                    "Hexaghost",
-                                ],
-                                room: Boss,
-                            )),
-                        ),
-                    ]),
+                  ],
+                  _else: [
                     If(
-                        condition: Asc(15),
-                        then: Single(ShowReward([
-                            Relic(Rare),
-                            Gold(
-                                min: 25,
-                                max: 25,
-                            ),
-                            StandardCard,
-                        ])),
-                        _else: Single(ShowReward([
-                            Relic(Rare),
-                            Gold(
-                                min: 50,
-                                max: 50,
-                            ),
-                            StandardCard,
-                        ])),
+                      condition: LessThan(N, Fixed(4)),
+                      then: [
+                        ShowReward([
+                          RandomRelic,
+                          EliteCard,
+                        ]),
+                      ],
+                      _else: [
+                        If(
+                          condition: LessThan(N, Fixed(6)),
+                          then: [
+                            ShowReward([
+                              Gold(
+                                min: 55,
+                                max: 65,
+                              ),
+                              EliteCard,
+                            ]),
+                          ],
+                          _else: [
+                            ShowReward([
+                              EliteCard,
+                            ]),
+                          ],
+                        ),
+                      ],
                     ),
-                ],
+                  ],
+                ),
+              ],
             ),
             (
-                name: "I am Awake",
-                effects: [
-                    Custom,
-                    AddRelic("Mark Of The Bloom"),
-                ],
-            ),
-            (
-                name: "I am Awake",
-                effects: [
+              amount: Fixed(78),
+              effect: [
+                If(
+                  condition: Equals(N, Fixed(0)),
+                  then: [
+                    RandomChance([
+                      (
+                        amount: Fixed(33),
+                        effect: [
+                          AddN(Fixed(1)),
+                        ],
+                      ),
+                      (
+                        amount: Fixed(33),
+                        effect: [
+                          AddGold(Fixed(30)),
+                          AddN(Fixed(2)),
+                        ],
+                      ),
+                      (
+                        amount: Fixed(33),
+                        effect: [
+                          RandomRelic,
+                          AddN(Fixed(4)),
+                        ],
+                      ),
+                    ]),
+                  ],
+                  _else: [
                     If(
-                        condition: OnFloor(41),
-                        then: Multiple([
-                            HealPercentage(
-                                amount: Fixed(100),
-                            ),
-                            CreateCard(
-                                name: "Doubt",
-                                location: DeckPile,
-                            ),
+                      condition: Equals(N, Fixed(1)),
+                      then: [
+                        RandomChance([
+                          (
+                            amount: Fixed(33),
+                            effect: [
+                              AddGold(Fixed(30)),
+                              AddN(Fixed(2)),
+                            ],
+                          ),
+                          (
+                            amount: Fixed(33),
+                            effect: [
+                              RandomRelic,
+                              AddN(Fixed(4)),
+                            ],
+                          ),
                         ]),
-                        _else: Multiple([
-                            AddGold(Fixed(999)),
-                            CreateCard(
-                                name: "Normality",
-                                location: DeckPile,
+                      ],
+                      _else: [
+                        If(
+                          condition: Equals(N, Fixed(2)),
+                          then: [
+                            RandomChance([
+                              (
+                                amount: Fixed(33),
+                                effect: [
+                                  AddN(Fixed(1)),
+                                ],
+                              ),
+                              (
+                                amount: Fixed(33),
+                                effect: [
+                                  RandomRelic,
+                                  AddN(Fixed(4)),
+                                ],
+                              ),
+                            ]),
+                          ],
+                          _else: [
+                            If(
+                              condition: Equals(N, Fixed(3)),
+                              then: [
+                                RandomRelic,
+                                AddN(Fixed(4)),
+                              ],
+                              _else: [
+                                If(
+                                  condition: Equals(N, Fixed(4)),
+                                  then: [
+                                    RandomChance([
+                                      (
+                                        amount: Fixed(33),
+                                        effect: [
+                                          AddN(Fixed(1)),
+                                        ],
+                                      ),
+                                      (
+                                        amount: Fixed(33),
+                                        effect: [
+                                          AddGold(Fixed(30)),
+                                          AddN(Fixed(2)),
+                                        ],
+                                      ),
+                                    ]),
+                                  ],
+                                  _else: [
+                                    If(
+                                      condition: Equals(N, Fixed(5)),
+                                      then: [
+                                        AddGold(Fixed(30)),
+                                        AddN(Fixed(2)),
+                                      ],
+                                      _else: [
+                                        AddN(Fixed(1)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                            CreateCard(
-                                name: "Normality",
-                                location: DeckPile,
-                            ),
-                        ]),
+                          ],
+                        ),
+                      ],
                     ),
-                ],
+                  ],
+                ),
+                If(
+                  condition: Equals(N, Fixed(7)),
+                  _else: [
+                    ShowChoices([
+                      "Leave",
+                      "Dead Adventurer Search",
+                    ]),
+                  ],
+                ),
+              ],
             ),
-            (
-                name: "Leave",
-            ),
+          ]),
         ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    variants: [
+      "Dead Adventurer Lagavulin",
+      "Dead Adventurer Sentry",
+      "Dead Adventurer Gremlin Nob",
+    ],
+    condition: OnFloor(7),
+  ),
+  (
+    name: "Designer Inspire",
+    choices: [
+      (
+        name: "Adjustments",
+        effects: [
+          AddGold(ByAsc(
+            base: -40,
+            low: -50,
+            high: -50,
+          )),
+          If(
+            condition: MultipleOr([
+              IsVariant("Designer Inspire Base"),
+              IsVariant("Designer Inspire Trans_2"),
+            ]),
+            then: [
+              UpgradeCard,
+            ],
+            _else: [
+              UpgradeRandomCard(2),
+            ],
+          ),
+        ],
+        condition: MultipleAnd([
+          HasUpgradableCard,
+          HasGold(ByAsc(
+            base: 40,
+            low: 50,
+            high: 50,
+          )),
+        ]),
+      ),
+      (
+        name: "Clean Up",
+        effects: [
+          AddGold(ByAsc(
+            base: -60,
+            low: -75,
+            high: -75,
+          )),
+          If(
+            condition: MultipleOr([
+              IsVariant("Designer Inspire Base"),
+              IsVariant("Designer Inspire Up_2"),
+            ]),
+            then: [
+              RemoveCard(1),
+            ],
+            _else: [
+              TransformRandomCard(2),
+            ],
+          ),
+        ],
+        condition: MultipleAnd([
+          HasGold(ByAsc(
+            base: 60,
+            low: 75,
+            high: 75,
+          )),
+          MultipleOr([
+            MultipleAnd([
+              MultipleOr([
+                IsVariant("Designer Inspire Base"),
+                IsVariant("Designer Inspire Up_2"),
+              ]),
+              HasRemoveableCards(),
+            ]),
+            MultipleAnd([
+              MultipleOr([
+                IsVariant("Designer Inspire Trans_2"),
+                IsVariant("Designer Inspire Up_2_trans_2"),
+              ]),
+              HasRemoveableCards(
+                count: 2,
+              ),
+            ]),
+          ]),
+        ]),
+      ),
+      (
+        name: "Full Service",
+        effects: [
+          AddGold(ByAsc(
+            base: -90,
+            low: -110,
+            high: -110,
+          )),
+          RemoveCard(1),
+          UpgradeRandomCard(1),
+        ],
+        condition: MultipleAnd([
+          HasRemoveableCards(),
+          HasGold(ByAsc(
+            base: 90,
+            low: 110,
+            high: 110,
+          )),
+        ]),
+      ),
+      (
+        name: "Punch",
+        effects: [
+          LoseHp(
+            amount: ByAsc(
+              base: 3,
+              low: 5,
+              high: 5,
+            ),
+          ),
+        ],
+      ),
+    ],
+    shrine: true,
+    variants: [
+      "Designer Inspire Base",
+      "Designer Inspire Up_2",
+      "Designer Inspire Trans_2",
+      "Designer Inspire Up Trans_2",
+    ],
+    condition: HasGold(Fixed(75)),
+  ),
+  (
+    name: "Duplicator",
+    choices: [
+      (
+        name: "Pray",
+        effects: [
+          DuplicateCard,
+        ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    shrine: true,
+  ),
+  (
+    name: "Face Trader",
+    choices: [
+      (
+        name: "Touch",
+        effects: [
+          DamagePercentage(Fixed(10)),
+          If(
+            condition: Asc(15),
+            then: [
+              AddGold(Fixed(50)),
+            ],
+            _else: [
+              AddGold(Fixed(75)),
+            ],
+          ),
+        ],
+      ),
+      (
+        name: "Trade",
+        effects: [
+          RandomChance([
+            (
+              amount: Fixed(20),
+              effect: [
+                AddRelic("Cultist Headpiece"),
+              ],
+            ),
+            (
+              amount: Fixed(20),
+              effect: [
+                AddRelic("Face Of Cleric"),
+              ],
+            ),
+            (
+              amount: Fixed(20),
+              effect: [
+                AddRelic("Gremlin Visage"),
+              ],
+            ),
+            (
+              amount: Fixed(20),
+              effect: [
+                AddRelic("Nloths Hungry Face"),
+              ],
+            ),
+            (
+              amount: Fixed(20),
+              effect: [
+                AddRelic("Ssserpent Head"),
+              ],
+            ),
+          ]),
+        ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    shrine: true,
+  ),
+  (
+    name: "Falling",
+    choices: [
+      (
+        name: "Land",
+        effects: [
+          Custom,
+        ],
+        condition: HasRemoveableCards(
+          card_type: Skill,
+        ),
+      ),
+      (
+        name: "Channel",
+        effects: [
+          Custom,
+        ],
+        condition: HasRemoveableCards(
+          card_type: Power,
+        ),
+      ),
+      (
+        name: "Attack",
+        effects: [
+          Custom,
+        ],
+        condition: HasRemoveableCards(
+          card_type: Attack,
+        ),
+      ),
+      (
+        name: "Land gracefully",
+        condition: MultipleAnd([
+          Not(HasRemoveableCards(
+            card_type: Skill,
+          )),
+          Not(HasRemoveableCards(
+            card_type: Attack,
+          )),
+          Not(HasRemoveableCards(
+            card_type: Power,
+          )),
+        ]),
+      ),
+    ],
+  ),
+  (
+    name: "Forgotten Altar",
+    choices: [
+      (
+        name: "Offer",
+        effects: [
+          RemoveRelic("Golden Idol"),
+          AddRelic("Bloody Idol"),
+        ],
+        condition: HasRelic("Golden Idol"),
+      ),
+      (
+        name: "Sacrifice",
+        effects: [
+          DamagePercentage(ByAsc(
+            base: 25,
+            low: 35,
+            high: 35,
+          )),
+          AddMaxHp(Fixed(5)),
+        ],
+      ),
+      (
+        name: "Desecrate",
+        effects: [
+          CreateCard(
+            name: "Decay",
+            location: DeckPile,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Golden Idol",
+    choices: [
+      (
+        name: "Take",
+        effects: [
+          AddRelic("Golden Idol"),
+          ShowChoices([
+            "Golden Idol Hide",
+            "Golden Idol Outrun",
+            "Golden Idol Smash",
+          ]),
+        ],
+      ),
+      (
+        name: "Golden Idol Outrun",
+        effects: [
+          CreateCard(
+            name: "Injury",
+            location: DeckPile,
+          ),
+        ],
+        initial: false,
+      ),
+      (
+        name: "Golden Idol Smash",
+        effects: [
+          DamagePercentage(ByAsc(
+            base: 25,
+            low: 35,
+            high: 35,
+          )),
+        ],
+        initial: false,
+      ),
+      (
+        name: "Golden Idol Hide",
+        effects: [
+          ReduceMaxHpPercentage(ByAsc(
+            base: 8,
+            low: 10,
+            high: 10,
+          )),
+        ],
+        initial: false,
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "Golden Shrine",
+    choices: [
+      (
+        name: "Pray",
+        effects: [
+          AddGold(ByAsc(
+            base: 100,
+            low: 50,
+            high: 50,
+          )),
+        ],
+      ),
+      (
+        name: "Desecrate",
+        effects: [
+          AddGold(Fixed(275)),
+          CreateCard(
+            name: "Regret",
+            location: DeckPile,
+          ),
+        ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    shrine: true,
+  ),
+  (
+    name: "Knowing Skull",
+    choices: [
+      (
+        name: "Knowing Skull Success",
+        effects: [
+          LoseHp(
+            amount: Sum([
+              Fixed(6),
+              Custom,
+            ]),
+          ),
+          CreateCardByType(
+            location: DeckPile,
+            type: All,
+            _class: Some(None),
+          ),
+          ShowChoices([
+            "Knowing Skull Success",
+            "Knowing Skull Pick Me Up",
+            "Knowing Skull Riches",
+            "Knowing Skull Leave",
+          ]),
+        ],
+      ),
+      (
+        name: "Knowing Skull Pick Me Up",
+        effects: [
+          LoseHp(
+            amount: Sum([
+              Fixed(6),
+              Custom,
+            ]),
+          ),
+          RandomPotion,
+          ShowChoices([
+            "Knowing Skull Success",
+            "Knowing Skull Pick Me Up",
+            "Knowing Skull Riches",
+            "Knowing Skull Leave",
+          ]),
+        ],
+      ),
+      (
+        name: "Knowing Skull Riches",
+        effects: [
+          LoseHp(
+            amount: Sum([
+              Fixed(6),
+              Custom,
+            ]),
+          ),
+          AddGold(Fixed(90)),
+          ShowChoices([
+            "Knowing Skull Success",
+            "Knowing Skull Pick Me Up",
+            "Knowing Skull Riches",
+            "Knowing Skull Leave",
+          ]),
+        ],
+      ),
+      (
+        name: "Knowing Skull Leave",
+        effects: [
+          LoseHp(
+            amount: Fixed(6),
+          ),
+        ],
+      ),
+    ],
+    shrine: true,
+    condition: RemainingHp(
+      amount: Fixed(12),
     ),
-    (
-        name: "The Moai Head",
-        choices: [
+  ),
+  (
+    name: "Lab",
+    choices: [
+      (
+        name: "Find Some Potions!",
+        effects: [
+          If(
+            condition: Asc(15),
+            then: [
+              ShowReward([
+                RandomPotion,
+                RandomPotion,
+              ]),
+            ],
+            _else: [
+              ShowReward([
+                RandomPotion,
+                RandomPotion,
+                RandomPotion,
+              ]),
+            ],
+          ),
+        ],
+      ),
+    ],
+    shrine: true,
+  ),
+  (
+    name: "Living Wall",
+    choices: [
+      (
+        name: "Forget",
+        effects: [
+          RemoveCard(1),
+          ShowChoices([
+            "Leave",
+          ]),
+        ],
+      ),
+      (
+        name: "Change",
+        effects: [
+          TransformCard(1),
+          ShowChoices([
+            "Leave",
+          ]),
+        ],
+      ),
+      (
+        name: "Grow",
+        effects: [
+          UpgradeCard,
+          ShowChoices([
+            "Leave",
+          ]),
+        ],
+        condition: HasUpgradableCard,
+      ),
+      (
+        name: "Leave",
+        initial: false,
+      ),
+    ],
+  ),
+  (
+    name: "Masked Bandits",
+    choices: [
+      (
+        name: "Pay",
+        effects: [
+          LoseAllGold,
+        ],
+      ),
+      (
+        name: "Fight",
+        effects: [
+          Fight(
+            monsters: [
+              "Pointy",
+              "Romeo",
+              "Bear",
+            ],
+            room: HallwayFight,
+          ),
+          ShowReward([
+            RelicName("Red Mask"),
+            Gold(
+              min: 25,
+              max: 35,
+            ),
+            StandardCard,
+          ]),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Match And Keep",
+    shrine: true,
+  ),
+  (
+    name: "Mind Bloom",
+    choices: [
+      (
+        name: "I am War",
+        effects: [
+          RandomChance([
             (
-                name: "Jump Inside",
-                effects: [
-                    ReduceMaxHpPercentage(Custom),
-                    HealPercentage(
-                        amount: Fixed(100),
-                    ),
-                ],
+              amount: Fixed(33),
+              effect: [
+                Fight(
+                  monsters: [
+                    "Slime Boss",
+                  ],
+                  room: Boss,
+                ),
+              ],
             ),
             (
-                name: "Offer",
-                effects: [
-                    RemoveRelic("Golden Idol"),
-                    AddGold(Fixed(333)),
-                ],
-                condition: HasRelic("Golden Idol"),
+              amount: Fixed(33),
+              effect: [
+                Fight(
+                  monsters: [
+                    "The Guardian",
+                  ],
+                  room: Boss,
+                ),
+              ],
             ),
             (
-                name: "Leave",
+              amount: Fixed(33),
+              effect: [
+                Fight(
+                  monsters: [
+                    "Hexaghost",
+                  ],
+                  room: Boss,
+                ),
+              ],
             ),
+          ]),
+          If(
+            condition: Asc(15),
+            then: [
+              ShowReward([
+                Relic(Rare),
+                Gold(
+                  min: 25,
+                  max: 25,
+                ),
+                StandardCard,
+              ]),
+            ],
+            _else: [
+              ShowReward([
+                Relic(Rare),
+                Gold(
+                  min: 50,
+                  max: 50,
+                ),
+                StandardCard,
+              ]),
+            ],
+          ),
+        ],
+      ),
+      (
+        name: "I am Awake",
+        effects: [
+          Custom,
+          AddRelic("Mark Of The Bloom"),
+        ],
+      ),
+      (
+        name: "I am Awake",
+        effects: [
+          If(
+            condition: OnFloor(41),
+            then: [
+              HealPercentage(
+                amount: Fixed(100),
+              ),
+              CreateCard(
+                name: "Doubt",
+                location: DeckPile,
+              ),
+            ],
+            _else: [
+              AddGold(Fixed(999)),
+              CreateCard(
+                name: "Normality",
+                location: DeckPile,
+              ),
+              CreateCard(
+                name: "Normality",
+                location: DeckPile,
+              ),
+            ],
+          ),
+        ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "Mushrooms",
+    choices: [
+      (
+        name: "Stomp",
+        effects: [
+          Fight(
+            monsters: [
+              "Fungi Beast",
+              "Fungi Beast",
+              "Fungi Beast",
+            ],
+            room: HallwayFight,
+          ),
+          ShowReward([
+            RelicName("Odd Mushroom"),
+            Gold(
+              min: 20,
+              max: 30,
+            ),
+            StandardCard,
+          ]),
+        ],
+      ),
+      (
+        name: "Eat",
+        effects: [
+          HealPercentage(
+            amount: Fixed(25),
+          ),
+          CreateCard(
+            name: "Parasite",
+            location: DeckPile,
+          ),
+        ],
+      ),
+    ],
+    condition: OnFloor(7),
+  ),
+  (
+    name: "Mysterious Sphere",
+    choices: [
+      (
+        name: "Open Sphere",
+        effects: [
+          Fight(
+            monsters: [
+              "Orb Walker",
+              "Orb Walker",
+            ],
+            room: HallwayFight,
+          ),
+          ShowReward([
+            Relic(Rare),
+            Gold(
+              min: 45,
+              max: 55,
+            ),
+            StandardCard,
+          ]),
+        ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "Neow",
+    choices: [
+      (
+        name: "Talk",
+        effects: [
+          ShowChoices([
+            "Neow One Hp",
+            "Neow Six Hp",
+            "Neow Seven Hp",
+            "Neow Eight Hp",
+          ]),
+        ],
+      ),
+      (
+        name: "Neow One Hp",
+        effects: [
+          AddRelic("Neows Lament"),
+          ShowChoices([
+            "Leave",
+          ]),
+        ],
+        initial: false,
+      ),
+      (
+        name: "Neow Six Hp",
+        effects: [
+          AddMaxHp(Fixed(6)),
+          ShowChoices([
+            "Leave",
+          ]),
+        ],
+        condition: Class(Silent),
+        initial: false,
+      ),
+      (
+        name: "Neow Seven Hp",
+        effects: [
+          AddMaxHp(Fixed(7)),
+          ShowChoices([
+            "Leave",
+          ]),
         ],
         condition: MultipleOr([
-            HasRelic("Golden Idol"),
-            HalfHp,
+          Class(Defect),
+          Class(Watcher),
         ]),
-    ),
-    (
-        name: "Mushrooms",
-        choices: [
-            (
-                name: "Stomp",
-                effects: [
-                    Fight(
-                        monsters: [
-                            "Fungi Beast",
-                            "Fungi Beast",
-                            "Fungi Beast",
-                        ],
-                        room: HallwayFight,
-                    ),
-                    ShowReward([
-                        RelicName("Odd Mushroom"),
-                        Gold(
-                            min: 20,
-                            max: 30,
-                        ),
-                        StandardCard,
-                    ]),
-                ],
-            ),
-            (
-                name: "Eat",
-                effects: [
-                    HealPercentage(
-                        amount: Fixed(25),
-                    ),
-                    CreateCard(
-                        name: "Parasite",
-                        location: DeckPile,
-                    ),
-                ],
-            ),
+        initial: false,
+      ),
+      (
+        name: "Neow Eight Hp",
+        effects: [
+          AddMaxHp(Fixed(8)),
+          ShowChoices([
+            "Leave",
+          ]),
         ],
-        condition: OnFloor(7),
-    ),
-    (
-        name: "Mysterious Sphere",
-        choices: [
-            (
-                name: "Open Sphere",
-                effects: [
-                    Fight(
-                        monsters: [
-                            "Orb Walker",
-                            "Orb Walker",
-                        ],
-                        room: HallwayFight,
-                    ),
-                    ShowReward([
-                        Relic(Rare),
-                        Gold(
-                            min: 45,
-                            max: 55,
-                        ),
-                        StandardCard,
-                    ]),
-                ],
-            ),
-            (
-                name: "Leave",
-            ),
+        condition: Class(Ironclad),
+        initial: false,
+      ),
+      (
+        name: "Leave",
+        initial: false,
+      ),
+    ],
+    variants: [
+      "Neow First Run",
+      "Neow Success Run",
+    ],
+  ),
+  (
+    name: "Nloth",
+    choices: [
+      (
+        name: "Offer Relic",
+        effects: [
+          Custom,
+          AddRelic("Nloths Gift"),
         ],
-    ),
-    (
-        name: "The Nest",
-        choices: [
-            (
-                name: "Smash and Grab",
-                effects: [
-                    AddGold(ByAsc(
-                        base: 99,
-                        low: 50,
-                        high: 50,
-                    )),
-                ],
-            ),
-            (
-                name: "Stay in Line",
-                effects: [
-                    LoseHp(
-                        amount: Fixed(6),
-                    ),
-                    CreateCard(
-                        name: "Ritual Dagger",
-                        location: DeckPile,
-                    ),
-                ],
-            ),
+      ),
+      (
+        name: "Offer Relic",
+        effects: [
+          Custom,
+          AddRelic("Nloths Gift"),
         ],
-    ),
-    (
-        name: "A Note For Yourself",
-        choices: [
-            (
-                name: "Continue",
-                effects: [
-                    ShowChoices([
-                        "A Note For Yourself Take",
-                        "A Note For Yourself Ignore",
-                    ]),
-                ],
-            ),
-            (
-                name: "A Note For Yourself Take",
-                effects: [
-                    Custom,
-                ],
-                initial: false,
-            ),
-            (
-                name: "A Note For Yourself Ignore",
-                initial: false,
-            ),
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    shrine: true,
+    condition: Custom,
+  ),
+  (
+    name: "Old Beggar",
+    choices: [
+      (
+        name: "Offer Gold",
+        effects: [
+          AddGold(Fixed(-75)),
+          RemoveCard(1),
         ],
-        shrine: true,
-        condition: Asc(15),
-    ),
-    (
-        name: "Nloth",
-        choices: [
-            (
-                name: "Offer Relic",
-                effects: [
-                    Custom,
-                    AddRelic("Nloths Gift"),
-                ],
-            ),
-            (
-                name: "Offer Relic",
-                effects: [
-                    Custom,
-                    AddRelic("Nloths Gift"),
-                ],
-            ),
-            (
-                name: "Leave",
-            ),
+        condition: MultipleAnd([
+          HasRemoveableCards(),
+          HasGold(Fixed(75)),
+        ]),
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    condition: HasGold(Fixed(75)),
+  ),
+  (
+    name: "Ominous Forge",
+    choices: [
+      (
+        name: "Forge",
+        effects: [
+          UpgradeCard,
         ],
-        shrine: true,
-        condition: Custom,
-    ),
-    (
-        name: "Old Beggar",
-        choices: [
+        condition: HasUpgradableCard,
+      ),
+      (
+        name: "Rummage",
+        effects: [
+          AddRelic("Warped Tongs"),
+          CreateCard(
+            name: "Pain",
+            location: DeckPile,
+          ),
+        ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "Pleading Vagrant",
+    choices: [
+      (
+        name: "Offer Gold",
+        effects: [
+          AddGold(Fixed(-85)),
+          RandomRelic,
+        ],
+        condition: HasGold(Fixed(85)),
+      ),
+      (
+        name: "Rob",
+        effects: [
+          RandomRelic,
+          CreateCard(
+            name: "Shame",
+            location: DeckPile,
+          ),
+        ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "Purifier",
+    choices: [
+      (
+        name: "Pray",
+        effects: [
+          RemoveCard(1),
+        ],
+        condition: HasRemoveableCards(),
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    shrine: true,
+  ),
+  (
+    name: "Scrap Ooze",
+    choices: [
+      (
+        name: "Scrap Ooze Reach Inside",
+        effects: [
+          LoseHp(
+            amount: Sum([
+              ByAsc(
+                base: 3,
+                low: 5,
+                high: 5,
+              ),
+              N,
+            ]),
+          ),
+          RandomChance([
             (
-                name: "Offer Gold",
-                effects: [
-                    AddGold(Fixed(-75)),
-                    RemoveCard(1),
-                ],
-                condition: MultipleAnd([
-                    HasRemoveableCards(),
-                    HasGold(Fixed(75)),
+              amount: Sum([
+                Fixed(25),
+                X,
+              ]),
+              effect: [
+                RandomRelic,
+              ],
+            ),
+            (
+              amount: Sum([
+                Fixed(75),
+                NegX,
+              ]),
+              effect: [
+                AddN(Fixed(1)),
+                AddX(Fixed(10)),
+                If(
+                  condition: Equals(X, Fixed(80)),
+                  then: [
+                    SetX(Fixed(75)),
+                  ],
+                ),
+                ShowChoices([
+                  "Scrap Ooze Reach Inside",
+                  "Leave",
                 ]),
+              ],
             ),
-            (
-                name: "Leave",
-            ),
+          ]),
         ],
-        condition: HasGold(Fixed(75)),
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "Secret Portal",
+    choices: [
+      (
+        name: "Enter the Portal",
+        effects: [
+          Custom,
+        ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    shrine: true,
+    condition: Custom,
+  ),
+  (
+    name: "Sensory Stone",
+    choices: [
+      (
+        name: "Recall (1 card)",
+        effects: [
+          ShowReward([
+            ColorlessCard,
+          ]),
+        ],
+      ),
+      (
+        name: "Recall (2 card)",
+        effects: [
+          LoseHp(
+            amount: Fixed(5),
+          ),
+          ShowReward([
+            ColorlessCard,
+            ColorlessCard,
+          ]),
+        ],
+      ),
+      (
+        name: "Recall (3 card)",
+        effects: [
+          LoseHp(
+            amount: Fixed(10),
+          ),
+          ShowReward([
+            ColorlessCard,
+            ColorlessCard,
+            ColorlessCard,
+          ]),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Shining Light",
+    choices: [
+      (
+        name: "Enter",
+        effects: [
+          UpgradeRandomCard(2),
+          DamagePercentage(ByAsc(
+            base: 20,
+            low: 30,
+            high: 30,
+          )),
+        ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "The Cleric",
+    choices: [
+      (
+        name: "Heal",
+        effects: [
+          AddGold(Fixed(-35)),
+          HealPercentage(
+            amount: Fixed(25),
+          ),
+          ShowChoices([
+            "Leave",
+          ]),
+        ],
+        condition: HasGold(Fixed(35)),
+      ),
+      (
+        name: "Purify",
+        effects: [
+          AddGold(ByAsc(
+            base: -50,
+            low: -75,
+            high: -75,
+          )),
+          RemoveCard(1),
+          ShowChoices([
+            "Leave",
+          ]),
+        ],
+        condition: HasGold(ByAsc(
+          base: 50,
+          low: 75,
+          high: 75,
+        )),
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    condition: HasGold(Fixed(35)),
+  ),
+  (
+    name: "The Colosseum",
+    choices: [
+      (
+        name: "Continue",
+        effects: [
+          Fight(
+            monsters: [
+              "Blue Slaver",
+              "Red Slaver",
+            ],
+            room: HallwayFight,
+          ),
+          ShowChoices([
+            "The Colosseum Cowardace",
+            "The Colosseum Victory",
+          ]),
+        ],
+      ),
+      (
+        name: "The Colosseum Cowardace",
+        initial: false,
+      ),
+      (
+        name: "The Colosseum Victory",
+        effects: [
+          Fight(
+            monsters: [
+              "Taskmaster",
+              "Gremlin Nob",
+            ],
+            room: Elite,
+          ),
+          ShowReward([
+            Gold(
+              min: 100,
+              max: 100,
+            ),
+            Relic(Rare),
+            Relic(Uncommon),
+            StandardCard,
+          ]),
+        ],
+        initial: false,
+      ),
+    ],
+    condition: OnFloor(26),
+  ),
+  (
+    name: "The Divine Fountain",
+    choices: [
+      (
+        name: "Drink",
+        effects: [
+          Custom,
+        ],
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    shrine: true,
+    condition: HasCard(
+      location: DeckPile,
+      card: Curse,
     ),
-    (
-        name: "Ominous Forge",
-        choices: [
+  ),
+  (
+    name: "The Joust",
+    choices: [
+      (
+        name: "Bet on Murderer",
+        effects: [
+          AddGold(Fixed(-50)),
+          RandomChance([
             (
-                name: "Forge",
-                effects: [
-                    UpgradeCard,
-                ],
-                condition: HasUpgradableCard,
+              amount: Fixed(70),
+              effect: [
+                AddGold(Fixed(100)),
+              ],
             ),
             (
-                name: "Rummage",
-                effects: [
-                    AddRelic("Warped Tongs"),
-                    CreateCard(
-                        name: "Pain",
-                        location: DeckPile,
-                    ),
-                ],
+              amount: Fixed(30),
+              effect: [],
             ),
-            (
-                name: "Leave",
-            ),
+          ]),
         ],
-    ),
-    (
-        name: "Pleading Vagrant",
-        choices: [
+      ),
+      (
+        name: "Bet on Owner",
+        effects: [
+          AddGold(Fixed(-50)),
+          RandomChance([
             (
-                name: "Offer Gold",
-                effects: [
-                    AddGold(Fixed(-85)),
-                    RandomRelic,
-                ],
-                condition: HasGold(Fixed(85)),
+              amount: Fixed(30),
+              effect: [
+                AddGold(Fixed(250)),
+              ],
             ),
             (
-                name: "Rob",
-                effects: [
-                    RandomRelic,
-                    CreateCard(
-                        name: "Shame",
-                        location: DeckPile,
-                    ),
-                ],
+              amount: Fixed(70),
+              effect: [],
             ),
-            (
-                name: "Leave",
-            ),
+          ]),
         ],
-    ),
-    (
-        name: "Purifier",
-        choices: [
-            (
-                name: "Pray",
-                effects: [
-                    RemoveCard(1),
-                ],
-                condition: HasRemoveableCards(),
-            ),
-            (
-                name: "Leave",
-            ),
+      ),
+    ],
+    shrine: true,
+    condition: HasGold(Fixed(50)),
+  ),
+  (
+    name: "The Library",
+    choices: [
+      (
+        name: "Read",
+        effects: [
+          ChooseCardByType(
+            location: DeckPile,
+            type: All,
+            choices: Fixed(20),
+          ),
         ],
-        shrine: true,
-    ),
-    (
-        name: "Scrap Ooze",
-        choices: [
-            (
-                name: "Scrap Ooze Reach Inside",
-                effects: [
-                    LoseHp(
-                        amount: Sum([
-                            ByAsc(
-                                base: 3,
-                                low: 5,
-                                high: 5,
-                            ),
-                            N,
-                        ]),
-                    ),
-                    RandomChance([
-                        (
-                            amount: Sum([
-                                Fixed(25),
-                                X,
-                            ]),
-                            effect: Single(RandomRelic),
-                        ),
-                        (
-                            amount: Sum([
-                                Fixed(75),
-                                NegX,
-                            ]),
-                            effect: Multiple([
-                                AddN(Fixed(1)),
-                                AddX(Fixed(10)),
-                                If(
-                                    condition: Equals(X, Fixed(80)),
-                                    then: Single(SetX(Fixed(75))),
-                                ),
-                                ShowChoices([
-                                    "Scrap Ooze Reach Inside",
-                                    "Leave",
-                                ]),
-                            ]),
-                        ),
-                    ]),
-                ],
+      ),
+      (
+        name: "Sleep",
+        effects: [
+          HealPercentage(
+            amount: ByAsc(
+              base: 33,
+              low: 20,
+              high: 20,
             ),
-            (
-                name: "Leave",
-            ),
+          ),
         ],
-    ),
-    (
-        name: "Secret Portal",
-        choices: [
+      ),
+    ],
+  ),
+  (
+    name: "The Mausoleum",
+    choices: [
+      (
+        name: "Open Coffin",
+        effects: [
+          RandomChance([
             (
-                name: "Enter the Portal",
-                effects: [
-                    Custom,
-                ],
+              amount: ByAsc(
+                base: 50,
+                low: 100,
+                high: 100,
+              ),
+              effect: [
+                CreateCard(
+                  name: "Writhe",
+                  location: DeckPile,
+                ),
+              ],
             ),
             (
-                name: "Leave",
+              amount: ByAsc(
+                base: 50,
+                low: 0,
+                high: 0,
+              ),
+              effect: [],
             ),
+          ]),
+          RandomRelic,
         ],
-        shrine: true,
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "The Moai Head",
+    choices: [
+      (
+        name: "Jump Inside",
+        effects: [
+          ReduceMaxHpPercentage(Custom),
+          HealPercentage(
+            amount: Fixed(100),
+          ),
+        ],
+      ),
+      (
+        name: "Offer",
+        effects: [
+          RemoveRelic("Golden Idol"),
+          AddGold(Fixed(333)),
+        ],
+        condition: HasRelic("Golden Idol"),
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    condition: MultipleOr([
+      HasRelic("Golden Idol"),
+      HalfHp,
+    ]),
+  ),
+  (
+    name: "The Nest",
+    choices: [
+      (
+        name: "Smash and Grab",
+        effects: [
+          AddGold(ByAsc(
+            base: 99,
+            low: 50,
+            high: 50,
+          )),
+        ],
+      ),
+      (
+        name: "Stay in Line",
+        effects: [
+          LoseHp(
+            amount: Fixed(6),
+          ),
+          CreateCard(
+            name: "Ritual Dagger",
+            location: DeckPile,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "The Ssssserpent",
+    choices: [
+      (
+        name: "Agree",
+        effects: [
+          AddGold(ByAsc(
+            base: 175,
+            low: 150,
+            high: 150,
+          )),
+          CreateCard(
+            name: "Doubt",
+            location: DeckPile,
+          ),
+        ],
+      ),
+      (
+        name: "Disagree",
+      ),
+    ],
+  ),
+  (
+    name: "The Woman In Blue",
+    choices: [
+      (
+        name: "Buy 1 Potion",
+        effects: [
+          AddGold(Fixed(-20)),
+          ShowReward([
+            RandomPotion,
+          ]),
+        ],
+      ),
+      (
+        name: "Buy 2 Potions",
+        effects: [
+          AddGold(Fixed(-30)),
+          ShowReward([
+            RandomPotion,
+            RandomPotion,
+          ]),
+        ],
+      ),
+      (
+        name: "Buy 3 Potions",
+        effects: [
+          AddGold(Fixed(-40)),
+          ShowReward([
+            RandomPotion,
+            RandomPotion,
+            RandomPotion,
+          ]),
+        ],
+      ),
+      (
+        name: "Leave",
+        effects: [
+          If(
+            condition: Asc(15),
+            then: [
+              ReduceMaxHpPercentage(Fixed(5)),
+            ],
+          ),
+        ],
+      ),
+    ],
+    shrine: true,
+    condition: HasGold(Fixed(50)),
+  ),
+  (
+    name: "Tomb Of Lord Red Mask",
+    choices: [
+      (
+        name: "Offer Gold",
+        effects: [
+          AddGold(Fixed(-32768)),
+          AddRelic("Red Mask"),
+        ],
+      ),
+      (
+        name: "Don the Mask",
+        effects: [
+          AddGold(Fixed(222)),
+          RemoveRelic("Red Mask"),
+        ],
+        condition: HasRelic("Red Mask"),
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "Transmogrifier",
+    choices: [
+      (
+        name: "Pray",
+        effects: [
+          TransformCard(1),
+        ],
+        condition: HasRemoveableCards(),
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    shrine: true,
+  ),
+  (
+    name: "Upgrade Shrine",
+    choices: [
+      (
+        name: "Pray",
+        effects: [
+          UpgradeCard,
+        ],
+        condition: HasUpgradableCard,
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+    shrine: true,
+  ),
+  (
+    name: "Vampires",
+    choices: [
+      (
+        name: "Accept",
+        effects: [
+          ReduceMaxHpPercentage(Fixed(30)),
+          Custom,
+          Repeat(
+            n: Fixed(5),
+            effect: [
+              CreateCard(
+                name: "Bite",
+                location: DeckPile,
+              ),
+            ],
+          ),
+        ],
+        condition: Not(HasRelic("Blood Vial")),
+      ),
+      (
+        name: "Accept",
+        effects: [
+          RemoveRelic("Blood Vial"),
+          Custom,
+          Repeat(
+            n: Fixed(5),
+            effect: [
+              CreateCard(
+                name: "Bite",
+                location: DeckPile,
+              ),
+            ],
+          ),
+        ],
+        condition: HasRelic("Blood Vial"),
+      ),
+      (
+        name: "Refuse",
+      ),
+    ],
+  ),
+  (
+    name: "We Meet Again",
+    choices: [
+      (
+        name: "Give Potion",
+        effects: [
+          Custom,
+          RandomRelic,
+        ],
+      ),
+      (
+        name: "Give Gold",
+        effects: [
+          AddGold(Custom),
+          RandomRelic,
+        ],
+      ),
+      (
+        name: "Give Card",
+        effects: [
+          Custom,
+          RandomRelic,
+        ],
         condition: Custom,
-    ),
-    (
-        name: "Sensory Stone",
-        choices: [
+      ),
+      (
+        name: "Attack",
+      ),
+    ],
+    shrine: true,
+  ),
+  (
+    name: "Wheel Of Change",
+    choices: [
+      (
+        name: "Spin",
+        effects: [
+          RandomChance([
             (
-                name: "Recall (1 card)",
-                effects: [
-                    ShowReward([
-                        ColorlessCard,
-                    ]),
-                ],
-            ),
-            (
-                name: "Recall (2 card)",
-                effects: [
-                    LoseHp(
-                        amount: Fixed(5),
-                    ),
-                    ShowReward([
-                        ColorlessCard,
-                        ColorlessCard,
-                    ]),
-                ],
-            ),
-            (
-                name: "Recall (3 card)",
-                effects: [
-                    LoseHp(
-                        amount: Fixed(10),
-                    ),
-                    ShowReward([
-                        ColorlessCard,
-                        ColorlessCard,
-                        ColorlessCard,
-                    ]),
-                ],
-            ),
-        ],
-    ),
-    (
-        name: "Shining Light",
-        choices: [
-            (
-                name: "Enter",
-                effects: [
-                    UpgradeRandomCard(2),
-                    DamagePercentage(ByAsc(
-                        base: 20,
-                        low: 30,
-                        high: 30,
-                    )),
-                ],
-            ),
-            (
-                name: "Leave",
-            ),
-        ],
-    ),
-    (
-        name: "The Ssssserpent",
-        choices: [
-            (
-                name: "Agree",
-                effects: [
-                    AddGold(ByAsc(
-                        base: 175,
-                        low: 150,
-                        high: 150,
-                    )),
-                    CreateCard(
-                        name: "Doubt",
-                        location: DeckPile,
-                    ),
-                ],
-            ),
-            (
-                name: "Disagree",
-            ),
-        ],
-    ),
-    (
-        name: "Tomb Of Lord Red Mask",
-        choices: [
-            (
-                name: "Offer Gold",
-                effects: [
-                    AddGold(Fixed(-32768)),
-                    AddRelic("Red Mask"),
-                ],
-            ),
-            (
-                name: "Don the Mask",
-                effects: [
-                    AddGold(Fixed(222)),
-                    RemoveRelic("Red Mask"),
-                ],
-                condition: HasRelic("Red Mask"),
-            ),
-            (
-                name: "Leave",
-            ),
-        ],
-    ),
-    (
-        name: "Transmogrifier",
-        choices: [
-            (
-                name: "Pray",
-                effects: [
-                    TransformCard(1),
-                ],
-                condition: HasRemoveableCards(),
-            ),
-            (
-                name: "Leave",
-            ),
-        ],
-        shrine: true,
-    ),
-    (
-        name: "Upgrade Shrine",
-        choices: [
-            (
-                name: "Pray",
-                effects: [
-                    UpgradeCard,
-                ],
-                condition: HasUpgradableCard,
-            ),
-            (
-                name: "Leave",
-            ),
-        ],
-        shrine: true,
-    ),
-    (
-        name: "Vampires",
-        choices: [
-            (
-                name: "Accept",
-                effects: [
-                    ReduceMaxHpPercentage(Fixed(30)),
-                    Custom,
-                    Repeat(
-                        n: Fixed(5),
-                        effect: Single(CreateCard(
-                            name: "Bite",
-                            location: DeckPile,
-                        )),
-                    ),
-                ],
-                condition: Not(HasRelic("Blood Vial")),
-            ),
-            (
-                name: "Accept",
-                effects: [
-                    RemoveRelic("Blood Vial"),
-                    Custom,
-                    Repeat(
-                        n: Fixed(5),
-                        effect: Single(CreateCard(
-                            name: "Bite",
-                            location: DeckPile,
-                        )),
-                    ),
-                ],
-                condition: HasRelic("Blood Vial"),
-            ),
-            (
-                name: "Refuse",
-            ),
-        ],
-    ),
-    (
-        name: "We Meet Again",
-        choices: [
-            (
-                name: "Give Potion",
-                effects: [
-                    Custom,
-                    RandomRelic,
-                ],
-            ),
-            (
-                name: "Give Gold",
-                effects: [
-                    AddGold(Custom),
-                    RandomRelic,
-                ],
-            ),
-            (
-                name: "Give Card",
-                effects: [
-                    Custom,
-                    RandomRelic,
-                ],
-                condition: Custom,
-            ),
-            (
-                name: "Attack",
-            ),
-        ],
-        shrine: true,
-    ),
-    (
-        name: "Wheel Of Change",
-        choices: [
-            (
-                name: "Spin",
-                effects: [
-                    RandomChance([
-                        (
-                            amount: Fixed(1),
-                            effect: Single(If(
-                                condition: Act(1),
-                                then: Single(AddGold(Fixed(100))),
-                                _else: Single(If(
-                                    condition: Act(2),
-                                    then: Single(AddGold(Fixed(200))),
-                                    _else: Single(AddGold(Fixed(300))),
-                                )),
-                            )),
-                        ),
-                        (
-                            amount: Fixed(1),
-                            effect: Single(RandomRelic),
-                        ),
-                        (
-                            amount: Fixed(1),
-                            effect: Single(HealPercentage(
-                                amount: Fixed(100),
-                            )),
-                        ),
-                        (
-                            amount: Fixed(1),
-                            effect: Single(CreateCard(
-                                name: "Decay",
-                                location: DeckPile,
-                            )),
-                        ),
-                        (
-                            amount: Fixed(1),
-                            effect: Single(RemoveCard(1)),
-                        ),
-                        (
-                            amount: Fixed(1),
-                            effect: Single(DamagePercentage(ByAsc(
-                                base: 10,
-                                low: 15,
-                                high: 15,
-                            ))),
-                        ),
-                    ]),
-                ],
-            ),
-        ],
-        shrine: true,
-    ),
-    (
-        name: "Winding Halls",
-        choices: [
-            (
-                name: "Embrace Madness",
-                effects: [
-                    CreateCard(
-                        name: "Madness",
-                        location: DeckPile,
-                    ),
-                    CreateCard(
-                        name: "Madness",
-                        location: DeckPile,
-                    ),
-                    DamagePercentage(Custom),
-                ],
-            ),
-            (
-                name: "Focus",
-                effects: [
-                    CreateCard(
-                        name: "Writhe",
-                        location: DeckPile,
-                    ),
-                    HealPercentage(
-                        amount: ByAsc(
-                            base: 25,
-                            low: 20,
-                            high: 20,
-                        ),
-                    ),
-                ],
-            ),
-            (
-                name: "Retrace Your Steps",
-                effects: [
-                    ReduceMaxHpPercentage(Fixed(5)),
-                ],
-            ),
-        ],
-    ),
-    (
-        name: "Wing Statue",
-        choices: [
-            (
-                name: "Pray",
-                effects: [
-                    RemoveCard(1),
-                    LoseHp(
-                        amount: Fixed(7),
-                    ),
-                ],
-            ),
-            (
-                name: "Destroy",
-                effects: [
-                    AddGold(Custom),
-                ],
-                condition: Custom,
-            ),
-            (
-                name: "Leave",
-            ),
-        ],
-    ),
-    (
-        name: "The Woman In Blue",
-        choices: [
-            (
-                name: "Buy 1 Potion",
-                effects: [
-                    AddGold(Fixed(-20)),
-                    ShowReward([
-                        RandomPotion,
-                    ]),
-                ],
-            ),
-            (
-                name: "Buy 2 Potions",
-                effects: [
-                    AddGold(Fixed(-30)),
-                    ShowReward([
-                        RandomPotion,
-                        RandomPotion,
-                    ]),
-                ],
-            ),
-            (
-                name: "Buy 3 Potions",
-                effects: [
-                    AddGold(Fixed(-40)),
-                    ShowReward([
-                        RandomPotion,
-                        RandomPotion,
-                        RandomPotion,
-                    ]),
-                ],
-            ),
-            (
-                name: "Leave",
-                effects: [
+              amount: Fixed(1),
+              effect: [
+                If(
+                  condition: Act(1),
+                  then: [
+                    AddGold(Fixed(100)),
+                  ],
+                  _else: [
                     If(
-                        condition: Asc(15),
-                        then: Single(ReduceMaxHpPercentage(Fixed(5))),
+                      condition: Act(2),
+                      then: [
+                        AddGold(Fixed(200)),
+                      ],
+                      _else: [
+                        AddGold(Fixed(300)),
+                      ],
                     ),
-                ],
+                  ],
+                ),
+              ],
             ),
+            (
+              amount: Fixed(1),
+              effect: [
+                RandomRelic,
+              ],
+            ),
+            (
+              amount: Fixed(1),
+              effect: [
+                HealPercentage(
+                  amount: Fixed(100),
+                ),
+              ],
+            ),
+            (
+              amount: Fixed(1),
+              effect: [
+                CreateCard(
+                  name: "Decay",
+                  location: DeckPile,
+                ),
+              ],
+            ),
+            (
+              amount: Fixed(1),
+              effect: [
+                RemoveCard(1),
+              ],
+            ),
+            (
+              amount: Fixed(1),
+              effect: [
+                DamagePercentage(ByAsc(
+                  base: 10,
+                  low: 15,
+                  high: 15,
+                )),
+              ],
+            ),
+          ]),
         ],
-        shrine: true,
-        condition: HasGold(Fixed(50)),
-    ),
-    (
-        name: "World Of Goop",
-        choices: [
-            (
-                name: "Gather Gold",
-                effects: [
-                    AddGold(Fixed(75)),
-                    LoseHp(
-                        amount: Fixed(11),
-                    ),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Leave It",
-                effects: [
-                    AddGold(Custom),
-                    ShowChoices([
-                        "Leave",
-                    ]),
-                ],
-            ),
-            (
-                name: "Leave",
-                initial: false,
-            ),
+      ),
+    ],
+    shrine: true,
+  ),
+  (
+    name: "Winding Halls",
+    choices: [
+      (
+        name: "Embrace Madness",
+        effects: [
+          CreateCard(
+            name: "Madness",
+            location: DeckPile,
+          ),
+          CreateCard(
+            name: "Madness",
+            location: DeckPile,
+          ),
+          DamagePercentage(Custom),
         ],
-        shrine: true,
-    ),
+      ),
+      (
+        name: "Focus",
+        effects: [
+          CreateCard(
+            name: "Writhe",
+            location: DeckPile,
+          ),
+          HealPercentage(
+            amount: ByAsc(
+              base: 25,
+              low: 20,
+              high: 20,
+            ),
+          ),
+        ],
+      ),
+      (
+        name: "Retrace Your Steps",
+        effects: [
+          ReduceMaxHpPercentage(Fixed(5)),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Wing Statue",
+    choices: [
+      (
+        name: "Pray",
+        effects: [
+          RemoveCard(1),
+          LoseHp(
+            amount: Fixed(7),
+          ),
+        ],
+      ),
+      (
+        name: "Destroy",
+        effects: [
+          AddGold(Custom),
+        ],
+        condition: Custom,
+      ),
+      (
+        name: "Leave",
+      ),
+    ],
+  ),
+  (
+    name: "World Of Goop",
+    choices: [
+      (
+        name: "Gather Gold",
+        effects: [
+          AddGold(Fixed(75)),
+          LoseHp(
+            amount: Fixed(11),
+          ),
+          ShowChoices([
+            "Leave",
+          ]),
+        ],
+      ),
+      (
+        name: "Leave It",
+        effects: [
+          AddGold(Custom),
+          ShowChoices([
+            "Leave",
+          ]),
+        ],
+      ),
+      (
+        name: "Leave",
+        initial: false,
+      ),
+    ],
+    shrine: true,
+  ),
 ]

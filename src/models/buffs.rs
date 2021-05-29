@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use std::{collections::HashMap, fs::File, path::Path};
 
-use super::core::{EffectGroup, When, WhenEffect, is_default};
+use super::core::{Effect, When, WhenEffect, is_default};
 
 #[derive(Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct BaseBuff {
@@ -15,7 +15,7 @@ pub struct BaseBuff {
     #[serde(default, skip_serializing_if = "is_default")]
     pub debuff: bool,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_add: EffectGroup,
+    pub on_add: Vec<Effect>,
     #[serde(default, skip_serializing_if = "is_default")]
     pub reduce_at: When,
     #[serde(default, skip_serializing_if = "is_default")]
@@ -38,7 +38,7 @@ pub fn by_name(name: &str) -> &'static BaseBuff {
 }
 
 lazy_static! {
-    static ref BUFFS: HashMap<String, BaseBuff> = {
+    pub static ref BUFFS: HashMap<String, BaseBuff> = {
         let mut m = HashMap::new();
 
         for buff in all_buffs() {

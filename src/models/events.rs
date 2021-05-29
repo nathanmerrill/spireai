@@ -48,7 +48,7 @@ pub fn by_name(name: &str) -> &'static BaseEvent {
 }
 
 lazy_static! {
-    static ref EVENTS: HashMap<String, BaseEvent> = {
+    pub static ref EVENTS: HashMap<String, BaseEvent> = {
         let mut m = HashMap::new();
 
         for event in all_events() {

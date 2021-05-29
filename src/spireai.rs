@@ -1,6 +1,8 @@
 use crate::models;
+use itertools::Itertools;
 use models::choices::Choice;
 use models::state::GameState;
+use rand::Rng;
 use rand::{seq::SliceRandom, prelude::{IteratorRandom, ThreadRng}};
 
 pub mod appraiser;
@@ -57,12 +59,20 @@ pub struct GamePossibilitySet {
 }
 
 impl GamePossibilitySet {
-    fn choose<'a, T>(&mut self, choices: &'a [T]) -> Option<&'a T> {
-        if choices.len() != 0 {
-            self.probability /= choices.len() as f64;
+    fn choose<'a, T>(&mut self, choices: impl IntoIterator<Item = T>) -> Option<T> 
+    {
+        let resolved = choices.into_iter().collect_vec();
+        let resolved_count = resolved.len();
+        if resolved_count != 0 {
+            self.probability /= resolved_count as f64;
         }
 
-        choices.iter().choose(&mut self.rng)
+        resolved.into_iter().choose(&mut self.rng)
+    }
+
+    fn range(&mut self, max: usize) -> usize {
+        self.probability /= max as f64;
+        self.rng.gen_range(0..max)
     }
 
     fn choose_weighted<'a, T>(&mut self, choices: &'a [(T, u8)]) -> Option<&'a T> {
@@ -78,10 +88,14 @@ impl GamePossibilitySet {
         }
     }
 
-    fn choose_multiple<'a, T>(&mut self, choices: &'a [T], count: usize) -> Vec<&'a T> {
-        let selection: Vec<&T> = choices.choose_multiple(&mut self.rng, count).collect();
+    fn choose_multiple<'a, T>(&mut self, choices: impl IntoIterator<Item = &'a T>, count: usize) -> Vec<&'a T> {
+        
+        let mut resolved = choices.into_iter().collect_vec();
+        let resolved_count = resolved.len();
 
-        self.probability /= num_integer::binomial(choices.len(), selection.len()) as f64;
+        let selection: Vec<&T> = resolved.into_iter().choose_multiple(&mut self.rng, count);
+
+        self.probability /= num_integer::binomial(resolved_count, selection.len()) as f64;
 
         selection
     }

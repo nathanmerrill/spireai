@@ -114,7 +114,7 @@ impl Default for Amount {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum CardLocation {
     DeckPile,
     DrawPile,
@@ -141,7 +141,7 @@ impl Default for CardType {
 }
 
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Hash)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
 pub enum When {
     // Time-based
     BeforeHandDraw,
@@ -179,7 +179,6 @@ pub enum When {
 
     // Meta
     Never,
-    Multiple(Vec<When>),
 }
 
 impl Default for When {
@@ -188,7 +187,7 @@ impl Default for When {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum RelativePosition {
     Bottom,
     Top,
@@ -223,7 +222,7 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
         #[serde(default, skip_serializing_if = "is_default")]
-        if_fatal: EffectGroup,
+        if_fatal: Vec<Effect>,
     },
     LoseHp {
         #[serde(default, skip_serializing_if = "is_default")]
@@ -291,7 +290,7 @@ pub enum Effect {
 
     ChooseCards {
         location: CardLocation,
-        then: CardEffectGroup,
+        then: Vec<CardEffect>,
         #[serde(default, skip_serializing_if = "is_default")]
         min: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
@@ -312,7 +311,7 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         position: RelativePosition,
         #[serde(default, skip_serializing_if = "is_default")]
-        then: CardEffectGroup,
+        then: Vec<CardEffect>,
     },
 
     CreateCardByType {
@@ -326,7 +325,7 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         position: RelativePosition,
         #[serde(default, skip_serializing_if = "is_default")]
-        then: CardEffectGroup,
+        then: Vec<CardEffect>,
     },
 
     ChooseCardByType {
@@ -340,9 +339,11 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         position: RelativePosition,
         #[serde(default, skip_serializing_if = "is_default")]
-        then: CardEffectGroup,
+        then: Vec<CardEffect>,
         #[serde(default, skip_serializing_if = "is_default")]
         choices: Amount,
+        #[serde(default, skip_serializing_if = "is_default")]
+        exclude_healing: bool,
     },
 
     // Meta-scaling
@@ -378,14 +379,14 @@ pub enum Effect {
     If {
         condition: Condition,
         #[serde(default, skip_serializing_if = "is_default")]
-        then: EffectGroup,
+        then: Vec<Effect>,
         #[serde(default, skip_serializing_if = "is_default")]
-        _else: EffectGroup,
+        _else: Vec<Effect>,
     },
     RandomChance(Vec<EffectChance>),
     Repeat {
         n: Amount,
-        effect: EffectGroup,
+        effect: Vec<Effect>,
     },
     Custom,
 }
@@ -393,32 +394,7 @@ pub enum Effect {
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct EffectChance {
     pub amount: Amount,
-    pub effect: EffectGroup,
-}
-
-#[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
-pub enum CardEffectGroup {
-    Multiple(Vec<CardEffect>),
-    Single(Box<CardEffect>),
-    None,
-}
-
-impl Default for CardEffectGroup {
-    fn default() -> Self {
-        CardEffectGroup::None
-    }
-}
-
-#[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
-pub enum EffectGroup {
-    Multiple(Vec<Effect>),
-    Single(Box<Effect>),
-    None,
-}
-impl Default for EffectGroup {
-    fn default() -> Self {
-        EffectGroup::None
-    }
+    pub effect: Vec<Effect>,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
@@ -439,7 +415,7 @@ pub enum CardEffect {
         #[serde(default, skip_serializing_if = "is_default")]
         position: RelativePosition,
         #[serde(default, skip_serializing_if = "is_default")]
-        then: CardEffectGroup,
+        then: Vec<CardEffect>,
     },
     AutoPlay,
     Retain,
@@ -463,13 +439,13 @@ pub enum RewardType {
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub enum Target {
     _Self,
+    Player,
     RandomEnemy,
     TargetEnemy,
     AllEnemies,
     Attacker,
     AnyFriendly,    // Includes self
     RandomFriendly, // Self if only remaining
-    Friendly(String),
 }
 
 impl Default for Target {
@@ -480,7 +456,7 @@ impl Default for Target {
 #[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
 pub struct WhenEffect {
     pub when: When,
-    pub effect: EffectGroup,
+    pub effect: Vec<Effect>,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, strum_macros::AsStaticStr, Deserialize, Serialize)]
@@ -493,11 +469,6 @@ pub enum Condition {
         target: Target,
     },
     HalfHp,
-    Status {
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-        status: String,
-    },
     NoBlock,
     Attacking {
         #[serde(default, skip_serializing_if = "is_default")]
@@ -519,10 +490,7 @@ pub enum Condition {
     LessThan(Amount, Amount),
     Asc(u8),
     Act(u8),
-    Dead {
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
+    FriendlyDead(String),
     InPosition(usize),
     HasFriendlies(usize), //Does not include fake deaths
     Not(Box<Condition>),

@@ -2,17 +2,17 @@ use ron::de::from_reader;
 use std::{collections::HashMap, fs::File, path::Path};
 use serde::{Deserialize, Serialize};
 
-use super::core::{Class, Condition, EffectGroup, Rarity, is_default};
+use super::core::{Class, Condition, Effect, Rarity, is_default};
 
 #[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct BasePotion {
     pub name: String,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub _class: Class,
+    pub class: Class,
     #[serde(default, skip_serializing_if = "is_default")]
     pub rarity: Rarity,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_drink: EffectGroup,
+    pub on_drink: Vec<Effect>,
     #[serde(
         default = "Condition::never",
         skip_serializing_if = "Condition::is_never"
@@ -34,7 +34,7 @@ pub fn by_name(name: &str) -> &'static BasePotion {
 }
 
 lazy_static! {
-    static ref POTIONS: HashMap<String, BasePotion> = {
+    pub static ref POTIONS: HashMap<String, BasePotion> = {
         let mut m = HashMap::new();
 
         for potion in all_potions() {

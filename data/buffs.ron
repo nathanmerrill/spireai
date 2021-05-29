@@ -1,1280 +1,1516 @@
 [
-    (
-        name: "Accuracy",
-    ),
-    (
-        name: "After Image",
-        effects: [
-            (
-                when: PlayCard(All),
-                effect: Single(Block(
-                    amount: X,
-                )),
-            ),
+  (
+    name: "Accuracy",
+  ),
+  (
+    name: "After Image",
+    effects: [
+      (
+        when: PlayCard(All),
+        effect: [
+          Block(
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "Amplify",
-        reduce_at: PlayCard(Power),
-        expire_at: BeforeEnemyMove,
-    ),
-    (
-        name: "Angry",
-        effects: [
-            (
-                when: OnRecieveAttackDamage,
-                effect: Single(AddBuff(
-                    buff: "Strength",
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Amplify",
+    reduce_at: PlayCard(Power),
+    expire_at: BeforeEnemyMove,
+  ),
+  (
+    name: "Angry",
+    effects: [
+      (
+        when: OnRecieveAttackDamage,
+        effect: [
+          AddBuff(
+            buff: "Strength",
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "Artifact",
-    ),
-    (
-        name: "Asleep",
-        expire_at: OnHpLoss,
-    ),
-    (
-        name: "Barricade",
-        singular: true,
-        effects: [
-            (
-                when: AfterEnemyMove,
-                effect: Single(RetainBlock),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Artifact",
+  ),
+  (
+    name: "Asleep",
+    expire_at: OnHpLoss,
+  ),
+  (
+    name: "Barricade",
+    singular: true,
+    effects: [
+      (
+        when: AfterEnemyMove,
+        effect: [
+          RetainBlock,
         ],
-    ),
-    (
-        name: "Battle Hymn",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(CreateCard(
-                    name: "Smite",
-                    location: PlayerHand,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Battle Hymn",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          CreateCard(
+            name: "Smite",
+            location: PlayerHand,
+          ),
         ],
-    ),
-    (
-        name: "Beat Of Death",
-        effects: [
-            (
-                when: PlayCard(All),
-                effect: Single(Damage(
-                    amount: X,
-                    target: AllEnemies,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Beat Of Death",
+    effects: [
+      (
+        when: PlayCard(All),
+        effect: [
+          Damage(
+            amount: X,
+            target: AllEnemies,
+          ),
         ],
-    ),
-    (
-        name: "Berserk",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddEnergy(X)),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Berserk",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddEnergy(X),
         ],
-    ),
-    (
-        name: "Bias",
-        debuff: true,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddBuff(
-                    buff: "Focus",
-                    amount: NegX,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Bias",
+    debuff: true,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddBuff(
+            buff: "Focus",
+            amount: NegX,
+          ),
         ],
-    ),
-    (
-        name: "Blasphemer",
-        singular: true,
-        expire_at: BeforeHandDraw,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(Damage(
-                    amount: Fixed(9999),
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Blasphemer",
+    singular: true,
+    expire_at: BeforeHandDraw,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Damage(
+            amount: Fixed(9999),
+          ),
         ],
-    ),
-    (
-        name: "Block Return",
-        debuff: true,
-        effects: [
-            (
-                when: OnRecieveAttackDamage,
-                effect: Single(Block(
-                    amount: X,
-                    target: Attacker,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Block Return",
+    debuff: true,
+    effects: [
+      (
+        when: OnRecieveAttackDamage,
+        effect: [
+          Block(
+            amount: X,
+            target: Attacker,
+          ),
         ],
-    ),
-    (
-        name: "Blur",
-        reduce_at: BeforeHandDraw,
-        effects: [
-            (
-                when: AfterEnemyMove,
-                effect: Single(RetainBlock),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Blur",
+    reduce_at: BeforeHandDraw,
+    effects: [
+      (
+        when: AfterEnemyMove,
+        effect: [
+          RetainBlock,
         ],
-    ),
-    (
-        name: "Brutality",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(LoseHp(
-                    amount: X,
-                )),
-            ),
-            (
-                when: BeforeHandDraw,
-                effect: Single(Draw(X)),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Brutality",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          LoseHp(
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "Buffer",
-    ),
-    (
-        name: "Burst",
-        reduce_at: PlayCard(Skill),
-    ),
-    (
-        name: "Choked",
-        debuff: true,
-        expire_at: BeforeHandDraw,
-        effects: [
-            (
-                when: PlayCard(All),
-                effect: Single(LoseHp(
-                    amount: X,
-                )),
-            ),
+      ),
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Draw(X),
         ],
-    ),
-    (
-        name: "Collect",
-        reduce_at: BeforeHandDraw,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(CreateCard(
-                    name: "Collect",
-                    location: PlayerHand,
-                    then: Single(Upgrade),
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Buffer",
+  ),
+  (
+    name: "Burst",
+    reduce_at: PlayCard(Skill),
+  ),
+  (
+    name: "Choked",
+    debuff: true,
+    expire_at: BeforeHandDraw,
+    effects: [
+      (
+        when: PlayCard(All),
+        effect: [
+          LoseHp(
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "Combust",
-        on_add: Single(AddN(Fixed(1))),
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(LoseHp(
-                    amount: N,
-                )),
-            ),
-            (
-                when: BeforeEnemyMove,
-                effect: Single(Damage(
-                    amount: X,
-                    target: AllEnemies,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Collect",
+    reduce_at: BeforeHandDraw,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          CreateCard(
+            name: "Collect",
+            location: PlayerHand,
+            then: [
+              Upgrade,
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Confused",
-        singular: true,
-        debuff: true,
-    ),
-    (
-        name: "Constricted",
-        debuff: true,
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(Damage(
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Combust",
+    on_add: [
+      AddN(Fixed(1)),
+    ],
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          LoseHp(
+            amount: N,
+          ),
         ],
-    ),
-    (
-        name: "Corpse Explosion",
-        debuff: true,
-        effects: [
-            (
-                when: OnDie,
-                effect: Single(Damage(
-                    amount: Mult([
-                        X,
-                        MaxHp,
-                    ]),
-                    target: AnyFriendly,
-                )),
-            ),
+      ),
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          Damage(
+            amount: X,
+            target: AllEnemies,
+          ),
         ],
-    ),
-    (
-        name: "Corruption",
-        singular: true,
-    ),
-    (
-        name: "Creative Ai",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(Repeat(
-                    n: X,
-                    effect: Single(CreateCardByType(
-                        location: PlayerHand,
-                        type: Power,
-                    )),
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Confused",
+    singular: true,
+    debuff: true,
+  ),
+  (
+    name: "Constricted",
+    debuff: true,
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          Damage(
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "Curiosity",
-        effects: [
-            (
-                when: PlayCard(Power),
-                effect: Single(AddBuff(
-                    buff: "Strength",
-                    amount: X,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Curl Up",
-        expire_at: OnRecieveAttackDamage,
-        effects: [
-            (
-                when: OnRecieveAttackDamage,
-                effect: Single(Block(
-                    amount: X,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Dark Embrace",
-        effects: [
-            (
-                when: Exhaust,
-                effect: Single(Draw(X)),
-            ),
-        ],
-    ),
-    (
-        name: "Demon Form",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddBuff(
-                    buff: "Strength",
-                    amount: X,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Deva",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddN(X)),
-            ),
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddEnergy(N)),
-            ),
-        ],
-    ),
-    (
-        name: "Devotion",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddBuff(
-                    buff: "Mantra",
-                    amount: X,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Dexterity",
-    ),
-    (
-        name: "Dexterity Down",
-        debuff: true,
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(AddBuff(
-                    buff: "Dexterity",
-                    amount: NegX,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Double Damage",
-        reduce_at: BeforeEnemyMove,
-    ),
-    (
-        name: "Double Tap",
-        reduce_at: PlayCard(Attack),
-    ),
-    (
-        name: "Draw Card",
-        expire_at: BeforeHandDraw,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(Draw(X)),
-            ),
-        ],
-    ),
-    (
-        name: "Draw Reduction",
-        debuff: true,
-        expire_at: BeforeEnemyMove,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(Draw(NegX)),
-            ),
-        ],
-    ),
-    (
-        name: "Duplication",
-        reduce_at: PlayCard(All),
-    ),
-    (
-        name: "Echo Form",
-    ),
-    (
-        name: "Electro",
-        singular: true,
-    ),
-    (
-        name: "Energized",
-        expire_at: BeforeHandDraw,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddEnergy(X)),
-            ),
-        ],
-    ),
-    (
-        name: "Enrage",
-        effects: [
-            (
-                when: PlayCard(Attack),
-                effect: Single(AddBuff(
-                    buff: "Strength",
-                    amount: X,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Entangled",
-        singular: true,
-        debuff: true,
-        expire_at: BeforeEnemyMove,
-    ),
-    (
-        name: "Envenom",
-        effects: [
-            (
-                when: OnDealUnblockedDamage,
-                effect: Single(AddBuff(
-                    buff: "Poison",
-                    amount: X,
-                    target: TargetEnemy,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Equilibrium",
-        reduce_at: BeforeHandDiscard,
-        effects: [
-            (
-                when: BeforeHandDiscard,
-                effect: Single(DoCardEffect(
-                    location: PlayerHand,
-                    position: All,
-                    effect: Retain,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Establishment",
-    ),
-    (
-        name: "Evolve",
-        effects: [
-            (
-                when: DrawCard(Status),
-                effect: Single(Draw(X)),
-            ),
-        ],
-    ),
-    (
-        name: "Explode",
-        reduce_at: AfterEnemyMove,
-    ),
-    (
-        name: "Fading",
-        reduce_at: AfterEnemyMove,
-        effects: [
-            (
-                when: AfterEnemyMove,
-                effect: Single(If(
-                    condition: Equals(X, Fixed(1)),
-                    then: Die()
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Fasting",
-        debuff: true,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddEnergy(NegX)),
-            ),
-        ],
-    ),
-    (
-        name: "Feel No Pain",
-        effects: [
-            (
-                when: Exhaust,
-                effect: Single(Block(
-                    amount: X,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Fire Breathing",
-        effects: [
-            (
-                when: Multiple([
-                    DrawCard(Status),
-                    DrawCard(Curse),
-                ]),
-                effect: Single(Damage(
-                    amount: X,
-                    target: AllEnemies,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Flame Barrier",
-        expire_at: BeforeHandDraw,
-        effects: [
-            (
-                when: OnRecieveAttackDamage,
-                effect: Single(Damage(
-                    amount: X,
-                    target: Attacker,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Flying",
-    ),
-    (
-        name: "Focus",
-    ),
-    (
-        name: "Foresight",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(Scry(X)),
-            ),
-        ],
-    ),
-    (
-        name: "Frail",
-        debuff: true,
-    ),
-    (
-        name: "Free Attack Power",
-        reduce_at: PlayCard(Attack),
-    ),
-    (
-        name: "Heatsink",
-        effects: [
-            (
-                when: PlayCard(Power),
-                effect: Single(Draw(X)),
-            ),
-        ],
-    ),
-    (
-        name: "Hello",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(Repeat(
-                    n: X,
-                    effect: Single(CreateCardByType(
-                        location: PlayerHand,
-                        type: All,
-                        _rarity: Some(Common),
-                    )),
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Hex",
-        debuff: true,
-        effects: [
-            (
-                when: Multiple([
-                    PlayCard(Curse),
-                    PlayCard(Power),
-                    PlayCard(Skill),
-                    PlayCard(Status),
-                ]),
-                effect: Single(Repeat(
-                    n: X,
-                    effect: Single(CreateCard(
-                        name: "Dazed",
-                        location: DrawPile,
-                        position: Random,
-                    )),
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Infinite Blades",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(Repeat(
-                    n: X,
-                    effect: Single(CreateCard(
-                        name: "Shiv",
-                        location: PlayerHand,
-                    )),
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Innate Thievery",
-        effects: [],
-    ),
-    (
-        name: "Intangible",
-        reduce_at: BeforeHandDraw,
-    ),
-    (
-        name: "Invincible",
-        effects: [
-            (
-                when: OnHpLoss,
-                effect: Single(Custom),
-            ),
-        ],
-    ),
-    (
-        name: "Juggernaut",
-        effects: [
-            (
-                when: OnBlock,
-                effect: Single(Damage(
-                    amount: X,
-                    target: RandomEnemy,
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Life Link",
-        singular: true,
-        effects: [
-            (
-                when: OnDie,
-                effect: Single(If(
-                    condition: HasFriendlies(1),
-                    then: Single(FakeDie),
-                    _else: Single(Die(
-                        target: AnyFriendly,
-                    )),
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Like Water",
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(If(
-                    condition: Stance(Calm),
-                    then: Single(Block(
-                        amount: X,
-                    )),
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Lock On",
-        debuff: true,
-        reduce_at: BeforeHandDraw,
-    ),
-    (
-        name: "Loop",
-    ),
-    (
-        name: "Machine Learning",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(Draw(X)),
-            ),
-        ],
-    ),
-    (
-        name: "Magnetism",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(Repeat(
-                    n: X,
-                    effect: Single(CreateCardByType(
-                        location: PlayerHand,
-                        type: All,
-                        _class: Some(None),
-                    )),
-                )),
-            ),
-        ],
-    ),
-    (
-        name: "Malleable",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(SetX(Fixed(3))),
-            ),
-            (
-                when: OnRecieveAttackDamage,
-                effect: Multiple([
-                    AddN(X),
-                    AddX(Fixed(1)),
-                ]),
-            ),
-            (
-                when: PlayCard(Attack),
-                effect: Multiple([
-                    Block(
-                        amount: N,
-                    ),
-                    SetN(Fixed(0)),
-                ]),
-            ),
-        ],
-    ),
-    (
-        name: "Mantra",
-        on_add: Single(If(
-            condition: LessThan(Fixed(10), X),
-            then: Multiple([
-                AddX(Fixed(-10)),
-                SetStance(Divinity),
+      ),
+    ],
+  ),
+  (
+    name: "Corpse Explosion",
+    debuff: true,
+    effects: [
+      (
+        when: OnDie,
+        effect: [
+          Damage(
+            amount: Mult([
+              X,
+              MaxHp,
             ]),
-        )),
-    ),
-    (
-        name: "Mark",
-        debuff: true,
-    ),
-    (
-        name: "Master Reality",
-        singular: true,
-    ),
-    (
-        name: "Mayhem",
-        effects: [
-            (
-                when: AfterHandDraw,
-                effect: Single(Repeat(
-                    n: X,
-                    effect: Single(DoCardEffect(
-                        location: DrawPile,
-                        position: Top,
-                        effect: AutoPlay,
-                    )),
-                )),
-            ),
+            target: AnyFriendly,
+          ),
         ],
-    ),
-    (
-        name: "Mental Fortress",
-    ),
-    (
-        name: "Metallicize",
-        effects: [
-            (
-                when: TurnEnd,
-                effect: Single(Block(
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Corruption",
+    singular: true,
+  ),
+  (
+    name: "Creative Ai",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Repeat(
+            n: X,
+            effect: [
+              CreateCardByType(
+                location: PlayerHand,
+                type: Power,
+              ),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Mode Shift",
-        effects: [
-            (
-                when: OnReceiveUnblockedDamage,
-                effect: Single(Custom),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Curiosity",
+    effects: [
+      (
+        when: PlayCard(Power),
+        effect: [
+          AddBuff(
+            buff: "Strength",
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "Next Turn Block",
-        expire_at: BeforeHandDraw,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(Block(
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Curl Up",
+    expire_at: OnRecieveAttackDamage,
+    effects: [
+      (
+        when: OnRecieveAttackDamage,
+        effect: [
+          Block(
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "Nightmare",
-        repeats: true,
-        singular: true,
-    ),
-    (
-        name: "Nirvana",
-        effects: [
-            (
-                when: Scry,
-                effect: Single(Block(
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Dark Embrace",
+    effects: [
+      (
+        when: Exhaust,
+        effect: [
+          Draw(X),
         ],
-    ),
-    (
-        name: "Noxious Fumes",
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddBuff(
-                    buff: "Poison",
-                    amount: X,
-                    target: AllEnemies,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Demon Form",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddBuff(
+            buff: "Strength",
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "No Block",
-        debuff: true,
-        reduce_at: BeforeEnemyMove,
-    ),
-    (
-        name: "No Draw",
-        singular: true,
-        debuff: true,
-        expire_at: BeforeEnemyMove,
-    ),
-    (
-        name: "Omega",
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(Damage(
-                    amount: X,
-                    target: AllEnemies,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Deva",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddN(X),
         ],
-    ),
-    (
-        name: "Painful Stabs",
-        effects: [
-            (
-                when: OnReceiveUnblockedDamage,
-                effect: Single(CreateCard(
-                    name: "Wound",
-                    location: DiscardPile,
-                )),
-            ),
+      ),
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddEnergy(N),
         ],
-    ),
-    (
-        name: "Panache",
-        on_add: Single(SetN(Fixed(5))),
-        effects: [
-            (
-                when: PlayCard(All),
-                effect: Single(AddN(Fixed(-1))),
-            ),
-            (
-                when: PlayCard(All),
-                effect: Single(If(
-                    condition: Equals(N, Fixed(0)),
-                    then: Multiple([
-                        ResetN,
-                        Damage(
-                            amount: X,
-                            target: AllEnemies,
-                        ),
-                    ]),
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Devotion",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddBuff(
+            buff: "Mantra",
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "Pen Nib",
-        singular: true,
-    ),
-    (
-        name: "Phantasmal",
-        reduce_at: BeforeHandDraw,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddBuff(
-                    buff: "Double Damage",
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Dexterity",
+  ),
+  (
+    name: "Dexterity Down",
+    debuff: true,
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          AddBuff(
+            buff: "Dexterity",
+            amount: NegX,
+          ),
         ],
-    ),
-    (
-        name: "Plated Armor",
-        reduce_at: OnReceiveUnblockedDamage,
-        effects: [
-            (
-                when: BeforeHandDiscard,
-                effect: Single(Block(
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Double Damage",
+    reduce_at: BeforeEnemyMove,
+  ),
+  (
+    name: "Double Tap",
+    reduce_at: PlayCard(Attack),
+  ),
+  (
+    name: "Draw Card",
+    expire_at: BeforeHandDraw,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Draw(X),
         ],
-    ),
-    (
-        name: "Poison",
-        debuff: true,
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(LoseHp(
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Draw Reduction",
+    debuff: true,
+    expire_at: BeforeEnemyMove,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Draw(NegX),
         ],
-    ),
-    (
-        name: "Rage",
-        effects: [
-            (
-                when: PlayCard(Attack),
-                effect: Single(Block(
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Duplication",
+    reduce_at: PlayCard(All),
+  ),
+  (
+    name: "Echo Form",
+  ),
+  (
+    name: "Electro",
+    singular: true,
+  ),
+  (
+    name: "Energized",
+    expire_at: BeforeHandDraw,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddEnergy(X),
         ],
-    ),
-    (
-        name: "Reactive",
-        effects: [
-            (
-                when: OnReceiveUnblockedDamage,
-                effect: Single(Custom),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Enrage",
+    effects: [
+      (
+        when: PlayCard(Attack),
+        effect: [
+          AddBuff(
+            buff: "Strength",
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "Rebound",
-        reduce_at: PlayCard(All),
-    ),
-    (
-        name: "Regenerate",
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(Heal(
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Entangled",
+    singular: true,
+    debuff: true,
+    expire_at: BeforeEnemyMove,
+  ),
+  (
+    name: "Envenom",
+    effects: [
+      (
+        when: OnDealUnblockedDamage,
+        effect: [
+          AddBuff(
+            buff: "Poison",
+            amount: X,
+            target: TargetEnemy,
+          ),
         ],
-    ),
-    (
-        name: "Regeneration",
-        reduce_at: BeforeEnemyMove,
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(Heal(
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Equilibrium",
+    reduce_at: BeforeHandDiscard,
+    effects: [
+      (
+        when: BeforeHandDiscard,
+        effect: [
+          DoCardEffect(
+            location: PlayerHand,
+            position: All,
+            effect: Retain,
+          ),
         ],
-    ),
-    (
-        name: "Repair",
-        effects: [
-            (
-                when: CombatEnd,
-                effect: Single(Heal(
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Establishment",
+  ),
+  (
+    name: "Evolve",
+    effects: [
+      (
+        when: DrawCard(Status),
+        effect: [
+          Draw(X),
         ],
-    ),
-    (
-        name: "Ritual",
-        effects: [
-            (
-                when: TurnEnd,
-                effect: Single(AddBuff(
-                    buff: "Strength",
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Explode",
+    reduce_at: AfterEnemyMove,
+  ),
+  (
+    name: "Fading",
+    reduce_at: AfterEnemyMove,
+    effects: [
+      (
+        when: AfterEnemyMove,
+        effect: [
+          If(
+            condition: Equals(X, Fixed(1)),
+            then: [
+              Die(),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Ritual",
-        effects: [
-            (
-                when: TurnEnd,
-                effect: Single(AddBuff(
-                    buff: "Strength",
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Fasting",
+    debuff: true,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddEnergy(NegX),
         ],
-    ),
-    (
-        name: "Rupture",
-    ),
-    (
-        name: "Rushdown",
-    ),
-    (
-        name: "Sadistic",
-    ),
-    (
-        name: "Shackled",
-        debuff: true,
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(AddBuff(
-                    buff: "Strength",
-                    amount: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Feel No Pain",
+    effects: [
+      (
+        when: Exhaust,
+        effect: [
+          Block(
+            amount: X,
+          ),
         ],
-    ),
-    (
-        name: "Sharp Hide",
-        effects: [
-            (
-                when: PlayCard(Attack),
-                effect: Single(Damage(
-                    amount: X,
-                    target: Attacker,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Fire Breathing",
+    effects: [
+      (
+        when: DrawCard(Status),
+        effect: [
+          Damage(
+            amount: X,
+            target: AllEnemies,
+          ),
         ],
-    ),
-    (
-        name: "Shifting",
-        effects: [
-            (
-                when: PlayCard(Attack),
-                effect: Single(Damage(
-                    amount: X,
-                    target: Attacker,
-                )),
-            ),
+      ),
+      (
+        when: DrawCard(Curse),
+        effect: [
+          Damage(
+            amount: X,
+            target: AllEnemies,
+          ),
         ],
-    ),
-    (
-        name: "Simmering Rage",
-        singular: true,
-        expire_at: BeforeHandDraw,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(SetStance(Wrath)),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Flame Barrier",
+    expire_at: BeforeHandDraw,
+    effects: [
+      (
+        when: OnRecieveAttackDamage,
+        effect: [
+          Damage(
+            amount: X,
+            target: Attacker,
+          ),
         ],
-    ),
-    (
-        name: "Slow",
-        debuff: true,
-        effects: [
-            (
-                when: PlayCard(All),
-                effect: Single(Custom),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Flying",
+  ),
+  (
+    name: "Focus",
+  ),
+  (
+    name: "Foresight",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Scry(X),
         ],
-    ),
-    (
-        name: "Split",
-        singular: true,
-    ),
-    (
-        name: "Split",
-        singular: true,
-    ),
-    (
-        name: "Spore Cloud",
-        effects: [
-            (
-                when: OnDie,
-                effect: Single(AddBuff(
-                    buff: "Vulnerable",
-                    amount: X,
-                    target: AllEnemies,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Frail",
+    debuff: true,
+  ),
+  (
+    name: "Free Attack Power",
+    reduce_at: PlayCard(Attack),
+  ),
+  (
+    name: "Heatsink",
+    effects: [
+      (
+        when: PlayCard(Power),
+        effect: [
+          Draw(X),
         ],
-    ),
-    (
-        name: "Stasis",
-        singular: true,
-        effects: [
-            (
-                when: OnDie,
-                effect: Single(Custom),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Hello",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Repeat(
+            n: X,
+            effect: [
+              CreateCardByType(
+                location: PlayerHand,
+                type: All,
+                _rarity: Some(Common),
+              ),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Static Discharge",
-        effects: [
-            (
-                when: OnReceiveUnblockedDamage,
-                effect: Single(ChannelOrb(Lightning)),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Hex",
+    debuff: true,
+    effects: [
+      (
+        when: PlayCard(Curse),
+        effect: [
+          Repeat(
+            n: X,
+            effect: [
+              CreateCard(
+                name: "Dazed",
+                location: DrawPile,
+                position: Random,
+              ),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Storm",
-        effects: [
-            (
-                when: PlayCard(Power),
-                effect: Single(ChannelOrb(Lightning)),
-            ),
+      ),
+      (
+        when: PlayCard(Status),
+        effect: [
+          Repeat(
+            n: X,
+            effect: [
+              CreateCard(
+                name: "Dazed",
+                location: DrawPile,
+                position: Random,
+              ),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Strength",
-    ),
-    (
-        name: "Strength",
-    ),
-    (
-        name: "Strength Down",
-        debuff: true,
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(AddBuff(
-                    buff: "Strength",
-                    amount: NegX,
-                )),
-            ),
+      ),
+      (
+        when: PlayCard(Skill),
+        effect: [
+          Repeat(
+            n: X,
+            effect: [
+              CreateCard(
+                name: "Dazed",
+                location: DrawPile,
+                position: Random,
+              ),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Strength Up",
-        effects: [
-            (
-                when: AfterEnemyMove,
-                effect: Single(AddBuff(
-                    buff: "Strength",
-                    amount: X,
-                )),
-            ),
+      ),
+      (
+        when: PlayCard(Power),
+        effect: [
+          Repeat(
+            n: X,
+            effect: [
+              CreateCard(
+                name: "Dazed",
+                location: DrawPile,
+                position: Random,
+              ),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Study",
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(CreateCard(
-                    name: "Insight",
-                    location: DrawPile,
-                    position: Random,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Infinite Blades",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Repeat(
+            n: X,
+            effect: [
+              CreateCard(
+                name: "Shiv",
+                location: PlayerHand,
+              ),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Surrounded",
-        singular: true,
-    ),
-    (
-        name: "The Bomb",
-        repeats: true,
-        singular: true,
-        effects: [
-            (
-                when: BeforeEnemyMove,
-                effect: Single(Custom),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Innate Thievery",
+  ),
+  (
+    name: "Intangible",
+    reduce_at: BeforeHandDraw,
+  ),
+  (
+    name: "Invincible",
+    effects: [
+      (
+        when: OnHpLoss,
+        effect: [
+          Custom,
         ],
-    ),
-    (
-        name: "Thorns",
-        effects: [
-            (
-                when: OnRecieveAttackDamage,
-                effect: Single(Damage(
-                    amount: X,
-                    target: Attacker,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Juggernaut",
+    effects: [
+      (
+        when: OnBlock,
+        effect: [
+          Damage(
+            amount: X,
+            target: RandomEnemy,
+          ),
         ],
-    ),
-    (
-        name: "Thousand Cuts",
-        effects: [
-            (
-                when: PlayCard(All),
-                effect: Single(Damage(
-                    amount: X,
-                    target: AllEnemies,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Life Link",
+    singular: true,
+    effects: [
+      (
+        when: OnDie,
+        effect: [
+          If(
+            condition: HasFriendlies(1),
+            then: [
+              FakeDie,
+            ],
+            _else: [
+              Die(
+                target: AnyFriendly,
+              ),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Time Warp",
-        repeats: true,
-        singular: true,
-        effects: [
-            (
-                when: PlayCard(All),
-                effect: Multiple([
-                    AddN(),
-                    If(
-                        condition: Equals(N, Fixed(12)),
-                        then: Multiple([
-                            AddBuff (
-                                buff: "Strength",
-                                amount: Fixed(2)
-                            ),
-                            Custom
-                        ])
-                    )
-                ]),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Like Water",
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          If(
+            condition: Stance(Calm),
+            then: [
+              Block(
+                amount: X,
+              ),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Tools Of The Trade",
-        effects: [
-            (
-                when: AfterHandDraw,
-                effect: Single(Draw(X)),
-            ),
-            (
-                when: AfterHandDraw,
-                effect: Single(ChooseCards(
-                    location: PlayerHand,
-                    then: Single(Discard),
-                    min: X,
-                    max: X,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Lock On",
+    debuff: true,
+    reduce_at: BeforeHandDraw,
+  ),
+  (
+    name: "Loop",
+  ),
+  (
+    name: "Machine Learning",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Draw(X),
         ],
-    ),
-    (
-        name: "Vigor",
-        expire_at: PlayCard(Attack),
-        effects: [
-            (
-                when: PlayCard(Attack),
-                effect: Single(Custom),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Magnetism",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Repeat(
+            n: X,
+            effect: [
+              CreateCardByType(
+                location: PlayerHand,
+                type: All,
+                _class: Some(None),
+              ),
+            ],
+          ),
         ],
-    ),
-    (
-        name: "Vulnerable",
-        debuff: true,
-        reduce_at: BeforeHandDraw,
-    ),
-    (
-        name: "Wave Of The Hand",
-        effects: [
-            (
-                when: OnBlock,
-                effect: Single(AddBuff(
-                    buff: "Weak",
-                    amount: X,
-                    target: AllEnemies,
-                )),
-            ),
+      ),
+    ],
+  ),
+  (
+    name: "Malleable",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          SetX(Fixed(3)),
         ],
-    ),
-    (
-        name: "Weak",
-        debuff: true,
-        reduce_at: BeforeHandDraw,
-    ),
-    (
-        name: "Well Laid Plans",
-    ),
-    (
-        name: "Wraith Form",
-        debuff: true,
-        effects: [
-            (
-                when: BeforeHandDraw,
-                effect: Single(AddBuff(
-                    buff: "Dexterity",
-                    amount: NegX,
-                )),
-            ),
+      ),
+      (
+        when: OnRecieveAttackDamage,
+        effect: [
+          AddN(X),
+          AddX(Fixed(1)),
         ],
-    ),
+      ),
+      (
+        when: PlayCard(Attack),
+        effect: [
+          Block(
+            amount: N,
+          ),
+          SetN(Fixed(0)),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Mantra",
+    on_add: [
+      If(
+        condition: LessThan(Fixed(10), X),
+        then: [
+          AddX(Fixed(-10)),
+          SetStance(Divinity),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Mark",
+    debuff: true,
+  ),
+  (
+    name: "Master Reality",
+    singular: true,
+  ),
+  (
+    name: "Mayhem",
+    effects: [
+      (
+        when: AfterHandDraw,
+        effect: [
+          Repeat(
+            n: X,
+            effect: [
+              DoCardEffect(
+                location: DrawPile,
+                position: Top,
+                effect: AutoPlay,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Mental Fortress",
+  ),
+  (
+    name: "Metallicize",
+    effects: [
+      (
+        when: TurnEnd,
+        effect: [
+          Block(
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Mode Shift",
+    effects: [
+      (
+        when: OnReceiveUnblockedDamage,
+        effect: [
+          Custom,
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Next Turn Block",
+    expire_at: BeforeHandDraw,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          Block(
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Nightmare",
+    repeats: true,
+    singular: true,
+  ),
+  (
+    name: "Nirvana",
+    effects: [
+      (
+        when: Scry,
+        effect: [
+          Block(
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "No Block",
+    debuff: true,
+    reduce_at: BeforeEnemyMove,
+  ),
+  (
+    name: "No Draw",
+    singular: true,
+    debuff: true,
+    expire_at: BeforeEnemyMove,
+  ),
+  (
+    name: "Noxious Fumes",
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddBuff(
+            buff: "Poison",
+            amount: X,
+            target: AllEnemies,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Omega",
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          Damage(
+            amount: X,
+            target: AllEnemies,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Painful Stabs",
+    effects: [
+      (
+        when: OnReceiveUnblockedDamage,
+        effect: [
+          CreateCard(
+            name: "Wound",
+            location: DiscardPile,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Panache",
+    on_add: [
+      SetN(Fixed(5)),
+    ],
+    effects: [
+      (
+        when: PlayCard(All),
+        effect: [
+          AddN(Fixed(-1)),
+        ],
+      ),
+      (
+        when: PlayCard(All),
+        effect: [
+          If(
+            condition: Equals(N, Fixed(0)),
+            then: [
+              ResetN,
+              Damage(
+                amount: X,
+                target: AllEnemies,
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Pen Nib",
+    singular: true,
+  ),
+  (
+    name: "Phantasmal",
+    reduce_at: BeforeHandDraw,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddBuff(
+            buff: "Double Damage",
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Plated Armor",
+    reduce_at: OnReceiveUnblockedDamage,
+    effects: [
+      (
+        when: BeforeHandDiscard,
+        effect: [
+          Block(
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Poison",
+    debuff: true,
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          LoseHp(
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Rage",
+    effects: [
+      (
+        when: PlayCard(Attack),
+        effect: [
+          Block(
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Reactive",
+    effects: [
+      (
+        when: OnReceiveUnblockedDamage,
+        effect: [
+          Custom,
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Rebound",
+    reduce_at: PlayCard(All),
+  ),
+  (
+    name: "Regenerate",
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          Heal(
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Regeneration",
+    reduce_at: BeforeEnemyMove,
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          Heal(
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Repair",
+    effects: [
+      (
+        when: CombatEnd,
+        effect: [
+          Heal(
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Ritual",
+    effects: [
+      (
+        when: TurnEnd,
+        effect: [
+          AddBuff(
+            buff: "Strength",
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Rupture",
+  ),
+  (
+    name: "Rushdown",
+  ),
+  (
+    name: "Sadistic",
+  ),
+  (
+    name: "Shackled",
+    debuff: true,
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          AddBuff(
+            buff: "Strength",
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Sharp Hide",
+    effects: [
+      (
+        when: PlayCard(Attack),
+        effect: [
+          Damage(
+            amount: X,
+            target: Attacker,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Shifting",
+    effects: [
+      (
+        when: PlayCard(Attack),
+        effect: [
+          Damage(
+            amount: X,
+            target: Attacker,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Simmering Rage",
+    singular: true,
+    expire_at: BeforeHandDraw,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          SetStance(Wrath),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Slow",
+    debuff: true,
+    effects: [
+      (
+        when: PlayCard(All),
+        effect: [
+          Custom,
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Split",
+    singular: true,
+  ),
+  (
+    name: "Spore Cloud",
+    effects: [
+      (
+        when: OnDie,
+        effect: [
+          AddBuff(
+            buff: "Vulnerable",
+            amount: X,
+            target: AllEnemies,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Stasis",
+    singular: true,
+    effects: [
+      (
+        when: OnDie,
+        effect: [
+          Custom,
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Static Discharge",
+    effects: [
+      (
+        when: OnReceiveUnblockedDamage,
+        effect: [
+          ChannelOrb(Lightning),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Storm",
+    effects: [
+      (
+        when: PlayCard(Power),
+        effect: [
+          ChannelOrb(Lightning),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Strength",
+  ),
+  (
+    name: "Strength Down",
+    debuff: true,
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          AddBuff(
+            buff: "Strength",
+            amount: NegX,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Strength Up",
+    effects: [
+      (
+        when: AfterEnemyMove,
+        effect: [
+          AddBuff(
+            buff: "Strength",
+            amount: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Study",
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          CreateCard(
+            name: "Insight",
+            location: DrawPile,
+            position: Random,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Surrounded",
+    singular: true,
+  ),
+  (
+    name: "The Bomb",
+    repeats: true,
+    singular: true,
+    effects: [
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          Custom,
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Thorns",
+    effects: [
+      (
+        when: OnRecieveAttackDamage,
+        effect: [
+          Damage(
+            amount: X,
+            target: Attacker,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Thousand Cuts",
+    effects: [
+      (
+        when: PlayCard(All),
+        effect: [
+          Damage(
+            amount: X,
+            target: AllEnemies,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Time Warp",
+    repeats: true,
+    singular: true,
+    effects: [
+      (
+        when: PlayCard(All),
+        effect: [
+          AddN(Fixed(1)),
+          If(
+            condition: Equals(N, Fixed(12)),
+            then: [
+              AddBuff(
+                buff: "Strength",
+                amount: Fixed(2),
+              ),
+              Custom,
+            ],
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Tools Of The Trade",
+    effects: [
+      (
+        when: AfterHandDraw,
+        effect: [
+          Draw(X),
+        ],
+      ),
+      (
+        when: AfterHandDraw,
+        effect: [
+          ChooseCards(
+            location: PlayerHand,
+            then: [
+              Discard,
+            ],
+            min: X,
+            max: X,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Vigor",
+    expire_at: PlayCard(Attack),
+    effects: [
+      (
+        when: PlayCard(Attack),
+        effect: [
+          Custom,
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Vulnerable",
+    debuff: true,
+    reduce_at: BeforeHandDraw,
+  ),
+  (
+    name: "Wave Of The Hand",
+    effects: [
+      (
+        when: OnBlock,
+        effect: [
+          AddBuff(
+            buff: "Weak",
+            amount: X,
+            target: AllEnemies,
+          ),
+        ],
+      ),
+    ],
+  ),
+  (
+    name: "Weak",
+    debuff: true,
+    reduce_at: BeforeHandDraw,
+  ),
+  (
+    name: "Well Laid Plans",
+  ),
+  (
+    name: "Wraith Form",
+    debuff: true,
+    effects: [
+      (
+        when: BeforeHandDraw,
+        effect: [
+          AddBuff(
+            buff: "Dexterity",
+            amount: NegX,
+          ),
+        ],
+      ),
+    ],
+  ),
 ]

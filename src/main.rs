@@ -2,10 +2,22 @@ use crate::comm::request::GameState;
 use crate::models::choices::Choice;
 use comm::request::Request;
 use comm::response::Response;
+use im::HashMap;
+use itertools::Itertools;
+use models::acts::Act;
+use models::buffs::BaseBuff;
+use models::cards::BaseCard;
+use models::events::BaseEvent;
+use models::monsters::BaseMonster;
+use models::potions::BasePotion;
+use models::relics::BaseRelic;
+use serde::Serialize;
+use uuid::Uuid;
 use std::error::Error;
 use std::fs::File;
 use std::io::stdin;
 use std::io::Write;
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -24,8 +36,34 @@ lazy_static! {
 }
 
 
+
+pub fn write<T>(cards: T, filename: &'static str) where T: Serialize {
+    let filepath = Path::new("data").join(filename);
+    let file = File::create(filepath).unwrap();
+    let mut config = ron::ser::PrettyConfig::new();
+    config.indentor = "  ".to_string();
+    config.separate_tuple_members = false;
+    ron::ser::to_writer_pretty(file, &cards, config).unwrap();
+}
+
 fn main() {
-    crate::models::cards::by_name("Bash");
+    let acts: Vec<Act> = models::acts::all_acts();
+    let cards: Vec<BaseCard> = models::cards::ALL_CARDS.values().sorted_by_key(|f|&f.name).map(|card| card.clone()).collect();
+    let relics: Vec<BaseRelic> = models::relics::RELICS.values().sorted_by_key(|f|&f.name).map(|relic| relic.clone()).collect();
+    let potions: Vec<BasePotion> = models::potions::POTIONS.values().sorted_by_key(|f|&f.name).map(|potion| potion.clone()).collect();
+    let monsters: Vec<BaseMonster> = models::monsters::MONSTERS.values().sorted_by_key(|f|&f.name).map(|monster| monster.clone()).collect();
+    let events: Vec<BaseEvent> = models::events::EVENTS.values().sorted_by_key(|f|&f.name).map(|event| event.clone()).collect();
+    let buffs: Vec<BaseBuff> = models::buffs::BUFFS.values().sorted_by_key(|f|&f.name).map(|buff| buff.clone()).collect();
+    
+    write(acts, "acts.ron");
+    write(cards, "cards.ron");
+    write(relics, "relics.ron");
+    write(potions, "potions.ron");
+    write(monsters, "monsters.ron");
+    write(events, "events.ron");
+    write(buffs, "buffs.ron");
+    
+
     let last_action_clone = Arc::clone(&LAST_ACTION);
     let last_state_clone = Arc::clone(&LAST_STATE);
     std::panic::set_hook(Box::new(move |_info| {
@@ -66,19 +104,20 @@ fn run(start_message: &str) {
     let mut ai = spireai::SpireAi::new();
     let mut game_state: Option<GameState> = None;
     let mut queue: Vec<Response> = vec![Response::Simple(String::from(start_message))];
+    let mut uuid_map: HashMap<String, Uuid> = HashMap::new();
 
     loop {
         let request = process_queue(&mut queue, &game_state);
-        let choice = handle_request(&request, &mut ai);
+        let choice = handle_request(&request, &mut ai, &mut uuid_map);
 
         game_state = request.game_state;
         queue = comm::response::decompose_choice(choice);
     }
 }
 
-fn handle_request(request: &Request, ai: &mut spireai::SpireAi) -> Choice {
+fn handle_request(request: &Request, ai: &mut spireai::SpireAi, uuid_map: &mut HashMap<String, Uuid>) -> Choice {
     match &request.game_state {
-        Some(state) => ai.choose(&comm::interop::convert_state(&state)),
+        Some(state) => ai.choose(&comm::interop::convert_state(&state, uuid_map)),
         None => {
             if request.available_commands.contains(&String::from("start")) {
                 Choice::Start {

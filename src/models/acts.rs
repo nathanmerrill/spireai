@@ -32,7 +32,7 @@ impl std::fmt::Debug for Act {
     }
 }
 
-fn all_acts() -> Vec<Act> {
+pub fn all_acts() -> Vec<Act> {
     let filepath = Path::new("data").join("acts.ron");
     let file = File::open(filepath).unwrap();
     from_reader(file).unwrap()
