@@ -648,7 +648,7 @@
               CreateCardByType(
                 location: PlayerHand,
                 type: All,
-                _rarity: Some(Common),
+                rarity: Some(Common),
               ),
             ],
           ),
@@ -776,24 +776,6 @@
   (
     name: "Life Link",
     singular: true,
-    effects: [
-      (
-        when: OnDie,
-        effect: [
-          If(
-            condition: HasFriendlies(1),
-            then: [
-              FakeDie,
-            ],
-            _else: [
-              Die(
-                target: AnyFriendly,
-              ),
-            ],
-          ),
-        ],
-      ),
-    ],
   ),
   (
     name: "Like Water",
@@ -844,7 +826,7 @@
               CreateCardByType(
                 location: PlayerHand,
                 type: All,
-                _class: Some(None),
+                class: Some(None),
               ),
             ],
           ),

@@ -1,7 +1,8 @@
-use im::{HashMap, Vector};
+use im::{HashMap, HashSet, Vector};
 use uuid::Uuid;
 
-use crate::{comm::request as old, models::state::UuidVector};
+use crate::spireai::evaluator::{CardReference, CardStorage};
+use crate::{comm::request as old};
 use crate::models::core as new_core;
 use crate::models::monsters::Intent as NewIntent;
 use crate::models::state as new;
@@ -9,6 +10,7 @@ use crate::models::state as new;
 pub fn convert_state(state: &old::GameState, uuid_map: &mut HashMap<String, Uuid>) -> new::GameState {
     let relics = convert_relics(&state.relics, uuid_map);
     let buffs = convert_buffs(&state.combat_state.as_ref().unwrap().player.powers, uuid_map);
+    let choices = convert_card_choices(state, uuid_map);
 
     new::GameState {
         class: convert_class(&state.class),
@@ -16,7 +18,7 @@ pub fn convert_state(state: &old::GameState, uuid_map: &mut HashMap<String, Uuid
             hp: state.current_hp as u16,
             max_hp: state.max_hp as u16,
             is_player: true,
-            buff_names: buffs.items.iter().map(|(uuid, buff)| (buff.base.name.to_string(), *uuid)).collect(),
+            buff_names: buffs.iter().map(|(uuid, buff)| (buff.base.name.to_string(), *uuid)).collect(),
             buffs_when: HashMap::new(),
             buffs: buffs,
             block: state
@@ -29,18 +31,26 @@ pub fn convert_state(state: &old::GameState, uuid_map: &mut HashMap<String, Uuid
         battle_state: state
             .combat_state
             .as_ref()
-            .map(|a| convert_battle_state(a, state, uuid_map))
+            .map(|a| convert_battle_state(a, uuid_map))
             .unwrap_or_else(|| new::BattleState::default()),
         gold: state.gold as u16,
         floor: state.floor as u8,
         floor_state: convert_floor_state(state, uuid_map),
         deck: convert_cards(&state.deck, uuid_map),
+        card_choices: choices.iter().map(|choice| CardReference {
+            storage: CardStorage::Stasis,
+            uuid: choice.uuid,
+            base: choice.base
+        }).collect(),
+        card_choice_range: None,
+        card_stasis: choices.into_iter().map(|choice| (choice.uuid, choice)).collect(),
+        card_choice_type: convert_card_choice_type(state),
         map: convert_map(state),
         potions: convert_potions(&state.potions),
         act: state.act as u8,
         asc: state.ascension_level as u8,
         relic_whens: HashMap::new(),
-        relic_names: relics.items.iter().map(|(uuid, r)|(r.base.name.to_string(), *uuid)).collect(),
+        relic_names: relics.iter().map(|(uuid, r)|(r.base.name.to_string(), *uuid)).collect(),
         relics: relics,
         keys: None,
         won: None
@@ -100,11 +110,11 @@ pub fn convert_relic(relic: &old::Relic, uuid_map: &mut HashMap<String, Uuid>) -
     }
 }
 
-pub fn convert_relics(relics: &[old::Relic], uuid_map: &mut HashMap<String, Uuid>) -> UuidVector<new::Relic> {
-    let mut vector = UuidVector::new();
+pub fn convert_relics(relics: &[old::Relic], uuid_map: &mut HashMap<String, Uuid>) -> HashMap<Uuid, new::Relic> {
+    let mut vector = HashMap::new();
     for relic in relics {
         let new_relic = convert_relic(relic, uuid_map);
-        vector.add(new_relic);
+        vector.insert(new_relic.uuid, new_relic);
     }
     vector
 }
@@ -132,35 +142,59 @@ pub fn convert_intent(intent: &old::Intent) -> NewIntent {
 
 pub fn convert_battle_state(
     state: &old::CombatState,
-    game_state: &old::GameState,
     uuid_map: &mut HashMap<String, Uuid>
 ) -> new::BattleState {
+    let mut draw = HashSet::new();
+    let mut discard = HashSet::new();
+    let mut exhaust = HashSet::new();
+    let mut hand = HashSet::new();
+
+    let mut cards = HashMap::new();
+    for (uuid, card) in convert_cards(&state.draw_pile, uuid_map) {
+        cards.insert(uuid, card);
+        draw.insert(uuid);
+    }
+    for (uuid, card) in convert_cards(&state.discard_pile, uuid_map) {
+        cards.insert(uuid, card);
+        discard.insert(uuid);
+    }
+    for (uuid, card) in convert_cards(&state.exhaust_pile, uuid_map) {
+        cards.insert(uuid, card);
+        exhaust.insert(uuid);
+    }
+    for (uuid, card) in convert_cards(&state.hand, uuid_map) {
+        cards.insert(uuid, card);
+        hand.insert(uuid);
+    }
+
+
     new::BattleState {
         active: true,
-        draw: convert_cards(&state.draw_pile, uuid_map).items,
+        cards,
+        draw,
         discard_count: state.cards_discarded_this_turn as u8,
         draw_bottom_known: Vector::new(),
         draw_top_known: Vector::new(),
         play_count: 0,
-        discard: convert_cards(&state.discard_pile, uuid_map),
-        exhaust: convert_cards(&state.exhaust_pile, uuid_map),
-        hand: convert_cards(&state.hand, uuid_map),
+        hp_loss_count: 0,
+        discard,
+        exhaust,
+        hand,
         last_card_played: None,
         orb_slots: 0,
+        power_count: 0,
         monsters: convert_monsters(&state.monsters, uuid_map),
         energy: state.player.energy as u8,
         orbs: convert_orbs(&state.player.orbs),
         stance: new_core::Stance::None,
         battle_type: new::BattleType::Common,
-        card_choices: convert_card_choices(game_state, uuid_map),
-        card_choice_type: convert_card_choice_type(game_state)
     }
 }
 
-pub fn convert_card_choices(game_state: &old::GameState, uuid_map: &mut HashMap<String, Uuid>) -> UuidVector<new::Card> {
+pub fn convert_card_choices(game_state: &old::GameState, uuid_map: &mut HashMap<String, Uuid>) -> Vector<new::Card> {
     match &game_state.screen_state {
-        old::ScreenState::Grid(grid) => convert_cards(&grid.cards, uuid_map),
-        _ => UuidVector::new(),
+        old::ScreenState::Grid(grid) => grid.cards.iter().map(|card|convert_card(card, uuid_map)).collect(),
+        _ => Vector::new(),
     }
 }
 
@@ -347,25 +381,38 @@ fn convert_orbs(orbs: &[old::OrbType]) -> Vector<new::Orb> {
         .collect()
 }
 
-fn convert_monsters(monsters: &[old::Monster], uuid_map: &mut HashMap<String, Uuid>) -> Vector<new::Monster> {
+lazy_static!{
+    static ref monster_move: crate::models::monsters::MonsterMove = crate::models::monsters::MonsterMove {
+        name: String::new(),
+        effects: vec![],
+        intent: NewIntent::None,
+    };
+}
+
+fn convert_monsters(monsters: &[old::Monster], uuid_map: &mut HashMap<String, Uuid>) -> HashMap<Uuid, new::Monster> {
 
     monsters
         .iter()
         .enumerate()
         .map(|(index, monster)| {
             let buffs = convert_buffs(&monster.powers, uuid_map);
-            new::Monster {
+            let uuid = *uuid_map.entry(monster.id.to_string()).or_insert_with(Uuid::new_v4);
+            let monster = new::Monster {
                 base: crate::models::monsters::by_name(&monster.id),
+                uuid,
                 position: index,
                 creature: new::Creature {
                     hp: monster.current_hp as u16,
                     max_hp: monster.max_hp as u16,
                     is_player: false,
-                    buff_names: buffs.items.iter().map(|(uuid, buff)| (buff.base.name.to_string(), *uuid)).collect(),
+                    buff_names: buffs.iter().map(|(uuid, buff)| (buff.base.name.to_string(), *uuid)).collect(),
                     buffs_when: HashMap::new(),
                     buffs: buffs,
                     block: monster.block as u16,
                 },
+                index: 0,
+                phase: 0,
+                whens: HashMap::new(),
                 vars: new::Vars {
                     n: 0,
                     x: 0,
@@ -373,27 +420,31 @@ fn convert_monsters(monsters: &[old::Monster], uuid_map: &mut HashMap<String, Uu
                 },
                 targetable: !monster.is_gone,
                 intent: convert_intent(&monster.intent),
-            }
+                current_move: &monster_move,
+                last_move: None,
+                last_move_count: 0,
+            };
+            (uuid, monster)
         })
         .collect()
 }
 
-fn convert_buffs(buffs: &[old::Power], uuid_map: &mut HashMap<String, Uuid>) -> UuidVector<new::Buff> {
-    let mut vector = UuidVector::new();
+fn convert_buffs(buffs: &[old::Power], uuid_map: &mut HashMap<String, Uuid>) -> HashMap<Uuid, new::Buff> {
+    let mut vector = HashMap::new();
 
     for buff in buffs {
-        let uuid = uuid_map.entry(buff.id.to_string()).or_insert_with(Uuid::new_v4);
+        let uuid = *uuid_map.entry(buff.id.to_string()).or_insert_with(Uuid::new_v4);
 
-        vector.add(new::Buff {
+        vector.insert(uuid, new::Buff {
             base: crate::models::buffs::by_name(&buff.name),
-            uuid: *uuid,
+            uuid: uuid,
             vars: new::Vars {
                 n: buff.amount as i16,
                 x: 0,
                 n_reset: 0,
             },
             stacked_vars: vec![],
-        })
+        });
     }
 
     vector
@@ -418,11 +469,11 @@ fn convert_potions(potions: &[old::Potion]) -> Vector<Option<new::Potion>> {
         .collect()
 }
 
-fn convert_cards(cards: &[old::Card], uuid_map: &mut HashMap<String, Uuid>) -> UuidVector<new::Card> {
-    let mut vector = UuidVector::new();
+fn convert_cards(cards: &[old::Card], uuid_map: &mut HashMap<String, Uuid>) -> HashMap<Uuid, new::Card> {
+    let mut vector = HashMap::new();
     for card in cards {
         let new_card = convert_card(card, uuid_map);
-        vector.add(new_card);
+        vector.insert(new_card.uuid, new_card);
     }
     vector
 }
@@ -446,6 +497,9 @@ fn convert_card(card: &old::Card, uuid_map: &mut HashMap<String, Uuid>) -> new::
         uuid: *uuid,
         upgrades: card.upgrades as u8,
         cost: card.cost as u8,
+        base_cost: card.cost as u8,
+        cost_until_played: false,
+        retain: false,
     }
 }
 

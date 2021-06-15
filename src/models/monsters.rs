@@ -2,7 +2,7 @@ use ron::de::from_reader;
 use std::{collections::HashMap, fs::File, path::Path};
 use serde::{Deserialize, Serialize};
 
-use super::core::{Amount, Condition, Effect, When, WhenEffect, is_default, one, is_one};
+use super::core::{Amount, Condition, Effect, When, WhenEffect, is_default};
 
 #[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct BaseMonster {
@@ -10,7 +10,7 @@ pub struct BaseMonster {
     pub hp_range: SimpleRange,
     pub hp_range_asc: SimpleRange,
     pub moveset: Vec<MonsterMove>,
-    pub move_order: Vec<Move>,
+    pub phases: Vec<Phase>,
     #[serde(default, skip_serializing_if = "is_default")]
     pub n_range: Option<Range>,
     #[serde(default, skip_serializing_if = "is_default")]
@@ -25,6 +25,21 @@ impl std::fmt::Debug for BaseMonster {
             .finish()
     }
 }
+
+#[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
+pub struct Phase {
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub name: String,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub next: String,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub moves: Vec<Move>,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub when: When,
+    #[serde(default = "Condition::always", skip_serializing_if = "Condition::is_always")]
+    pub when_condition: Condition,
+}
+
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct MonsterMove {
@@ -59,26 +74,21 @@ pub enum Move {
     If {
         condition: Condition,
         #[serde(default, skip_serializing_if = "is_default")]
-        then: Vec<Move>,
+        then_phase: String,
         #[serde(default, skip_serializing_if = "is_default")]
-        _else: Vec<Move>,
+        else_phase: String,
     },
-    Loop(Vec<Move>),
-    InOrder(String),
+    Fixed(String),
     Probability(Vec<ProbabilisticMove>), // Weight, name, repeats
-    When(When),
-    AfterMove(Vec<(String, Move)>),
-    WhenMove(String),
-    WhenLoseBuff(String),
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct ProbabilisticMove {
-    #[serde(default = "one", skip_serializing_if = "is_one")]
-    pub weight: u8,
     pub name: String,
-    #[serde(default = "one", skip_serializing_if = "is_one")]
-    pub max_repeats: u8,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub weight: Amount,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub max_repeats: Amount,
 }
 
 #[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]

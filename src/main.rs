@@ -27,7 +27,6 @@ lazy_static! {
 
 
 fn main() {   
-
     let last_action_clone = Arc::clone(&LAST_ACTION);
     let last_state_clone = Arc::clone(&LAST_STATE);
     std::panic::set_hook(Box::new(move |_info| {
@@ -74,8 +73,8 @@ fn run(start_message: &str) {
         let request = process_queue(&mut queue, &game_state);
         let choice = handle_request(&request, &mut ai, &mut uuid_map);
 
+        queue = comm::response::decompose_choice(choice, &request, &uuid_map);
         game_state = request.game_state;
-        queue = comm::response::decompose_choice(choice);
     }
 }
 

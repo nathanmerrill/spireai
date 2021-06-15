@@ -3,8 +3,9 @@ use crate::spireai::*;
 use models::choices::Choice;
 use models::core::*;
 use models::state::*;
+use crate::spireai::evaluator::*;
 
-pub fn predict_outcome(choice: &Choice, state: &mut GamePossibilitySet) {
+pub fn predict_outcome(choice: &Choice, state: &mut GamePossibility) {
     match choice {
         Choice::BuyCard(name) => {
             let cost = if let FloorState::Shop { ref mut cards, .. } = state.state.floor_state {
@@ -19,9 +20,8 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibilitySet) {
             };
 
             spend_money(cost, true, state.into());
-            evaluator::add_card_to_deck(name, false, state.into());
+            evaluator::add_card_to_deck(name, state.into());
         }
-
         Choice::BuyPotion(name) => {
             let cost = if let FloorState::Shop {
                 ref mut potions, ..
@@ -55,7 +55,7 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibilitySet) {
             spend_money(cost, true, state.into());
             evaluator::add_relic(name, state.into());
         }
-        Choice::BuyRemoveCard(position) => {
+        Choice::BuyRemoveCard(card) => {
             let cost = if let FloorState::Shop {
                 ref mut purge_cost, ..
             } = state.state.floor_state
@@ -68,17 +68,17 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibilitySet) {
             };
 
             spend_money(cost, true, state.into());
-            remove_card_from_deck(*position, state.into());
+            evaluator::remove_card_from_location(*card, &mut state.state);
         }
-        Choice::DeckRemove(positions) => {
-            for position in positions {
-                remove_card_from_deck(*position, state.into());
+        Choice::DeckRemove(cards) => {
+            for card in cards {
+                evaluator::remove_card_from_location(*card, &mut state.state);
             }
         }
-        Choice::DeckTransform(positions, should_upgrade) => {
-            let sets: Vec<Vec<&&'static models::cards::BaseCard>> = positions.iter().map(|p| {
+        Choice::DeckTransform(cards, should_upgrade) => {
+            let sets: Vec<Vec<&&'static models::cards::BaseCard>> = cards.iter().map(|p| {
                 let (class, name) = {
-                    let card = &state.state.deck[*p];
+                    let card = &state.state.deck[&p.uuid];
                     (card.base._class, card.base.name.to_string())
                 };
 
@@ -91,18 +91,22 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibilitySet) {
                 available_cards
             }).collect();
 
-            for position in positions {
-                remove_card_from_deck(*position, &mut state.state);
+            for card in cards {
+                evaluator::remove_card_from_location(*card, &mut state.state);
             }
 
             for set in sets {
-                let card = state.choose(&set).unwrap();
-                evaluator::add_card_to_deck(&card.name, *should_upgrade, &mut state.state);
+                let base = state.choose(set).unwrap();
+                if let Some(card_ref) = evaluator::add_card_to_deck(&base.name, state) {
+                    if *should_upgrade {
+                        card_ref.get_mut(&mut state.state).upgrades = 1;
+                    }
+                }
             }
         }
-        Choice::DeckUpgrade(positions) => {
-            for position in positions {
-                upgrade_card_in_deck(*position, state.into());
+        Choice::DeckUpgrade(cards) => {
+            for card in cards {
+                evaluator::upgrade_card(*card, &mut state.state);
             }
         }
         Choice::Dig => {
@@ -111,7 +115,7 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibilitySet) {
         Choice::DiscardPotion { slot } => {
             state.state.potions[*slot] = None;
         }
-        Choice::DrinkPotion { slot, target_index } => {
+        Choice::DrinkPotion { slot, target } => {
             let potion = state.state.potions[*slot]
                 .as_ref()
                 .expect("Potion does not exist in slot!");
@@ -122,16 +126,19 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibilitySet) {
                 Some(GameAction {
                     creature: CreatureReference::Player,
                     is_attack: false,
-                    target: *target_index,
+                    target: *target,
                 }),
             );
+        }
+        Choice::End => {
+            evaluator::end_turn(state)
         }
         _ => unimplemented!(),
     }
 }
 
-fn add_random_relic(weights: (u8, u8, u8), state: &mut GamePossibilitySet) {
-    let choices = [
+fn add_random_relic(weights: (u8, u8, u8), state: &mut GamePossibility) {
+    let choices = vec![
         (Rarity::Common, weights.0),
         (Rarity::Uncommon, weights.1),
         (Rarity::Rare, weights.1),
@@ -149,40 +156,13 @@ fn add_random_relic(weights: (u8, u8, u8), state: &mut GamePossibilitySet) {
         .map(|relic| &relic.name)
         .collect();
 
-    let relic: &String = state.choose(&available_relics)
+    let relic: &String = state.choose(available_relics)
         .expect("No available relics to be chosen!");
 
-    if relic == "War Paint" || relic == "Whetstone" {
-        let card_type = if relic == "War Paint" {
-            CardType::Skill
-        } else {
-            CardType::Attack
-        };
-        let available_cards: Vec<usize> = state
-            .state
-            .cards()
-            .enumerate()
-            .filter(|(_, card)| evaluator::card_types_match(*card, card_type, &state.state) && evaluator::card_upgradable(*card, &state.state))
-            .map(|(p, _)| p)
-            .collect();
-
-        let cards = state.choose_multiple(&available_cards, 2);
-
-        for card in cards {
-            upgrade_card_in_deck(*card, state.into());
-        }
-    }
+    evaluator::add_relic(relic, state);
 }
 
-fn upgrade_card_in_deck(position: usize, state: &mut GameState) {
-    state.deck[position].upgrades += 1;
-}
-
-fn remove_card_from_deck(position: usize, state: &mut GameState) {
-    state.deck.remove(position);
-}
-
-fn spend_money(amount: u16, at_shop: bool, state: &mut GameState) {
+fn spend_money(amount: u16, at_shop: bool, state: &mut GameState) -> &Option<Relic> {
     state.gold -= amount;
 
     if at_shop {
@@ -190,6 +170,7 @@ fn spend_money(amount: u16, at_shop: bool, state: &mut GameState) {
             relic.enabled = false;
         }
     }
+    &None
 }
 
 fn add_potion(name: &str, state: &mut GameState) {
@@ -199,7 +180,7 @@ fn add_potion(name: &str, state: &mut GameState) {
 
 pub fn verify_prediction<'a>(
     outcome: &'a GameState,
-    prediction: &'a GamePossibilitySet,
+    choice: &'a GamePossibility,
 ) -> &'a GameState {
     unimplemented!()
     /*

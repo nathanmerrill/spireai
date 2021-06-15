@@ -39,7 +39,7 @@ impl PartialEq for BaseRelic {
         self.name == other.name
     }
 }
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub enum Activation {
     Immediate,
     When(When),
@@ -47,11 +47,11 @@ pub enum Activation {
         increment: When,
         reset: When,
         auto_reset: bool,
-        target: u8,
+        target: u16,
     },
     Uses {
         use_when: When,
-        uses: u8,
+        uses: u16,
     },
     WhenEnabled {
         //Activation is triggered before any enable/disable checks

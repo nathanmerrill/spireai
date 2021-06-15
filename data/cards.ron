@@ -1340,7 +1340,7 @@
         ),
         target: AllEnemies,
       ),
-      EndTurn,
+      Custom,
     ],
   ),
   (
@@ -1744,7 +1744,7 @@
         location: DiscardPile,
         position: All,
         effect: MoveTo(
-          location: DrawPile,
+          location: DrawPile(Bottom),
         ),
       ),
       Shuffle,
@@ -1922,7 +1922,6 @@
           ZeroTurnCost,
         ],
         choices: Fixed(3),
-        exclude_healing: true,
       ),
       If(
         condition: Upgraded,
@@ -2850,7 +2849,7 @@
           CreateCardByType(
             location: PlayerHand,
             type: All,
-            _class: Some(All),
+            class: Some(All),
             then: [
               ZeroTurnCost,
             ],
@@ -2860,7 +2859,7 @@
           CreateCardByType(
             location: PlayerHand,
             type: All,
-            _class: Some(All),
+            class: Some(All),
           ),
         ],
       ),
@@ -3505,7 +3504,7 @@
       CreateCardByType(
         location: PlayerHand,
         type: All,
-        _class: Some(None),
+        class: Some(None),
       ),
       SelfEffect(Exhaust),
     ],
@@ -3812,7 +3811,7 @@
     name: "Masterful Stab",
     type: Attack,
     class: Silent,
-    cost: Custom,
+    cost: 0,
     rarity: Uncommon,
     on_play: [
       AttackDamage(
@@ -5564,10 +5563,7 @@
     name: "Streamline",
     type: Attack,
     class: Defect,
-    cost: N,
-    on_start: [
-      SetN(Fixed(2)),
-    ],
+    cost: 2,
     on_play: [
       AttackDamage(
         amount: Upgradable(
@@ -5575,12 +5571,7 @@
           upgraded: 20,
         ),
       ),
-      If(
-        condition: Equals(N, Fixed(0)),
-        _else: [
-          AddN(Fixed(-1)),
-        ],
-      ),
+      SelfEffect(ReduceCost(Fixed(1)))
     ],
     targeted: Always,
   ),
@@ -6015,7 +6006,7 @@
           CreateCardByType(
             location: PlayerHand,
             type: All,
-            _class: Some(None),
+            class: Some(None),
             then: [
               ZeroTurnCost,
             ],

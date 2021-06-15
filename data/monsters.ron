@@ -65,52 +65,36 @@
         intent: Unknown,
       ),
     ],
-    move_order: [
-      If(
-        condition: Asc(17),
-        then: [
-          Loop([
-            Probability([
-              (
-                weight: 40,
-                name: "Corrosive Spit",
-                max_repeats: 2,
-              ),
-              (
-                weight: 30,
-                name: "Tackle",
-                max_repeats: 2,
-              ),
-              (
-                weight: 30,
-                name: "Lick",
-              ),
-            ]),
-          ]),
-        ],
-        _else: [
-          Loop([
-            Probability([
-              (
-                weight: 30,
-                name: "Corrosive Spit",
-                max_repeats: 2,
-              ),
-              (
-                weight: 40,
-                name: "Tackle",
-              ),
-              (
-                weight: 30,
-                name: "Lick",
-                max_repeats: 2,
-              ),
-            ]),
+    phases: [
+      (
+        name: "Base",
+        moves: [
+          Probability([
+            (
+              weight: ByAsc(base: 30, low: 30, high: 40,),
+              name: "Corrosive Spit",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: ByAsc(base: 40, low: 40, high: 30,),
+              name: "Tackle",
+              max_repeats: ByAsc(base: 1, low: 1, high: 2,),
+            ),
+            (
+              weight: Fixed(30),
+              name: "Lick",
+              max_repeats: ByAsc(base: 2, low: 2, high: 1,),
+            ),
           ]),
         ],
       ),
-      When(OnHalfHp),
-      InOrder("Split"),
+      (
+        when: OnHalfHp,
+        moves: [
+          Fixed("Split")
+        ],
+        next: "Base",
+      ),
     ],
     effects: [
       (
@@ -177,58 +161,26 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      If(
-        condition: Asc(17),
-        then: [
-          Loop([
-            Probability([
-              (
-                weight: 40,
-                name: "Corrosive Spit",
-                max_repeats: 2,
-              ),
-              (
-                weight: 30,
-                name: "Tackle",
-                max_repeats: 2,
-              ),
-              (
-                weight: 30,
-                name: "Lick",
-              ),
-            ]),
-          ]),
-        ],
-        _else: [
-          Loop([
-            Probability([
-              (
-                weight: 30,
-                name: "Corrosive Spit",
-                max_repeats: 2,
-              ),
-              (
-                weight: 40,
-                name: "Tackle",
-              ),
-              (
-                weight: 30,
-                name: "Lick",
-                max_repeats: 2,
-              ),
-            ]),
-          ]),
-        ],
-      ),
-    ],
-    effects: [
+    phases: [
       (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Split",
-          ),
+        moves: [
+          Probability([
+            (
+              weight: ByAsc(base: 30, low: 30, high: 40,),
+              name: "Corrosive Spit",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(40),
+              name: "Tackle",
+              max_repeats: ByAsc(base: 1, low: 1, high: 2,),
+            ),
+            (
+              weight: ByAsc(base: 30, low: 30, high: 20,),
+              name: "Lick",
+              max_repeats: ByAsc(base: 2, low: 2, high: 1,),
+            ),
+          ]),
         ],
       ),
     ],
@@ -269,31 +221,17 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      If(
-        condition: Asc(17),
-        then: [
-          InOrder("Lick"),
-        ],
-      ),
-      Loop([
-        Probability([
-          (
-            name: "Lick",
-          ),
-          (
-            name: "Tackle",
-          ),
-        ]),
-      ]),
-    ],
-    effects: [
+    phases: [
       (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Split",
-          ),
+        moves: [
+          Probability([
+            (
+              name: "Lick",
+            ),
+            (
+              name: "Tackle",
+            ),
+          ]),
         ],
       ),
     ],
@@ -325,18 +263,7 @@
           AttackDamage(
             amount: Fixed(6),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(6),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(6),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(6),
-            target: TargetEnemy,
+            times: Fixed(4),
           ),
         ],
         intent: Attack,
@@ -344,7 +271,7 @@
       (
         name: "Rebirth",
         effects: [
-          RemoveDebuffs(),
+          RemoveDebuffs,
           HealPercentage(
             amount: Fixed(100),
           ),
@@ -382,49 +309,58 @@
           AttackDamage(
             amount: Fixed(10),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(10),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(10),
-            target: TargetEnemy,
+            times: Fixed(3),
           ),
         ],
         intent: Attack,
       ),
     ],
-    move_order: [
-      InOrder("Slash"),
-      Loop([
-        Probability([
-          (
-            weight: 75,
-            name: "Slash",
-            max_repeats: 2,
-          ),
-          (
-            weight: 25,
-            name: "Soul Strike",
-          ),
-        ]),
-      ]),
-      When(OnDie),
-      InOrder("Rebirth"),
-      InOrder("Dark Echo"),
-      Loop([
-        Probability([
-          (
-            name: "Sludge",
-            max_repeats: 2,
-          ),
-          (
-            name: "Tackle",
-            max_repeats: 2,
-          ),
-        ]),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Slash")
+        ],
+        next: "Base",
+      ),
+      (
+        name: "Base",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(75),
+              name: "Slash",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(25),
+              name: "Soul Strike",
+            ),
+          ]),
+        ],
+      ),
+      (
+        when: OnDie,
+        moves: [
+          Fixed("Rebirth"),
+          Fixed("Dark Echo"),
+        ],
+        next: "Reborn",
+      ),
+      (
+        name: "Reborn",
+        moves: [
+          Probability([
+            (
+              name: "Sludge",
+              max_repeats: Fixed(2),
+            ),
+            (
+              name: "Tackle",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+        ],
+      ),
     ],
     effects: [
       (
@@ -526,12 +462,20 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      InOrder("Bear Hug"),
-      Loop([
-        InOrder("Lunge"),
-        InOrder("Maul"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Bear Hug"),
+        ],
+        next: "Base",
+      ),
+      (
+        name: "Base",
+        moves: [
+          Fixed("Lunge"),
+          Fixed("Maul"),
+        ],
+      ),
     ],
   ),
   (
@@ -583,38 +527,20 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      If(
-        condition: Asc(17),
-        then: [
-          Loop([
-            Probability([
-              (
-                weight: 60,
-                name: "Stab",
-                max_repeats: 2,
-              ),
-              (
-                weight: 40,
-                name: "Rake",
-              ),
-            ]),
-          ]),
-        ],
-        _else: [
-          Loop([
-            Probability([
-              (
-                weight: 60,
-                name: "Stab",
-                max_repeats: 2,
-              ),
-              (
-                weight: 40,
-                name: "Rake",
-                max_repeats: 2,
-              ),
-            ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(60),
+              name: "Stab",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(40),
+              name: "Rake",
+              max_repeats: ByAsc(base: 2, low: 2, high: 1,),
+            ),
           ]),
         ],
       ),
@@ -634,7 +560,11 @@
       (
         name: "Multi Stab",
         effects: [
-          Custom,
+          AttackDamage(
+            amount: Fixed(6),
+            target: TargetEnemy,
+            times: Custom,
+          )
         ],
         intent: Attack,
       ),
@@ -653,20 +583,22 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        Probability([
-          (
-            weight: 85,
-            name: "Multi Stab",
-            max_repeats: 2,
-          ),
-          (
-            weight: 15,
-            name: "Multi Stab",
-          ),
-        ]),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(85),
+              name: "Multi Stab",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(15),
+              name: "Multi Stab",
+            ),
+          ]),
+        ]
+      ),
     ],
     effects: [
       (
@@ -764,24 +696,43 @@
         intent: Stun,
       ),
     ],
-    move_order: [
-      InOrder("Spawn Orbs"),
-      Loop([
-        InOrder("Flail"),
-        InOrder("Boost"),
-        InOrder("Flail"),
-        InOrder("Boost"),
-        InOrder("Hyperbeam"),
-        If(
-          condition: Asc(19),
-          then: [
-            InOrder("Boost"),
-          ],
-          _else: [
-            InOrder("Stunned"),
-          ],
-        ),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Spawn Orbs")
+        ],
+        next: "Base",
+      ),
+      (
+        name: "Base",
+        when: OnHalfHp,
+        moves: [
+          Fixed("Flail"),
+          Fixed("Boost"),
+          Fixed("Flail"),
+          Fixed("Boost"),
+          Fixed("Hyperbeam"),
+          If(
+            condition: Asc(19),
+            then_phase: "Boost",
+            else_phase: "Stunned"
+          )
+        ],
+      ),
+      (
+        name: "Boost",
+        moves: [
+          Fixed("Boost")
+        ],
+        next: "Base",
+      ),
+      (
+        name: "Stunned",
+        moves: [
+          Fixed("Stunned")
+        ],
+        next: "Base",
+      ),
     ],
     effects: [
       (
@@ -831,40 +782,44 @@
         intent: Defend,
       ),
     ],
-    move_order: [
-      Loop([
-        Probability([
-          (
-            weight: 150,
-            name: "Stasis",
-          ),
-          (
-            weight: 15,
-            name: "Beam",
-            max_repeats: 0,
-          ),
-          (
-            weight: 35,
-            name: "Support Beam",
-            max_repeats: 0,
-          ),
-        ]),
-      ]),
-      WhenMove("Stasis"),
-      Loop([
-        Probability([
-          (
-            weight: 30,
-            name: "Beam",
-            max_repeats: 2,
-          ),
-          (
-            weight: 70,
-            name: "Support Beam",
-            max_repeats: 2,
-          ),
-        ]),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(150),
+              name: "Stasis",
+            ),
+            (
+              weight: Fixed(15),
+              name: "Beam",
+              max_repeats: Fixed(0),
+            ),
+            (
+              weight: Fixed(35),
+              name: "Support Beam",
+              max_repeats: Fixed(0),
+            ),
+          ]),
+        ],
+      ),
+      (
+        when: OnMove("Stasis"),
+        moves: [
+          Probability([
+            (
+              weight: Fixed(30),
+              name: "Beam",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(70),
+              name: "Support Beam",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+        ],
+      ),
     ],
   ),
   (
@@ -892,26 +847,7 @@
         effects: [
           AttackDamage(
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            target: TargetEnemy,
-          ),
-          If(
-            condition: Asc(2),
-            then: [
-              AttackDamage(
-                target: TargetEnemy,
-              ),
-            ],
+            times: ByAsc(base: 5, low: 6, high: 6,),
           ),
         ],
         intent: Attack,
@@ -955,40 +891,51 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Probability([
-        (
-          weight: 125,
-          name: "Peck",
-        ),
-        (
-          weight: 75,
-          name: "Caw",
-        ),
-      ]),
-      Loop([
-        Loop([
+    phases: [
+      (
+        moves: [
           Probability([
             (
-              weight: 50,
+              weight: Fixed(125),
               name: "Peck",
-              max_repeats: 2,
             ),
             (
-              weight: 20,
-              name: "Swoop",
-            ),
-            (
-              weight: 30,
+              weight: Fixed(75),
               name: "Caw",
             ),
           ]),
-        ]),
-        WhenLoseBuff("Flying"),
-        InOrder("Stunned"),
-        InOrder("Headbutt"),
-        InOrder("Fly"),
-      ]),
+        ],
+        next: "Base",
+      ),
+      (
+        name: "Base",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(50),
+              name: "Peck",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(20),
+              name: "Swoop",
+            ),
+            (
+              weight: Fixed(30),
+              name: "Caw",
+            ),
+          ]),
+        ],
+      ),
+      (
+        when: OnLoseBuff("Flying"),
+        moves: [
+          Fixed("Stunned"),
+          Fixed("Headbutt"),
+          Fixed("Fly"),
+        ],
+        next: "Base",
+      ),
     ],
     effects: [
       (
@@ -1041,22 +988,7 @@
               high: 7,
             ),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 6,
-              low: 7,
-              high: 7,
-            ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 6,
-              low: 7,
-              high: 7,
-            ),
-            target: TargetEnemy,
+            times: Fixed(3),
           ),
         ],
         intent: Attack,
@@ -1088,40 +1020,44 @@
         intent: Defend,
       ),
     ],
-    move_order: [
-      Loop([
-        If(
-          condition: HasFriendlies(1),
-          then: [
-            Probability([
-              (
-                weight: 65,
-                name: "Defend",
-                max_repeats: 0,
-              ),
-              (
-                weight: 35,
-                name: "Slash",
-                max_repeats: 0,
-              ),
-            ]),
-          ],
-          _else: [
-            Probability([
-              (
-                weight: 65,
-                name: "Fury",
-                max_repeats: 0,
-              ),
-              (
-                weight: 35,
-                name: "Slash",
-                max_repeats: 0,
-              ),
-            ]),
-          ],
-        ),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(65),
+              name: "Defend",
+              max_repeats: Fixed(0),
+            ),
+            (
+              weight: Fixed(35),
+              name: "Slash",
+              max_repeats: Fixed(0),
+            ),
+          ]),
+          If (
+            condition: HasFriendlies(1),
+            else_phase: "Aggressive"
+          )
+        ],
+      ),
+      (
+        name: "Aggressive",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(65),
+              name: "Fury",
+              max_repeats: Fixed(0),
+            ),
+            (
+              weight: Fixed(35),
+              name: "Slash",
+              max_repeats: Fixed(0),
+            ),
+          ]),
+        ],
+      ),
     ],
   ),
   (
@@ -1144,14 +1080,7 @@
               low: 6,
               high: 6,
             ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 5,
-              low: 6,
-              high: 6,
-            ),
+            times: Fixed(2),
             target: TargetEnemy,
           ),
         ],
@@ -1216,34 +1145,48 @@
         intent: StrongDebuff,
       ),
     ],
-    move_order: [
-      If(
-        condition: Asc(17),
-        _else: [
-          InOrder("Poke"),
+    phases: [
+      (
+        moves: [
+          If(
+            condition: Asc(17),
+            then_phase: "Hex",
+          ),
+          Fixed("Poke")
         ],
+        next: "Hex",
       ),
-      InOrder("Hex"),
-      Loop([
-        Probability([
-          (
-            name: "Debilitate",
-          ),
-          (
-            name: "Drain",
-          ),
-        ]),
-        Probability([
-          (
-            weight: 60,
-            name: "Poke",
-          ),
-          (
-            weight: 40,
-            name: "Zap",
-          ),
-        ]),
-      ]),
+      (
+        name: "Hex",
+        moves: [
+          Fixed("Hex")
+        ],
+        next: "Base",
+      ),
+      (
+        name: "Base",
+        moves: [
+          Probability([
+            (
+              name: "Debilitate",
+            ),
+            (
+              name: "Drain",
+            ),
+          ]),
+          Probability([
+            (
+              weight: Fixed(60),
+              name: "Poke",
+            ),
+            (
+              weight: Fixed(40),
+              name: "Zap",
+            ),
+          ]),
+        ],
+        next: "Base",
+      ),
     ],
   ),
   (
@@ -1309,67 +1252,7 @@
           AttackDamage(
             amount: Fixed(2),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(2),
-            target: TargetEnemy,
-          ),
-          If(
-            condition: Asc(4),
-            then: [
-              AttackDamage(
-                amount: Fixed(2),
-                target: TargetEnemy,
-              ),
-              AttackDamage(
-                amount: Fixed(2),
-                target: TargetEnemy,
-              ),
-              AttackDamage(
-                amount: Fixed(2),
-                target: TargetEnemy,
-              ),
-            ],
+            times: ByAsc(base: 12, low: 15, high: 15,)
           ),
         ],
         intent: Attack,
@@ -1389,36 +1272,168 @@
         intent: Attack,
       ),
       (
-        name: "Buff",
+        name: "Buff_1",
         effects: [
-          Custom,
+          Unbuff("Strength Down"),
+          AddBuff(
+            buff: "Strength",
+            amount: Fixed(2),
+          ),
+          AddBuff(
+            buff: "Artifact",
+            amount: Fixed(2),
+          )
+        ],
+        intent: StrongDebuff,
+      ),
+      (
+        name: "Buff_2",
+        effects: [
+          Unbuff("Strength Down"),
+          AddBuff(
+            buff: "Strength",
+            amount: Fixed(2),
+          ),
+          AddBuff(
+            buff: "Beat of Death",
+          )
+        ],
+        intent: StrongDebuff,
+      ),
+      (
+        name: "Buff_3",
+        effects: [
+          Unbuff("Strength Down"),
+          AddBuff(
+            buff: "Strength",
+            amount: Fixed(2),
+          ),
+          AddBuff(
+            buff: "Painful Stabs",
+          )
+        ],
+        intent: StrongDebuff,
+      ),
+      (
+        name: "Buff_4",
+        effects: [
+          Unbuff("Strength Down"),
+          AddBuff(
+            buff: "Strength",
+            amount: Fixed(12),
+          ),
+        ],
+        intent: StrongDebuff,
+      ),
+      (
+        name: "Buff_5",
+        effects: [
+          Unbuff("Strength Down"),
+          AddBuff(
+            buff: "Strength",
+            amount: Fixed(52),
+          ),
         ],
         intent: StrongDebuff,
       ),
     ],
-    move_order: [
-      InOrder("Debilitate"),
-      Loop([
-        Probability([
-          (
-            name: "Blood Shots",
-          ),
-          (
-            weight: 50,
-            name: "Echo",
-          ),
-        ]),
-        Probability([
-          (
-            name: "Blood Shots",
-          ),
-          (
-            weight: 50,
-            name: "Echo",
-          ),
-        ]),
-        InOrder("Buff"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Debilitate"),
+          Probability([
+            (
+              name: "Blood Shots",
+            ),
+            (
+              name: "Echo",
+            ),
+          ]),
+          Probability([
+            (
+              name: "Blood Shots",
+            ),
+            (
+              name: "Echo",
+            ),
+          ]),
+          Fixed("Buff_1"),
+          Probability([
+            (
+              name: "Blood Shots",
+            ),
+            (
+              name: "Echo",
+            ),
+          ]),
+          Probability([
+            (
+              name: "Blood Shots",
+            ),
+            (
+              name: "Echo",
+            ),
+          ]),
+          Fixed("Buff_2"),
+          Probability([
+            (
+              name: "Blood Shots",
+            ),
+            (
+              name: "Echo",
+            ),
+          ]),
+          Probability([
+            (
+              name: "Blood Shots",
+            ),
+            (
+              name: "Echo",
+            ),
+          ]),
+          Fixed("Buff_3"),
+          Probability([
+            (
+              name: "Blood Shots",
+            ),
+            (
+              name: "Echo",
+            ),
+          ]),
+          Probability([
+            (
+              name: "Blood Shots",
+            ),
+            (
+              name: "Echo",
+            ),
+          ]),
+          Fixed("Buff_4"),
+        ],
+        next: "Loop",
+      ),
+      (
+        name: "Loop",
+        moves: [
+          Probability([
+            (
+              name: "Blood Shots",
+            ),
+            (
+              name: "Echo",
+            ),
+          ]),
+          Probability([
+            (
+              name: "Blood Shots",
+            ),
+            (
+              name: "Echo",
+            ),
+          ]),
+          Fixed("Buff_5"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -1485,11 +1500,19 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      InOrder("Incantation"),
-      Loop([
-        InOrder("Dark Strike"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Incantation"),
+        ],
+        next: "Base",
+      ),
+      (
+        name: "Base",
+        moves: [
+          Fixed("Dark Strike"),
+        ],
+      ),
     ],
   ),
   (
@@ -1529,9 +1552,13 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      InOrder("Stab"),
-      InOrder("Explode"),
+    phases: [
+      (
+        moves: [
+          Fixed("Stab"),
+          Fixed("Explode"),
+        ],
+      ),
     ],
   ),
   (
@@ -1565,14 +1592,7 @@
               high: 9,
             ),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 8,
-              low: 9,
-              high: 9,
-            ),
-            target: TargetEnemy,
+            times: Fixed(2)
           ),
         ],
         intent: Attack,
@@ -1609,55 +1629,57 @@
         intent: Unknown,
       ),
     ],
-    move_order: [
-      Probability([
-        (
-          name: "Nip",
-        ),
-        (
-          name: "Harden",
-        ),
-      ]),
-      Loop([
-        If(
-          condition: InPosition(1),
-          then: [
-            Loop([
-              Probability([
-                (
-                  name: "Nip",
-                  max_repeats: 2,
-                ),
-                (
-                  name: "Harden",
-                ),
-              ]),
-            ]),
-          ],
-          _else: [
-            Loop([
-              Probability([
-                (
-                  weight: 30,
-                  name: "Nip",
-                  max_repeats: 2,
-                ),
-                (
-                  weight: 40,
-                  name: "Chomp",
-                ),
-                (
-                  weight: 30,
-                  name: "Harden",
-                ),
-              ]),
-            ]),
-          ],
-        ),
-        When(OnDie),
-        InOrder("Regrow"),
-        InOrder("Reincarnate"),
-      ]),
+    phases: [
+      (
+        name: "Inner Darkling",
+        moves: [
+          Probability([
+            (
+              name: "Nip",
+              max_repeats: Fixed(2),
+            ),
+            (
+              name: "Harden",
+            ),
+          ]),
+          If(
+            condition: InPosition(1),
+            else_phase: "Outer Darkling",
+          ),
+        ],
+      ),
+      (
+        name: "Outer Darkling",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(30),
+              name: "Nip",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(40),
+              name: "Chomp",
+            ),
+            (
+              weight: Fixed(30),
+              name: "Harden",
+            ),
+          ]),
+        ],
+      ),
+      (
+        when: OnDie,
+        moves: [
+          Fixed("Regrow"),
+          Fixed("Reincarnate"),
+          If(
+            condition: InPosition(1),
+            then_phase: "Inner Darkling",
+            else_phase: "Outer Darkling",
+          ),
+        ],
+      ),
     ],
     n_range: Some((
       min: ByAsc(
@@ -1723,14 +1745,7 @@
               high: 12,
             ),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 10,
-              low: 12,
-              high: 12,
-            ),
-            target: TargetEnemy,
+            times: Fixed(2),
           ),
           CreateCard(
             name: "Dazed",
@@ -1744,11 +1759,13 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Beam"),
-        InOrder("Square Of Protection"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Beam"),
+          Fixed("Square Of Protection"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -1797,25 +1814,20 @@
               low: 12,
               high: 12,
             ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 10,
-              low: 12,
-              high: 12,
-            ),
+            times: Fixed(2),
             target: TargetEnemy,
           ),
         ],
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Circle Of Power"),
-        InOrder("Beam"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Circle Of Power"),
+          Fixed("Beam"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -1866,10 +1878,14 @@
         intent: Unknown,
       ),
     ],
-    move_order: [
-      InOrder("Slam"),
-      InOrder("Slam"),
-      InOrder("Explode"),
+    phases: [
+      (
+        moves: [
+          Fixed("Slam"),
+          Fixed("Slam"),
+          Fixed("Explode"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -1922,10 +1938,12 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Smash"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Smash")
+        ],
+      ),
     ],
   ),
   (
@@ -1964,20 +1982,22 @@
         intent: Buff,
       ),
     ],
-    move_order: [
-      Loop([
-        Probability([
-          (
-            weight: 60,
-            name: "Bite",
-            max_repeats: 2,
-          ),
-          (
-            weight: 40,
-            name: "Grow",
-          ),
-        ]),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(60),
+              name: "Bite",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(40),
+              name: "Grow",
+            ),
+          ]),
+        ],
+      ),
     ],
     effects: [
       (
@@ -2033,55 +2053,61 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Probability([
-        (
-          name: "Count",
-          max_repeats: 2,
-        ),
-        (
-          name: "Glare",
-          max_repeats: 2,
-        ),
-      ]),
-      Probability([
-        (
-          name: "Count",
-          max_repeats: 2,
-        ),
-        (
-          name: "Glare",
-          max_repeats: 2,
-        ),
-      ]),
-      Probability([
-        (
-          name: "Count",
-          max_repeats: 2,
-        ),
-        (
-          name: "Glare",
-          max_repeats: 2,
-        ),
-      ]),
-      If(
-        condition: Asc(18),
-        _else: [
+    phases: [
+      (
+        moves: [
           Probability([
             (
               name: "Count",
-              max_repeats: 2,
+              max_repeats: Fixed(2),
             ),
             (
               name: "Glare",
-              max_repeats: 2,
+              max_repeats: Fixed(2),
+            ),
+          ]),
+          Probability([
+            (
+              name: "Count",
+              max_repeats: Fixed(2),
+            ),
+            (
+              name: "Glare",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+          Probability([
+            (
+              name: "Count",
+              max_repeats: Fixed(2),
+            ),
+            (
+              name: "Glare",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+          If(
+            condition: Asc(18),
+            then_phase: "It Is Time",
+          ),
+          Probability([
+            (
+              name: "Count",
+              max_repeats: Fixed(2),
+            ),
+            (
+              name: "Glare",
+              max_repeats: Fixed(2),
             ),
           ]),
         ],
+        next: "It Is Time",
       ),
-      Loop([
-        InOrder("It Is Time"),
-      ]),
+      (
+        moves: [
+          Fixed("It Is Time"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -2127,39 +2153,23 @@
         intent: Debuff,
       ),
     ],
-    move_order: [
-      Loop([
-        If(
-          condition: Asc(17),
-          then: [
-            Probability([
-              (
-                weight: 25,
-                name: "Spit Web",
-              ),
-              (
-                weight: 75,
-                name: "Bite",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-          _else: [
-            Probability([
-              (
-                weight: 25,
-                name: "Spit Web",
-                max_repeats: 2,
-              ),
-              (
-                weight: 75,
-                name: "Bite",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-        ),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Spit Web",
+              max_repeats: ByAsc(base: 2, low: 2, high: 1,),
+            ),
+            (
+              weight: Fixed(75),
+              name: "Bite",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+        ],
+      ),
     ],
     n_range: Some((
       min: ByAsc(
@@ -2253,70 +2263,86 @@
           AttackDamage(
             amount: Fixed(6),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(6),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(6),
-            target: TargetEnemy,
+            times: Fixed(3),
           ),
         ],
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        If(
-          condition: HasFriendlies(0),
-          then: [
-            Probability([
-              (
-                weight: 75,
-                name: "Rally",
-              ),
-              (
-                weight: 25,
-                name: "Stab",
-              ),
-            ]),
-          ],
-          _else: [
-            If(
-              condition: HasFriendlies(1),
-              then: [
-                Probability([
-                  (
-                    weight: 25,
-                    name: "Rally",
-                  ),
-                  (
-                    weight: 25,
-                    name: "Stab",
-                  ),
-                  (
-                    weight: 15,
-                    name: "Encourage",
-                  ),
-                ]),
-              ],
-              _else: [
-                Probability([
-                  (
-                    weight: 66,
-                    name: "Encourage",
-                  ),
-                  (
-                    weight: 33,
-                    name: "Stab",
-                  ),
-                ]),
-              ],
+    phases: [
+      (
+        name: "0 Allies",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(75),
+              name: "Rally",
             ),
-          ],
-        ),
-      ]),
+            (
+              weight: Fixed(25),
+              name: "Stab",
+            ),
+          ]),
+          If(
+            condition: HasFriendlies(2),
+            then_phase: "2 Allies"
+          ),
+          If(
+            condition: HasFriendlies(1),
+            then_phase: "1 Allies"
+          ),
+        ],
+      ),
+      (
+        name: "1 Allies",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Rally",
+            ),
+            (
+              weight: Fixed(25),
+              name: "Stab",
+            ),
+            (
+              weight: Fixed(15),
+              name: "Encourage",
+            ),
+          ]),
+          If(
+            condition: HasFriendlies(0),
+            then_phase: "0 Allies"
+          ),
+          If(
+            condition: HasFriendlies(2),
+            then_phase: "2 Allies"
+          ),
+        ],
+      ),
+      (
+        name: "2 Allies",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(66),
+              name: "Encourage",
+            ),
+            (
+              weight: Fixed(33),
+              name: "Stab",
+            ),
+          ]),
+          If(
+            condition: HasFriendlies(0),
+            then_phase: "0 Allies"
+          ),
+          If(
+            condition: HasFriendlies(2),
+            else_phase: "1 Allies"
+          ),
+        ],
+      ),
     ],
   ),
   (
@@ -2374,31 +2400,39 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      InOrder("Bellow"),
-      If(
-        condition: Asc(18),
-        then: [
-          Loop([
-            InOrder("Skull Bash"),
-            InOrder("Rush"),
-            InOrder("Rush"),
-          ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Bellow"),
+          If(
+            condition: Asc(18),
+            then_phase: "Ascended",
+            else_phase: "Unascended",
+          )
         ],
-        _else: [
-          Loop([
-            Probability([
-              (
-                weight: 33,
-                name: "Skull Bash",
-                max_repeats: 0,
-              ),
-              (
-                weight: 66,
-                name: "Rush",
-                max_repeats: 2,
-              ),
-            ]),
+      ),
+      (
+        name: "Ascended",
+        moves: [
+          Fixed("Skull Bash"),
+          Fixed("Rush"),
+          Fixed("Rush"),
+        ],
+      ),
+      (
+        name: "Unascended",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(33),
+              name: "Skull Bash",
+              max_repeats: Fixed(0),
+            ),
+            (
+              weight: Fixed(66),
+              name: "Rush",
+              max_repeats: Fixed(2),
+            ),
           ]),
         ],
       ),
@@ -2434,22 +2468,25 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Charging"),
-        InOrder("Charging"),
-        If(
-          condition: Asc(17),
-          then: [
-            Loop([
-              InOrder("Ultimate Blast"),
-            ]),
-          ],
-          _else: [
-            InOrder("Ultimate Blast"),
-          ],
-        ),
-      ]),
+    phases: [
+      (
+        name: "Charging",
+        moves: [
+          Fixed("Charging"),
+          Fixed("Charging"),
+        ],
+        next: "Blast",
+      ),
+      (
+        name: "Blast",
+        moves: [
+          Fixed("Ultimate Blast"),
+          If(
+            condition: Asc(17),
+            else_phase: "Charging"
+          ),
+        ],
+      ),
     ],
   ),
   (
@@ -2466,6 +2503,9 @@
       (
         name: "Activate",
         intent: Unknown,
+        effects: [
+          SetN(Custom),
+        ]
       ),
       (
         name: "Divider",
@@ -2473,26 +2513,7 @@
           AttackDamage(
             amount: N,
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: N,
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: N,
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: N,
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: N,
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: N,
-            target: TargetEnemy,
+            times: Fixed(6),
           ),
         ],
         intent: Attack,
@@ -2507,46 +2528,7 @@
               high: 3,
             ),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 2,
-              low: 3,
-              high: 3,
-            ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 2,
-              low: 3,
-              high: 3,
-            ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 2,
-              low: 3,
-              high: 3,
-            ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 2,
-              low: 3,
-              high: 3,
-            ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 2,
-              low: 3,
-              high: 3,
-            ),
-            target: TargetEnemy,
+            times: Fixed(6),
           ),
           CreateCard(
             name: "Burn",
@@ -2597,14 +2579,7 @@
               high: 6,
             ),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 5,
-              low: 6,
-              high: 6,
-            ),
-            target: TargetEnemy,
+            times: Fixed(2),
           ),
         ],
         intent: AttackDebuff,
@@ -2627,23 +2602,27 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      InOrder("Activate"),
-      InOrder("Divider"),
-      Loop([
-        InOrder("Sear"),
-        InOrder("Tackle"),
-        InOrder("Sear"),
-        InOrder("Inflame"),
-        InOrder("Tackle"),
-        InOrder("Sear"),
-        InOrder("Inferno"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Activate"),
+          Fixed("Divider"),
+        ],
+        next: "Base",
+      ),
+      (
+        name: "Base",
+        moves: [
+          Fixed("Sear"),
+          Fixed("Tackle"),
+          Fixed("Sear"),
+          Fixed("Inflame"),
+          Fixed("Tackle"),
+          Fixed("Sear"),
+          Fixed("Inferno"),
+        ],
+      ),
     ],
-    n_range: Some((
-      min: Custom,
-      max: Custom,
-    )),
   ),
   (
     name: "Jaw Worm",
@@ -2705,30 +2684,35 @@
         intent: DefendBuff,
       ),
     ],
-    move_order: [
-      If(
-        condition: Act(3),
-        _else: [
-          InOrder("Chomp"),
-        ],
+    phases: [
+      (
+        moves: [
+          If(
+            condition: Act(3),
+            then_phase: "Base",
+          ),
+          Fixed("Chomp"),
+        ]
       ),
-      Loop([
-        Probability([
-          (
-            weight: 45,
-            name: "Bellow",
-          ),
-          (
-            weight: 30,
-            name: "Thrash",
-            max_repeats: 2,
-          ),
-          (
-            weight: 25,
-            name: "Chomp",
-          ),
-        ]),
-      ]),
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(45),
+              name: "Bellow",
+            ),
+            (
+              weight: Fixed(30),
+              name: "Thrash",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(25),
+              name: "Chomp",
+            ),
+          ]),
+        ]
+      ),
     ],
     effects: [
       (
@@ -2772,12 +2756,6 @@
       (
         name: "Attack",
         effects: [
-          Unbuff(
-            buff: "Metallicize",
-          ),
-          Unbuff(
-            buff: "Asleep",
-          ),
           AttackDamage(
             amount: ByAsc(
               base: 18,
@@ -2818,36 +2796,49 @@
         intent: Sleep,
       ),
       (
+        name: "Awaken",
+        intent: Sleep,
+        effects: [
+          Unbuff("Metallicize"),
+          Unbuff("Asleep"),
+        ],
+      ),
+      (
         name: "Stunned",
         effects: [
-          Unbuff(
-            buff: "Metallicize",
-          ),
-          Unbuff(
-            buff: "Asleep",
-          ),
+          Unbuff("Metallicize"),
+          Unbuff("Asleep"),
         ],
         intent: Stun,
       ),
     ],
-    move_order: [
-      InOrder("Sleep"),
-      InOrder("Sleep"),
-      InOrder("Sleep"),
-      When(OnHpLoss),
-      If(
-        condition: Buff(
+    phases: [
+      (
+        moves: [
+          Fixed("Sleep"),
+          Fixed("Sleep"),
+          Fixed("Awaken"),
+        ],
+        next: "Core",
+      ),
+      (
+        when: OnHpLoss,
+        when_condition: Buff (
           buff: "Asleep",
         ),
-        _else: [
-          InOrder("Stunned"),
+        moves: [
+          Fixed("Stunned"),
+        ],
+        next: "Core",
+      ),
+      (
+        name: "Core",
+        moves: [
+          Fixed("Attack"),
+          Fixed("Attack"),
+          Fixed("Siphon Soul"),
         ],
       ),
-      Loop([
-        InOrder("Attack"),
-        InOrder("Attack"),
-        InOrder("Siphon Soul"),
-      ]),
     ],
     effects: [
       (
@@ -2927,28 +2918,32 @@
         intent: Escape,
       ),
     ],
-    move_order: [
-      InOrder("Mug"),
-      InOrder("Mug"),
-      Probability([
-        (
-          name: "Lunge",
-        ),
-        (
-          name: "Smoke Bomb",
-        ),
-      ]),
-      Probability([
-        (
-          weight: 0,
-          name: "Escape",
-        ),
-        (
-          weight: 100,
-          name: "Smoke Bomb",
-        ),
-      ]),
-      InOrder("Escape"),
+    phases: [
+      (
+        moves: [
+          Fixed("Mug"),
+          Fixed("Mug"),
+          Probability([
+            (
+              name: "Lunge",
+            ),
+            (
+              name: "Smoke Bomb",
+            ),
+          ]),
+          Probability([
+            (
+              weight: Fixed(0),
+              name: "Escape",
+            ),
+            (
+              weight: Fixed(100),
+              name: "Smoke Bomb",
+            ),
+          ]),
+          Fixed("Escape"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -2992,10 +2987,12 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Scratch"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Scratch"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -3075,24 +3072,28 @@
         intent: Escape,
       ),
     ],
-    move_order: [
-      InOrder("Mug"),
-      InOrder("Mug"),
-      Probability([
-        (
-          name: "Lunge",
-        ),
-        (
-          name: "Smoke Bomb",
-        ),
-      ]),
-      Probability([
-        (
-          weight: 100,
-          name: "Smoke Bomb",
-        ),
-      ]),
-      InOrder("Escape"),
+    phases: [
+      (
+        moves: [
+          Fixed("Mug"),
+          Fixed("Mug"),
+          Probability([
+            (
+              name: "Lunge",
+            ),
+            (
+              name: "Smoke Bomb",
+            ),
+          ]),
+          Probability([
+            (
+              weight: Fixed(100),
+              name: "Smoke Bomb",
+            ),
+          ]),
+          Fixed("Escape"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -3177,47 +3178,39 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      Loop([
-        If(
-          condition: Custom,
-          then: [
-            If(
-              condition: Asc(17),
-              then: [
-                Probability([
-                  (
-                    name: "Heal",
-                    max_repeats: 2,
-                  ),
-                ]),
-              ],
-              _else: [
-                Probability([
-                  (
-                    name: "Heal",
-                    max_repeats: 3,
-                  ),
-                ]),
-              ],
+    phases: [
+      (
+        name: "Core",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(40),
+              name: "Buff",
+              max_repeats: Fixed(2),
             ),
-          ],
-          _else: [
-            Probability([
-              (
-                weight: 40,
-                name: "Buff",
-                max_repeats: 2,
-              ),
-              (
-                weight: 60,
-                name: "Attack Debuff",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-        ),
-      ]),
+            (
+              weight: Fixed(60),
+              name: "Attack Debuff",
+              max_repeats: ByAsc(base: 2, low: 2, high: 1,),
+            ),
+          ]),
+          If(
+            condition: Custom,
+            then_phase: "Heal",
+          )
+        ],
+      ),
+      (
+        name: "Heal",
+        moves: [
+          Fixed("Heal"),
+          If(
+            condition: Not(Custom),
+            then_phase: "Core",
+          ),
+          Fixed("Heal")
+        ],
+      ),
     ],
   ),
   (
@@ -3272,22 +3265,7 @@
               high: 7,
             ),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 6,
-              low: 7,
-              high: 7,
-            ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 6,
-              low: 7,
-              high: 7,
-            ),
-            target: TargetEnemy,
+            times: Fixed(3)
           ),
         ],
         intent: Attack,
@@ -3303,32 +3281,40 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Probability([
-        (
-          name: "Debuff",
-        ),
-        (
-          name: "Attack",
-        ),
-      ]),
-      Loop([
-        Probability([
-          (
-            weight: 35,
-            name: "Debuff",
-          ),
-          (
-            weight: 35,
-            name: "Attack",
-            max_repeats: 2,
-          ),
-          (
-            weight: 30,
-            name: "Scythe",
-          ),
-        ]),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              name: "Debuff",
+            ),
+            (
+              name: "Attack",
+            ),
+          ]),
+        ],
+        next: "Core",
+      ),
+      (
+        name: "Core",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(35),
+              name: "Debuff",
+            ),
+            (
+              weight: Fixed(35),
+              name: "Attack",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(30),
+              name: "Scythe",
+            ),
+          ]),
+        ],
+      ),
     ],
     effects: [
       (
@@ -3395,21 +3381,23 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        Probability([
-          (
-            weight: 60,
-            name: "Laser",
-            max_repeats: 2,
-          ),
-          (
-            weight: 40,
-            name: "Claw",
-            max_repeats: 2,
-          ),
-        ]),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(60),
+              name: "Laser",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(40),
+              name: "Claw",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+        ],
+      ),
     ],
     effects: [
       (
@@ -3448,23 +3436,18 @@
               high: 6,
             ),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 5,
-              low: 6,
-              high: 6,
-            ),
-            target: TargetEnemy,
+            times: Fixed(2),
           ),
         ],
-        intent: Buff,
+        intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Attack"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Attack"),
+        ],
+      ),
     ],
   ),
   (
@@ -3503,39 +3486,23 @@
         intent: Debuff,
       ),
     ],
-    move_order: [
-      Loop([
-        If(
-          condition: Asc(17),
-          then: [
-            Probability([
-              (
-                weight: 25,
-                name: "Grow",
-              ),
-              (
-                weight: 75,
-                name: "Bite",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-          _else: [
-            Probability([
-              (
-                weight: 25,
-                name: "Grow",
-                max_repeats: 2,
-              ),
-              (
-                weight: 75,
-                name: "Bite",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-        ),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Grow",
+              max_repeats: ByAsc(base: 2, low: 2, high: 1,),
+            ),
+            (
+              weight: Fixed(75),
+              name: "Bite",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+        ],
+      ),
     ],
     n_range: Some((
       min: ByAsc(
@@ -3632,81 +3599,97 @@
         intent: Debuff,
       ),
     ],
-    move_order: [
-      InOrder("Stab"),
-      Loop([
-        Probability([
-          (
-            weight: 25,
-            name: "Entangle",
-          ),
-          (
-            weight: 75,
-            name: "Scrape",
-            max_repeats: 2,
-          ),
-        ]),
-        If(
-          condition: Asc(17),
-          _else: [
-            Probability([
-              (
-                weight: 25,
-                name: "Entangle",
-              ),
-              (
-                weight: 75,
-                name: "Scrape",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-        ),
-        Probability([
-          (
-            weight: 25,
-            name: "Entangle",
-          ),
-          (
-            weight: 75,
-            name: "Stab",
-            max_repeats: 2,
-          ),
-        ]),
-      ]),
-      WhenMove("Entangle"),
-      Loop([
-        If(
-          condition: Asc(17),
-          then: [
-            Probability([
-              (
-                weight: 55,
-                name: "Scrape",
-              ),
-              (
-                weight: 45,
-                name: "Stab",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-          _else: [
-            Probability([
-              (
-                weight: 55,
-                name: "Scrape",
-                max_repeats: 2,
-              ),
-              (
-                weight: 45,
-                name: "Stab",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-        ),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Stab"),
+          If (
+            condition: Asc(17),
+            then_phase: "Loop_Ascended",
+            else_phase: "Loop_Unascended",
+          )
+        ],
+      ),
+      (
+        name: "Loop_Unascended",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Entangle",
+            ),
+            (
+              weight: Fixed(75),
+              name: "Scrape",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Entangle",
+            ),
+            (
+              weight: Fixed(75),
+              name: "Scrape",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Entangle",
+            ),
+            (
+              weight: Fixed(75),
+              name: "Stab",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+        ],
+      ),
+      (
+        name: "Loop_Ascended",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Entangle",
+            ),
+            (
+              weight: Fixed(75),
+              name: "Scrape",
+            ),
+          ]),
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Entangle",
+            ),
+            (
+              weight: Fixed(75),
+              name: "Stab",
+            ),
+          ]),
+        ],
+      ),
+      (
+        when: OnMove("Entangle"),
+        moves: [
+          Probability([
+            (
+              weight: Fixed(55),
+              name: "Scrape",
+              max_repeats: ByAsc(base: 2, low: 2, high: 1,),
+            ),
+            (
+              weight: Fixed(45),
+              name: "Stab",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+        ],
+      ),
     ],
   ),
   (
@@ -3745,14 +3728,7 @@
               low: 16,
               high: 16,
             ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 13,
-              low: 16,
-              high: 16,
-            ),
+            times: Fixed(2),
             target: TargetEnemy,
           ),
           AddBuff(
@@ -3777,59 +3753,53 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      InOrder("Summon"),
-      Loop([
-        If(
-          condition: HasFriendlies(3),
-          then: [
-            Probability([
-              (
-                weight: 67,
-                name: "Snake Strike",
-              ),
-              (
-                weight: 33,
-                name: "Big Bite",
-              ),
-            ]),
-          ],
-          _else: [
-            If(
-              condition: HasFriendlies(4),
-              then: [
-                Probability([
-                  (
-                    weight: 67,
-                    name: "Snake Strike",
-                  ),
-                  (
-                    weight: 33,
-                    name: "Big Bite",
-                  ),
-                ]),
-              ],
-              _else: [
-                Probability([
-                  (
-                    weight: 33,
-                    name: "Snake Strike",
-                  ),
-                  (
-                    weight: 33,
-                    name: "Big Bite",
-                  ),
-                  (
-                    weight: 33,
-                    name: "Summon",
-                    max_repeats: 2,
-                  ),
-                ]),
-              ],
+    phases: [
+      (
+        moves: [
+          Fixed("Summon"),
+        ],
+        next: "Core"
+      ),
+      (
+        name: "Core",
+        moves: [
+          Probability([
+            (
+              name: "Snake Strike",
             ),
-          ],
-        ),
-      ]),
+            (
+              name: "Big Bite",
+            ),
+            (
+              name: "Summon",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+          If (
+            condition: HasFriendlies(3),
+            then_phase: "NoSummon"
+          )
+        ],
+      ),
+      (
+        name: "NoSummon",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(67),
+              name: "Snake Strike",
+            ),
+            (
+              weight: Fixed(33),
+              name: "Big Bite",
+            ),
+          ]),
+          If (
+            condition: HasFriendlies(3),
+            else_phase: "Core"
+          )
+        ],
+      ),
     ],
   ),
   (
@@ -3870,20 +3840,22 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      Loop([
-        Probability([
-          (
-            weight: 80,
-            name: "Repulse",
-            max_repeats: 0,
-          ),
-          (
-            weight: 20,
-            name: "Bash",
-          ),
-        ]),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(80),
+              name: "Repulse",
+              max_repeats: Fixed(0),
+            ),
+            (
+              weight: Fixed(20),
+              name: "Bash",
+            ),
+          ]),
+        ],
+      ),
     ],
   ),
   (
@@ -3939,18 +3911,33 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      InOrder("Mock"),
-      Loop([
-        InOrder("Agonizing Slash"),
-        InOrder("Cross Slash"),
-        If(
-          condition: Asc(17),
-          then: [
-            InOrder("Cross Slash"),
-          ],
-        ),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Mock"),
+          If(
+            condition: Asc(17),
+            then_phase: "Core",
+            else_phase: "Core Ascended",
+          ),
+        ],
+        next: "Core",
+      ),
+      (
+        name: "Core",
+        moves: [
+          Fixed("Agonizing Slash"),
+          Fixed("Cross Slash"),
+        ],
+      ),
+      (
+        name: "Core Ascended",
+        moves: [
+          Fixed("Agonizing Slash"),
+          Fixed("Cross Slash"),
+          Fixed("Cross Slash"),
+        ],
+      ),
     ],
   ),
   (
@@ -3998,24 +3985,23 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      If(
-        condition: InPosition(1),
-        then: [
-          InOrder("Beam"),
-        ],
-        _else: [
-          InOrder("Bolt"),
+    phases: [
+      (
+        moves: [
+          If(
+            condition: InPosition(1),
+            else_phase: "Core"
+          ),
+          Fixed("Beam"),
         ],
       ),
-      Probability([
-        (
-          name: "Beam",
-        ),
-        (
-          name: "Bolt",
-        ),
-      ]),
+      (
+        name: "Core",
+        moves: [
+          Fixed("Bolt"),
+          Fixed("Beam"),
+        ],
+      ),
     ],
   ),
   (
@@ -4038,14 +4024,7 @@
               low: 7,
               high: 7,
             ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 6,
-              low: 7,
-              high: 7,
-            ),
+            times: Fixed(2),
             target: TargetEnemy,
           ),
         ],
@@ -4082,45 +4061,59 @@
         intent: Stun,
       ),
     ],
-    move_order: [
-      If(
-        condition: Asc(17),
-        then: [
-          InOrder("Fell"),
-        ],
-        _else: [
+    phases: [
+      (
+        moves: [
+          If(
+            condition: Asc(17),
+            then_phase: "Ascended_Start",
+          ),
           Probability([
             (
               name: "Suck",
             ),
             (
               name: "Double Strike",
+            ),
+          ]),
+        ],
+        next: "Core",
+      ),
+      (
+        name: "Ascended_Start",
+        moves: [
+          Fixed("Fell")
+        ],
+        next: "Core",
+      ),
+      (
+        name: "Core",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(40),
+              name: "Double Strike",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(40),
+              name: "Suck",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(20),
+              name: "Fell",
             ),
           ]),
         ],
       ),
-      Loop([
-        Loop([
-          Probability([
-            (
-              weight: 40,
-              name: "Double Strike",
-              max_repeats: 2,
-            ),
-            (
-              weight: 40,
-              name: "Suck",
-              max_repeats: 2,
-            ),
-            (
-              weight: 20,
-              name: "Fell",
-            ),
-          ]),
-        ]),
-        WhenLoseBuff("Plated Armor"),
-        InOrder("Stunned"),
-      ]),
+      (
+        when: OnLoseBuff("Plated Armor"),
+        moves: [
+          Fixed("Stunned"),
+        ],
+        next: "Core",
+      ),
     ],
     effects: [
       (
@@ -4174,18 +4167,27 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        If(
-          condition: HasFriendlies(0),
-          then: [
-            InOrder("Shield Bash"),
-          ],
-          _else: [
-            InOrder("Protect"),
-          ],
-        ),
-      ]),
+    phases: [
+      (
+        name: "Protect",
+        moves: [
+          Fixed("Protect"),
+          If(
+            condition: HasFriendlies(0),
+            then_phase: "Shield Bash",
+          ),
+        ],
+      ),
+      (
+        name: "Shield Bash",
+        moves: [
+          Fixed("Shield Bash"),
+          If(
+            condition: HasFriendlies(0),
+            else_phase: "Protect",
+          ),
+        ],
+      ),
     ],
   ),
   (
@@ -4244,14 +4246,20 @@
         intent: Unknown,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Goop Spray"),
-        InOrder("Preparing"),
-        InOrder("Slam"),
-      ]),
-      When(OnHalfHp),
-      InOrder("Split"),
+    phases: [
+      (
+        moves: [
+          Fixed("Goop Spray"),
+          Fixed("Preparing"),
+          Fixed("Slam"),
+        ],
+      ),
+      (
+        when: OnHalfHp,
+        moves: [
+          Fixed("Split"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -4285,22 +4293,7 @@
               high: 8,
             ),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 7,
-              low: 8,
-              high: 8,
-            ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 7,
-              low: 8,
-              high: 8,
-            ),
-            target: TargetEnemy,
+            times: Fixed(3),
           ),
         ],
         intent: StrongDebuff,
@@ -4322,30 +4315,29 @@
         intent: Unknown,
       ),
     ],
-    move_order: [
-      Loop([
-        Probability([
-          (
-            weight: 65,
-            name: "Chomp",
-            max_repeats: 2,
-          ),
-          (
-            weight: 35,
-            name: "Enfeebling Spores",
-          ),
-        ]),
-      ]),
-      If(
-        condition: Asc(17),
-        then: [
-          AfterMove([
-            ("Enfeebling Spores", Loop([
-              InOrder("Chomp"),
-              InOrder("Chomp"),
-              InOrder("Enfeebling Spores"),
-            ])),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(65),
+              name: "Chomp",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(35),
+              name: "Enfeebling Spores",
+            ),
           ]),
+        ],
+      ),
+      (
+        when: OnMove("Enfeebling Spores"),
+        when_condition: Asc(17),
+        moves: [
+          Fixed("Chomp"),
+          Fixed("Chomp"),
+          Fixed("Enfeebling Spores"),
         ],
       ),
     ],
@@ -4387,10 +4379,12 @@
         intent: StrongDebuff,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Puncture"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Puncture"),
+        ],
+      ),
     ],
   ),
   (
@@ -4458,22 +4452,30 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      InOrder("Perplexing Glare"),
-      Loop([
-        Probability([
-          (
-            weight: 60,
-            name: "Bite",
-            max_repeats: 2,
-          ),
-          (
-            weight: 40,
-            name: "Tail Whip",
-            max_repeats: 0,
-          ),
-        ]),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Perplexing Glare"),
+        ],
+        next: "Core",
+      ),
+      (
+        name: "Core",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(60),
+              name: "Bite",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(40),
+              name: "Tail Whip",
+              max_repeats: Fixed(0),
+            ),
+          ]),
+        ],
+      ),
     ],
   ),
   (
@@ -4563,13 +4565,20 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      InOrder("Activate"),
-      InOrder("Attack Debuff"),
-      Loop([
-        InOrder("Slam"),
-        InOrder("Harden"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Activate"),
+          Fixed("Attack Debuff"),
+        ],
+        next: "Core",
+      ),
+      (
+        moves: [
+          Fixed("Slam"),
+          Fixed("Harden"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -4646,41 +4655,29 @@
         intent: Unknown,
       ),
     ],
-    move_order: [
-      Loop([
-        If(
-          condition: Asc(17),
-          then: [
-            Probability([
-              (
-                weight: 70,
-                name: "Lick",
-              ),
-              (
-                weight: 30,
-                name: "Flame Tackle",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-          _else: [
-            Probability([
-              (
-                weight: 70,
-                name: "Lick",
-                max_repeats: 2,
-              ),
-              (
-                weight: 30,
-                name: "Flame Tackle",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-        ),
-      ]),
-      When(OnHalfHp),
-      InOrder("Split"),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(70),
+              name: "Lick",
+              max_repeats: ByAsc(base: 2, low: 2, high: 1,),
+            ),
+            (
+              weight: Fixed(30),
+              name: "Flame Tackle",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+        ],
+      ),
+      (
+        when: OnHalfHp,
+        moves: [
+          Fixed("Split"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -4733,39 +4730,23 @@
         intent: Debuff,
       ),
     ],
-    move_order: [
-      Loop([
-        If(
-          condition: Asc(17),
-          then: [
-            Probability([
-              (
-                weight: 70,
-                name: "Lick",
-              ),
-              (
-                weight: 30,
-                name: "Flame Tackle",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-          _else: [
-            Probability([
-              (
-                weight: 70,
-                name: "Lick",
-                max_repeats: 2,
-              ),
-              (
-                weight: 30,
-                name: "Flame Tackle",
-                max_repeats: 2,
-              ),
-            ]),
-          ],
-        ),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              weight: Fixed(70),
+              name: "Lick",
+              max_repeats: ByAsc(base: 2, low: 2, high: 1,),
+            ),
+            (
+              weight: Fixed(30),
+              name: "Flame Tackle",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+        ],
+      ),
     ],
   ),
   (
@@ -4794,10 +4775,12 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Tackle"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Tackle"),
+        ],
+      ),
     ],
   ),
   (
@@ -4836,33 +4819,37 @@
         intent: Buff,
       ),
     ],
-    move_order: [
-      Loop([
-        If(
-          condition: BuffX(
-            buff: "Thorns",
-            amount: ByAsc(
-              base: 15,
-              low: 16,
-              high: 19,
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              name: "Cut",
             ),
+            (
+              name: "Spike",
+              max_repeats: Fixed(0),
+            ),
+          ]),
+          If (
+            condition: BuffX(
+              buff: "Thorns",
+              amount: ByAsc(
+                base: 15,
+                low: 16,
+                high: 19,
+              ),
+            ),
+            then_phase: "Cut"
           ),
-          then: [
-            InOrder("Cut"),
-          ],
-          _else: [
-            Probability([
-              (
-                name: "Cut",
-              ),
-              (
-                name: "Spike",
-                max_repeats: 0,
-              ),
-            ]),
-          ],
-        ),
-      ]),
+        ],
+      ),
+      (
+        name: "Cut",
+        moves: [
+          Fixed("Cut")
+        ],
+      ),
     ],
     effects: [
       (
@@ -4948,72 +4935,78 @@
         intent: AttackDefend,
       ),
     ],
-    move_order: [
-      If(
-        condition: Asc(17),
-        then: [
-          InOrder("Constrict"),
-          Loop([
-            Probability([
-              (
-                name: "Quick Tackle",
-                max_repeats: 2,
-              ),
-              (
-                name: "Smash",
-                max_repeats: 2,
-              ),
-            ]),
-            If(
+    phases: [
+      (
+        moves: [
+          If(
+            condition: Asc(17),
+            then_phase: "Constrict_Ascended",
+            else_phase: "Constrict_Unascended",
+          )
+        ],
+      ),
+      (
+        name: "Constrict_Ascended",
+        moves: [
+          Fixed("Constrict")
+        ],
+        next: "Attack_Ascended"
+      ),
+      (
+        name: "Attack_Ascended",
+        moves: [
+          Probability([
+            (
+              name: "Quick Tackle",
+              max_repeats: Fixed(2),
+            ),
+            (
+              name: "Smash",
+              max_repeats: Fixed(2),
+            ),
+          ]),
+          If (
               condition: Buff(
                 buff: "Constricted",
                 target: Player,
               ),
-              _else: [
-                InOrder("Constrict"),
-              ],
+            else_phase: "Constrict_Ascended"
+          )
+        ]
+      ),
+      (
+        name: "Constrict_Unascended",
+        moves: [
+          Probability([
+            (
+              name: "Constrict",
+            ),
+            (
+              name: "Smash",
             ),
           ]),
         ],
-        _else: [
-          Loop([
-            AfterMove([
-              ("Constrict", Probability([
-                (
-                  name: "Quick Tackle",
-                ),
-                (
-                  name: "Smash",
-                ),
-              ])),
-            ]),
-            If(
+      ),
+      (
+        name: "Attack_Unascended",
+        when: OnMove("Constrict"),
+        when_condition: Not(Asc(17)),
+        moves: [
+          Probability([
+            (
+              name: "Quick Tackle",
+            ),
+            (
+              name: "Smash",
+            ),
+          ]),
+          If (
               condition: Buff(
                 buff: "Constricted",
                 target: Player,
               ),
-              then: [
-                Probability([
-                  (
-                    name: "Quick Tackle",
-                  ),
-                  (
-                    name: "Smash",
-                  ),
-                ]),
-              ],
-              _else: [
-                Probability([
-                  (
-                    name: "Constrict",
-                  ),
-                  (
-                    name: "Smash",
-                  ),
-                ]),
-              ],
-            ),
-          ]),
+            else_phase: "Constrict_Unascended"
+          )
         ],
       ),
     ],
@@ -5078,26 +5071,28 @@
         intent: Buff,
       ),
     ],
-    move_order: [
-      Loop([
-        Probability([
-          (
-            name: "Bash",
-          ),
-          (
-            name: "Fortify",
-          ),
-        ]),
-        Probability([
-          (
-            name: "Bash",
-          ),
-          (
-            name: "Fortify",
-          ),
-        ]),
-        InOrder("Smash"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Probability([
+            (
+              name: "Bash",
+            ),
+            (
+              name: "Fortify",
+            ),
+          ]),
+          Probability([
+            (
+              name: "Bash",
+            ),
+            (
+              name: "Fortify",
+            ),
+          ]),
+          Fixed("Smash"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -5171,23 +5166,7 @@
           AttackDamage(
             amount: Fixed(10),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(10),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(10),
-            target: TargetEnemy,
-          ),
-          If(
-            condition: Asc(3),
-            then: [
-              AttackDamage(
-                amount: Fixed(10),
-                target: TargetEnemy,
-              ),
-            ],
+            times: ByAsc(base: 3, low: 4, high: 4,),
           ),
         ],
         intent: Attack,
@@ -5204,27 +5183,35 @@
         intent: Buff,
       ),
     ],
-    move_order: [
-      InOrder("Burn Strike"),
-      Loop([
-        InOrder("Skewer"),
-        Probability([
-          (
-            name: "Burn Strike",
-          ),
-          (
-            name: "Piercer",
-          ),
-        ]),
-        Probability([
-          (
-            name: "Burn Strike",
-          ),
-          (
-            name: "Piercer",
-          ),
-        ]),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Burn Strike"),
+        ],
+        next: "Core",
+      ),
+      (
+        name: "Core",
+        moves: [
+          Fixed("Skewer"),
+          Probability([
+            (
+              name: "Burn Strike",
+            ),
+            (
+              name: "Piercer",
+            ),
+          ]),
+          Probability([
+            (
+              name: "Burn Strike",
+            ),
+            (
+              name: "Piercer",
+            ),
+          ]),
+        ],
+      ),
     ],
     effects: [
       (
@@ -5285,10 +5272,12 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Taskmaster"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Taskmaster"),
+        ],
+      ),
     ],
   ),
   (
@@ -5342,6 +5331,7 @@
               ),
             ],
           ),
+          AddN(Fixed(1)),
         ],
         intent: AttackDebuff,
       ),
@@ -5366,6 +5356,7 @@
             amount: Fixed(2),
             target: TargetEnemy,
           ),
+          AddN(Fixed(1)),
         ],
         intent: AttackDebuff,
       ),
@@ -5382,6 +5373,7 @@
             amount: Fixed(2),
             target: TargetEnemy,
           ),
+          SetN(Fixed(0)),
         ],
         intent: Debuff,
       ),
@@ -5396,6 +5388,7 @@
             ),
             target: TargetEnemy,
           ),
+          AddN(Fixed(1)),
         ],
         intent: Attack,
       ),
@@ -5410,6 +5403,7 @@
               high: 4,
             ),
           ),
+          AddN(Fixed(1)),
         ],
         intent: Buff,
       ),
@@ -5419,18 +5413,16 @@
           AttackDamage(
             amount: Fixed(10),
             target: TargetEnemy,
+            times: Fixed(2),
           ),
-          AttackDamage(
-            amount: Fixed(10),
-            target: TargetEnemy,
-          ),
+          SetN(Fixed(0)),
         ],
         intent: Attack,
       ),
       (
         name: "Anger",
         effects: [
-          RemoveDebuffs(),
+          RemoveDebuffs,
           AddBuff(
             buff: "Strength",
             amount: ByAsc(
@@ -5439,895 +5431,276 @@
               high: 12,
             ),
           ),
+          SetX(Fixed(1)),
         ],
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      If(
-        condition: Asc(19),
-        then: [
+    phases: [
+      (
+        name: "Core",
+        moves: [
+          If (
+            condition: MultipleAnd([
+              Equals(X, Fixed(1)),
+              Equals(N, Fixed(2))
+            ]),
+            then_phase: "Execute",
+          ),
+          If (
+            condition: MultipleAnd([
+              Equals(X, Fixed(0)),
+              Equals(N, Fixed(3))
+            ]),
+            then_phase: "Taunt",
+          ),
+          If (
+            condition: BuffX(
+              buff: "Metallicize",
+              amount: Fixed(10),
+            ),
+            then_phase: "No Defensive"
+          ),
           Probability([
             (
-              weight: 30,
+              weight: ByAsc(base: 15, low: 15, high: 30,),
               name: "Defensive Stance",
             ),
             (
-              weight: 25,
-              name: "Face Slap",
-            ),
-            (
-              weight: 45,
-              name: "Heavy Slash",
-            ),
-          ]),
-        ],
-        _else: [
-          Probability([
-            (
-              weight: 15,
-              name: "Defensive Stance",
-            ),
-            (
-              weight: 15,
+              weight: ByAsc(base: 15, low: 15, high: 0,),
               name: "Gloat",
             ),
             (
-              weight: 25,
+              weight: Fixed(25),
               name: "Face Slap",
             ),
             (
-              weight: 45,
+              weight: Fixed(45),
               name: "Heavy Slash",
             ),
           ]),
         ],
       ),
-      Loop([
-        If(
-          condition: HalfHp,
-          then: [
-            InOrder("Anger"),
-            Loop([
-              InOrder("Execute"),
-              If(
-                condition: BuffX(
-                  buff: "Metallicize",
-                  amount: Fixed(10),
-                ),
-                then: [
-                  Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ]),
-                  AfterMove([
-                    ("Gloat", Probability([
-                      (
-                        weight: 55,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Face Slap", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Heavy Slash", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Face Slap",
-                      ),
-                    ])),
-                  ]),
-                ],
-                _else: [
-                  Probability([
-                    (
-                      weight: 15,
-                      name: "Defensive Stance",
-                    ),
-                    (
-                      weight: 15,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ]),
-                  AfterMove([
-                    ("Defensive Stance", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 25,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Gloat", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 40,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Face Slap", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 15,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Heavy Slash", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 15,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Face Slap",
-                      ),
-                    ])),
-                  ]),
-                ],
-              ),
+      (
+        name: "No Defensive",
+        when: OnMove("Defensive Stance"),
+        moves: [
+          If (
+            condition: MultipleAnd([
+              Equals(X, Fixed(1)),
+              Equals(N, Fixed(2))
             ]),
-          ],
-          _else: [
-            If(
-              condition: BuffX(
-                buff: "Metallicize",
-                amount: Fixed(10),
-              ),
-              then: [
-                AfterMove([
-                  ("Defensive Stance", Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Gloat", Probability([
-                    (
-                      weight: 55,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Face Slap", Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 70,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Heavy Slash", Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 70,
-                      name: "Face Slap",
-                    ),
-                  ])),
-                ]),
-              ],
-              _else: [
-                AfterMove([
-                  ("Defensive Stance", Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Gloat", Probability([
-                    (
-                      weight: 15,
-                      name: "Defensive Stance",
-                    ),
-                    (
-                      weight: 40,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Face Slap", Probability([
-                    (
-                      weight: 15,
-                      name: "Defensive Stance",
-                    ),
-                    (
-                      weight: 15,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 70,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Heavy Slash", Probability([
-                    (
-                      weight: 15,
-                      name: "Defensive Stance",
-                    ),
-                    (
-                      weight: 15,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 70,
-                      name: "Face Slap",
-                    ),
-                  ])),
-                ]),
-              ],
+            then_phase: "Execute",
+          ),
+          If (
+            condition: MultipleAnd([
+              Equals(X, Fixed(0)),
+              Equals(N, Fixed(3))
+            ]),
+            then_phase: "Taunt",
+          ),
+          Probability([
+            (
+              weight: Fixed(30),
+              name: "Gloat",
             ),
-          ],
-        ),
-        If(
-          condition: HalfHp,
-          then: [
-            InOrder("Anger"),
-            Loop([
-              InOrder("Execute"),
-              If(
-                condition: BuffX(
-                  buff: "Metallicize",
-                  amount: Fixed(10),
-                ),
-                then: [
-                  Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ]),
-                  AfterMove([
-                    ("Gloat", Probability([
-                      (
-                        weight: 55,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Face Slap", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Heavy Slash", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Face Slap",
-                      ),
-                    ])),
-                  ]),
-                ],
-                _else: [
-                  Probability([
-                    (
-                      weight: 15,
-                      name: "Defensive Stance",
-                    ),
-                    (
-                      weight: 15,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ]),
-                  AfterMove([
-                    ("Defensive Stance", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 25,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Gloat", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 40,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Face Slap", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 15,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Heavy Slash", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 15,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Face Slap",
-                      ),
-                    ])),
-                  ]),
-                ],
-              ),
-            ]),
-          ],
-          _else: [
-            If(
-              condition: BuffX(
-                buff: "Metallicize",
-                amount: Fixed(10),
-              ),
-              then: [
-                AfterMove([
-                  ("Defensive Stance", Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Gloat", Probability([
-                    (
-                      weight: 55,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Face Slap", Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 70,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Heavy Slash", Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 70,
-                      name: "Face Slap",
-                    ),
-                  ])),
-                ]),
-              ],
-              _else: [
-                AfterMove([
-                  ("Defensive Stance", Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Gloat", Probability([
-                    (
-                      weight: 15,
-                      name: "Defensive Stance",
-                    ),
-                    (
-                      weight: 40,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Face Slap", Probability([
-                    (
-                      weight: 15,
-                      name: "Defensive Stance",
-                    ),
-                    (
-                      weight: 15,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 70,
-                      name: "Heavy Slash",
-                    ),
-                  ])),
-                  ("Heavy Slash", Probability([
-                    (
-                      weight: 15,
-                      name: "Defensive Stance",
-                    ),
-                    (
-                      weight: 15,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 70,
-                      name: "Face Slap",
-                    ),
-                  ])),
-                ]),
-              ],
+            (
+              weight: Fixed(25),
+              name: "Face Slap",
             ),
-          ],
-        ),
-        If(
-          condition: HalfHp,
-          then: [
-            InOrder("Anger"),
-            Loop([
-              InOrder("Execute"),
-              If(
-                condition: BuffX(
-                  buff: "Metallicize",
-                  amount: Fixed(10),
-                ),
-                then: [
-                  Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ]),
-                  AfterMove([
-                    ("Gloat", Probability([
-                      (
-                        weight: 55,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Face Slap", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Heavy Slash", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Face Slap",
-                      ),
-                    ])),
-                  ]),
-                ],
-                _else: [
-                  Probability([
-                    (
-                      weight: 15,
-                      name: "Defensive Stance",
-                    ),
-                    (
-                      weight: 15,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ]),
-                  AfterMove([
-                    ("Defensive Stance", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 25,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Gloat", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 40,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Face Slap", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 15,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Heavy Slash", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 15,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Face Slap",
-                      ),
-                    ])),
-                  ]),
-                ],
-              ),
-            ]),
-          ],
-          _else: [
-            InOrder("Taunt"),
-          ],
-        ),
-        If(
-          condition: HalfHp,
-          then: [
-            InOrder("Anger"),
-            Loop([
-              InOrder("Execute"),
-              If(
-                condition: BuffX(
-                  buff: "Metallicize",
-                  amount: Fixed(10),
-                ),
-                then: [
-                  Probability([
-                    (
-                      weight: 30,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ]),
-                  AfterMove([
-                    ("Gloat", Probability([
-                      (
-                        weight: 55,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Face Slap", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Heavy Slash", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Face Slap",
-                      ),
-                    ])),
-                  ]),
-                ],
-                _else: [
-                  Probability([
-                    (
-                      weight: 15,
-                      name: "Defensive Stance",
-                    ),
-                    (
-                      weight: 15,
-                      name: "Gloat",
-                    ),
-                    (
-                      weight: 25,
-                      name: "Face Slap",
-                    ),
-                    (
-                      weight: 45,
-                      name: "Heavy Slash",
-                    ),
-                  ]),
-                  AfterMove([
-                    ("Defensive Stance", Probability([
-                      (
-                        weight: 30,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 25,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Gloat", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 40,
-                        name: "Face Slap",
-                      ),
-                      (
-                        weight: 45,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Face Slap", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 15,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Heavy Slash",
-                      ),
-                    ])),
-                    ("Heavy Slash", Probability([
-                      (
-                        weight: 15,
-                        name: "Defensive Stance",
-                      ),
-                      (
-                        weight: 15,
-                        name: "Gloat",
-                      ),
-                      (
-                        weight: 70,
-                        name: "Face Slap",
-                      ),
-                    ])),
-                  ]),
-                ],
-              ),
-            ]),
-          ],
-          _else: [
-            If(
-              condition: BuffX(
-                buff: "Metallicize",
-                amount: Fixed(10),
-              ),
-              then: [
-                Probability([
-                  (
-                    weight: 30,
-                    name: "Gloat",
-                  ),
-                  (
-                    weight: 25,
-                    name: "Face Slap",
-                  ),
-                  (
-                    weight: 45,
-                    name: "Heavy Slash",
-                  ),
-                ]),
-              ],
-              _else: [
-                Probability([
-                  (
-                    weight: 15,
-                    name: "Gloat",
-                  ),
-                  (
-                    weight: 15,
-                    name: "Defensive Stance",
-                  ),
-                  (
-                    weight: 25,
-                    name: "Face Slap",
-                  ),
-                  (
-                    weight: 45,
-                    name: "Heavy Slash",
-                  ),
-                ]),
-              ],
+            (
+              weight: Fixed(45),
+              name: "Heavy Slash",
             ),
-          ],
-        ),
-      ]),
+          ]),
+        ],
+      ),
+      (
+        when: OnMove("Gloat"),
+        moves: [
+          If (
+            condition: MultipleAnd([
+              Equals(X, Fixed(1)),
+              Equals(N, Fixed(2))
+            ]),
+            then_phase: "Execute",
+          ),
+          If (
+            condition: MultipleAnd([
+              Equals(X, Fixed(0)),
+              Equals(N, Fixed(3))
+            ]),
+            then_phase: "Taunt",
+          ),
+          If (
+            condition: BuffX(
+              buff: "Metallicize",
+              amount: Fixed(10),
+            ),
+            then_phase: "No Gloat/Defensive"
+          ),
+          Probability([
+            (
+              weight: Fixed(15),
+              name: "Defensive Stance",
+            ),
+            (
+              weight: Fixed(40),
+              name: "Face Slap",
+            ),
+            (
+              weight: Fixed(45),
+              name: "Heavy Slash",
+            ),
+          ]),
+        ],
+      ),
+      (
+        name: "No Gloat/Defensive",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(55),
+              name: "Face Slap",
+            ),
+            (
+              weight: Fixed(45),
+              name: "Heavy Slash",
+            ),
+          ]),
+        ],
+      ),
+      (
+        when: OnMove("Face Slap"),
+        moves: [
+          If (
+            condition: MultipleAnd([
+              Equals(X, Fixed(1)),
+              Equals(N, Fixed(2))
+            ]),
+            then_phase: "Execute",
+          ),
+          If (
+            condition: MultipleAnd([
+              Equals(X, Fixed(0)),
+              Equals(N, Fixed(3))
+            ]),
+            then_phase: "Taunt",
+          ),
+          If (
+            condition: BuffX(
+              buff: "Metallicize",
+              amount: Fixed(10),
+            ),
+            then_phase: "No Defensive/Face Slap"
+          ),
+          Probability([
+            (
+              weight: Fixed(15),
+              name: "Defensive Stance",
+            ),
+            (
+              weight: Fixed(15),
+              name: "Gloat",
+            ),
+            (
+              weight: Fixed(70),
+              name: "Heavy Slash",
+            ),
+          ]),
+        ],
+      ),
+      (
+        name: "No Defensive/Face Slap",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(30),
+              name: "Gloat",
+            ),
+            (
+              weight: Fixed(70),
+              name: "Heavy Slash",
+            ),
+          ]),
+        ],
+      ),
+      (
+        when: OnMove("Heavy Slash"),
+        moves: [
+          If (
+            condition: MultipleAnd([
+              Equals(X, Fixed(1)),
+              Equals(N, Fixed(2))
+            ]),
+            then_phase: "Execute",
+          ),
+          If (
+            condition: MultipleAnd([
+              Equals(X, Fixed(0)),
+              Equals(N, Fixed(3))
+            ]),
+            then_phase: "Taunt",
+          ),
+          If (
+            condition: BuffX(
+              buff: "Metallicize",
+              amount: Fixed(10),
+            ),
+            then_phase: "No Defensive/Heavy Slash"
+          ),
+          Probability([
+            (
+              weight: Fixed(15),
+              name: "Defensive Stance",
+            ),
+            (
+              weight: Fixed(15),
+              name: "Gloat",
+            ),
+            (
+              weight: Fixed(70),
+              name: "Face Slap",
+            ),
+          ]),
+        ],
+      ),
+      (
+        name: "No Defensive/Heavy Slash",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(30),
+              name: "Gloat",
+            ),
+            (
+              weight: Fixed(70),
+              name: "Face Slap",
+            ),
+          ]),
+        ],
+      ),
+      (
+        name: "Execute",
+        moves: [
+          Fixed("Execute"),
+        ],
+        next: "Core",
+      ),
+      (
+        name: "Taunt",
+        moves: [
+          Fixed("Taunt"),
+        ],
+        next: "Core",
+      ), 
+      (
+        name: "Anger",
+        moves: [
+          Fixed("Anger"),
+        ],
+        next: "Execute",
+      ),     
     ],
   ),
   (
@@ -6435,92 +5808,109 @@
         intent: Unknown,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Spawn"),
-        Probability([
-          (
-            weight: 70,
-            name: "Fireball",
-          ),
-          (
-            weight: 30,
-            name: "Buff",
-          ),
-        ]),
-        If(
-          condition: HasFriendlies(2),
-          then: [
-            Probability([
-              (
-                weight: 70,
-                name: "Fireball",
-                max_repeats: 0,
-              ),
-              (
-                weight: 30,
-                name: "Buff",
-                max_repeats: 0,
-              ),
-            ]),
-          ],
-          _else: [
-            Probability([
-              (
-                weight: 25,
-                name: "Spawn",
-                max_repeats: 0,
-              ),
-              (
-                weight: 45,
-                name: "Fireball",
-                max_repeats: 2,
-              ),
-              (
-                weight: 30,
-                name: "Buff",
-              ),
-            ]),
-          ],
-        ),
-        InOrder("Mega Debuff"),
-        Loop([
+    phases: [
+      (
+        moves: [
+          Fixed("Spawn"),
+          Probability([
+            (
+              weight: Fixed(70),
+              name: "Fireball",
+            ),
+            (
+              weight: Fixed(30),
+              name: "Buff",
+            ),
+          ]),
           If(
             condition: HasFriendlies(2),
-            then: [
-              Probability([
-                (
-                  weight: 70,
-                  name: "Fireball",
-                  max_repeats: 2,
-                ),
-                (
-                  weight: 30,
-                  name: "Buff",
-                ),
-              ]),
-            ],
-            _else: [
-              Probability([
-                (
-                  weight: 25,
-                  name: "Spawn",
-                  max_repeats: 0,
-                ),
-                (
-                  weight: 45,
-                  name: "Fireball",
-                  max_repeats: 2,
-                ),
-                (
-                  weight: 30,
-                  name: "Buff",
-                ),
-              ]),
-            ],
+            else_phase: "Turn 3 Spawn",
           ),
-        ]),
-      ]),
+          Probability([
+            (
+              weight: Fixed(70),
+              name: "Fireball",
+            ),
+            (
+              weight: Fixed(30),
+              name: "Buff",
+            ),
+          ]),
+          Fixed("Mega Debuff"),
+        ],
+      ),
+      (
+        name: "Turn 3 Spawn",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Spawn",
+              max_repeats: Fixed(0),
+            ),
+            (
+              weight: Fixed(45),
+              name: "Fireball",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(30),
+              name: "Buff",
+            ),
+          ]),
+          Fixed("Mega Debuff"),
+        ],
+      ),
+      (
+        name: "Core",
+        moves: [
+          If(
+            condition: HasFriendlies(2),
+            else_phase: "Spawn",
+          ),
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Spawn",
+              max_repeats: Fixed(0),
+            ),
+            (
+              weight: Fixed(45),
+              name: "Fireball",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(30),
+              name: "Buff",
+            ),
+          ]),
+        ],
+      ),
+      (
+        name: "Spawn",
+        moves: [
+          If(
+            condition: HasFriendlies(2),
+            then_phase: "Core",
+          ),
+          Probability([
+            (
+              weight: Fixed(25),
+              name: "Spawn",
+              max_repeats: Fixed(0),
+            ),
+            (
+              weight: Fixed(45),
+              name: "Fireball",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(30),
+              name: "Buff",
+            ),
+          ]),
+        ],
+      ),
     ],
   ),
   (
@@ -6579,18 +5969,7 @@
           AttackDamage(
             amount: Fixed(5),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(5),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(5),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: Fixed(5),
-            target: TargetEnemy,
+            times: Fixed(4),
           ),
         ],
         intent: AttackDebuff,
@@ -6630,35 +6009,45 @@
           AttackDamage(
             amount: Fixed(8),
             target: TargetEnemy,
+            times: Fixed(2),
           ),
-          AttackDamage(
-            amount: Fixed(8),
-            target: TargetEnemy,
-          ),
-          Unbuff(
-            buff: "Sharp Hide",
+          Unbuff("Sharp Hide"),
+          AddN(Fixed(10)),
+          AddBuff(
+            buff: "Mode Shift",
+            amount: Sum([
+              ByAsc(
+                base: 30,
+                low: 35,
+                high: 40,
+              ),
+              N,
+            ])
           ),
         ],
         intent: StrongDebuff,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Charging Up"),
-        InOrder("Fierce Bash"),
-        InOrder("Vent Steam"),
-        InOrder("Whirlwind"),
-      ]),
-      WhenLoseBuff("Mode Shift"),
-      InOrder("Defensive Mode"),
-      InOrder("Roll Attack"),
-      InOrder("Twin Slam"),
-      Loop([
-        InOrder("Charging Up"),
-        InOrder("Fierce Bash"),
-        InOrder("Vent Steam"),
-        InOrder("Whirlwind"),
-      ]),
+    phases: [
+      (
+        name: "Core",
+        moves: [
+          Fixed("Charging Up"),
+          Fixed("Fierce Bash"),
+          Fixed("Vent Steam"),
+          Fixed("Whirlwind"),
+        ],
+      ),
+      (
+        when: OnLoseBuff("Mode Shift"),
+        moves: [
+          Fixed("Defensive Mode"),
+          Fixed("Roll Attack"),
+          Fixed("Twin Slam"),
+          Fixed("Whirlwind"),
+        ],
+        next: "Core",
+      )
     ],
     effects: [
       (
@@ -6750,24 +6139,36 @@
         intent: AttackDebuff,
       ),
     ],
-    move_order: [
-      InOrder("Roar"),
-      Loop([
-        AfterMove([
-          ("Nom", InOrder("Drool")),
-        ]),
-        Probability([
-          (
-            name: "Drool",
-          ),
-          (
-            name: "Slam",
-          ),
-          (
-            name: "Nom",
-          ),
-        ]),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Roar"),
+        ],
+        next: "Core",
+      ),
+      (
+        name: "Core",
+        moves: [
+          Probability([
+            (
+              name: "Drool",
+            ),
+            (
+              name: "Slam",
+            ),
+            (
+              name: "Nom",
+            ),
+          ]),
+        ],
+      ),
+      (
+        when: OnMove("Nom"),
+        moves: [
+          Fixed("Drool"),
+        ],
+        next: "Core",
+      )
     ],
   ),
   (
@@ -6791,22 +6192,7 @@
               high: 8,
             ),
             target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 7,
-              low: 8,
-              high: 8,
-            ),
-            target: TargetEnemy,
-          ),
-          AttackDamage(
-            amount: ByAsc(
-              base: 7,
-              low: 8,
-              high: 8,
-            ),
-            target: TargetEnemy,
+            times: Fixed(3),
           ),
         ],
         intent: Attack,
@@ -6883,52 +6269,43 @@
               ),
             ],
           ),
-          RemoveDebuffs(),
+          RemoveDebuffs,
         ],
         intent: Buff,
       ),
     ],
-    move_order: [
-      Loop([
-        Probability([
-          (
-            weight: 20,
-            name: "Ripple",
+    phases: [
+      (
+        name: "Core",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(20),
+              name: "Ripple",
+            ),
+            (
+              weight: Fixed(45),
+              name: "Reverberate",
+              max_repeats: Fixed(2),
+            ),
+            (
+              weight: Fixed(35),
+              name: "Head Slam",
+            ),
+          ]),
+          If(
+            condition: HalfHp,
+            then_phase: "Half",
           ),
-          (
-            weight: 45,
-            name: "Reverberate",
-            max_repeats: 2,
-          ),
-          (
-            weight: 35,
-            name: "Head Slam",
-          ),
-        ]),
-        If(
-          condition: HalfHp,
-          then: [
-            InOrder("Haste"),
-            Loop([
-              Probability([
-                (
-                  weight: 20,
-                  name: "Ripple",
-                ),
-                (
-                  weight: 45,
-                  name: "Reverberate",
-                  max_repeats: 2,
-                ),
-                (
-                  weight: 35,
-                  name: "Head Slam",
-                ),
-              ]),
-            ]),
-          ],
-        ),
-      ]),
+        ],
+      ),
+      (
+        name: "Half",
+        moves: [
+            Fixed("Haste"),
+        ],
+        next: "Core",
+      )
     ],
     effects: [
       (
@@ -6964,10 +6341,12 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Tackle"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Tackle"),
+        ],
+      ),
     ],
   ),
   (
@@ -6992,10 +6371,12 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        InOrder("Attack"),
-      ]),
+    phases: [
+      (
+        moves: [
+          Fixed("Attack"),
+        ],
+      ),
     ],
     effects: [
       (
@@ -7039,6 +6420,7 @@
             name: "Parasite",
             location: DeckPile,
           ),
+          SetN(Fixed(1)),
         ],
         intent: Attack,
       ),
@@ -7083,53 +6465,61 @@
         intent: Attack,
       ),
     ],
-    move_order: [
-      Loop([
-        Probability([
-          (
-            weight: 10,
-            name: "Implant",
+    phases: [
+      (
+        when: OnReceiveUnblockedDamage,
+        moves: [
+          If(
+            condition: Equals(N, Fixed(1)),
+            then_phase: "Implanted",
           ),
-          (
-            weight: 30,
-            name: "Flail",
-          ),
-          (
-            weight: 20,
-            name: "Wither",
-          ),
-          (
-            weight: 30,
-            name: "Multistrike",
-          ),
-          (
-            weight: 10,
-            name: "Strong Strike",
-          ),
-        ]),
-        AfterMove([
-          ("Implant", Loop([
-            Probability([
-              (
-                weight: 30,
-                name: "Flail",
-              ),
-              (
-                weight: 20,
-                name: "Wither",
-              ),
-              (
-                weight: 30,
-                name: "Multistrike",
-              ),
-              (
-                weight: 10,
-                name: "Strong Strike",
-              ),
-            ]),
-          ])),
-        ]),
-      ]),
+          Probability([
+            (
+              weight: Fixed(10),
+              name: "Implant",
+            ),
+            (
+              weight: Fixed(30),
+              name: "Flail",
+            ),
+            (
+              weight: Fixed(20),
+              name: "Wither",
+            ),
+            (
+              weight: Fixed(30),
+              name: "Multistrike",
+            ),
+            (
+              weight: Fixed(10),
+              name: "Strong Strike",
+            ),
+          ]),
+        ],
+      ),
+      (
+        name: "Implanted",
+        moves: [
+          Probability([
+            (
+              weight: Fixed(30),
+              name: "Flail",
+            ),
+            (
+              weight: Fixed(20),
+              name: "Wither",
+            ),
+            (
+              weight: Fixed(30),
+              name: "Multistrike",
+            ),
+            (
+              weight: Fixed(10),
+              name: "Strong Strike",
+            ),
+          ]),
+        ],
+      ),
     ],
     effects: [
       (

@@ -1,4 +1,4 @@
-use crate::models::core::*;
+use crate::{models::core::*, spireai::evaluator::{CardReference, CreatureReference}};
 
 pub enum Choice {
     Start {
@@ -7,14 +7,14 @@ pub enum Choice {
     },
     DrinkPotion {
         slot: usize,
-        target_index: Option<usize>,
+        target: Option<CreatureReference>,
     },
     DiscardPotion {
         slot: usize,
     },
     PlayCard {
-        card_index: usize,
-        target_index: Option<usize>,
+        card: CardReference,
+        target: Option<CreatureReference>,
     },
     EventChoice(String),
     NavigateToNode(i8),
@@ -23,19 +23,19 @@ pub enum Choice {
     BuyCard(String),
     BuyRelic(String),
     BuyPotion(String),
-    BuyRemoveCard(usize),
-    DeckRemove(Vec<usize>),
-    DeckTransform(Vec<usize>, bool), //And upgrade if true
-    DeckUpgrade(Vec<usize>),
+    BuyRemoveCard(CardReference),
+    DeckRemove(Vec<CardReference>),
+    DeckTransform(Vec<CardReference>, bool), //And upgrade if true
+    DeckUpgrade(Vec<CardReference>),
     OpenChest,
     Rest,
     RestDreamCatcher,
-    Smith(usize),
+    Smith(CardReference),
     Lift,
     Dig,
-    ScryDiscard(Vec<usize>),
+    ScryDiscard(Vec<CardReference>),
     Recall,
-    Toke(usize),
+    Toke(CardReference),
     EnterShop,
     End,
     Proceed,

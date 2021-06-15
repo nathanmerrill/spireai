@@ -141,7 +141,7 @@ impl Default for CardType {
 }
 
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Hash)]
 pub enum When {
     // Time-based
     BeforeHandDraw,
@@ -171,6 +171,10 @@ pub enum When {
     Shuffle,
     PlayCard(CardType),
     DrawCard(CardType),
+
+    // Enemy
+    OnMove(String),
+    OnLoseBuff(String),
 
     // Non-fight
     Rest,
@@ -222,6 +226,8 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
         #[serde(default, skip_serializing_if = "is_default")]
+        times: Amount,
+        #[serde(default, skip_serializing_if = "is_default")]
         if_fatal: Vec<Effect>,
     },
     LoseHp {
@@ -230,11 +236,7 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    Unbuff {
-        buff: String,
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
+    Unbuff(String),
     AddBuff {
         buff: String,
         #[serde(default, skip_serializing_if = "is_default")]
@@ -248,17 +250,13 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    DamagePercentage(Amount),
-    RemoveDebuffs {
-        #[serde(default, skip_serializing_if = "is_default")]
-        target: Target,
-    },
+    LoseHpPercentage(Amount),
+    RemoveDebuffs,
     RetainBlock,
     Die {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    EndTurn,
 
     AddX(Amount),
     SetX(Amount),
@@ -319,13 +317,15 @@ pub enum Effect {
         #[serde(rename = "type")]
         _type: CardType,
         #[serde(default, skip_serializing_if = "is_default")]
-        _rarity: Option<Rarity>,
+        rarity: Option<Rarity>,
         #[serde(default, skip_serializing_if = "is_default")]
-        _class: Option<Class>,
+        class: Option<Class>,
         #[serde(default, skip_serializing_if = "is_default")]
         position: RelativePosition,
         #[serde(default, skip_serializing_if = "is_default")]
         then: Vec<CardEffect>,
+        #[serde(default="_true", skip_serializing_if = "is_true")]
+        exclude_healing: bool,
     },
 
     ChooseCardByType {
@@ -333,16 +333,16 @@ pub enum Effect {
         #[serde(rename = "type")]
         _type: CardType,
         #[serde(default, skip_serializing_if = "is_default")]
-        _rarity: Option<Rarity>,
+        rarity: Option<Rarity>,
         #[serde(default, skip_serializing_if = "is_default")]
-        _class: Option<Class>,
+        class: Option<Class>,
         #[serde(default, skip_serializing_if = "is_default")]
         position: RelativePosition,
         #[serde(default, skip_serializing_if = "is_default")]
         then: Vec<CardEffect>,
         #[serde(default, skip_serializing_if = "is_default")]
         choices: Amount,
-        #[serde(default, skip_serializing_if = "is_default")]
+        #[serde(default="_true", skip_serializing_if = "is_true")]
         exclude_healing: bool,
     },
 
@@ -354,7 +354,6 @@ pub enum Effect {
     RemoveRelic(String),
     TransformCard(u8),
     TransformRandomCard(u8),
-    DuplicateCard,
     RandomPotion,
     UpgradeRandomCard(u8),
     UpgradeCard,
@@ -366,7 +365,6 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         count: Amount,
     },
-    FakeDie,
 
     Fight {
         monsters: Vec<String>,

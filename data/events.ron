@@ -643,7 +643,14 @@
       (
         name: "Pray",
         effects: [
-          DuplicateCard,
+          ChooseCards(
+            location: DeckPile,
+            then: [
+              CopyTo(
+                location: DeckPile,
+              ),
+            ],
+          ),
         ],
       ),
       (
@@ -658,7 +665,7 @@
       (
         name: "Touch",
         effects: [
-          DamagePercentage(Fixed(10)),
+          LoseHpPercentage(Fixed(10)),
           If(
             condition: Asc(15),
             then: [
@@ -773,7 +780,7 @@
       (
         name: "Sacrifice",
         effects: [
-          DamagePercentage(ByAsc(
+          LoseHpPercentage(ByAsc(
             base: 25,
             low: 35,
             high: 35,
@@ -819,7 +826,7 @@
       (
         name: "Golden Idol Smash",
         effects: [
-          DamagePercentage(ByAsc(
+          LoseHpPercentage(ByAsc(
             base: 25,
             low: 35,
             high: 35,
@@ -887,7 +894,8 @@
           CreateCardByType(
             location: DeckPile,
             type: All,
-            _class: Some(None),
+            class: Some(None),
+            exclude_healing: false,
           ),
           ShowChoices([
             "Knowing Skull Success",
@@ -1516,7 +1524,7 @@
         name: "Enter",
         effects: [
           UpgradeRandomCard(2),
-          DamagePercentage(ByAsc(
+          LoseHpPercentage(ByAsc(
             base: 20,
             low: 30,
             high: 30,
@@ -1689,6 +1697,7 @@
             location: DeckPile,
             type: All,
             choices: Fixed(20),
+            exclude_healing: false,
           ),
         ],
       ),
@@ -2058,7 +2067,7 @@
             (
               amount: Fixed(1),
               effect: [
-                DamagePercentage(ByAsc(
+                LoseHpPercentage(ByAsc(
                   base: 10,
                   low: 15,
                   high: 15,
@@ -2085,7 +2094,7 @@
             name: "Madness",
             location: DeckPile,
           ),
-          DamagePercentage(Custom),
+          LoseHpPercentage(Custom),
         ],
       ),
       (
