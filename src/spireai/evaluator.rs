@@ -312,7 +312,7 @@ pub fn eval_target(
     }
 }
 
-pub fn eval_card_effects(effects: &Vec<CardEffect>, card: CardReference, state: &mut GamePossibility) {
+pub fn eval_card_effects(effects: &[CardEffect], card: CardReference, state: &mut GamePossibility) {
     for effect in effects {
         eval_card_effect(effect, card, state);
     }
@@ -336,7 +336,7 @@ pub fn eval_card_effect(effect: &CardEffect, card: CardReference, state: &mut Ga
                 eval_effect(effect, state, binding, Some(GameAction {
                     is_attack: card.base._type == CardType::Attack,
                     creature: CreatureReference::Player,
-                    target: target
+                    target,
                 }))
             }
         }
@@ -556,7 +556,7 @@ pub fn copy_card(card: &Card) -> Card {
 
 
 pub fn eval_effects(
-    effects: &'static Vec<Effect>,
+    effects: &'static [Effect],
     state: &mut GamePossibility,
     binding: Binding,
     action: Option<GameAction>
@@ -579,7 +579,7 @@ pub fn eval_effect(
             target,
         } => {
             let amount = eval_amount(buff_amount, state.into(), binding);
-            for creature in eval_targets(target, state.into(), binding, action)
+            for creature in eval_targets(target, state, binding, action)
             {
                 add_buff(creature.get_mut(state.into()), buff_name, amount)
             }
@@ -610,7 +610,7 @@ pub fn eval_effect(
             }
         }
         Effect::AddRelic(name) => {
-            add_relic(name, state.into());
+            add_relic(name, state);
         }
         Effect::AddX(amount ) => {
             binding.get_mut_vars(state.into()).x += eval_amount(amount, state.into(), binding);
@@ -682,7 +682,7 @@ pub fn eval_effect(
             state.state.card_choice_type = CardChoiceType::Then(then);
         }
         Effect::CreateCard{name, location, position, then} => {
-            let card = create_card(name, &mut state.state);
+            let card = create_card(name, &state.state);
             if let Some(card_ref) = insert_card(card, *location, *position, state){
                 eval_card_effects(then, card_ref, state);
             }            
@@ -733,11 +733,9 @@ pub fn end_turn(state: &mut GamePossibility) {
             if !eval_condition(&card_ref.base.retain, &state.state, binding, None) {
                 card_ref.get_mut(&mut state.state).retain = false;
             }
-        } else {
-            if !has_runic_pyramid {
-                remove_card_from_location(card_ref, &mut state.state);
-                add_card_to_location(card_ref, CardLocation::DiscardPile, RelativePosition::Top, state);
-            }
+        } else if !has_runic_pyramid {
+            remove_card_from_location(card_ref, &mut state.state);
+            add_card_to_location(card_ref, CardLocation::DiscardPile, RelativePosition::Top, state);
         }
         eval_effects(&card_ref.base.on_turn_end, state, binding, None);
     }
@@ -756,7 +754,7 @@ fn next_move(creature: CreatureReference, state: &mut GamePossibility) {
     let monster = creature.get_monster_mut(&mut state.state).unwrap();
     if let Some(last_move) = monster.last_move{
         if last_move == monster.current_move {
-            monster.last_move_count = monster.last_move_count + 1;
+            monster.last_move_count += 1;
         } else {
             monster.last_move = Some(last_move);
             monster.last_move_count = 1;
@@ -791,7 +789,7 @@ fn draw(n: u8, state: &mut GamePossibility) {
         let card = state.state.battle_state.cards.get(&uuid).unwrap().base;
         cards.push(CardReference {
             storage: CardStorage::Battle,
-            uuid: uuid,
+            uuid,
             base: card,
         });
     }
@@ -840,7 +838,7 @@ fn get_cards_in_location(location: CardLocation, position: RelativePosition, sta
 
                     vec![CardReference {
                         storage: CardStorage::Battle,
-                        uuid: uuid,
+                        uuid,
                         base: state.state.battle_state.cards[&uuid].base
                     }]
                 },
@@ -865,7 +863,7 @@ fn get_cards_in_location(location: CardLocation, position: RelativePosition, sta
                         });
                         vec![CardReference {
                             storage: CardStorage::Battle,
-                            uuid: uuid,
+                            uuid,
                             base: state.state.battle_state.cards[&uuid].base
                         }]
                     }
@@ -880,11 +878,10 @@ fn random_cards_by_type(amount: usize, class: Option<Class>, _type: CardType, ra
     let cards = models::cards::available_cards_by_class(class.unwrap_or(state.state.class)).iter().filter(|card| {
         (_type == CardType::All || card._type == _type) &&
         (rarity == None || rarity.unwrap() == card.rarity) &&
-        (!exclude_healing || match card.name.as_str() {
-            "Feed" | "Reaper" | "Lesson Learned" | "Alchemize" | "Wish" | "Bandage Up" | "Self Repair" => false,
-            _ => true
-        })
-    }).map(|card| *card);
+        (!exclude_healing || 
+        !matches!(card.name.as_str(),
+            "Feed" | "Reaper" | "Lesson Learned" | "Alchemize" | "Wish" | "Bandage Up" | "Self Repair"))
+    }).cloned();
 
     state.choose_multiple(cards.collect(), amount as usize)
 }
@@ -929,15 +926,15 @@ fn eval_when(when: When, target: CreatureReference, state: &mut GamePossibility)
 }
 
 fn eval_monster_when(creature: CreatureReference, when: When, state: &mut GamePossibility) {
-    if let Some(monster ) = creature.get_monster(&mut state.state){
+    if let Some(monster ) = creature.get_monster(&state.state){
         if let Some(phase) = monster.whens.get(&when) {
             set_monster_phase(phase, creature, state);
         }
     }
 }
 
-fn set_monster_phase(phase: &'static String, creature: CreatureReference, state: &mut GamePossibility) {
-    let new_phase = creature.get_monster(&state.state).unwrap().base.phases.iter().position(|p| &p.name == phase).unwrap();
+fn set_monster_phase(phase: &str, creature: CreatureReference, state: &mut GamePossibility) {
+    let new_phase = creature.get_monster(&state.state).unwrap().base.phases.iter().position(|p| p.name == phase).unwrap();
     set_monster_move(0, new_phase, creature, state);
 }
 
@@ -951,7 +948,7 @@ fn set_monster_move(mut move_index: usize, mut phase_index: usize, creature: Cre
     let next_move = loop {
         let mut phase = base.phases.get(phase_index).unwrap();
         if move_index == phase.moves.len() {
-            if phase.next != "" {
+            if !phase.next.is_empty() {
                 let position = base.phases.iter().find_position(|a| a.name == phase.next).unwrap();
                 phase_index = position.0;
                 phase = position.1;            
@@ -985,11 +982,10 @@ fn set_monster_move(mut move_index: usize, mut phase_index: usize, creature: Cre
                     else_phase
                 };
 
-                if next_phase != "" {
+                if !next_phase.is_empty() {
                     let position = base.phases.iter().find_position(|a| &a.name == next_phase).unwrap();
                     phase_index = position.0;
                     move_index = 0;
-                    phase = position.1;    
                 }
                 None
             }
@@ -998,7 +994,7 @@ fn set_monster_move(mut move_index: usize, mut phase_index: usize, creature: Cre
         if let Some(value) = name {
             break value;
         } else {
-            move_index = move_index + 1;
+            move_index += 1;
         }
     };
 
@@ -1022,14 +1018,12 @@ fn eval_relic_when(when: When, state: &mut GamePossibility) {
 
             match &base.activation {
                 Activation::Counter {increment, reset, auto_reset, target} => {
-                    if increment == &when {
-                        if x < *target {
-                            x = x + 1;
-                            if x == *target {
-                                eval_effects(&base.effect, state, Binding::Relic(relic_ref), None);
-                                if *auto_reset {
-                                    x = 0;
-                                }
+                    if increment == &when && x < *target {
+                        x += 1;
+                        if x == *target {
+                            eval_effects(&base.effect, state, Binding::Relic(relic_ref), None);
+                            if *auto_reset {
+                                x = 0;
                             }
                         }
                     }
@@ -1040,7 +1034,7 @@ fn eval_relic_when(when: When, state: &mut GamePossibility) {
                 Activation::Immediate | Activation::Custom => {},
                 Activation::Uses { .. } => {
                     if x != 0 {
-                        x = x - 1;
+                        x -= 1;
                         eval_effects(&base.effect, state, Binding::Relic(relic_ref), None);
                     }
                 }
@@ -1090,10 +1084,10 @@ fn eval_creature_buff_when(creature: CreatureReference, when: When, state: &mut 
                 let should_remove = {
                     let buff = buff_ref.get_mut(&mut state.state);
                     if buff.stacked_vars.is_empty() {
-                        buff.vars.x = buff.vars.x - 1;
+                        buff.vars.x += 1;
                     } else {
                         for mut var in buff.stacked_vars.iter_mut() {
-                            var.x = var.x -1;
+                            var.x -= 1;
                         }
 
                         buff.stacked_vars = buff.stacked_vars.iter().filter(|var| var.x > 0).cloned().collect();
@@ -1310,12 +1304,10 @@ pub fn add_relic(name: &str, state: &mut GamePossibility) {
                 } else {
                     vec![activated_at, disabled_at]
                 }
+            } else if enabled_at == disabled_at {
+                vec![activated_at, enabled_at]
             } else {
-                if enabled_at == disabled_at {
-                    vec![activated_at, enabled_at]
-                } else {
-                    vec![activated_at, enabled_at, disabled_at]
-                }
+                vec![activated_at, enabled_at, disabled_at]
             }
         },
         Activation::Custom => {
@@ -1345,7 +1337,7 @@ pub fn add_relic(name: &str, state: &mut GamePossibility) {
     };
 
     for when in whens {
-        state.state.relic_whens.entry(when.clone()).or_insert_with(||Vector::new()).push_back(relic.uuid)
+        state.state.relic_whens.entry(when.clone()).or_insert_with(Vector::new).push_back(relic.uuid)
     }
     state.state.relics.insert(relic.uuid, relic);
 }
@@ -1363,11 +1355,7 @@ pub fn find_relic_mut<'a>(name: &str, state: &'a mut GameState) -> Option<&'a mu
 }
 
 pub fn find_relic<'a>(name: &str, state: &'a GameState) -> Option<&'a Relic> {
-    if let Some(uuid) = state.relic_names.get(name) {
-        Some(state.relics.get(uuid).unwrap())
-    } else {
-        None
-    }
+    state.relic_names.get(name).map(|uuid|state.relics.get(uuid).unwrap())
 }
 
 pub fn add_max_hp(amount: u16, state: &mut GameState) {
@@ -1396,7 +1384,7 @@ pub fn add_gold(amount: u16, state: &mut GameState) {
     }
 
     if state.relic_names.contains_key("Bloody Idol") {
-        heal(5 as f64, state);
+        heal(5_f64, state);
     }
 
     state.gold += amount;
@@ -1419,7 +1407,7 @@ fn add_buff(creature: &mut Creature, name: &str, amount: i16) {
     } else {
         let new_buff = create_buff(name, amount);
         for effects in &new_buff.base.effects {
-            creature.buffs_when.entry(effects.when.clone()).or_insert_with(||Vector::new()).push_back(new_buff.uuid)
+            creature.buffs_when.entry(effects.when.clone()).or_insert_with(Vector::new).push_back(new_buff.uuid)
         }
         creature.buff_names.insert(name.to_string(), new_buff.uuid);
         creature.buffs.insert(new_buff.uuid, new_buff);

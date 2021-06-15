@@ -20,7 +20,7 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibility) {
             };
 
             spend_money(cost, true, state.into());
-            evaluator::add_card_to_deck(name, state.into());
+            evaluator::add_card_to_deck(name, state);
         }
         Choice::BuyPotion(name) => {
             let cost = if let FloorState::Shop {
@@ -53,7 +53,7 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibility) {
             };
 
             spend_money(cost, true, state.into());
-            evaluator::add_relic(name, state.into());
+            evaluator::add_relic(name, state);
         }
         Choice::BuyRemoveCard(card) => {
             let cost = if let FloorState::Shop {
@@ -84,7 +84,7 @@ pub fn predict_outcome(choice: &Choice, state: &mut GamePossibility) {
 
                 let available_cards: Vec<&&'static models::cards::BaseCard> =
                     models::cards::available_cards_by_class(class)
-                        .into_iter()
+                        .iter()
                         .filter(move |c| c.name != name)
                         .collect();
 

@@ -32,7 +32,7 @@ pub fn convert_state(state: &old::GameState, uuid_map: &mut HashMap<String, Uuid
             .combat_state
             .as_ref()
             .map(|a| convert_battle_state(a, uuid_map))
-            .unwrap_or_else(|| new::BattleState::default()),
+            .unwrap_or_else(new::BattleState::default),
         gold: state.gold as u16,
         floor: state.floor as u8,
         floor_state: convert_floor_state(state, uuid_map),
@@ -51,7 +51,7 @@ pub fn convert_state(state: &old::GameState, uuid_map: &mut HashMap<String, Uuid
         asc: state.ascension_level as u8,
         relic_whens: HashMap::new(),
         relic_names: relics.iter().map(|(uuid, r)|(r.base.name.to_string(), *uuid)).collect(),
-        relics: relics,
+        relics,
         keys: None,
         won: None
     }
@@ -382,7 +382,7 @@ fn convert_orbs(orbs: &[old::OrbType]) -> Vector<new::Orb> {
 }
 
 lazy_static!{
-    static ref monster_move: crate::models::monsters::MonsterMove = crate::models::monsters::MonsterMove {
+    static ref MONSTER_MOVE: crate::models::monsters::MonsterMove = crate::models::monsters::MonsterMove {
         name: String::new(),
         effects: vec![],
         intent: NewIntent::None,
@@ -407,7 +407,7 @@ fn convert_monsters(monsters: &[old::Monster], uuid_map: &mut HashMap<String, Uu
                     is_player: false,
                     buff_names: buffs.iter().map(|(uuid, buff)| (buff.base.name.to_string(), *uuid)).collect(),
                     buffs_when: HashMap::new(),
-                    buffs: buffs,
+                    buffs,
                     block: monster.block as u16,
                 },
                 index: 0,
@@ -420,7 +420,7 @@ fn convert_monsters(monsters: &[old::Monster], uuid_map: &mut HashMap<String, Uu
                 },
                 targetable: !monster.is_gone,
                 intent: convert_intent(&monster.intent),
-                current_move: &monster_move,
+                current_move: &MONSTER_MOVE,
                 last_move: None,
                 last_move_count: 0,
             };
@@ -437,7 +437,7 @@ fn convert_buffs(buffs: &[old::Power], uuid_map: &mut HashMap<String, Uuid>) -> 
 
         vector.insert(uuid, new::Buff {
             base: crate::models::buffs::by_name(&buff.name),
-            uuid: uuid,
+            uuid,
             vars: new::Vars {
                 n: buff.amount as i16,
                 x: 0,

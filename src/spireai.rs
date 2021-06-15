@@ -73,8 +73,8 @@ impl GamePossibility {
         self.rng.gen_range(0..max)
     }
 
-    fn choose_weighted<'a, T>(&mut self, choices: &'a Vec<(T, u8)>) -> Option<&'a T> {
-        if choices.len() == 0 {
+    fn choose_weighted<'a, T>(&mut self, choices: &'a [(T, u8)]) -> Option<&'a T> {
+        if choices.is_empty() {
             None
         } else {
             let choice_sum: u8 = choices.iter().map(|(_, a)|a).sum();
