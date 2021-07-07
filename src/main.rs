@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::comm::request::GameState;
 use crate::models::choices::Choice;
 use crate::models::core::Class;
@@ -69,7 +71,7 @@ fn run(start_message: &str) {
     let mut ai = spireai::SpireAi::new(crate::state::game::GameState::new(Class::Ironclad, 0));
     let mut game_state: Option<GameState> = None;
     let mut queue: Vec<Response> = vec![Response::Simple(String::from(start_message))];
-    let mut map: HashMap<String, Uuid> = HashMap::new();
+    let map: HashMap<String, Uuid> = HashMap::new();
 
     loop {
         let request = process_queue(&mut queue, &game_state);

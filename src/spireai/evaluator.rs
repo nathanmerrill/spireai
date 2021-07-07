@@ -502,13 +502,13 @@ impl GamePossibility {
     }
 
 
-    fn fight(&mut self, monsters: &'static Vec<String>, fight_type: FightType) {
+    fn fight(&mut self, monsters: &'static [String], fight_type: FightType) {
         self.create_battle(monsters, fight_type);
         self.eval_when(When::CombatStart);
         self.start_turn(true);
     }
 
-    fn create_battle(&mut self, monster_names: &'static Vec<String>, fight_type: FightType) {
+    fn create_battle(&mut self, monster_names: &'static [String], fight_type: FightType) {
         let cards: HashMap<Uuid, Card> = self.state.deck.values().map(|c| (c.uuid, c.duplicate())).collect();
         let draw_top = if self.state.has_relic("Frozen Eye") {
             cards.values().map(|c| c.uuid).collect()
@@ -1150,7 +1150,7 @@ impl GamePossibility {
                         }
                     }
                     "Darkling" => {
-                        if self.state.battle_state.monsters.values().all(|a| a.targetable == false || a.uuid == uuid) {
+                        if self.state.battle_state.monsters.values().all(|a| !a.targetable || a.uuid == uuid) {
                             true
                         } else {
                             let monster_mut = creature_ref.get_monster_mut(&mut self.state).unwrap();
@@ -1324,7 +1324,7 @@ impl GamePossibility {
             Some(GameAction {
                 creature: CreatureReference::Player,
                 is_attack: false,
-                target: target,
+                target,
             }),
         );
     }

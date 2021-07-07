@@ -155,10 +155,7 @@ impl GameState {
     }
 
     pub fn potion_at(&self, slot: usize) -> Option<PotionReference> {
-        match &self.potions[slot] {
-            Some(potion) => Some(potion.reference(slot)),
-            None => None,
-        }
+        self.potions[slot].as_ref().map(|potion| potion.reference(slot))
     }
 
     pub fn card_playable(&self, card: CardReference) -> bool {
@@ -331,19 +328,12 @@ impl GameState {
     }
 
     pub fn potions(&self) -> impl Iterator<Item = PotionReference> + '_ {
-        self.potion_slots().filter_map(|a| a)
+        self.potion_slots().flatten()
     }
 
     pub fn potion_slots(&self) -> impl Iterator<Item = Option<PotionReference>> + '_ {
         self.potions.iter().enumerate().map(|(position, opt)| {
-            if let Some(potion) = opt {
-                Some(PotionReference {
-                    base: potion.base,
-                    index: position,
-                })
-            } else {
-                None
-            }
+            opt.as_ref().map(|potion|potion.reference(position))
         })
     }
 

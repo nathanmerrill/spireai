@@ -35,6 +35,7 @@ impl SpireAi {
     }
 }
 
+#[allow(unused_variables)]
 fn find_match(state: &GameState, choice: &Choice, comm_state: &CommState) -> GameState {
     unimplemented!()
 }

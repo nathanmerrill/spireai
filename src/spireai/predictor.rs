@@ -134,6 +134,7 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
     }
 }
 
+#[allow(unused_variables)]
 pub fn verify_prediction<'a>(outcome: &'a GameState, choice: &'a GamePossibility) -> &'a GameState {
     unimplemented!()
     /*

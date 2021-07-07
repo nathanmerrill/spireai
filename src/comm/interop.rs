@@ -19,7 +19,7 @@ pub fn state_matches(
         ) && combat_state.player.block as u16 == internal.player.block
             && battle_state_matches(&combat_state, &internal.battle_state, uuid_map)
     } else {
-        internal.battle_state.active == false
+        !internal.battle_state.active
     }) && class_matches(&external.class, internal.class)
         && external.current_hp as u16 == internal.player.hp
         && external.max_hp as u16 == internal.player.max_hp
@@ -299,7 +299,7 @@ fn monsters_match(
             && external.current_hp as u16 == internal.creature.hp
             && external.max_hp as u16 == internal.creature.hp
             && external.block as u16 == internal.creature.block
-            && external.is_gone == !internal.targetable
+            && external.is_gone != internal.targetable
             && external.name == internal.base.name
             && intent_matches(&external.intent, internal.intent))
         {
@@ -361,7 +361,7 @@ fn potions_match(
             Some(p) => p.base.name.as_str(),
         };
 
-        if name != &external[idx].name {
+        if name != external[idx].name {
             return false;
         }
     }

@@ -103,7 +103,7 @@ impl Creature {
         self.buff_names.get(name).map(|u| &self.buffs[u])
     }
     pub fn find_buff_mut(&mut self, name: &str) -> Option<&mut Buff> {
-        let uuid = self.buff_names.get(name).map(|u| *u);
+        let uuid = self.buff_names.get(name).copied();
         match uuid {
             Some(u) => self.buffs.get_mut(&u),
             None => None,
@@ -236,7 +236,7 @@ impl Card {
             Condition::Always => true,
             Condition::Not(b) => {
                 if b.as_ref() == &Condition::Upgraded {
-                    return self.upgrades > 0;
+                    self.upgrades > 0
                 } else {
                     panic!("Unexpected condition!")
                 }
@@ -255,7 +255,7 @@ impl Card {
                     if let Amount::Upgradable { upgraded, .. } = self.base.cost {
                         let diff = self.base_cost - upgraded as u8;
                         self.base_cost -= diff;
-                        self.cost = self.base_cost.checked_sub(diff).unwrap_or(0);
+                        self.cost = self.base_cost.saturating_sub(diff);
                     }
 
                     if let Condition::Upgraded = self.base.retain {
