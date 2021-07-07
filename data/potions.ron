@@ -26,7 +26,7 @@
     class: None,
     on_drink: [
       ChooseCardByType(
-        location: PlayerHand,
+        destination: PlayerHand,
         type: Attack,
         then: [
           ZeroTurnCost,
@@ -84,7 +84,7 @@
         effect: [
           CreateCard(
             name: "Miracle",
-            location: PlayerHand,
+            destination: PlayerHand,
           ),
         ],
       ),
@@ -95,7 +95,7 @@
     class: None,
     on_drink: [
       ChooseCardByType(
-        location: PlayerHand,
+        destination: PlayerHand,
         type: All,
         class: Some(None),
         then: [
@@ -134,7 +134,7 @@
         effect: [
           CreateCard(
             name: "Shiv",
-            location: PlayerHand,
+            destination: PlayerHand,
           ),
         ],
       ),
@@ -281,7 +281,7 @@
         target: TargetEnemy,
       ),
     ],
-    targeted: Always,
+    targeted: true,
   ),
   (
     name: "Fire Potion",
@@ -295,7 +295,7 @@
         target: TargetEnemy,
       ),
     ],
-    targeted: Always,
+    targeted: true,
   ),
   (
     name: "Flex Potion",
@@ -399,9 +399,7 @@
       ChooseCards(
         location: DiscardPile,
         then: [
-          MoveTo(
-            location: PlayerHand,
-          ),
+          MoveTo(PlayerHand),
           ZeroTurnCost,
         ],
         min: Upgradable(
@@ -428,7 +426,7 @@
         target: TargetEnemy,
       ),
     ],
-    targeted: Always,
+    targeted: true,
   ),
   (
     name: "Potion Of Capacity",
@@ -446,7 +444,7 @@
     class: None,
     on_drink: [
       ChooseCardByType(
-        location: PlayerHand,
+        destination: PlayerHand,
         type: Power,
         then: [
           ZeroTurnCost,
@@ -476,7 +474,7 @@
     class: None,
     on_drink: [
       ChooseCardByType(
-        location: PlayerHand,
+        destination: PlayerHand,
         type: Skill,
         then: [
           ZeroTurnCost,
@@ -571,6 +569,6 @@
         target: TargetEnemy,
       ),
     ],
-    targeted: Always,
+    targeted: true,
   ),
 ]

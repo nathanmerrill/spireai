@@ -1,10 +1,9 @@
 use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
 
-use std::{collections::HashMap, fs::File, path::Path};
+use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
-use super::core::{Amount, CardType, Class, Condition, Effect, Rarity, is_default};
-
+use super::core::{is_default, Amount, CardType, Class, Condition, Effect, Rarity};
 
 #[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
 pub struct BaseCard {
@@ -82,7 +81,7 @@ lazy_static! {
     pub static ref ALL_CARDS: HashMap<String, BaseCard> = {
         let mut m = HashMap::new();
 
-        for card in all_cards() {
+        for card in all_cards().unwrap() {
             m.insert((&card.name).to_string(), card);
         }
 
@@ -129,8 +128,21 @@ lazy_static! {
         .collect();
 }
 
-fn all_cards() -> Vec<BaseCard> {
+fn all_cards() -> Result<Vec<BaseCard>, Box<dyn Error>> {
     let filepath = Path::new("data").join("cards.ron");
-    let file = File::open(filepath).unwrap();
-    from_reader(file).unwrap()
+    let file = File::open(filepath)?;
+    let u = from_reader(file)?;
+    Ok(u)
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn can_parse() -> Result<(), String> {
+        match super::all_cards() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(format!("{:?}", err))
+        }
+    }
 }

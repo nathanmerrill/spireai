@@ -7,4 +7,3 @@ pub mod events;
 pub mod monsters;
 pub mod potions;
 pub mod relics;
-pub mod state;

@@ -1,6 +1,5 @@
-use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
-use std::{fs::File, path::Path};
+use std::{error::Error, fs::File, io::BufReader, path::Path};
 
 #[derive(Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Act {
@@ -32,8 +31,22 @@ impl std::fmt::Debug for Act {
     }
 }
 
-pub fn all_acts() -> Vec<Act> {
+pub fn all_acts() -> Result<Vec<Act>, Box<dyn Error>> {
     let filepath = Path::new("data").join("acts.ron");
-    let file = File::open(filepath).unwrap();
-    from_reader(file).unwrap()
+    let file = File::open(filepath)?;
+    let reader = BufReader::new(file);
+    let u = ron::de::from_reader(reader)?;
+    Ok(u)
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn can_parse() -> Result<(), String> {
+        match super::all_acts() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err.to_string())
+        }
+    }
 }

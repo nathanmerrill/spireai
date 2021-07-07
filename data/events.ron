@@ -61,7 +61,7 @@
         effects: [
           CreateCard(
             name: "Jax",
-            location: DeckPile,
+            destination: DeckPile,
           ),
           ShowChoices([
             "Leave",
@@ -120,7 +120,7 @@
         effects: [
           CreateCard(
             name: "Regret",
-            location: DeckPile,
+            destination: DeckPile,
           ),
           ShowReward([
             RandomRelic,
@@ -171,7 +171,7 @@
             effect: [
               CreateCard(
                 name: "Apparition",
-                location: DeckPile,
+                destination: DeckPile,
               ),
             ],
           ),
@@ -647,7 +647,7 @@
             location: DeckPile,
             then: [
               CopyTo(
-                location: DeckPile,
+                destination: DeckPile,
               ),
             ],
           ),
@@ -793,7 +793,7 @@
         effects: [
           CreateCard(
             name: "Decay",
-            location: DeckPile,
+            destination: DeckPile,
           ),
         ],
       ),
@@ -818,7 +818,7 @@
         effects: [
           CreateCard(
             name: "Injury",
-            location: DeckPile,
+            destination: DeckPile,
           ),
         ],
         initial: false,
@@ -869,7 +869,7 @@
           AddGold(Fixed(275)),
           CreateCard(
             name: "Regret",
-            location: DeckPile,
+            destination: DeckPile,
           ),
         ],
       ),
@@ -892,7 +892,7 @@
             ]),
           ),
           CreateCardByType(
-            location: DeckPile,
+            destination: DeckPile,
             type: All,
             class: Some(None),
             exclude_healing: false,
@@ -1037,7 +1037,7 @@
               "Romeo",
               "Bear",
             ],
-            room: HallwayFight,
+            room: Common,
           ),
           ShowReward([
             RelicName("Red Mask"),
@@ -1139,18 +1139,18 @@
               ),
               CreateCard(
                 name: "Doubt",
-                location: DeckPile,
+                destination: DeckPile,
               ),
             ],
             _else: [
               AddGold(Fixed(999)),
               CreateCard(
                 name: "Normality",
-                location: DeckPile,
+                destination: DeckPile,
               ),
               CreateCard(
                 name: "Normality",
-                location: DeckPile,
+                destination: DeckPile,
               ),
             ],
           ),
@@ -1173,7 +1173,7 @@
               "Fungi Beast",
               "Fungi Beast",
             ],
-            room: HallwayFight,
+            room: Common,
           ),
           ShowReward([
             RelicName("Odd Mushroom"),
@@ -1193,7 +1193,7 @@
           ),
           CreateCard(
             name: "Parasite",
-            location: DeckPile,
+            destination: DeckPile,
           ),
         ],
       ),
@@ -1211,7 +1211,7 @@
               "Orb Walker",
               "Orb Walker",
             ],
-            room: HallwayFight,
+            room: Common,
           ),
           ShowReward([
             Relic(Rare),
@@ -1358,7 +1358,7 @@
           AddRelic("Warped Tongs"),
           CreateCard(
             name: "Pain",
-            location: DeckPile,
+            destination: DeckPile,
           ),
         ],
       ),
@@ -1384,7 +1384,7 @@
           RandomRelic,
           CreateCard(
             name: "Shame",
-            location: DeckPile,
+            destination: DeckPile,
           ),
         ],
       ),
@@ -1588,7 +1588,7 @@
               "Blue Slaver",
               "Red Slaver",
             ],
-            room: HallwayFight,
+            room: Common,
           ),
           ShowChoices([
             "The Colosseum Cowardace",
@@ -1694,7 +1694,7 @@
         name: "Read",
         effects: [
           ChooseCardByType(
-            location: DeckPile,
+            destination: DeckPile,
             type: All,
             choices: Fixed(20),
             exclude_healing: false,
@@ -1731,7 +1731,7 @@
               effect: [
                 CreateCard(
                   name: "Writhe",
-                  location: DeckPile,
+                  destination: DeckPile,
                 ),
               ],
             ),
@@ -1802,7 +1802,7 @@
           ),
           CreateCard(
             name: "Ritual Dagger",
-            location: DeckPile,
+            destination: DeckPile,
           ),
         ],
       ),
@@ -1821,7 +1821,7 @@
           )),
           CreateCard(
             name: "Doubt",
-            location: DeckPile,
+            destination: DeckPile,
           ),
         ],
       ),
@@ -1946,7 +1946,7 @@
             effect: [
               CreateCard(
                 name: "Bite",
-                location: DeckPile,
+                destination: DeckPile,
               ),
             ],
           ),
@@ -1963,7 +1963,7 @@
             effect: [
               CreateCard(
                 name: "Bite",
-                location: DeckPile,
+                destination: DeckPile,
               ),
             ],
           ),
@@ -2054,7 +2054,7 @@
               effect: [
                 CreateCard(
                   name: "Decay",
-                  location: DeckPile,
+                  destination: DeckPile,
                 ),
               ],
             ),
@@ -2088,11 +2088,11 @@
         effects: [
           CreateCard(
             name: "Madness",
-            location: DeckPile,
+            destination: DeckPile,
           ),
           CreateCard(
             name: "Madness",
-            location: DeckPile,
+            destination: DeckPile,
           ),
           LoseHpPercentage(Custom),
         ],
@@ -2102,7 +2102,7 @@
         effects: [
           CreateCard(
             name: "Writhe",
-            location: DeckPile,
+            destination: DeckPile,
           ),
           HealPercentage(
             amount: ByAsc(

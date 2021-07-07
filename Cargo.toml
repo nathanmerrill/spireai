@@ -20,3 +20,4 @@ ron = "0.6.4"
 im = "15.0.0"
 num-integer = "0.1.44"
 uuid = { version = "0.8.2", features = ["v4"] }
+factorial = "0.2.1"

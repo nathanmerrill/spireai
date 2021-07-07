@@ -1,6 +1,7 @@
 [
   (
     name: "Acid Slime L",
+    fight_type: Common,
     hp_range: (
       min: 65,
       max: 68,
@@ -23,11 +24,11 @@
           ),
           CreateCard(
             name: "Slimed",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
           CreateCard(
             name: "Slimed",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
         ],
         intent: AttackDebuff,
@@ -109,6 +110,7 @@
   ),
   (
     name: "Acid Slime M",
+    fight_type: Common,
     hp_range: (
       min: 28,
       max: 32,
@@ -131,7 +133,7 @@
           ),
           CreateCard(
             name: "Slimed",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
         ],
         intent: AttackDebuff,
@@ -187,6 +189,7 @@
   ),
   (
     name: "Acid Slime S",
+    fight_type: Common,
     hp_range: (
       min: 8,
       max: 12,
@@ -238,6 +241,7 @@
   ),
   (
     name: "Awakened One",
+    fight_type: Boss,
     hp_range: (
       min: 300,
       max: 300,
@@ -297,8 +301,7 @@
           ),
           CreateCard(
             name: "Void",
-            location: DrawPile,
-            position: Random,
+            destination: DrawPile(Random),
           ),
         ],
         intent: AttackDebuff,
@@ -406,6 +409,7 @@
   ),
   (
     name: "Bear",
+    fight_type: Common,
     hp_range: (
       min: 38,
       max: 42,
@@ -480,6 +484,7 @@
   ),
   (
     name: "Blue Slaver",
+    fight_type: Common,
     hp_range: (
       min: 46,
       max: 50,
@@ -548,6 +553,7 @@
   ),
   (
     name: "Book Of Stabbing",
+    fight_type: Elite,
     hp_range: (
       min: 160,
       max: 162,
@@ -613,6 +619,7 @@
   ),
   (
     name: "Bronze Automaton",
+    fight_type: Elite,
     hp_range: (
       min: 300,
       max: 300,
@@ -748,6 +755,7 @@
   ),
   (
     name: "Bronze Orb",
+    fight_type: Elite,
     hp_range: (
       min: 52,
       max: 58,
@@ -824,6 +832,7 @@
   ),
   (
     name: "Byrd",
+    fight_type: Common,
     hp_range: (
       min: 25,
       max: 31,
@@ -955,6 +964,7 @@
   ),
   (
     name: "Centurion",
+    fight_type: Common,
     hp_range: (
       min: 76,
       max: 80,
@@ -1062,6 +1072,7 @@
   ),
   (
     name: "Chosen",
+    fight_type: Common,
     hp_range: (
       min: 76,
       max: 80,
@@ -1191,6 +1202,7 @@
   ),
   (
     name: "Corrupt Heart",
+    fight_type: Boss,
     hp_range: (
       min: 750,
       max: 750,
@@ -1220,28 +1232,23 @@
           ),
           CreateCard(
             name: "Dazed",
-            location: DrawPile,
-            position: Random,
+            destination: DrawPile(Random),
           ),
           CreateCard(
             name: "Slimed",
-            location: DrawPile,
-            position: Random,
+            destination: DrawPile(Random),
           ),
           CreateCard(
             name: "Wound",
-            location: DrawPile,
-            position: Random,
+            destination: DrawPile(Random),
           ),
           CreateCard(
             name: "Burn",
-            location: DrawPile,
-            position: Random,
+            destination: DrawPile(Random),
           ),
           CreateCard(
             name: "Void",
-            location: DrawPile,
-            position: Random,
+            destination: DrawPile(Random),
           ),
         ],
         intent: StrongDebuff,
@@ -1466,6 +1473,7 @@
   ),
   (
     name: "Cultist",
+    fight_type: Common,
     hp_range: (
       min: 48,
       max: 54,
@@ -1517,6 +1525,7 @@
   ),
   (
     name: "Dagger",
+    fight_type: Elite,
     hp_range: (
       min: 20,
       max: 25,
@@ -1535,7 +1544,7 @@
           ),
           CreateCard(
             name: "Wound",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
         ],
         intent: AttackDebuff,
@@ -1563,6 +1572,7 @@
   ),
   (
     name: "Darkling",
+    fight_type: Common,
     hp_range: (
       min: 48,
       max: 56,
@@ -1706,6 +1716,7 @@
   ),
   (
     name: "Deca",
+    fight_type: Boss,
     hp_range: (
       min: 250,
       max: 250,
@@ -1749,11 +1760,11 @@
           ),
           CreateCard(
             name: "Dazed",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
           CreateCard(
             name: "Dazed",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
         ],
         intent: AttackDebuff,
@@ -1785,6 +1796,7 @@
   ),
   (
     name: "Donu",
+    fight_type: Boss,
     hp_range: (
       min: 250,
       max: 250,
@@ -1847,6 +1859,7 @@
   ),
   (
     name: "Exploder",
+    fight_type: Common,
     hp_range: (
       min: 30,
       max: 30,
@@ -1901,6 +1914,7 @@
   ),
   (
     name: "Fat Gremlin",
+    fight_type: Common,
     hp_range: (
       min: 13,
       max: 17,
@@ -1948,6 +1962,7 @@
   ),
   (
     name: "Fungi Beast",
+    fight_type: Common,
     hp_range: (
       min: 22,
       max: 28,
@@ -2013,6 +2028,7 @@
   ),
   (
     name: "Giant Head",
+    fight_type: Boss,
     hp_range: (
       min: 500,
       max: 500,
@@ -2122,6 +2138,7 @@
   ),
   (
     name: "Green Louse",
+    fight_type: Common,
     hp_range: (
       min: 11,
       max: 17,
@@ -2209,6 +2226,7 @@
   ),
   (
     name: "Gremlin Leader",
+    fight_type: Elite,
     hp_range: (
       min: 140,
       max: 148,
@@ -2347,6 +2365,7 @@
   ),
   (
     name: "Gremlin Nob",
+    fight_type: Elite,
     hp_range: (
       min: 82,
       max: 86,
@@ -2440,6 +2459,7 @@
   ),
   (
     name: "Gremlin Wizard",
+    fight_type: Common,
     hp_range: (
       min: 23,
       max: 25,
@@ -2491,6 +2511,7 @@
   ),
   (
     name: "Hexaghost",
+    fight_type: Boss,
     hp_range: (
       min: 250,
       max: 250,
@@ -2532,15 +2553,15 @@
           ),
           CreateCard(
             name: "Burn",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
           CreateCard(
             name: "Burn",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
           CreateCard(
             name: "Burn",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
           Custom,
         ],
@@ -2558,13 +2579,13 @@
             then: [
               CreateCard(
                 name: "Burn",
-                location: DiscardPile,
+                destination: DiscardPile,
               ),
             ],
           ),
           CreateCard(
             name: "Burn",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
         ],
         intent: AttackDebuff,
@@ -2626,6 +2647,7 @@
   ),
   (
     name: "Jaw Worm",
+    fight_type: Common,
     hp_range: (
       min: 40,
       max: 44,
@@ -2744,6 +2766,7 @@
   ),
   (
     name: "Lagavulin",
+    fight_type: Elite,
     hp_range: (
       min: 109,
       max: 111,
@@ -2862,6 +2885,7 @@
   ),
   (
     name: "Looter",
+    fight_type: Common,
     hp_range: (
       min: 44,
       max: 48,
@@ -2963,6 +2987,7 @@
   ),
   (
     name: "Mad Gremlin",
+    fight_type: Common,
     hp_range: (
       min: 20,
       max: 24,
@@ -3012,6 +3037,7 @@
   ),
   (
     name: "Mugger",
+    fight_type: Common,
     hp_range: (
       min: 48,
       max: 52,
@@ -3113,6 +3139,7 @@
   ),
   (
     name: "Mystic",
+    fight_type: Common,
     hp_range: (
       min: 48,
       max: 56,
@@ -3215,6 +3242,7 @@
   ),
   (
     name: "Nemesis",
+    fight_type: Elite,
     hp_range: (
       min: 185,
       max: 185,
@@ -3229,26 +3257,26 @@
         effects: [
           CreateCard(
             name: "Burn",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
           CreateCard(
             name: "Burn",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
           CreateCard(
             name: "Burn",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
           If(
             condition: Asc(18),
             then: [
               CreateCard(
                 name: "Burn",
-                location: DiscardPile,
+                destination: DiscardPile,
               ),
               CreateCard(
                 name: "Burn",
-                location: DiscardPile,
+                destination: DiscardPile,
               ),
             ],
           ),
@@ -3334,6 +3362,7 @@
   ),
   (
     name: "Orb Walker",
+    fight_type: Common,
     hp_range: (
       min: 90,
       max: 96,
@@ -3356,12 +3385,11 @@
           ),
           CreateCard(
             name: "Burn",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
           CreateCard(
             name: "Burn",
-            location: DrawPile,
-            position: Random,
+            destination: DrawPile(Random),
           ),
         ],
         intent: AttackDebuff,
@@ -3417,6 +3445,7 @@
   ),
   (
     name: "Pointy",
+    fight_type: Common,
     hp_range: (
       min: 30,
       max: 30,
@@ -3452,6 +3481,7 @@
   ),
   (
     name: "Red Louse",
+    fight_type: Common,
     hp_range: (
       min: 10,
       max: 15,
@@ -3542,6 +3572,7 @@
   ),
   (
     name: "Red Slaver",
+    fight_type: Common,
     hp_range: (
       min: 46,
       max: 50,
@@ -3694,6 +3725,7 @@
   ),
   (
     name: "Reptomancer",
+    fight_type: Elite,
     hp_range: (
       min: 180,
       max: 190,
@@ -3804,6 +3836,7 @@
   ),
   (
     name: "Repulsor",
+    fight_type: Common,
     hp_range: (
       min: 29,
       max: 35,
@@ -3828,13 +3861,11 @@
         effects: [
           CreateCard(
             name: "Dazed",
-            location: DrawPile,
-            position: Random,
+            destination: DrawPile(Random),
           ),
           CreateCard(
             name: "Dazed",
-            location: DrawPile,
-            position: Random,
+            destination: DrawPile(Random),
           ),
         ],
         intent: AttackDebuff,
@@ -3860,6 +3891,7 @@
   ),
   (
     name: "Romeo",
+    fight_type: Common,
     hp_range: (
       min: 35,
       max: 39,
@@ -3942,6 +3974,7 @@
   ),
   (
     name: "Sentry",
+    fight_type: Elite,
     hp_range: (
       min: 38,
       max: 42,
@@ -3977,7 +4010,7 @@
             effect: [
               CreateCard(
                 name: "Dazed",
-                location: DiscardPile,
+                destination: DiscardPile,
               ),
             ],
           ),
@@ -4006,6 +4039,7 @@
   ),
   (
     name: "Shelled Parasite",
+    fight_type: Common,
     hp_range: (
       min: 68,
       max: 72,
@@ -4129,6 +4163,7 @@
   ),
   (
     name: "Shield Gremlin",
+    fight_type: Common,
     hp_range: (
       min: 12,
       max: 15,
@@ -4192,6 +4227,7 @@
   ),
   (
     name: "Slime Boss",
+    fight_type: Boss,
     hp_range: (
       min: 12,
       max: 15,
@@ -4213,7 +4249,7 @@
             effect: [
               CreateCard(
                 name: "Slimed",
-                location: DiscardPile,
+                destination: DiscardPile,
               ),
             ],
           ),
@@ -4274,6 +4310,7 @@
   ),
   (
     name: "Snake Plant",
+    fight_type: Common,
     hp_range: (
       min: 75,
       max: 79,
@@ -4355,6 +4392,7 @@
   ),
   (
     name: "Sneaky Gremlin",
+    fight_type: Common,
     hp_range: (
       min: 10,
       max: 14,
@@ -4389,6 +4427,7 @@
   ),
   (
     name: "Snecko",
+    fight_type: Common,
     hp_range: (
       min: 114,
       max: 120,
@@ -4480,6 +4519,7 @@
   ),
   (
     name: "Spheric Guardian",
+    fight_type: Common,
     hp_range: (
       min: 20,
       max: 20,
@@ -4601,6 +4641,7 @@
   ),
   (
     name: "Spike Slime L",
+    fight_type: Common,
     hp_range: (
       min: 64,
       max: 70,
@@ -4623,11 +4664,11 @@
           ),
           CreateCard(
             name: "Slimed",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
           CreateCard(
             name: "Slimed",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
         ],
         intent: AttackDebuff,
@@ -4692,6 +4733,7 @@
   ),
   (
     name: "Spike Slime M",
+    fight_type: Common,
     hp_range: (
       min: 28,
       max: 32,
@@ -4714,7 +4756,7 @@
           ),
           CreateCard(
             name: "Slimed",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
         ],
         intent: AttackDebuff,
@@ -4751,6 +4793,7 @@
   ),
   (
     name: "Spike Slime S",
+    fight_type: Common,
     hp_range: (
       min: 10,
       max: 14,
@@ -4785,6 +4828,7 @@
   ),
   (
     name: "Spiker",
+    fight_type: Common,
     hp_range: (
       min: 42,
       max: 56,
@@ -4869,6 +4913,7 @@
   ),
   (
     name: "Spire Growth",
+    fight_type: Common,
     hp_range: (
       min: 170,
       max: 170,
@@ -5013,6 +5058,7 @@
   ),
   (
     name: "Spire Shield",
+    fight_type: Elite,
     hp_range: (
       min: 110,
       max: 110,
@@ -5112,6 +5158,7 @@
   ),
   (
     name: "Spire Spear",
+    fight_type: Elite,
     hp_range: (
       min: 160,
       max: 160,
@@ -5137,23 +5184,21 @@
             then: [
               CreateCard(
                 name: "Burn",
-                location: DrawPile,
-                position: Top,
+                destination: DrawPile(Top),
               ),
               CreateCard(
                 name: "Burn",
-                location: DrawPile,
-                position: Top,
+                destination: DrawPile(Top),
               ),
             ],
             _else: [
               CreateCard(
                 name: "Burn",
-                location: DiscardPile,
+                destination: DiscardPile,
               ),
               CreateCard(
                 name: "Burn",
-                location: DiscardPile,
+                destination: DiscardPile,
               ),
             ],
           ),
@@ -5231,6 +5276,7 @@
   ),
   (
     name: "Taskmaster",
+    fight_type: Elite,
     hp_range: (
       min: 54,
       max: 60,
@@ -5264,7 +5310,7 @@
             effect: [
               CreateCard(
                 name: "Wound",
-                location: DiscardPile,
+                destination: DiscardPile,
               ),
             ],
           ),
@@ -5282,6 +5328,7 @@
   ),
   (
     name: "The Champ",
+    fight_type: Boss,
     hp_range: (
       min: 420,
       max: 420,
@@ -5705,6 +5752,7 @@
   ),
   (
     name: "The Collector",
+    fight_type: Boss,
     hp_range: (
       min: 282,
       max: 282,
@@ -5915,6 +5963,7 @@
   ),
   (
     name: "The Guardian",
+    fight_type: Boss,
     hp_range: (
       min: 240,
       max: 240,
@@ -6067,6 +6116,7 @@
   ),
   (
     name: "The Maw",
+    fight_type: Common,
     hp_range: (
       min: 300,
       max: 300,
@@ -6173,6 +6223,7 @@
   ),
   (
     name: "Time Eater",
+    fight_type: Boss,
     hp_range: (
       min: 456,
       max: 456,
@@ -6218,11 +6269,11 @@
             then: [
               CreateCard(
                 name: "Slimed",
-                location: DiscardPile,
+                destination: DiscardPile,
               ),
               CreateCard(
                 name: "Slimed",
-                location: DiscardPile,
+                destination: DiscardPile,
               ),
             ],
           ),
@@ -6321,6 +6372,7 @@
   ),
   (
     name: "Torch Head",
+    fight_type: Boss,
     hp_range: (
       min: 38,
       max: 40,
@@ -6351,6 +6403,7 @@
   ),
   (
     name: "Transient",
+    fight_type: Common,
     hp_range: (
       min: 999,
       max: 999,
@@ -6404,6 +6457,7 @@
   ),
   (
     name: "Writhing Mass",
+    fight_type: Common,
     hp_range: (
       min: 160,
       max: 160,
@@ -6418,7 +6472,7 @@
         effects: [
           CreateCard(
             name: "Parasite",
-            location: DeckPile,
+            destination: DeckPile,
           ),
           SetN(Fixed(1)),
         ],

@@ -1,514 +1,453 @@
-use im::{HashMap, HashSet, Vector};
+use im::{HashMap, Vector};
 use uuid::Uuid;
 
-use crate::spireai::evaluator::{CardReference, CardStorage};
-use crate::{comm::request as old};
-use crate::models::core as new_core;
+use crate::comm::request as external;
+use crate::models::core as internal_core;
 use crate::models::monsters::Intent as NewIntent;
-use crate::models::state as new;
+use crate::state as internal;
 
-pub fn convert_state(state: &old::GameState, uuid_map: &mut HashMap<String, Uuid>) -> new::GameState {
-    let relics = convert_relics(&state.relics, uuid_map);
-    let buffs = convert_buffs(&state.combat_state.as_ref().unwrap().player.powers, uuid_map);
-    let choices = convert_card_choices(state, uuid_map);
-
-    new::GameState {
-        class: convert_class(&state.class),
-        player: new::Creature {
-            hp: state.current_hp as u16,
-            max_hp: state.max_hp as u16,
-            is_player: true,
-            buff_names: buffs.iter().map(|(uuid, buff)| (buff.base.name.to_string(), *uuid)).collect(),
-            buffs_when: HashMap::new(),
-            buffs: buffs,
-            block: state
-                .combat_state
-                .as_ref()
-                .map(|a| a.player.block)
-                .unwrap_or(0) as u16,
-        },
-        event_state: None,
-        battle_state: state
-            .combat_state
-            .as_ref()
-            .map(|a| convert_battle_state(a, uuid_map))
-            .unwrap_or_else(new::BattleState::default),
-        gold: state.gold as u16,
-        floor: state.floor as u8,
-        floor_state: convert_floor_state(state, uuid_map),
-        deck: convert_cards(&state.deck, uuid_map),
-        card_choices: choices.iter().map(|choice| CardReference {
-            storage: CardStorage::Stasis,
-            uuid: choice.uuid,
-            base: choice.base
-        }).collect(),
-        card_choice_range: None,
-        card_stasis: choices.into_iter().map(|choice| (choice.uuid, choice)).collect(),
-        card_choice_type: convert_card_choice_type(state),
-        map: convert_map(state),
-        potions: convert_potions(&state.potions),
-        act: state.act as u8,
-        asc: state.ascension_level as u8,
-        relic_whens: HashMap::new(),
-        relic_names: relics.iter().map(|(uuid, r)|(r.base.name.to_string(), *uuid)).collect(),
-        relics,
-        keys: None,
-        won: None
-    }
+pub fn state_matches(
+    external: &external::GameState,
+    internal: &internal::game::GameState,
+    uuid_map: &mut HashMap<String, Uuid>,
+) -> bool {
+    (if let Some(combat_state) = &external.combat_state {
+        buffs_match(
+            &combat_state.player.powers,
+            &internal.player.buffs,
+            uuid_map,
+        ) && combat_state.player.block as u16 == internal.player.block
+            && battle_state_matches(&combat_state, &internal.battle_state, uuid_map)
+    } else {
+        internal.battle_state.active == false
+    }) && class_matches(&external.class, internal.class)
+        && external.current_hp as u16 == internal.player.hp
+        && external.max_hp as u16 == internal.player.max_hp
+        && external.gold as u16 == internal.gold
+        && external.floor as u8 == internal.floor
+        && floor_state_matches(external, &internal.floor_state)
+        && cards_match(&external.deck, &internal.deck, uuid_map)
+        && potions_match(&external.potions, &internal.potions)
+        && relics_match(&external.relics, &internal.relics, uuid_map)
+        && external.act as u8 == internal.act
+        && external.ascension_level as u8 == internal.asc
 }
-
-pub fn convert_map(state: &old::GameState) -> new::MapState {
-    let mut nodes: HashMap<(i8, i8), new::MapNode> = HashMap::new();
+/*
+pub fn convert_map(state: &external::GameState) -> internal::MapState {
+    let mut nodes: HashMap<(i8, i8), internal::MapNode> = HashMap::new();
     for node in &state.map {
         let new_node = convert_node(node);
         nodes.insert((new_node.floor, new_node.x), new_node);
     }
 
     let (x, y) = match &state.screen_state {
-        old::ScreenState::Map(current) => match &current.current_node {
+        external::ScreenState::Map(current) => match &current.current_node {
             Some(node) => (node.x, node.y),
             None => (-1, state.floor),
         },
         _ => (-1, state.floor),
     };
 
-    new::MapState {
+    internal::MapState {
         nodes,
         x: x as i8,
         floor: y as i8,
     }
 }
-pub fn convert_node(node: &old::MapNode) -> new::MapNode {
-    new::MapNode {
+pub fn convert_node(node: &external::MapNode) -> internal::MapNode {
+    internal::MapNode {
         floor: node.y as i8,
         icon: match node.symbol {
-            'M' => new::MapNodeIcon::Monster,
-            '?' => new::MapNodeIcon::Question,
-            '$' => new::MapNodeIcon::Shop,
-            'R' => new::MapNodeIcon::Campfire,
-            'T' => new::MapNodeIcon::Chest,
-            'E' => new::MapNodeIcon::Elite,
+            'M' => internal::MapNodeIcon::Monster,
+            '?' => internal::MapNodeIcon::Question,
+            '$' => internal::MapNodeIcon::Shop,
+            'R' => internal::MapNodeIcon::Campfire,
+            'T' => internal::MapNodeIcon::Chest,
+            'E' => internal::MapNodeIcon::Elite,
             _ => panic!("Unhandled node type: {}", node.symbol),
         },
         next: node.children.iter().map(|a| a.x as i8).collect(),
         x: node.x as i8,
     }
 }
+ */
 
-pub fn convert_relic(relic: &old::Relic, uuid_map: &mut HashMap<String, Uuid>) -> new::Relic {
-    let uuid = uuid_map.entry(relic.id.to_string()).or_insert_with(Uuid::new_v4);
-
-    new::Relic {
-        base: crate::models::relics::by_name(relic.name.as_str()),
-        vars: new::Vars {
-            n: relic.counter as i16,
-            x: 0,
-            n_reset: 0,
-        },
-        uuid: *uuid,
-        enabled: true,
-    }
+pub fn relics_match(
+    external: &[external::Relic],
+    internal: &HashMap<Uuid, internal::core::Relic>,
+    uuid_map: &mut HashMap<String, Uuid>,
+) -> bool {
+    sets_match(external, internal, uuid_map, relic_matches, |relic| {
+        relic.id.to_string()
+    })
 }
 
-pub fn convert_relics(relics: &[old::Relic], uuid_map: &mut HashMap<String, Uuid>) -> HashMap<Uuid, new::Relic> {
-    let mut vector = HashMap::new();
-    for relic in relics {
-        let new_relic = convert_relic(relic, uuid_map);
-        vector.insert(new_relic.uuid, new_relic);
-    }
-    vector
+pub fn relic_matches(external: &external::Relic, internal: &internal::core::Relic) -> bool {
+    external.name == internal.base.name
 }
 
-pub fn convert_intent(intent: &old::Intent) -> NewIntent {
-    match intent {
-        old::Intent::Attack => NewIntent::Attack,
-        old::Intent::AttackBuff => NewIntent::AttackBuff,
-        old::Intent::AttackDebuff => NewIntent::AttackDebuff,
-        old::Intent::AttackDefend => NewIntent::AttackDefend,
-        old::Intent::Buff => NewIntent::Buff,
-        old::Intent::Debuff => NewIntent::Debuff,
-        old::Intent::StrongDebuff => NewIntent::StrongDebuff,
-        old::Intent::Defend => NewIntent::Defend,
-        old::Intent::DefendDebuff => NewIntent::DefendDebuff,
-        old::Intent::DefendBuff => NewIntent::DefendBuff,
-        old::Intent::Escape => NewIntent::Escape,
-        old::Intent::None => NewIntent::None,
-        old::Intent::Sleep => NewIntent::Sleep,
-        old::Intent::Stun => NewIntent::Stun,
-        old::Intent::Unknown => NewIntent::Unknown,
-        old::Intent::Debug | old::Intent::Magic => panic!("Unrecognized intent: {:?}", intent),
-    }
-}
-
-pub fn convert_battle_state(
-    state: &old::CombatState,
-    uuid_map: &mut HashMap<String, Uuid>
-) -> new::BattleState {
-    let mut draw = HashSet::new();
-    let mut discard = HashSet::new();
-    let mut exhaust = HashSet::new();
-    let mut hand = HashSet::new();
-
-    let mut cards = HashMap::new();
-    for (uuid, card) in convert_cards(&state.draw_pile, uuid_map) {
-        cards.insert(uuid, card);
-        draw.insert(uuid);
-    }
-    for (uuid, card) in convert_cards(&state.discard_pile, uuid_map) {
-        cards.insert(uuid, card);
-        discard.insert(uuid);
-    }
-    for (uuid, card) in convert_cards(&state.exhaust_pile, uuid_map) {
-        cards.insert(uuid, card);
-        exhaust.insert(uuid);
-    }
-    for (uuid, card) in convert_cards(&state.hand, uuid_map) {
-        cards.insert(uuid, card);
-        hand.insert(uuid);
-    }
-
-
-    new::BattleState {
-        active: true,
-        cards,
-        draw,
-        discard_count: state.cards_discarded_this_turn as u8,
-        draw_bottom_known: Vector::new(),
-        draw_top_known: Vector::new(),
-        play_count: 0,
-        hp_loss_count: 0,
-        discard,
-        exhaust,
-        hand,
-        last_card_played: None,
-        orb_slots: 0,
-        power_count: 0,
-        monsters: convert_monsters(&state.monsters, uuid_map),
-        energy: state.player.energy as u8,
-        orbs: convert_orbs(&state.player.orbs),
-        stance: new_core::Stance::None,
-        battle_type: new::BattleType::Common,
-    }
-}
-
-pub fn convert_card_choices(game_state: &old::GameState, uuid_map: &mut HashMap<String, Uuid>) -> Vector<new::Card> {
-    match &game_state.screen_state {
-        old::ScreenState::Grid(grid) => grid.cards.iter().map(|card|convert_card(card, uuid_map)).collect(),
-        _ => Vector::new(),
-    }
-}
-
-pub fn convert_card_choice_type(game_state: &old::GameState) -> new::CardChoiceType {
-    match &game_state.current_action {
-        Some(s) => match s.as_str() {
-            "ScryAction" => new::CardChoiceType::Scry,
-            "DamageAction" => new::CardChoiceType::None,
-            _ => panic!("Unexpected action type: {}", s),
-        },
-        None => new::CardChoiceType::None,
-    }
-}
-
-pub fn convert_floor_state(state: &old::GameState, uuid_map: &mut HashMap<String, Uuid>) -> new::FloorState {
-    match &state.screen_state {
-        old::ScreenState::None {} => match &state.room_phase {
-            old::RoomPhase::Combat => new::FloorState::Battle,
-            _ => panic!("Expected Battle in None state"),
-        },
-        old::ScreenState::Event(_) => new::FloorState::Event,
-        old::ScreenState::Map(_) => new::FloorState::Map,
-        old::ScreenState::CombatReward(rewards) => {
-            new::FloorState::Rewards(convert_rewards(rewards, uuid_map))
-        }
-        old::ScreenState::CardReward(reward) => new::FloorState::CardReward(
-            reward
-                .cards
+pub fn battle_state_matches(
+    external: &external::CombatState,
+    internal: &internal::battle::BattleState,
+    uuid_map: &mut HashMap<String, Uuid>,
+) -> bool {
+    internal.active
+        && cards_match(
+            &external.hand,
+            &internal
+                .hand
                 .iter()
-                .map(|a| (a.name.to_string(), a.upgrades > 0))
+                .map(|u| (*u, internal.cards[u].clone()))
                 .collect(),
-        ),
-        old::ScreenState::ShopRoom {} => new::FloorState::ShopEntrance,
-        old::ScreenState::ShopScreen(screen) => convert_shop(screen),
-        old::ScreenState::Rest(_) => new::FloorState::Rest,
-        old::ScreenState::Grid(grid) => match &state.room_phase {
-            old::RoomPhase::Combat => new::FloorState::Battle,
-            old::RoomPhase::Event => {
+            uuid_map,
+        )
+        && cards_match(
+            &external.draw_pile,
+            &internal
+                .draw
+                .iter()
+                .map(|u| (*u, internal.cards[u].clone()))
+                .collect(),
+            uuid_map,
+        )
+        && cards_match(
+            &external.discard_pile,
+            &internal
+                .discard
+                .iter()
+                .map(|u| (*u, internal.cards[u].clone()))
+                .collect(),
+            uuid_map,
+        )
+        && cards_match(
+            &external.exhaust_pile,
+            &internal
+                .exhaust
+                .iter()
+                .map(|u| (*u, internal.cards[u].clone()))
+                .collect(),
+            uuid_map,
+        )
+        && external.cards_discarded_this_turn as u8 == internal.discard_count
+        && monsters_match(&external.monsters, &internal.monsters, uuid_map)
+        && external.player.energy as u8 == internal.energy
+        && orbs_match(&external.player.orbs, &internal.orbs)
+}
+
+pub fn floor_state_matches(
+    external: &external::GameState,
+    internal: &internal::game::FloorState,
+) -> bool {
+    match &external.screen_state {
+        external::ScreenState::None {} => match &external.room_phase {
+            external::RoomPhase::Combat => internal == &internal::game::FloorState::Battle,
+            _ => false,
+        },
+        external::ScreenState::Event(_) => internal == &internal::game::FloorState::Event,
+        external::ScreenState::Map(_) => internal == &internal::game::FloorState::Map,
+        external::ScreenState::CombatReward(external_rewards) => {
+            if let internal::game::FloorState::Rewards(internal_rewards) = internal {
+                rewards_match(external_rewards, internal_rewards)
+            } else {
+                false
+            }
+        }
+        external::ScreenState::CardReward(external_rewards) => {
+            if let internal::game::FloorState::CardReward(internal_rewards) = internal {
+                external_rewards.cards.iter().all(|card| {
+                    internal_rewards.iter().any(|(name, upgraded)| {
+                        &card.name == name && (card.upgrades > 0) == *upgraded
+                    })
+                })
+            } else {
+                false
+            }
+        }
+        external::ScreenState::ShopRoom {} => internal == &internal::game::FloorState::ShopEntrance,
+        external::ScreenState::ShopScreen(_) => true, // Shops statistically will never match
+        external::ScreenState::Rest(_) => internal == &internal::game::FloorState::Rest,
+        external::ScreenState::Grid(grid) => match &external.room_phase {
+            external::RoomPhase::Combat => internal == &internal::game::FloorState::Battle,
+            external::RoomPhase::Event => {
                 if grid.for_purge {
-                    new::FloorState::EventRemove(grid.num_cards as u8)
+                    internal == &internal::game::FloorState::EventRemove(grid.num_cards as u8)
                 } else if grid.for_transform {
-                    new::FloorState::EventTransform(grid.num_cards as u8, false)
+                    internal
+                        == &internal::game::FloorState::EventTransform(grid.num_cards as u8, false)
                 } else if grid.for_upgrade {
-                    new::FloorState::EventUpgrade(grid.num_cards as u8)
+                    internal == &internal::game::FloorState::EventUpgrade(grid.num_cards as u8)
                 } else {
                     panic!("Unexpected grid in event")
                 }
             }
             _ => panic!("Unexpected room phase in grid choice"),
         },
-        old::ScreenState::Chest(chest) => convert_chest(chest),
+        external::ScreenState::Chest(chest) => {
+            if let internal::game::FloorState::Chest(chest_type) = internal {
+                chest_matches(chest, *chest_type)
+            } else {
+                false
+            }
+        }
         // ScreenState::CardReward(CardReward),
         // ScreenState::BossReward(Vec<Relic>),
-        // ScreenState::Grid(Grid) => new::FloorState::CardSelect,
+        // ScreenState::Grid(Grid) => internal::game::FloorState::CardSelect,
         // ScreenState::HandSelect(HandSelect),
-        old::ScreenState::GameOver(_) => new::FloorState::GameOver,
+        external::ScreenState::GameOver(_) => internal == &internal::game::FloorState::GameOver,
         // ScreenState::Complete,
         _ => panic!("Unhandled screen state"),
     }
 }
 
-fn convert_chest(chest: &old::Chest) -> new::FloorState {
-    if chest.chest_open {
-        panic!("Not sure how to handle open chest")
-    } else {
-        let chest_type = match chest.chest_type {
-            old::ChestType::SmallChest => new_core::ChestType::Small,
-            old::ChestType::MediumChest => new_core::ChestType::Medium,
-            old::ChestType::LargeChest => new_core::ChestType::Large,
-            old::ChestType::BossChest => new_core::ChestType::Boss,
+fn chest_matches(external: &external::Chest, internal: internal_core::ChestType) -> bool {
+    internal
+        == match external.chest_type {
+            external::ChestType::SmallChest => internal_core::ChestType::Small,
+            external::ChestType::MediumChest => internal_core::ChestType::Medium,
+            external::ChestType::LargeChest => internal_core::ChestType::Large,
+            external::ChestType::BossChest => internal_core::ChestType::Boss,
             _ => panic!("Unexpected type of chest"),
-        };
-
-        new::FloorState::Chest(chest_type)
-    }
+        }
 }
 
-fn convert_shop(shop: &old::ShopScreen) -> new::FloorState {
-    let cards = shop
-        .cards
-        .iter()
-        .map(|a| {
-            (
-                a.name.to_string(),
-                a.price.expect("No price on card") as u16,
-            )
-        })
-        .collect();
-    let relics = shop
-        .relics
-        .iter()
-        .map(|a| {
-            (
-                a.name.to_string(),
-                a.price.expect("No price on relic") as u16,
-            )
-        })
-        .collect();
-    let potions = shop
-        .potions
-        .iter()
-        .map(|a| {
-            (
-                a.name.to_string(),
-                a.price.expect("No price on potion") as u16,
-            )
-        })
-        .collect();
-    let price = if shop.purge_available {
-        shop.purge_cost as u16
-    } else {
-        0
-    };
-
-    new::FloorState::Shop {
-        cards,
-        relics,
-        potions,
-        purge_cost: price,
-    }
-}
-
-fn convert_rewards(rewards: &old::CombatRewards, uuid_map: &mut HashMap<String, Uuid>) -> Vector<new::Reward> {
-    rewards
-        .rewards
-        .iter()
-        .map(|a| match a {
-            old::RewardType::Card => new::Reward::CardChoice,
-            old::RewardType::EmeraldKey => new::Reward::EmeraldKey,
-            old::RewardType::Gold { gold } => new::Reward::Gold(*gold as u8),
-            old::RewardType::Potion { potion } => new::Reward::Potion(convert_potion(potion)),
-            old::RewardType::Relic { relic } => new::Reward::Relic(convert_relic(relic, uuid_map)),
-            old::RewardType::StolenGold { gold } => new::Reward::Gold(*gold as u8),
-            old::RewardType::SapphireKey { link } => new::Reward::SapphireKey(convert_relic(link, uuid_map)),
-        })
-        .collect()
-}
-
-fn convert_event(event: &old::Event) -> new::EventState {
-    let base_event = crate::models::events::by_name(&event.event_name);
-
-    new::EventState {
-        base: base_event,
-        variant: Option::None,
-        variant_cards: vec![],
-        variant_relic: Option::None,
-        variant_amount: Option::None,
-        vars: new::Vars {
-            n: 0,
-            x: 0,
-            n_reset: 0,
-        },
-        available_choices: event
-            .options
-            .iter()
-            .filter(|a| !a.disabled)
-            .map(|option: &old::EventOption| {
-                base_event
-                    .choices
-                    .iter()
-                    .find(|a| a.name == option.label)
-                    .unwrap_or_else(|| {
-                        panic!("No option found that matches label: {}", option.label)
-                    })
-                    .name
-                    .to_string()
-            })
-            .collect(),
-    }
-}
-
-fn convert_orbs(orbs: &[old::OrbType]) -> Vector<new::Orb> {
-    orbs.iter()
-        .map(|orb| new::Orb {
-            base: match orb.name.as_str() {
-                "Lightning" => new_core::OrbType::Lightning,
-                "Dark" => new_core::OrbType::Dark,
-                "Frost" => new_core::OrbType::Frost,
-                "Plasma" => new_core::OrbType::Plasma,
-                _ => panic!("Unrecognized orb type"),
-            },
-            n: orb.evoke_amount as u16,
-        })
-        .collect()
-}
-
-lazy_static!{
-    static ref MONSTER_MOVE: crate::models::monsters::MonsterMove = crate::models::monsters::MonsterMove {
-        name: String::new(),
-        effects: vec![],
-        intent: NewIntent::None,
-    };
-}
-
-fn convert_monsters(monsters: &[old::Monster], uuid_map: &mut HashMap<String, Uuid>) -> HashMap<Uuid, new::Monster> {
-
-    monsters
-        .iter()
-        .enumerate()
-        .map(|(index, monster)| {
-            let buffs = convert_buffs(&monster.powers, uuid_map);
-            let uuid = *uuid_map.entry(monster.id.to_string()).or_insert_with(Uuid::new_v4);
-            let monster = new::Monster {
-                base: crate::models::monsters::by_name(&monster.id),
-                uuid,
-                position: index,
-                creature: new::Creature {
-                    hp: monster.current_hp as u16,
-                    max_hp: monster.max_hp as u16,
-                    is_player: false,
-                    buff_names: buffs.iter().map(|(uuid, buff)| (buff.base.name.to_string(), *uuid)).collect(),
-                    buffs_when: HashMap::new(),
-                    buffs,
-                    block: monster.block as u16,
-                },
-                index: 0,
-                phase: 0,
-                whens: HashMap::new(),
-                vars: new::Vars {
-                    n: 0,
-                    x: 0,
-                    n_reset: 0,
-                },
-                targetable: !monster.is_gone,
-                intent: convert_intent(&monster.intent),
-                current_move: &MONSTER_MOVE,
-                last_move: None,
-                last_move_count: 0,
-            };
-            (uuid, monster)
-        })
-        .collect()
-}
-
-fn convert_buffs(buffs: &[old::Power], uuid_map: &mut HashMap<String, Uuid>) -> HashMap<Uuid, new::Buff> {
-    let mut vector = HashMap::new();
-
-    for buff in buffs {
-        let uuid = *uuid_map.entry(buff.id.to_string()).or_insert_with(Uuid::new_v4);
-
-        vector.insert(uuid, new::Buff {
-            base: crate::models::buffs::by_name(&buff.name),
-            uuid,
-            vars: new::Vars {
-                n: buff.amount as i16,
-                x: 0,
-                n_reset: 0,
-            },
-            stacked_vars: vec![],
-        });
-    }
-
-    vector
-}
-
-fn convert_potion(potion: &old::Potion) -> new::Potion {
-    new::Potion {
-        base: crate::models::potions::by_name(&potion.name),
-    }
-}
-
-fn convert_potions(potions: &[old::Potion]) -> Vector<Option<new::Potion>> {
-    potions
-        .iter()
-        .map(|potion| {
-            if potion.name == "Potion Slot" {
-                None
-            } else {
-                Some(convert_potion(potion))
+fn rewards_match(
+    external: &external::CombatRewards,
+    internal: &Vector<internal::game::Reward>,
+) -> bool {
+    external.rewards.iter().all(|a| {
+        internal.iter().any(|b| match a {
+            external::RewardType::Card => b == &internal::game::Reward::CardChoice,
+            external::RewardType::EmeraldKey => b == &internal::game::Reward::EmeraldKey,
+            external::RewardType::Gold { gold } => b == &internal::game::Reward::Gold(*gold as u8),
+            external::RewardType::Potion { potion } => {
+                if let internal::game::Reward::Potion(p) = b {
+                    potion.name == p.base.name
+                } else {
+                    false
+                }
+            }
+            external::RewardType::Relic { relic } => {
+                if let internal::game::Reward::Relic(r) = b {
+                    relic.name == r.base.name
+                } else {
+                    false
+                }
+            }
+            external::RewardType::StolenGold { gold } => {
+                b == &internal::game::Reward::Gold(*gold as u8)
+            }
+            external::RewardType::SapphireKey { link } => {
+                if let internal::game::Reward::SapphireKey(r) = b {
+                    link.name == r.base.name
+                } else {
+                    false
+                }
             }
         })
-        .collect()
+    })
 }
 
-fn convert_cards(cards: &[old::Card], uuid_map: &mut HashMap<String, Uuid>) -> HashMap<Uuid, new::Card> {
-    let mut vector = HashMap::new();
-    for card in cards {
-        let new_card = convert_card(card, uuid_map);
-        vector.insert(new_card.uuid, new_card);
+fn events_match(external: &external::Event, internal: &internal::core::Event) -> bool {
+    external.event_name == internal.base.name
+        && external.options.iter().all(|option| {
+            internal
+                .available_choices
+                .iter()
+                .any(|a| a == &option.label)
+        })
+}
+
+fn orbs_match(
+    external_map: &[external::OrbType],
+    internal_map: &Vector<internal::core::Orb>,
+) -> bool {
+    if external_map.len() != internal_map.len() {
+        return false;
     }
-    vector
+
+    for (idx, external) in external_map.iter().enumerate() {
+        let internal = &internal_map[idx];
+        if !(internal.base
+            == match external.name.as_str() {
+                "Lightning" => internal_core::OrbType::Lightning,
+                "Dark" => internal_core::OrbType::Dark,
+                "Frost" => internal_core::OrbType::Frost,
+                "Plasma" => internal_core::OrbType::Plasma,
+                _ => panic!("Unrecognized orb type"),
+            }
+            && external.evoke_amount as u16 == internal.n)
+        {
+            return false;
+        }
+    }
+
+    true
 }
 
-fn convert_card(card: &old::Card, uuid_map: &mut HashMap<String, Uuid>) -> new::Card {
-    let uuid = uuid_map.entry(card.id.to_string()).or_insert_with(Uuid::new_v4);
+fn monsters_match(
+    external_map: &[external::Monster],
+    internal_map: &HashMap<Uuid, internal::core::Monster>,
+    uuid_map: &mut HashMap<String, Uuid>,
+) -> bool {
+    if external_map.len() != internal_map.len() {
+        return false;
+    }
 
-    let name = if card.name.ends_with('+') {
-        &card.name[0..card.name.len() - 1]
+    for internal in internal_map.values() {
+        let external = &external_map[internal.position];
+        if !(buffs_match(&external.powers, &internal.creature.buffs, uuid_map)
+            && external.current_hp as u16 == internal.creature.hp
+            && external.max_hp as u16 == internal.creature.hp
+            && external.block as u16 == internal.creature.block
+            && external.is_gone == !internal.targetable
+            && external.name == internal.base.name
+            && intent_matches(&external.intent, internal.intent))
+        {
+            return false;
+        }
+    }
+    true
+}
+
+fn intent_matches(external: &external::Intent, internal: NewIntent) -> bool {
+    internal
+        == match external {
+            external::Intent::Attack => NewIntent::Attack,
+            external::Intent::AttackBuff => NewIntent::AttackBuff,
+            external::Intent::AttackDebuff => NewIntent::AttackDebuff,
+            external::Intent::AttackDefend => NewIntent::AttackDefend,
+            external::Intent::Buff => NewIntent::Buff,
+            external::Intent::Debuff => NewIntent::Debuff,
+            external::Intent::StrongDebuff => NewIntent::StrongDebuff,
+            external::Intent::Defend => NewIntent::Defend,
+            external::Intent::DefendDebuff => NewIntent::DefendDebuff,
+            external::Intent::DefendBuff => NewIntent::DefendBuff,
+            external::Intent::Escape => NewIntent::Escape,
+            external::Intent::None => NewIntent::None,
+            external::Intent::Sleep => NewIntent::Sleep,
+            external::Intent::Stun => NewIntent::Stun,
+            external::Intent::Unknown => NewIntent::Unknown,
+            external::Intent::Debug | external::Intent::Magic => {
+                panic!("Unrecognized intent: {:?}", external)
+            }
+        }
+}
+
+fn buffs_match(
+    external: &[external::Power],
+    internal: &HashMap<Uuid, internal::core::Buff>,
+    uuid_map: &mut HashMap<String, Uuid>,
+) -> bool {
+    sets_match(
+        external,
+        &internal,
+        uuid_map,
+        |a, b| a.name == b.base.name && a.amount as i16 == b.vars.n,
+        |a| a.id.to_string(),
+    )
+}
+
+fn potions_match(
+    external: &[external::Potion],
+    internal: &Vector<Option<internal::core::Potion>>,
+) -> bool {
+    if external.len() != internal.len() {
+        return false;
+    }
+
+    for idx in 0..external.len() {
+        let name = match &internal[idx] {
+            None => "Potion Slot",
+            Some(p) => p.base.name.as_str(),
+        };
+
+        if name != &external[idx].name {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn sets_match<A, B, F, T>(
+    external: &[A],
+    internal: &HashMap<Uuid, B>,
+    uuid_map: &mut HashMap<String, Uuid>,
+    matcher: F,
+    id: T,
+) -> bool
+where
+    B: Clone,
+    F: Fn(&A, &B) -> bool,
+    T: Fn(&A) -> String,
+{
+    if external.len() != internal.len() {
+        return false;
+    }
+
+    let mut remaining = Vec::new();
+    let mut used_uuids = HashMap::new();
+
+    for external_item in external {
+        if let Some(uuid) = uuid_map.get(&id(external_item)) {
+            let internal_item = internal[uuid].clone();
+            if !matcher(external_item, &internal_item) {
+                return false;
+            }
+            used_uuids.insert(*uuid, internal_item);
+        } else {
+            remaining.push(external_item)
+        }
+    }
+
+    let remaining_uuids = used_uuids.symmetric_difference(internal.clone());
+
+    for external_item in remaining {
+        let mut found_match = false;
+        for (uuid, internal_item) in &remaining_uuids {
+            if matcher(external_item, internal_item) {
+                found_match = true;
+                uuid_map.insert(id(external_item), *uuid);
+                break;
+            }
+        }
+
+        if !found_match {
+            return false;
+        }
+    }
+
+    true
+}
+
+fn cards_match(
+    external: &[external::Card],
+    internal: &HashMap<Uuid, internal::core::Card>,
+    uuid_map: &mut HashMap<String, Uuid>,
+) -> bool {
+    sets_match(external, internal, uuid_map, card_matches, |a| {
+        a.id.to_string()
+    })
+}
+
+fn card_matches(external: &external::Card, internal: &internal::core::Card) -> bool {
+    let name = if external.name.ends_with('+') {
+        &external.name[0..external.name.len() - 1]
     } else {
-        card.name.as_str()
+        external.name.as_str()
     };
-    new::Card {
-        base: crate::models::cards::by_name(&String::from(name)),
-        vars: new::Vars {
-            n: 0,
-            n_reset: 0,
-            x: 0,
-        },
-        bottled: false,
-        uuid: *uuid,
-        upgrades: card.upgrades as u8,
-        cost: card.cost as u8,
-        base_cost: card.cost as u8,
-        cost_until_played: false,
-        retain: false,
-    }
+    name == internal.base.name
+        && external.upgrades as u8 == internal.upgrades
+        && external.cost as u8 == internal.cost
 }
 
-fn convert_class(class: &old::PlayerClass) -> new_core::Class {
-    match class {
-        old::PlayerClass::Ironclad => new_core::Class::Ironclad,
-        old::PlayerClass::Silent => new_core::Class::Silent,
-        old::PlayerClass::Defect => new_core::Class::Defect,
-        old::PlayerClass::Watcher => new_core::Class::Watcher,
-        old::PlayerClass::Other => panic!("Unrecognized class"),
-    }
+fn class_matches(external: &external::PlayerClass, internal: internal_core::Class) -> bool {
+    internal
+        == match external {
+            external::PlayerClass::Ironclad => internal_core::Class::Ironclad,
+            external::PlayerClass::Silent => internal_core::Class::Silent,
+            external::PlayerClass::Defect => internal_core::Class::Defect,
+            external::PlayerClass::Watcher => internal_core::Class::Watcher,
+            external::PlayerClass::Other => panic!("Unrecognized class"),
+        }
 }

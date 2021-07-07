@@ -1,14 +1,15 @@
 use ron::de::from_reader;
-use std::{collections::HashMap, fs::File, path::Path};
+use std::{collections::HashMap, error::Error, fs::File, path::Path};
 use serde::{Deserialize, Serialize};
 
-use super::core::{Amount, Condition, Effect, When, WhenEffect, is_default};
+use super::core::{Amount, Condition, Effect, FightType, When, WhenEffect, is_default};
 
 #[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct BaseMonster {
     pub name: String,
     pub hp_range: SimpleRange,
     pub hp_range_asc: SimpleRange,
+    pub fight_type: FightType,
     pub moveset: Vec<MonsterMove>,
     pub phases: Vec<Phase>,
     #[serde(default, skip_serializing_if = "is_default")]
@@ -47,6 +48,16 @@ pub struct MonsterMove {
     #[serde(default, skip_serializing_if = "is_default")]
     pub effects: Vec<Effect>,
     pub intent: Intent,
+}
+
+impl Default for MonsterMove {
+    fn default() -> Self {
+        MonsterMove {
+            name: String::default(),
+            effects: vec![],
+            intent: Intent::None,
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
@@ -114,7 +125,7 @@ lazy_static! {
     pub static ref MONSTERS: HashMap<String, BaseMonster> = {
         let mut m = HashMap::new();
 
-        for monster in all_monsters() {
+        for monster in all_monsters().unwrap() {
             m.insert((&monster.name).to_string(), monster);
         }
 
@@ -122,8 +133,21 @@ lazy_static! {
     };
 }
 
-fn all_monsters() -> Vec<BaseMonster> {
+fn all_monsters() -> Result<Vec<BaseMonster>, Box<dyn Error>> {
     let filepath = Path::new("data").join("monsters.ron");
-    let file = File::open(filepath).unwrap();
-    from_reader(file).unwrap()
+    let file = File::open(filepath)?;
+    let u = from_reader(file)?;
+    Ok(u)
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn can_parse() -> Result<(), String> {
+        match super::all_monsters() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(format!("{:?}", err))
+        }
+    }
 }

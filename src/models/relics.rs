@@ -1,11 +1,9 @@
-use std::{collections::HashMap, fs::File, path::Path};
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use ron::de::from_reader;
 
-use super::core::{Class, Effect, When, Rarity, is_default};
-
-
+use super::core::{is_default, Class, Effect, Rarity, When};
 
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BaseRelic {
@@ -78,7 +76,7 @@ lazy_static! {
     pub static ref RELICS: HashMap<String, BaseRelic> = {
         let mut m = HashMap::new();
 
-        for relic in all_relics() {
+        for relic in all_relics().unwrap() {
             m.insert((&relic.name).to_string(), relic);
         }
 
@@ -86,8 +84,21 @@ lazy_static! {
     };
 }
 
-fn all_relics() -> Vec<BaseRelic> {
+fn all_relics() -> Result<Vec<BaseRelic>, Box<dyn Error>> {
     let filepath = Path::new("data").join("potions.ron");
-    let file = File::open(filepath).unwrap();
-    from_reader(file).unwrap()
+    let file = File::open(filepath)?;
+    let u = from_reader(file)?;
+    Ok(u)
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn can_parse() -> Result<(), String> {
+        match super::all_relics() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(format!("{:?}", err))
+        }
+    }
 }

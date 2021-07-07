@@ -1,9 +1,9 @@
 use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
 
-use std::{collections::HashMap, fs::File, path::Path};
+use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
-use super::core::{Effect, When, WhenEffect, is_default};
+use super::core::{is_default, Effect, When, WhenEffect};
 
 #[derive(Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub struct BaseBuff {
@@ -41,7 +41,7 @@ lazy_static! {
     pub static ref BUFFS: HashMap<String, BaseBuff> = {
         let mut m = HashMap::new();
 
-        for buff in all_buffs() {
+        for buff in all_buffs().unwrap() {
             m.insert((&buff.name).to_string(), buff);
         }
 
@@ -49,8 +49,21 @@ lazy_static! {
     };
 }
 
-fn all_buffs() -> Vec<BaseBuff> {
+fn all_buffs() -> Result<Vec<BaseBuff>, Box<dyn Error>> {
     let filepath = Path::new("data").join("buffs.ron");
-    let file = File::open(filepath).unwrap();
-    from_reader(file).unwrap()
+    let file = File::open(filepath)?;
+    let u = from_reader(file)?;
+    Ok(u)
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn can_parse() -> Result<(), String> {
+        match super::all_buffs() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(format!("{:?}", err))
+        }
+    }
 }

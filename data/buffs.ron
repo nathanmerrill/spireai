@@ -61,7 +61,7 @@
         effect: [
           CreateCard(
             name: "Smite",
-            location: PlayerHand,
+            destination: PlayerHand,
           ),
         ],
       ),
@@ -199,7 +199,7 @@
         effect: [
           CreateCard(
             name: "Collect",
-            location: PlayerHand,
+            destination: PlayerHand,
             then: [
               Upgrade,
             ],
@@ -284,7 +284,7 @@
             n: X,
             effect: [
               CreateCardByType(
-                location: PlayerHand,
+                destination: PlayerHand,
                 type: Power,
               ),
             ],
@@ -406,14 +406,6 @@
   (
     name: "Draw Card",
     expire_at: BeforeHandDraw,
-    effects: [
-      (
-        when: BeforeHandDraw,
-        effect: [
-          Draw(X),
-        ],
-      ),
-    ],
   ),
   (
     name: "Draw Reduction",
@@ -646,7 +638,7 @@
             n: X,
             effect: [
               CreateCardByType(
-                location: PlayerHand,
+                destination: PlayerHand,
                 type: All,
                 rarity: Some(Common),
               ),
@@ -668,8 +660,7 @@
             effect: [
               CreateCard(
                 name: "Dazed",
-                location: DrawPile,
-                position: Random,
+                destination: DrawPile(Random),
               ),
             ],
           ),
@@ -683,8 +674,7 @@
             effect: [
               CreateCard(
                 name: "Dazed",
-                location: DrawPile,
-                position: Random,
+                destination: DrawPile(Random),
               ),
             ],
           ),
@@ -698,8 +688,7 @@
             effect: [
               CreateCard(
                 name: "Dazed",
-                location: DrawPile,
-                position: Random,
+                destination: DrawPile(Random),
               ),
             ],
           ),
@@ -713,8 +702,7 @@
             effect: [
               CreateCard(
                 name: "Dazed",
-                location: DrawPile,
-                position: Random,
+                destination: DrawPile(Random),
               ),
             ],
           ),
@@ -733,7 +721,7 @@
             effect: [
               CreateCard(
                 name: "Shiv",
-                location: PlayerHand,
+                destination: PlayerHand,
               ),
             ],
           ),
@@ -824,7 +812,7 @@
             n: X,
             effect: [
               CreateCardByType(
-                location: PlayerHand,
+                destination: PlayerHand,
                 type: All,
                 class: Some(None),
               ),
@@ -1008,7 +996,7 @@
         effect: [
           CreateCard(
             name: "Wound",
-            location: DiscardPile,
+            destination: DiscardPile,
           ),
         ],
       ),
@@ -1341,8 +1329,7 @@
         effect: [
           CreateCard(
             name: "Insight",
-            location: DrawPile,
-            position: Random,
+            destination: DrawPile(Random),
           ),
         ],
       ),

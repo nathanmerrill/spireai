@@ -28,8 +28,7 @@
         activation: When(CombatStart),
         effect: Single(CreateCard(
             name: "Miracle",
-            location: PlayerHand,
-            position: Top,
+            destination: PlayerHand(Top),
         )),
         class: Watcher,
     ),
@@ -512,18 +511,15 @@
         effect: Multiple([
             CreateCard(
                 name: "Shiv",
-                location: PlayerHand,
-                position: Top,
+                destination: PlayerHand(Top),
             ),
             CreateCard(
                 name: "Shiv",
-                location: PlayerHand,
-                position: Top,
+                destination: PlayerHand(Top),
             ),
             CreateCard(
                 name: "Shiv",
-                location: PlayerHand,
-                position: Top,
+                destination: PlayerHand(Top),
             ),
         ]),
         class: Silent,
@@ -595,7 +591,7 @@
         rarity: Rare,
         activation: When(Exhaust),
         effect: Single(CreateCardByType(
-            location: PlayerHand,
+            destination: PlayerHand,
             type: All,
         )),
     ),
@@ -873,7 +869,7 @@
         name: "Orange Pellets",
         rarity: Shop,
         activation: Custom,
-        effect: Single(RemoveDebuffs()),
+        effect: Single(RemoveDebuffs),
     ),
     (
         name: "Orrery",
@@ -973,7 +969,7 @@
         effect: Multiple([
             CreateCard(
                 name: "Curse Of The Bell",
-                location: DeckPile,
+                destination: DeckPile,
             ),
             ShowReward([
                 RandomRelic,
@@ -1003,6 +999,7 @@
         name: "Empty Cage",
         rarity: Boss,
         activation: Immediate,
+        effect: Single(RemoveCard(2))
     ),
     (
         name: "Fusion Hammer",
@@ -1121,8 +1118,7 @@
             n: Fixed(3),
             effect: Single(CreateCard(
                 name: "Miracle",
-                location: PlayerHand,
-                position: Top,
+                destination: PlayerHand
             )),
         )),
         class: Watcher,
@@ -1136,8 +1132,7 @@
             n: Fixed(2),
             effect: Single(CreateCard(
                 name: "Wound",
-                location: DeckPile,
-                position: Random,
+                destination: DeckPile(Random),
             )),
         )),
         class: Ironclad,
@@ -1206,7 +1201,7 @@
         rarity: Event,
         activation: When(CombatStart),
         effect: Single(CreateCardByType(
-            location: PlayerHand,
+            destination: PlayerHand,
             type: Power,
             then: Single(ZeroTurnCost),
         )),

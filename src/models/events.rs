@@ -1,9 +1,9 @@
-use std::{collections::HashMap, fs::File, path::Path};
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use ron::de::from_reader;
 
-use super::core::{Condition, Effect, is_default, is_true, _true};
+use super::core::{Condition, Effect, _true, is_default, is_true};
 
 #[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct BaseEvent {
@@ -51,7 +51,7 @@ lazy_static! {
     pub static ref EVENTS: HashMap<String, BaseEvent> = {
         let mut m = HashMap::new();
 
-        for event in all_events() {
+        for event in all_events().unwrap() {
             m.insert((&event.name).to_string(), event);
         }
 
@@ -59,8 +59,21 @@ lazy_static! {
     };
 }
 
-fn all_events() -> Vec<BaseEvent> {
+fn all_events() -> Result<Vec<BaseEvent>, Box<dyn Error>> {
     let filepath = Path::new("data").join("events.ron");
-    let file = File::open(filepath).unwrap();
-    from_reader(file).unwrap()
+    let file = File::open(filepath)?;
+    let u = from_reader(file)?;
+    Ok(u)
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn can_parse() -> Result<(), String> {
+        match super::all_events() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(format!("{:?}", err))
+        }
+    }
 }

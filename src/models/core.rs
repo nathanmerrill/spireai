@@ -61,14 +61,25 @@ impl Default for Stance {
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
+pub enum FightType {
+    Common,
+    Elite,
+    Boss,
+}
+
+impl Default for FightType {
+    fn default() -> Self {
+        FightType::Common
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
 pub enum RoomType {
     Rest,
     Shop,
     Question,
-    HallwayFight,
+    Fight(FightType),
     Event,
-    Elite,
-    Boss,
     Treasure,
     All,
 }
@@ -115,14 +126,35 @@ impl Default for Amount {
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum CardDestination {
+    DeckPile,
+    DrawPile(RelativePosition),
+    PlayerHand,
+    ExhaustPile,
+    DiscardPile,
+}
+
+impl CardDestination {
+    pub fn location(self) -> CardLocation {
+        match self {
+            CardDestination::DeckPile => CardLocation::DeckPile,
+            CardDestination::DrawPile(_) => CardLocation::DrawPile,
+            CardDestination::PlayerHand => CardLocation::PlayerHand,
+            CardDestination::ExhaustPile => CardLocation::ExhaustPile,
+            CardDestination::DiscardPile => CardLocation::DiscardPile,
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum CardLocation {
     DeckPile,
     DrawPile,
     PlayerHand,
     ExhaustPile,
     DiscardPile,
+    Stasis,
 }
-
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
 pub enum CardType {
@@ -140,6 +172,11 @@ impl Default for CardType {
     }
 }
 
+impl CardType {
+    pub fn matches(self, other: CardType) -> bool {
+        self == CardType::All || self == other
+    }
+}
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize, Hash)]
 pub enum When {
@@ -305,15 +342,13 @@ pub enum Effect {
     SelfEffect(CardEffect),
     CreateCard {
         name: String,
-        location: CardLocation,
-        #[serde(default, skip_serializing_if = "is_default")]
-        position: RelativePosition,
+        destination: CardDestination,
         #[serde(default, skip_serializing_if = "is_default")]
         then: Vec<CardEffect>,
     },
 
     CreateCardByType {
-        location: CardLocation,
+        destination: CardDestination,
         #[serde(rename = "type")]
         _type: CardType,
         #[serde(default, skip_serializing_if = "is_default")]
@@ -321,15 +356,13 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         class: Option<Class>,
         #[serde(default, skip_serializing_if = "is_default")]
-        position: RelativePosition,
-        #[serde(default, skip_serializing_if = "is_default")]
         then: Vec<CardEffect>,
-        #[serde(default="_true", skip_serializing_if = "is_true")]
+        #[serde(default = "_true", skip_serializing_if = "is_true")]
         exclude_healing: bool,
     },
 
     ChooseCardByType {
-        location: CardLocation,
+        destination: CardDestination,
         #[serde(rename = "type")]
         _type: CardType,
         #[serde(default, skip_serializing_if = "is_default")]
@@ -337,12 +370,10 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         class: Option<Class>,
         #[serde(default, skip_serializing_if = "is_default")]
-        position: RelativePosition,
-        #[serde(default, skip_serializing_if = "is_default")]
         then: Vec<CardEffect>,
         #[serde(default, skip_serializing_if = "is_default")]
         choices: Amount,
-        #[serde(default="_true", skip_serializing_if = "is_true")]
+        #[serde(default = "_true", skip_serializing_if = "is_true")]
         exclude_healing: bool,
     },
 
@@ -368,7 +399,7 @@ pub enum Effect {
 
     Fight {
         monsters: Vec<String>,
-        room: RoomType,
+        room: FightType,
     },
 
     ShowChoices(Vec<String>),
@@ -399,19 +430,13 @@ pub struct EffectChance {
 pub enum CardEffect {
     Exhaust,
     Discard,
-    MoveTo {
-        location: CardLocation,
-        #[serde(default, skip_serializing_if = "is_default")]
-        position: RelativePosition,
-    },
+    MoveTo(CardDestination),
     Upgrade,
     ZeroCombatCost,
     ZeroTurnCost,
     ZeroCostUntilPlayed,
     CopyTo {
-        location: CardLocation,
-        #[serde(default, skip_serializing_if = "is_default")]
-        position: RelativePosition,
+        destination: CardDestination,
         #[serde(default, skip_serializing_if = "is_default")]
         then: Vec<CardEffect>,
     },

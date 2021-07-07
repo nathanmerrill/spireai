@@ -1,5 +1,6 @@
 use crate::comm::request::GameState;
 use crate::models::choices::Choice;
+use crate::models::core::Class;
 use comm::request::Request;
 use comm::response::Response;
 use im::HashMap;
@@ -14,6 +15,7 @@ use std::sync::Mutex;
 mod comm;
 mod models;
 mod spireai;
+mod state;
 
 #[macro_use]
 extern crate lazy_static;
@@ -64,23 +66,23 @@ fn main() {
 }
 
 fn run(start_message: &str) {
-    let mut ai = spireai::SpireAi::new();
+    let mut ai = spireai::SpireAi::new(crate::state::game::GameState::new(Class::Ironclad, 0));
     let mut game_state: Option<GameState> = None;
     let mut queue: Vec<Response> = vec![Response::Simple(String::from(start_message))];
-    let mut uuid_map: HashMap<String, Uuid> = HashMap::new();
+    let mut map: HashMap<String, Uuid> = HashMap::new();
 
     loop {
         let request = process_queue(&mut queue, &game_state);
-        let choice = handle_request(&request, &mut ai, &mut uuid_map);
+        let choice = handle_request(&request, &mut ai);
 
-        queue = comm::response::decompose_choice(choice, &request, &uuid_map);
+        queue = comm::response::decompose_choice(choice, &request, &map);
         game_state = request.game_state;
     }
 }
 
-fn handle_request(request: &Request, ai: &mut spireai::SpireAi, uuid_map: &mut HashMap<String, Uuid>) -> Choice {
+fn handle_request(request: &Request, ai: &mut spireai::SpireAi) -> Choice {
     match &request.game_state {
-        Some(state) => ai.choose(&comm::interop::convert_state(&state, uuid_map)),
+        Some(state) => ai.choose(&state),
         None => {
             if request.available_commands.contains(&String::from("start")) {
                 Choice::Start {

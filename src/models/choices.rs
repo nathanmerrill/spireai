@@ -1,4 +1,7 @@
-use crate::{models::core::*, spireai::evaluator::{CardReference, CreatureReference}};
+use crate::{
+    models::core::*,
+    spireai::references::{CardReference, MonsterReference},
+};
 
 pub enum Choice {
     Start {
@@ -7,14 +10,14 @@ pub enum Choice {
     },
     DrinkPotion {
         slot: usize,
-        target: Option<CreatureReference>,
+        target: Option<MonsterReference>,
     },
     DiscardPotion {
         slot: usize,
     },
     PlayCard {
         card: CardReference,
-        target: Option<CreatureReference>,
+        target: Option<MonsterReference>,
     },
     EventChoice(String),
     NavigateToNode(i8),

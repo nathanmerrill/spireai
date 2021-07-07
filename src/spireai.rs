@@ -1,122 +1,63 @@
-use crate::models;
+use crate::comm::request::GameState as CommState;
+use crate::{
+    models,
+    state::{game::GameState, probability::Probability},
+};
 use models::choices::Choice;
-use models::state::GameState;
-use rand::Rng;
-use rand::{seq::SliceRandom, prelude::{IteratorRandom, ThreadRng}};
+
+use self::evaluator::GamePossibility;
 
 pub mod appraiser;
 pub mod enumerator;
 pub mod evaluator;
 pub mod predictor;
+pub mod references;
 
 pub struct SpireAi {
-    expected_state: Option<GamePossibility>,
-    // Neural net nodes
+    state: GameState,
+    last_choice: Option<Choice>, // Neural net nodes
 }
 
 impl SpireAi {
-    pub fn new() -> SpireAi {
+    pub fn new(state: GameState) -> SpireAi {
         SpireAi {
-            expected_state: None,
+            state,
+            last_choice: None,
         }
     }
 
-    pub fn choose(&mut self, new_state: &GameState) -> Choice {
-        if let Some(expected_state) = &self.expected_state {
-            //predictor::verify_prediction(new_state, &expected_state);
+    pub fn choose(&mut self, new_state: &CommState) -> Choice {
+        if let Some(choice) = &self.last_choice {
+            self.state = find_match(&self.state, choice, new_state);
         }
-        let (choice, possibilities) = make_choice(new_state);
-        self.expected_state = possibilities;
 
-        choice
+        make_choice(&self.state)
     }
 }
 
-fn make_choice(state: &GameState) -> (Choice, Option<GamePossibility>) {
+fn find_match(state: &GameState, choice: &Choice, comm_state: &CommState) -> GameState {
+    unimplemented!()
+}
+
+fn make_choice(state: &GameState) -> Choice {
     let mut max_val = f64::MIN;
     let mut best_choice = Choice::State;
-    let mut best_outcome: Option<GamePossibility> = None;
 
     for choice in enumerator::all_choices(&state) {
-        let mut possibility_set = GamePossibility::new(state.clone(), ThreadRng::default());
-        predictor::predict_outcome(&choice, &mut possibility_set);
-        let rating = appraiser::rate_possibility_set(&possibility_set);
+        let mut possibility = GamePossibility {
+            state: state.clone(),
+            probability: Probability::new(),
+        };
+
+        predictor::predict_outcome(&choice, &mut possibility);
+
+        //let rating = appraiser::r(&possibility_set);
+        let rating = 0_f64;
         if rating > max_val {
             max_val = rating;
             best_choice = choice;
-            best_outcome = Some(possibility_set);
         }
     }
 
-    (best_choice, best_outcome)
+    best_choice
 }
-
-pub struct GamePossibility {
-    pub state: GameState,
-    pub probability: f64,
-    rng: ThreadRng
-}
-
-impl GamePossibility {
-    fn choose<T>(&mut self, choices: Vec<T>) -> Option<T> 
-    {
-        let resolved_count = choices.len();
-        if resolved_count != 0 {
-            self.probability /= resolved_count as f64;
-        }
-
-        choices.into_iter().choose(&mut self.rng)
-    }
-
-    fn range(&mut self, max: usize) -> usize {
-        self.probability /= max as f64;
-        self.rng.gen_range(0..max)
-    }
-
-    fn choose_weighted<'a, T>(&mut self, choices: &'a [(T, u8)]) -> Option<&'a T> {
-        if choices.is_empty() {
-            None
-        } else {
-            let choice_sum: u8 = choices.iter().map(|(_, a)|a).sum();
-            
-            let selection = choices.choose_weighted(&mut self.rng, |(_, a)| *a).unwrap();
-
-            self.probability *= selection.1 as f64/ choice_sum as f64;
-
-            Some(&selection.0)
-        }
-    }
-
-    fn choose_multiple<T>(&mut self, choices: Vec<T>, count: usize) -> Vec<T> {
-        
-        let resolved_count = choices.len();
-
-        let selection = choices.into_iter().choose_multiple(&mut self.rng, count);
-
-        self.probability /= num_integer::binomial(resolved_count, selection.len()) as f64;
-
-        selection
-    }
-
-    fn new(state: GameState, rng: ThreadRng) -> GamePossibility {
-        GamePossibility {
-            state,
-            rng,
-            probability: 1.0
-        }
-    }
-}
-
-impl<'a> From<&'a mut GamePossibility> for &'a GameState {
-    fn from(set: &mut GamePossibility) -> &GameState {
-        &set.state
-    }
-}
-
-impl<'a> From<&'a mut GamePossibility> for &'a mut GameState {
-    fn from(set: &mut GamePossibility) -> &mut GameState {
-        &mut set.state
-    }
-}
-
-
