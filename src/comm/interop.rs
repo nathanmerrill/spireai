@@ -17,7 +17,7 @@ pub fn state_matches(
             &internal.player.buffs,
             uuid_map,
         ) && combat_state.player.block as u16 == internal.player.block
-            && battle_state_matches(&combat_state, &internal.battle_state, uuid_map)
+            && battle_state_matches(combat_state, &internal.battle_state, uuid_map)
     } else {
         !internal.battle_state.active
     }) && class_matches(&external.class, internal.class)
@@ -340,7 +340,7 @@ fn buffs_match(
 ) -> bool {
     sets_match(
         external,
-        &internal,
+        internal,
         uuid_map,
         |a, b| a.name == b.base.name && a.amount as i16 == b.vars.n,
         |a| a.id.to_string(),

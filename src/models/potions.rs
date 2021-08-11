@@ -1,10 +1,11 @@
+use ::std::hash::{Hash, Hasher};
 use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use super::core::{is_default, Class, Effect, Rarity};
 
-#[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BasePotion {
     pub name: String,
     #[serde(default, skip_serializing_if = "is_default")]
@@ -21,6 +22,17 @@ impl std::fmt::Debug for BasePotion {
         f.debug_struct("BasePotion")
             .field("name", &self.name)
             .finish()
+    }
+}
+
+impl Hash for BasePotion {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state)
+    }
+}
+impl PartialEq for BasePotion {
+    fn eq(&self, other: &BasePotion) -> bool {
+        self.name == other.name
     }
 }
 
@@ -56,7 +68,7 @@ mod tests {
     fn can_parse() -> Result<(), String> {
         match super::all_potions() {
             Ok(_) => Ok(()),
-            Err(err) => Err(format!("{:?}", err))
+            Err(err) => Err(format!("{:?}", err)),
         }
     }
 }

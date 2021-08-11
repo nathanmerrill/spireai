@@ -87,7 +87,7 @@ pub fn decompose_choice(
         }
         Choice::End => vec![Response::Simple(String::from("END"))],
         Choice::EnterShop => vec![Response::Simple(String::from("CHOOSE 0"))],
-        Choice::EventChoice(name) => vec![Response::Choose(name)],
+        Choice::Event(name) => vec![Response::Choose(name)],
         Choice::Proceed => vec![Response::Simple(String::from("PROCEED"))],
         Choice::Return => vec![Response::Simple(String::from("RETURN"))],
         Choice::State => vec![Response::Simple(String::from("STATE"))],

@@ -1,3 +1,4 @@
+use ::std::hash::{Hash, Hasher};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
@@ -37,6 +38,13 @@ impl PartialEq for BaseRelic {
         self.name == other.name
     }
 }
+
+impl Hash for BaseRelic {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state)
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub enum Activation {
     Immediate,
@@ -98,7 +106,7 @@ mod tests {
     fn can_parse() -> Result<(), String> {
         match super::all_relics() {
             Ok(_) => Ok(()),
-            Err(err) => Err(format!("{:?}", err))
+            Err(err) => Err(format!("{:?}", err)),
         }
     }
 }

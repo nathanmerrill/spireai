@@ -3,9 +3,16 @@ use rand::{
     Rng,
 };
 
+#[derive(Clone, Debug)]
 pub struct Probability {
-    probability: f64,
+    pub probability: f64,
     rng: ThreadRng,
+}
+
+impl PartialEq for Probability {
+    fn eq(&self, other: &Probability) -> bool {
+        self.probability == other.probability
+    }
 }
 
 impl Probability {

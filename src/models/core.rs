@@ -20,7 +20,9 @@ impl Default for Rarity {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, strum_macros::Display, Deserialize, Serialize)]
+#[derive(
+    PartialEq, Eq, Clone, Copy, Debug, Hash, strum_macros::Display, Deserialize, Serialize,
+)]
 pub enum Class {
     All,
     None,
@@ -37,7 +39,7 @@ impl Default for Class {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum OrbType {
     Lightning,
     Dark,
@@ -46,7 +48,7 @@ pub enum OrbType {
     Any,
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Stance {
     Calm,
     Wrath,
@@ -84,7 +86,7 @@ pub enum RoomType {
     All,
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub enum ChestType {
     Large,
     Medium,
@@ -93,7 +95,7 @@ pub enum ChestType {
 }
 
 // ------------------- Evalulation -------------------------------
-#[derive(PartialEq, Eq, Clone, Debug, strum_macros::ToString, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug, strum_macros::ToString, Serialize, Deserialize)]
 pub enum Amount {
     ByAsc {
         #[serde(rename = "base")]
@@ -125,7 +127,7 @@ impl Default for Amount {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum CardDestination {
     DeckPile,
     DrawPile(RelativePosition),
@@ -146,7 +148,7 @@ impl CardDestination {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
 pub enum CardLocation {
     DeckPile,
     DrawPile,
@@ -228,7 +230,7 @@ impl Default for When {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum RelativePosition {
     Bottom,
     Top,
@@ -289,7 +291,6 @@ pub enum Effect {
     },
     LoseHpPercentage(Amount),
     RemoveDebuffs,
-    RetainBlock,
     Die {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
@@ -426,7 +427,7 @@ pub struct EffectChance {
     pub effect: Vec<Effect>,
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug, Deserialize, Serialize)]
 pub enum CardEffect {
     Exhaust,
     Discard,

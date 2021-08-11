@@ -6,13 +6,13 @@ use crate::models::core::Class;
 use comm::request::Request;
 use comm::response::Response;
 use im::HashMap;
-use uuid::Uuid;
 use std::error::Error;
 use std::fs::File;
 use std::io::stdin;
 use std::io::Write;
 use std::sync::Arc;
 use std::sync::Mutex;
+use uuid::Uuid;
 
 mod comm;
 mod models;
@@ -29,8 +29,7 @@ lazy_static! {
     static ref LAST_STATE: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
 }
 
-
-fn main() {   
+fn main() {
     let last_action_clone = Arc::clone(&LAST_ACTION);
     let last_state_clone = Arc::clone(&LAST_STATE);
     std::panic::set_hook(Box::new(move |_info| {
@@ -84,7 +83,7 @@ fn run(start_message: &str) {
 
 fn handle_request(request: &Request, ai: &mut spireai::SpireAi) -> Choice {
     match &request.game_state {
-        Some(state) => ai.choose(&state),
+        Some(state) => ai.choose(state),
         None => {
             if request.available_commands.contains(&String::from("start")) {
                 Choice::Start {

@@ -1,5 +1,7 @@
 use uuid::Uuid;
 
+use ::std::hash::{Hash, Hasher};
+
 use crate::{
     models::{
         self, buffs::BaseBuff, core::CardLocation, events::BaseEvent, monsters::BaseMonster,
@@ -11,11 +13,24 @@ use crate::{
     },
 };
 
-#[derive(Eq, Debug, Clone, Copy, PartialEq)]
+#[derive(Eq, Debug, Clone, Copy)]
 pub struct CardReference {
     pub location: CardLocation,
     pub uuid: Uuid,
     pub base: &'static models::cards::BaseCard,
+}
+
+impl PartialEq for CardReference {
+    fn eq(&self, other: &CardReference) -> bool {
+        self.uuid == other.uuid && self.location == other.location
+    }
+}
+
+impl Hash for CardReference {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.uuid.hash(state);
+        self.location.hash(state)
+    }
 }
 
 impl BindingReference for CardReference {
@@ -35,10 +50,22 @@ impl BindingReference for CardReference {
     }
 }
 
-#[derive(Eq, Debug, Clone, Copy, PartialEq)]
+#[derive(Eq, Debug, Clone, Copy)]
 pub struct MonsterReference {
     pub base: &'static BaseMonster,
     pub uuid: Uuid,
+}
+
+impl PartialEq for MonsterReference {
+    fn eq(&self, other: &MonsterReference) -> bool {
+        self.uuid == other.uuid
+    }
+}
+
+impl Hash for MonsterReference {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.uuid.hash(state)
+    }
 }
 
 impl BindingReference for MonsterReference {
@@ -58,7 +85,7 @@ impl MonsterReference {
     }
 }
 
-#[derive(Eq, Debug, Clone, Copy, PartialEq)]
+#[derive(Eq, Debug, Clone, Copy, PartialEq, Hash)]
 pub enum CreatureReference {
     Player,
     Creature(Uuid),
@@ -110,11 +137,24 @@ impl CreatureReference {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub struct BuffReference {
     pub base: &'static BaseBuff,
     pub creature: CreatureReference,
     pub buff: Uuid,
+}
+
+impl PartialEq for BuffReference {
+    fn eq(&self, other: &BuffReference) -> bool {
+        self.creature == other.creature && self.buff == other.buff
+    }
+}
+
+impl Hash for BuffReference {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.buff.hash(state);
+        self.creature.hash(state)
+    }
 }
 
 impl BindingReference for BuffReference {
@@ -132,10 +172,22 @@ impl BindingReference for BuffReference {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub struct PotionReference {
     pub base: &'static BasePotion,
     pub index: usize,
+}
+
+impl PartialEq for PotionReference {
+    fn eq(&self, other: &PotionReference) -> bool {
+        self.index == other.index
+    }
+}
+
+impl Hash for PotionReference {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.index.hash(state);
+    }
 }
 
 impl BindingReference for PotionReference {
@@ -149,10 +201,22 @@ impl BindingReference for PotionReference {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub struct RelicReference {
     pub base: &'static BaseRelic,
     pub relic: Uuid,
+}
+
+impl PartialEq for RelicReference {
+    fn eq(&self, other: &RelicReference) -> bool {
+        self.relic == other.relic
+    }
+}
+
+impl Hash for RelicReference {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.relic.hash(state);
+    }
 }
 
 impl BindingReference for RelicReference {
@@ -166,9 +230,21 @@ impl BindingReference for RelicReference {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 pub struct EventReference {
     pub base: &'static BaseEvent,
+}
+
+impl PartialEq for EventReference {
+    fn eq(&self, other: &EventReference) -> bool {
+        self.base.name == other.base.name
+    }
+}
+
+impl Hash for EventReference {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.base.name.hash(state);
+    }
 }
 
 impl BindingReference for EventReference {

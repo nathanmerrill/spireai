@@ -1,6 +1,6 @@
 use im::HashMap;
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct MapState {
     pub nodes: HashMap<(i8, i8), MapNode>,
     pub floor: i8,
@@ -17,7 +17,7 @@ impl MapState {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct MapNode {
     pub floor: i8,
     pub x: i8,
@@ -25,7 +25,7 @@ pub struct MapNode {
     pub icon: MapNodeIcon,
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum MapNodeIcon {
     Question,
     Elite,

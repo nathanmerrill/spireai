@@ -46,7 +46,7 @@ mod tests {
     fn can_parse() -> Result<(), String> {
         match super::all_acts() {
             Ok(_) => Ok(()),
-            Err(err) => Err(err.to_string())
+            Err(err) => Err(err.to_string()),
         }
     }
 }

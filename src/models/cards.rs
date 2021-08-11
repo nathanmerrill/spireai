@@ -1,11 +1,12 @@
 use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
 
+use ::std::hash::{Hash, Hasher};
 use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use super::core::{is_default, Amount, CardType, Class, Condition, Effect, Rarity};
 
-#[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
+#[derive(Eq, Clone, Deserialize, Serialize)]
 pub struct BaseCard {
     pub name: String,
     #[serde(rename = "type")]
@@ -56,6 +57,17 @@ impl std::fmt::Debug for BaseCard {
         f.debug_struct("BaseCard")
             .field("name", &self.name)
             .finish()
+    }
+}
+
+impl Hash for BaseCard {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state)
+    }
+}
+impl PartialEq for BaseCard {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
     }
 }
 
@@ -142,7 +154,7 @@ mod tests {
     fn can_parse() -> Result<(), String> {
         match super::all_cards() {
             Ok(_) => Ok(()),
-            Err(err) => Err(format!("{:?}", err))
+            Err(err) => Err(format!("{:?}", err)),
         }
     }
 }

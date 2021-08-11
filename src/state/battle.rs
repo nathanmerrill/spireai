@@ -11,7 +11,7 @@ use super::{
     probability::Probability,
 };
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct BattleState {
     pub active: bool,
     pub deck_references: HashMap<Uuid, Uuid>,

@@ -3,6 +3,7 @@ use crate::{
     spireai::references::{CardReference, MonsterReference},
 };
 
+#[derive(PartialEq, Eq, Clone, Debug, Hash)]
 pub enum Choice {
     Start {
         player_class: Class,
@@ -19,7 +20,7 @@ pub enum Choice {
         card: CardReference,
         target: Option<MonsterReference>,
     },
-    EventChoice(String),
+    Event(String),
     NavigateToNode(i8),
     TakeReward(usize),
     SelectCard(String),

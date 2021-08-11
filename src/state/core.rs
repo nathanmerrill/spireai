@@ -17,7 +17,7 @@ use crate::{
     },
 };
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Vars {
     pub n: i16,
     pub n_reset: i16,
@@ -34,13 +34,13 @@ impl Vars {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Orb {
     pub base: OrbType,
     pub n: u16,
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Creature {
     pub hp: u16,
     pub max_hp: u16,
@@ -130,7 +130,7 @@ impl Creature {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Card {
     pub base: &'static BaseCard,
     pub cost: u8,
@@ -267,7 +267,7 @@ impl Card {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Buff {
     pub base: &'static BaseBuff,
     pub uuid: Uuid,
@@ -315,7 +315,7 @@ impl Buff {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Relic {
     pub base: &'static BaseRelic,
     pub uuid: Uuid,
@@ -348,7 +348,7 @@ impl Relic {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Monster {
     pub base: &'static BaseMonster,
     pub uuid: Uuid,
@@ -390,7 +390,7 @@ impl Monster {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Event {
     pub base: &'static BaseEvent,
     pub vars: Vars,
@@ -424,7 +424,7 @@ impl Event {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Potion {
     pub base: &'static BasePotion,
 }

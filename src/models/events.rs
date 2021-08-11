@@ -1,3 +1,4 @@
+use ::std::hash::{Hash, Hasher};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
@@ -5,7 +6,7 @@ use ron::de::from_reader;
 
 use super::core::{Condition, Effect, _true, is_default, is_true};
 
-#[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
+#[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BaseEvent {
     pub name: String,
     #[serde(default, skip_serializing_if = "is_default")]
@@ -20,6 +21,17 @@ pub struct BaseEvent {
     )]
     pub condition: Condition,
 }
+impl Hash for BaseEvent {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state)
+    }
+}
+impl PartialEq for BaseEvent {
+    fn eq(&self, other: &BaseEvent) -> bool {
+        self.name == other.name
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
 pub struct BaseEventChoice {
     pub name: String,
@@ -73,7 +85,7 @@ mod tests {
     fn can_parse() -> Result<(), String> {
         match super::all_events() {
             Ok(_) => Ok(()),
-            Err(err) => Err(format!("{:?}", err))
+            Err(err) => Err(format!("{:?}", err)),
         }
     }
 }

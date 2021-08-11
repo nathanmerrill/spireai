@@ -19,7 +19,7 @@ use super::{
     probability::Probability,
 };
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct GameState {
     pub class: Class,
     pub map: MapState,
@@ -138,6 +138,16 @@ impl GameState {
         reference
     }
 
+    pub fn remove_relic(&mut self, name: &str) {
+        let uuid = self.relic_names.remove(name).unwrap();
+        self.relics.remove(&uuid);
+        for (_, uuids) in self.relic_whens.iter_mut() {
+            if let Some(index) = uuids.index_of(&uuid) {
+                uuids.remove(index);
+            }
+        }
+    }
+
     pub fn reduce_max_hp(&mut self, reduction: u16) {
         self.player.max_hp -= reduction;
         self.player.hp = std::cmp::min(self.player.hp, self.player.max_hp);
@@ -155,7 +165,9 @@ impl GameState {
     }
 
     pub fn potion_at(&self, slot: usize) -> Option<PotionReference> {
-        self.potions[slot].as_ref().map(|potion| potion.reference(slot))
+        self.potions[slot]
+            .as_ref()
+            .map(|potion| potion.reference(slot))
     }
 
     pub fn card_playable(&self, card: CardReference) -> bool {
@@ -332,9 +344,10 @@ impl GameState {
     }
 
     pub fn potion_slots(&self) -> impl Iterator<Item = Option<PotionReference>> + '_ {
-        self.potions.iter().enumerate().map(|(position, opt)| {
-            opt.as_ref().map(|potion|potion.reference(position))
-        })
+        self.potions
+            .iter()
+            .enumerate()
+            .map(|(position, opt)| opt.as_ref().map(|potion| potion.reference(position)))
     }
 
     pub fn player_buffs(&self) -> impl Iterator<Item = BuffReference> + '_ {
@@ -371,7 +384,7 @@ impl GameState {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum FloorState {
     Event,
     EventUpgrade(u8),
@@ -393,7 +406,7 @@ pub enum FloorState {
     }, // Last u8 is remove
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum Reward {
     CardChoice,
     Gold(u8),
@@ -403,14 +416,14 @@ pub enum Reward {
     SapphireKey(Relic),
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct KeyState {
     pub ruby: bool,
     pub emerald: bool,
     pub sapphire: bool,
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct CardChoiceState {
     pub choices: Vector<Uuid>,
     pub location: CardLocation,
@@ -429,7 +442,7 @@ impl CardChoiceState {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum CardChoiceEffect {
     None,
     Scry,

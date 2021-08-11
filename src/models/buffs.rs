@@ -3,9 +3,11 @@ use serde::{Deserialize, Serialize};
 
 use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
+use ::std::hash::{Hash, Hasher};
+
 use super::core::{is_default, Effect, When, WhenEffect};
 
-#[derive(Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Eq, Deserialize, Serialize)]
 pub struct BaseBuff {
     pub name: String,
     #[serde(default, skip_serializing_if = "is_default")]
@@ -28,6 +30,17 @@ impl std::fmt::Debug for BaseBuff {
         f.debug_struct("BaseBuff")
             .field("name", &self.name)
             .finish()
+    }
+}
+
+impl Hash for BaseBuff {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
+}
+impl PartialEq for BaseBuff {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
     }
 }
 
@@ -63,7 +76,7 @@ mod tests {
     fn can_parse() -> Result<(), String> {
         match super::all_buffs() {
             Ok(_) => Ok(()),
-            Err(err) => Err(format!("{:?}", err))
+            Err(err) => Err(format!("{:?}", err)),
         }
     }
 }

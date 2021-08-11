@@ -1,10 +1,12 @@
 use ron::de::from_reader;
-use std::{collections::HashMap, error::Error, fs::File, path::Path};
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
-use super::core::{Amount, Condition, Effect, FightType, When, WhenEffect, is_default};
+use ::std::hash::{Hash, Hasher};
 
-#[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
+use super::core::{is_default, Amount, Condition, Effect, FightType, When, WhenEffect};
+
+#[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BaseMonster {
     pub name: String,
     pub hp_range: SimpleRange,
@@ -27,6 +29,17 @@ impl std::fmt::Debug for BaseMonster {
     }
 }
 
+impl Hash for BaseMonster {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state)
+    }
+}
+impl PartialEq for BaseMonster {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct Phase {
     #[serde(default, skip_serializing_if = "is_default")]
@@ -37,17 +50,30 @@ pub struct Phase {
     pub moves: Vec<Move>,
     #[serde(default, skip_serializing_if = "is_default")]
     pub when: When,
-    #[serde(default = "Condition::always", skip_serializing_if = "Condition::is_always")]
+    #[serde(
+        default = "Condition::always",
+        skip_serializing_if = "Condition::is_always"
+    )]
     pub when_condition: Condition,
 }
 
-
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+#[derive(Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct MonsterMove {
     pub name: String,
     #[serde(default, skip_serializing_if = "is_default")]
     pub effects: Vec<Effect>,
     pub intent: Intent,
+}
+
+impl Hash for MonsterMove {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name.hash(state);
+    }
+}
+impl PartialEq for MonsterMove {
+    fn eq(&self, other: &MonsterMove) -> bool {
+        self.name == other.name
+    }
 }
 
 impl Default for MonsterMove {
@@ -60,7 +86,7 @@ impl Default for MonsterMove {
     }
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Intent {
     Attack,
     AttackBuff,
@@ -78,7 +104,6 @@ pub enum Intent {
     Stun,
     Unknown,
 }
-
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub enum Move {
@@ -114,7 +139,6 @@ pub struct SimpleRange {
     pub max: u16,
 }
 
-
 pub fn by_name(name: &str) -> &'static BaseMonster {
     MONSTERS
         .get(name)
@@ -147,7 +171,7 @@ mod tests {
     fn can_parse() -> Result<(), String> {
         match super::all_monsters() {
             Ok(_) => Ok(()),
-            Err(err) => Err(format!("{:?}", err))
+            Err(err) => Err(format!("{:?}", err)),
         }
     }
 }

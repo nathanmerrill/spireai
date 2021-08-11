@@ -44,14 +44,7 @@
   (
     name: "Barricade",
     singular: true,
-    effects: [
-      (
-        when: AfterEnemyMove,
-        effect: [
-          RetainBlock,
-        ],
-      ),
-    ],
+    effects: [],
   ),
   (
     name: "Battle Hymn",
@@ -140,14 +133,7 @@
   (
     name: "Blur",
     reduce_at: BeforeHandDraw,
-    effects: [
-      (
-        when: AfterEnemyMove,
-        effect: [
-          RetainBlock,
-        ],
-      ),
-    ],
+    effects: [],
   ),
   (
     name: "Brutality",
