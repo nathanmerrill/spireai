@@ -5,14 +5,8 @@ use crate::models::choices::Choice;
 use crate::models::core::Class;
 use comm::request::Request;
 use comm::response::Response;
-use im::HashMap;
 use std::error::Error;
-use std::fs::File;
 use std::io::stdin;
-use std::io::Write;
-use std::sync::Arc;
-use std::sync::Mutex;
-use uuid::Uuid;
 
 mod comm;
 mod models;
@@ -24,59 +18,19 @@ extern crate lazy_static;
 
 const DESIRED_CLASS: models::core::Class = models::core::Class::Watcher;
 
-lazy_static! {
-    static ref LAST_ACTION: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
-    static ref LAST_STATE: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
-}
-
 fn main() {
-    let last_action_clone = Arc::clone(&LAST_ACTION);
-    let last_state_clone = Arc::clone(&LAST_STATE);
-    std::panic::set_hook(Box::new(move |_info| {
-        let filename = format!(
-            "log/output-{}.log",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_secs()
-        );
-        let state = json::parse((*last_state_clone.lock().unwrap()).as_str()).unwrap();
-        let message = format!(
-            "{}\nLast action: {}\nLast state: {}",
-            _info,
-            last_action_clone.lock().unwrap(),
-            state.pretty(2)
-        );
-
-        if let Ok(mut f) = File::create(filename) {
-            f.write_all(message.as_bytes()).ok();
-        }
-    }));
-
-    std::panic::catch_unwind(|| {
-        run("ready");
-    })
-    .ok();
-
-    loop {
-        std::panic::catch_unwind(|| {
-            run("state");
-        })
-        .ok();
-    }
+    run();
 }
 
-fn run(start_message: &str) {
+fn run() {
     let mut ai = spireai::SpireAi::new(crate::state::game::GameState::new(Class::Ironclad, 0));
     let mut game_state: Option<GameState> = None;
-    let mut queue: Vec<Response> = vec![Response::Simple(String::from(start_message))];
-    let map: HashMap<String, Uuid> = HashMap::new();
-
+    let mut queue: Vec<Response> = vec![Response::Simple(String::from("ready"))];
     loop {
         let request = process_queue(&mut queue, &game_state);
         let choice = handle_request(&request, &mut ai);
 
-        queue = comm::response::decompose_choice(choice, &request, &map);
+        queue = comm::response::decompose_choice(choice, &request, &ai.uuid_map);
         game_state = request.game_state;
     }
 }
@@ -118,7 +72,6 @@ fn process_queue(queue: &mut Vec<Response>, game_state: &Option<GameState>) -> R
 fn send_message(response: &Response, game: &Option<GameState>) {
     let serialized = comm::response::serialize_response(response, game);
     println!("{}", serialized);
-    *LAST_ACTION.lock().unwrap() = serialized;
 }
 
 fn read_request() -> Request {
@@ -133,8 +86,6 @@ fn read_request() -> Request {
         Ok(model) => model,
         Err(err) => panic!("Failed to deserialize game state: Error: {}", err),
     };
-
-    *LAST_STATE.lock().unwrap() = request;
 
     model
 }

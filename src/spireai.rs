@@ -25,7 +25,7 @@ pub struct SpireAi {
     state: Rc<GameState>,
     last_choice: Option<Choice>, // Neural net nodes
     tree: MonteCarloTree,
-    uuid_map: HashMap<String, Uuid>,
+    pub uuid_map: HashMap<String, Uuid>,
 }
 
 impl SpireAi {
@@ -43,11 +43,15 @@ impl SpireAi {
     pub fn choose(&mut self, comm_state: &CommState) -> Choice {
         if let Some(choice) = self.last_choice.clone() {
             if let Some(matching_state) = self.find_match(&choice, comm_state) {
-                self.state = matching_state;
+                let mut new_state = matching_state.as_ref().clone();
+                interop::update_state(comm_state, &mut new_state);
+                self.state = Rc::new(new_state);
+            } else {
+                panic!("No matching state found!")
             }
         }
-
-        let next_choice = search(&mut self.tree, self.state.clone(), 5000, 20, 2.0f64.sqrt());
+        
+        let next_choice = search(&mut self.tree, self.state.clone(), 50000, 10, 2.0f64.sqrt());
 
         self.last_choice = Some(next_choice.clone());
 
@@ -71,8 +75,6 @@ impl SpireAi {
         None
     }
 }
-
-//monte carlo
 
 #[derive(PartialEq, Clone)]
 struct MonteCarloTree {
@@ -216,6 +218,7 @@ fn descend(
 
 fn evaluate(state: &GameState) -> f64 {
     state.player.hp as f64
+    // Neural net
 }
 
 fn resolve_choice(
@@ -246,27 +249,4 @@ fn resolve_choice(
     possible_outcomes.evaluation_count += 1;
 
     state
-}
-
-fn make_choice(state: &GameState) -> Choice {
-    let mut max_val = f64::MIN;
-    let mut best_choice = Choice::State;
-
-    for choice in enumerator::all_choices(state) {
-        let mut possibility = GamePossibility {
-            state: state.clone(),
-            probability: Probability::new(),
-        };
-
-        predictor::predict_outcome(&choice, &mut possibility);
-
-        //let rating = appraiser::r(&possibility_set);
-        let rating = 0_f64;
-        if rating > max_val {
-            max_val = rating;
-            best_choice = choice;
-        }
-    }
-
-    best_choice
 }

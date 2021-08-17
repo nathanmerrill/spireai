@@ -32,9 +32,33 @@ pub fn state_matches(
         && external.act as u8 == internal.act
         && external.ascension_level as u8 == internal.asc
 }
-/*
-pub fn convert_map(state: &external::GameState) -> internal::MapState {
-    let mut nodes: HashMap<(i8, i8), internal::MapNode> = HashMap::new();
+
+pub fn update_state(external: &external::GameState, internal: &mut internal::game::GameState) {
+    match external.floor {
+        0 | 18 | 35 | 52 => {
+            if external.combat_state.is_none() {
+                internal.map = convert_map(external); 
+            }
+        }
+        _ => {}
+    }
+
+    if let external::ScreenState::ShopScreen(state) = &external.screen_state {
+        internal.floor_state = convert_shop(state);
+    }
+}
+
+pub fn convert_shop(state: &external::ShopScreen) -> internal::game::FloorState {
+    internal::game::FloorState::Shop {
+        cards: state.cards.iter().map(|a| (a.name.clone(), a.price.unwrap() as u16)).collect(),
+        potions: state.potions.iter().map(|a| (a.name.clone(), a.price.unwrap() as u16)).collect(),
+        relics: state.relics.iter().map(|a| (a.name.clone(), a.price.unwrap() as u16)).collect(),
+        purge_cost: state.purge_cost as u16,
+    }
+}
+
+pub fn convert_map(state: &external::GameState) -> internal::map::MapState {
+    let mut nodes: HashMap<(i8, i8), internal::map::MapNode> = HashMap::new();
     for node in &state.map {
         let new_node = convert_node(node);
         nodes.insert((new_node.floor, new_node.x), new_node);
@@ -48,29 +72,29 @@ pub fn convert_map(state: &external::GameState) -> internal::MapState {
         _ => (-1, state.floor),
     };
 
-    internal::MapState {
+    internal::map::MapState {
         nodes,
         x: x as i8,
         floor: y as i8,
     }
 }
-pub fn convert_node(node: &external::MapNode) -> internal::MapNode {
-    internal::MapNode {
+
+pub fn convert_node(node: &external::MapNode) -> internal::map::MapNode {
+    internal::map::MapNode {
         floor: node.y as i8,
         icon: match node.symbol {
-            'M' => internal::MapNodeIcon::Monster,
-            '?' => internal::MapNodeIcon::Question,
-            '$' => internal::MapNodeIcon::Shop,
-            'R' => internal::MapNodeIcon::Campfire,
-            'T' => internal::MapNodeIcon::Chest,
-            'E' => internal::MapNodeIcon::Elite,
+            'M' => internal::map::MapNodeIcon::Monster,
+            '?' => internal::map::MapNodeIcon::Question,
+            '$' => internal::map::MapNodeIcon::Shop,
+            'R' => internal::map::MapNodeIcon::Campfire,
+            'T' => internal::map::MapNodeIcon::Chest,
+            'E' => internal::map::MapNodeIcon::Elite,
             _ => panic!("Unhandled node type: {}", node.symbol),
         },
         next: node.children.iter().map(|a| a.x as i8).collect(),
         x: node.x as i8,
     }
 }
- */
 
 pub fn relics_match(
     external: &[external::Relic],

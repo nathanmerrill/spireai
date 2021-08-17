@@ -1,4 +1,5 @@
 use ::std::hash::{Hash, Hasher};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
@@ -75,9 +76,7 @@ impl Default for Activation {
 }
 
 pub fn by_name(name: &str) -> &'static BaseRelic {
-    RELICS
-        .get(name)
-        .unwrap_or_else(|| panic!("Unrecognized relic: {}", name))
+    RELICS.get(name).unwrap_or_else(|| panic!("Unrecognized relic: {}, Available relics: {:?}", name, RELICS.keys().cloned().collect_vec()))
 }
 
 lazy_static! {
@@ -93,7 +92,7 @@ lazy_static! {
 }
 
 fn all_relics() -> Result<Vec<BaseRelic>, Box<dyn Error>> {
-    let filepath = Path::new("data").join("potions.ron");
+    let filepath = Path::new("data").join("relics.ron");
     let file = File::open(filepath)?;
     let u = from_reader(file)?;
     Ok(u)
