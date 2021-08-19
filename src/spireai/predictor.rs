@@ -14,7 +14,7 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
             {
                 let position = cards
                     .iter()
-                    .position(|(card, _)| card == name)
+                    .position(|(card, _)| &card.base.name == name)
                     .expect("Unable to find card that matches in shop");
                 let (_, cost) = cards.remove(position);
                 cost

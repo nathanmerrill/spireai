@@ -12,12 +12,7 @@ use crate::{
     },
 };
 
-use super::{
-    battle::BattleState,
-    core::{Card, Creature, Event, Potion, Relic},
-    map::MapState,
-    probability::Probability,
-};
+use super::{battle::BattleState, core::{Card, CardOffer, Creature, Event, Potion, Relic}, map::MapState, probability::Probability};
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct GameState {
@@ -39,6 +34,7 @@ pub struct GameState {
     pub gold: u16,
     pub keys: Option<KeyState>,
     pub won: Option<bool>,
+    pub card_rarity_offset: u8,
 }
 
 impl GameState {
@@ -290,6 +286,7 @@ impl GameState {
             gold: 99,
             keys: None,
             won: None,
+            card_rarity_offset: 0,
         };
 
         state.add_relic(starting_relic);
@@ -396,10 +393,10 @@ pub enum FloorState {
     Map,
     GameOver,
     Rewards(Vector<Reward>),
-    CardReward(Vector<(String, bool)>), // true if upgraded
+    CardReward(Vector<CardOffer>), // true if upgraded
     ShopEntrance,
     Shop {
-        cards: Vector<(String, u16)>,
+        cards: Vector<(CardOffer, u16)>,
         potions: Vector<(String, u16)>,
         relics: Vector<(String, u16)>,
         purge_cost: u16,
@@ -408,7 +405,7 @@ pub enum FloorState {
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum Reward {
-    CardChoice,
+    CardChoice(Vector<CardOffer>), // true if upgraded
     Gold(u8),
     Relic(Relic),
     Potion(Potion),

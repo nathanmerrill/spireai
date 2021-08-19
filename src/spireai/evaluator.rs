@@ -2,8 +2,8 @@ use crate::models::cards::BaseCard;
 use crate::models::monsters::Move;
 use crate::models::{self, core::*, monsters::Intent, relics::Activation};
 use crate::state::battle::BattleState;
-use crate::state::core::{Card, Creature, Monster, Orb};
-use crate::state::game::{CardChoiceEffect, CardChoiceState, GameState};
+use crate::state::core::{Card, CardOffer, Creature, Monster, Orb, Relic};
+use crate::state::game::{CardChoiceEffect, CardChoiceState, FloorState, GameState, Reward};
 use crate::state::probability::Probability;
 use im::HashMap;
 use im::{HashSet, Vector};
@@ -596,7 +596,183 @@ impl GamePossibility {
                     panic!("Unexpected ShowChoices when not in an event!")
                 }
             }
+            Effect::ShowReward(rewards) => {
+                self.state.floor_state = FloorState::Rewards(rewards.iter().map(|reward| {
+                    match reward {
+                        RewardType::ColorlessCard => {
+                            Reward::CardChoice(self.generate_card_rewards(FightType::Common, true))
+                        }
+                        RewardType::EliteCard => {
+                            Reward::CardChoice(self.generate_card_rewards(FightType::Elite, false))
+                        }
+                        RewardType::Gold {min, max} => {
+                            let amount = self.probability.range((max-min) as usize) as u8 + min;
+                            Reward::Gold(amount)
+                        }
+                        RewardType::RandomBook => {
+                            let book = self.probability.choose(vec!["Necronomicon", "Enchiridion", "Nilry's Codex"]).unwrap();
+                            Reward::Relic(Relic::by_name(book))
+                        }
+                        RewardType::RandomPotion => {
+                            self.probability.choose()
+                        }
+                        RewardType::RandomRelic => {
+
+                        }
+                        RewardType::Relic(name) => {
+
+                        }
+                        RewardType::StandardCard => {
+                            self.generate_card_rewards(FightType::Common, false);    
+                        }
+                    };
+                    unimplemented!()
+                }).collect())
+            }
             _ => unimplemented!(),
+        }
+    }
+
+    fn generate_card_rewards(&mut self, fight_type: FightType, colorless: bool) {
+        let cards = {
+            if colorless {
+                models::cards::available_cards_by_class(Class::None)
+            } else {
+                if self.state.has_relic("Prismatic Shard") {
+                    models::cards::available_cards_by_class(Class::All)
+                } else {
+                    models::cards::available_cards_by_class(self.state.class)
+                }
+            }
+        };
+
+        let count = 1 + {
+            if self.state.has_relic("Busted Crown") {
+                0
+            } else {
+                2
+            }
+        } + {
+            if self.state.has_relic("Question Card") {
+                1
+            } else {
+                0
+            }
+        };
+
+        self.generate_card_offers(Some(fight_type), cards, count, true);
+    }
+
+    fn generate_card_offers(&mut self, fight_type: Option<FightType>, mut available: &Vec<&'static BaseCard>, count: usize, reset_rarity: bool) -> Vec<CardOffer> {
+        let mut cards = available.clone();
+
+        (0..count).map(|a| {
+            let offer = self.generate_card_offer(fight_type, &cards);
+            cards.remove(cards.into_iter().position(|b| b == offer.base).unwrap());
+            if reset_rarity && offer.base.rarity == Rarity::Rare {
+                self.state.card_rarity_offset = 0;
+            }
+            offer
+        }).collect()
+    }
+
+    
+
+    fn generate_card_offer(&mut self, fight_type: Option<FightType>, available: &Vec<&'static BaseCard>) -> CardOffer {
+
+        let has_nloth = self.state.has_relic("N'loth's Gift");
+
+        let rarity_probabilities = match fight_type {
+            Some(FightType::Common) => {
+                if has_nloth {
+                    [4 + self.state.card_rarity_offset, 37, 59 - self.state.card_rarity_offset]
+                } else {
+                    if self.state.card_rarity_offset < 2 {
+                        [0, 35 + self.state.card_rarity_offset, 65 - self.state.card_rarity_offset]
+                    } else {
+                        [self.state.card_rarity_offset - 2, 37, 65 - self.state.card_rarity_offset]
+                    }
+                }
+            }
+            Some(FightType::Elite) => {
+                if has_nloth {
+                    if self.state.card_rarity_offset < 31 {
+                        [25 + self.state.card_rarity_offset, 40, 35 - self.state.card_rarity_offset]
+                    } else {
+                        [25 + self.state.card_rarity_offset, 75 - self.state.card_rarity_offset, 0]
+                    }   
+                } else {
+                    [5 + self.state.card_rarity_offset, 40, 55 - self.state.card_rarity_offset]
+                }
+            },
+            Some(FightType::Boss) => [100, 0, 0],
+            None => [4 + self.state.card_rarity_offset, 37, 59 - self.state.card_rarity_offset],
+        };
+
+        let [mut rare, mut uncommon, mut common] = rarity_probabilities;
+
+        let (mut has_rare, mut has_uncommon, mut has_common) = (false, false, false);
+        for card in available {
+            match card.rarity {
+                Rarity::Rare => has_rare = true,
+                Rarity::Uncommon => has_uncommon = true,
+                Rarity::Common => has_common = true,
+                _ => panic!("Unexpected rarity!")
+            }
+        }
+
+        if !has_rare {
+            rare = 0;
+        }
+        if !has_uncommon {
+            uncommon = 0;
+        }
+        if !has_common {
+            common = 0;
+        }
+
+        let rarity = *self.probability.choose_weighted(&[
+            (Rarity::Rare, rare),
+            (Rarity::Uncommon, uncommon),
+            (Rarity::Common, common)
+        ]).unwrap();
+
+        if rarity == Rarity::Rare {
+            self.state.card_rarity_offset = 0;
+        } else {
+            self.state.card_rarity_offset = std::cmp::min(self.state.card_rarity_offset + 1, 40);
+        }
+
+        let card = self.probability.choose(available.iter().filter(|card| card.rarity == rarity).collect()).unwrap();
+
+        let is_default_upgraded = 
+        match card._type {
+            CardType::Attack => {
+                self.state.has_relic("Molten Egg")
+            }
+            CardType::Skill => {
+                self.state.has_relic("Toxic Egg")
+            }
+            CardType::Power => {
+                self.state.has_relic("Frozen Egg")
+            }
+            _ => panic!("Unexpected card type!")
+        };
+
+        let is_upgraded = is_default_upgraded || {
+            let chance = match self.state.act {
+                1 => 0,
+                2 => 2,
+                3 | 4 => 4,
+                _ => panic!("Unexpected ascension")
+            } / if self.state.asc < 12 { 1 } else { 2 };
+
+            *self.probability.choose_weighted(&[(true, chance), (false, 8 - chance)]).unwrap()
+        };
+
+        CardOffer {
+            base: card,
+            upgraded: is_upgraded,
         }
     }
 

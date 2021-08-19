@@ -240,7 +240,7 @@ fn rewards_match(
 ) -> bool {
     external.rewards.iter().all(|a| {
         internal.iter().any(|b| match a {
-            external::RewardType::Card => b == &internal::game::Reward::CardChoice,
+            external::RewardType::Card => unimplemented!(),
             external::RewardType::EmeraldKey => b == &internal::game::Reward::EmeraldKey,
             external::RewardType::Gold { gold } => b == &internal::game::Reward::Gold(*gold as u8),
             external::RewardType::Potion { potion } => {

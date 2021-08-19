@@ -102,8 +102,8 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
         }
         FloorState::CardReward(card_choices) => {
             choices.push(Choice::Skip);
-            for (card, _) in card_choices {
-                choices.push(Choice::SelectCard(card.to_string()))
+            for card in card_choices {
+                choices.push(Choice::SelectCard(card.base.name.to_string()))
             }
 
             if state.relic_names.contains_key("Singing Bowl") {
@@ -122,7 +122,7 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
         } => {
             for (card, cost) in cards {
                 if *cost <= state.gold {
-                    choices.push(Choice::BuyCard(card.to_string()))
+                    choices.push(Choice::BuyCard(card.base.name.to_string()))
                 }
             }
 

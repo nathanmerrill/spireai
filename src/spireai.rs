@@ -217,7 +217,7 @@ fn descend(
 }
 
 fn evaluate(state: &GameState) -> f64 {
-    state.player.hp as f64
+    state.floor as f64 * 100.0 + state.player.hp as f64
     // Neural net
 }
 
