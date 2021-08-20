@@ -2,7 +2,7 @@ use im::{HashMap, Vector};
 use uuid::Uuid;
 
 use crate::comm::request as external;
-use crate::models::core as internal_core;
+use crate::models::{self, core as internal_core};
 use crate::models::monsters::Intent as NewIntent;
 use crate::state as internal;
 
@@ -50,7 +50,13 @@ pub fn update_state(external: &external::GameState, internal: &mut internal::gam
 
 pub fn convert_shop(state: &external::ShopScreen) -> internal::game::FloorState {
     internal::game::FloorState::Shop {
-        cards: state.cards.iter().map(|a| (a.name.clone(), a.price.unwrap() as u16)).collect(),
+        cards: state.cards.iter().map(|a| {
+            (internal::core::CardOffer {
+                base: models::cards::by_name(&a.name),
+                upgraded: a.upgrades > 0
+            },
+            a.price.unwrap() as u16)
+        }).collect(),
         potions: state.potions.iter().map(|a| (a.name.clone(), a.price.unwrap() as u16)).collect(),
         relics: state.relics.iter().map(|a| (a.name.clone(), a.price.unwrap() as u16)).collect(),
         purge_cost: state.purge_cost as u16,
@@ -179,8 +185,9 @@ pub fn floor_state_matches(
         external::ScreenState::CardReward(external_rewards) => {
             if let internal::game::FloorState::CardReward(internal_rewards) = internal {
                 external_rewards.cards.iter().all(|card| {
-                    internal_rewards.iter().any(|(name, upgraded)| {
-                        &card.name == name && (card.upgrades > 0) == *upgraded
+                    internal_rewards.iter().any(|offer| {
+                        card.name == offer.base.name && 
+                        (card.upgrades > 0) == offer.upgraded
                     })
                 })
             } else {

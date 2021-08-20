@@ -41,7 +41,7 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
             };
 
             possibility.spend_money(cost, true);
-            possibility.state.add_potion(name);
+            possibility.state.add_potion(models::potions::by_name(name));
         }
         Choice::BuyRelic(name) => {
             let cost =
@@ -57,7 +57,7 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
                 };
 
             possibility.spend_money(cost, true);
-            possibility.add_relic(name);
+            possibility.add_relic(models::relics::by_name(name));
         }
         Choice::BuyRemoveCard(card) => {
             let cost = if let FloorState::Shop {
@@ -119,7 +119,7 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
             }
         }
         Choice::Dig => {
-            let relic = possibility.random_relic(None);
+            let relic = possibility.random_relic(None, None);
             possibility.add_relic(relic);
         }
         Choice::DiscardPotion { slot } => {

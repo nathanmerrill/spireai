@@ -1,16 +1,10 @@
 use im::{vector, HashMap, Vector};
 use uuid::Uuid;
 
-use crate::{
-    models::{
-        core::{CardDestination, CardEffect, CardLocation, ChestType, Class, Condition, When},
-        relics::Activation,
-    },
-    spireai::references::{
+use crate::{models::{self, core::{CardDestination, CardEffect, CardLocation, ChestType, Class, Condition, When}, potions::BasePotion, relics::{Activation, BaseRelic}}, spireai::references::{
         BindingReference, BuffReference, CardReference, CreatureReference, PotionReference,
         RelicReference,
-    },
-};
+    }};
 
 use super::{battle::BattleState, core::{Card, CardOffer, Creature, Event, Potion, Relic}, map::MapState, probability::Probability};
 
@@ -82,8 +76,8 @@ impl GameState {
         self.relic_names.contains_key(name)
     }
 
-    pub fn add_relic(&mut self, name: &str) -> RelicReference {
-        let relic = Relic::by_name(name);
+    pub fn add_relic(&mut self, base: &'static BaseRelic) -> RelicReference {
+        let relic = Relic::new(base);
         self.relic_names
             .insert(relic.base.name.to_string(), relic.uuid);
         let whens = match &relic.base.activation {
@@ -149,9 +143,9 @@ impl GameState {
         self.player.hp = std::cmp::min(self.player.hp, self.player.max_hp);
     }
 
-    pub fn add_potion(&mut self, name: &str) {
+    pub fn add_potion(&mut self, base: &'static BasePotion) {
         if let Some(slot) = self.potions.iter().position(|a| a.is_none()) {
-            self.potions.set(slot, Some(Potion::by_name(name)));
+            self.potions.set(slot, Some(Potion{base}));
         }
     }
 
@@ -289,7 +283,7 @@ impl GameState {
             card_rarity_offset: 0,
         };
 
-        state.add_relic(starting_relic);
+        state.add_relic(models::relics::by_name(starting_relic));
 
         state
     }

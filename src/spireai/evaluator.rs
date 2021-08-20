@@ -1,8 +1,10 @@
 use crate::models::cards::BaseCard;
 use crate::models::monsters::Move;
+use crate::models::potions::BasePotion;
+use crate::models::relics::BaseRelic;
 use crate::models::{self, core::*, monsters::Intent, relics::Activation};
 use crate::state::battle::BattleState;
-use crate::state::core::{Card, CardOffer, Creature, Monster, Orb, Relic};
+use crate::state::core::{Card, CardOffer, Creature, Monster, Orb, Potion, Relic};
 use crate::state::game::{CardChoiceEffect, CardChoiceState, FloorState, GameState, Reward};
 use crate::state::probability::Probability;
 use im::HashMap;
@@ -311,7 +313,7 @@ impl GamePossibility {
                 }
             }
             Effect::AddRelic(name) => {
-                self.add_relic(name);
+                self.add_relic(models::relics::by_name(name));
             }
             Effect::AddX(amount) => {
                 binding.get_mut_vars(&mut self.state).x += self.eval_amount(amount, binding);
@@ -520,7 +522,7 @@ impl GamePossibility {
                 self.state.add_potion(potion);
             }
             Effect::RandomRelic => {
-                let relic = self.random_relic(None);
+                let relic = self.random_relic(None, None);
                 self.add_relic(relic)
             }
             Effect::ReduceMaxHpPercentage(amount) => {
@@ -614,26 +616,31 @@ impl GamePossibility {
                             Reward::Relic(Relic::by_name(book))
                         }
                         RewardType::RandomPotion => {
-                            self.probability.choose()
+                            let base = self.random_potion();
+                            Reward::Potion(Potion{base})
                         }
                         RewardType::RandomRelic => {
-
+                            let base = self.random_relic(None, None);
+                            Reward::Relic(Relic::new(base))
                         }
-                        RewardType::Relic(name) => {
-
+                        RewardType::Relic(rarity) => {
+                            let base = self.random_relic(None, Some(*rarity));
+                            Reward::Relic(Relic::new(base))
+                        }
+                        RewardType::RelicName(name) => {
+                            Reward::Relic(Relic::by_name(name))
                         }
                         RewardType::StandardCard => {
-                            self.generate_card_rewards(FightType::Common, false);    
+                            Reward::CardChoice(self.generate_card_rewards(FightType::Common, false))
                         }
-                    };
-                    unimplemented!()
+                    }
                 }).collect())
             }
             _ => unimplemented!(),
         }
     }
 
-    fn generate_card_rewards(&mut self, fight_type: FightType, colorless: bool) {
+    fn generate_card_rewards(&mut self, fight_type: FightType, colorless: bool) -> Vector<CardOffer> {
         let cards = {
             if colorless {
                 models::cards::available_cards_by_class(Class::None)
@@ -660,15 +667,16 @@ impl GamePossibility {
             }
         };
 
-        self.generate_card_offers(Some(fight_type), cards, count, true);
+        self.generate_card_offers(Some(fight_type), cards, count, true)
     }
 
-    fn generate_card_offers(&mut self, fight_type: Option<FightType>, mut available: &Vec<&'static BaseCard>, count: usize, reset_rarity: bool) -> Vec<CardOffer> {
+    fn generate_card_offers(&mut self, fight_type: Option<FightType>, available: &Vec<&'static BaseCard>, count: usize, reset_rarity: bool) -> Vector<CardOffer> {
         let mut cards = available.clone();
 
-        (0..count).map(|a| {
+        (0..count).map(|_| {
             let offer = self.generate_card_offer(fight_type, &cards);
-            cards.remove(cards.into_iter().position(|b| b == offer.base).unwrap());
+            let index = cards.iter().position(|b| b == &offer.base).unwrap();
+            cards.remove(index);
             if reset_rarity && offer.base.rarity == Rarity::Rare {
                 self.state.card_rarity_offset = 0;
             }
@@ -804,7 +812,7 @@ impl GamePossibility {
         };
     }
 
-    fn random_potion(&mut self) -> &'static String {
+    fn random_potion(&mut self) -> &'static BasePotion {
         let rarities = [
             (Rarity::Common, 70),
             (Rarity::Uncommon, 25),
@@ -820,7 +828,7 @@ impl GamePossibility {
             .filter(|a| a.rarity == rarity && !(in_combat && a.name == "Fruit Juice"))
             .collect_vec();
 
-        &self.probability.choose(potions).unwrap().name
+        &self.probability.choose(potions).unwrap()
     }
 
     fn fight(&mut self, monsters: &'static [String], fight_type: FightType) {
@@ -1679,17 +1687,17 @@ impl GamePossibility {
         }
     }
 
-    pub fn add_relic(&mut self, name: &str) {
-        let reference = self.state.add_relic(name);
+    pub fn add_relic(&mut self, base: &'static BaseRelic) {
+        let reference = self.state.add_relic(base);
 
         match reference.base.activation {
             Activation::Immediate => {
                 self.eval_effects(&reference.base.effect, Binding::Relic(reference), None);
             }
             Activation::Custom => {
-                match name {
+                match base.name.as_str() {
                     "War Paint" | "Whetstone" => {
-                        let card_type = if name == "War Paint" {
+                        let card_type = if base.name == "War Paint" {
                             CardType::Skill
                         } else {
                             CardType::Attack
@@ -1844,14 +1852,22 @@ impl GamePossibility {
         );
     }
 
-    pub fn random_relic(&mut self, chest_type: Option<ChestType>) -> &'static str {
+    pub fn random_relic(&mut self, chest_type: Option<ChestType>, rarity: Option<Rarity>) -> &'static BaseRelic {
         let probabilities = match chest_type {
-            None => [50, 33, 17, 0],
+            None => match rarity {
+                None => [50, 33, 17, 0],
+                Some(Rarity::Boss) => [0, 0, 0, 100],
+                Some(Rarity::Rare) => [0, 0, 100, 0],
+                Some(Rarity::Uncommon) => [0, 100, 0, 0],
+                Some(Rarity::Common) => [100, 0, 0, 0],
+                _ => panic!("Unexpected rarity"),
+            },
             Some(ChestType::Small) => [75, 25, 0, 0],
             Some(ChestType::Medium) => [35, 50, 15, 0],
             Some(ChestType::Large) => [0, 75, 25, 0],
             Some(ChestType::Boss) => [0, 0, 0, 100],
         };
+
         let rarities = [Rarity::Common, Rarity::Uncommon, Rarity::Rare, Rarity::Boss];
 
         let choices = rarities
@@ -1868,7 +1884,6 @@ impl GamePossibility {
                     && (relic.class == self.state.class || relic.class == Class::All)
                     && !self.state.has_relic(&relic.name)
             })
-            .map(|relic| &relic.name)
             .collect();
 
         self.probability
