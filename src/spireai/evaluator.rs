@@ -636,6 +636,9 @@ impl GamePossibility {
                     }
                 }).collect())
             }
+            Effect::Shuffle => {
+                self.shuffle();
+            }
             _ => unimplemented!(),
         }
     }
