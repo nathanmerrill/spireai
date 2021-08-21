@@ -1,5 +1,5 @@
 use crate::models::cards::BaseCard;
-use crate::models::monsters::Move;
+use crate::models::monsters::{BaseMonster, Move};
 use crate::models::potions::BasePotion;
 use crate::models::relics::BaseRelic;
 use crate::models::{self, core::*, monsters::Intent, relics::Activation};
@@ -637,10 +637,105 @@ impl GamePossibility {
                 }).collect())
             }
             Effect::Shuffle => {
+                self.state.battle_state.draw.extend(self.state.battle_state.discard.iter().copied());
+                self.state.battle_state.discard.clear();
                 self.shuffle();
+            }
+            Effect::Spawn{ choices, count} => {
+                let amount = self.eval_amount(count, binding);
+                for _ in 0..amount {
+                    let choice = self.probability.choose(choices.clone()).unwrap();
+                    let base = models::monsters::by_name(&choice);
+                    self.add_monster(base, 0);
+                }
+            }
+            Effect::Split(left, right) => {
+                if let Binding::Monster(monster_ref) = binding {
+                    let monster = self.remove_monster(monster_ref.uuid);
+                    let hp = monster.creature.hp;
+                    
+                    let left_base = models::monsters::by_name(left);
+                    let right_base = models::monsters::by_name(right);
+                    let left_ref = self.add_monster(left_base, monster.position);
+                    let right_ref = self.add_monster(right_base, monster.position + 1);
+
+                    let left = &mut self.state.get_mut(left_ref).creature;
+                    left.max_hp = hp;
+                    left.hp = hp;
+
+                    let right = &mut self.state.get_mut(right_ref).creature;
+                    right.max_hp = hp;
+                    right.hp = hp;   
+                } else {
+                    panic!("Unepxected binding")
+                }
             }
             _ => unimplemented!(),
         }
+    }
+
+    fn remove_monster(&mut self, uuid: Uuid) -> Monster {
+        let removed = self.state.battle_state.monsters.remove(&uuid).unwrap();
+        for (_, monster) in self.state.battle_state.monsters.iter_mut() {
+            if monster.position > removed.position {
+                monster.position -= 1;
+            }
+        }
+        removed
+    } 
+
+    fn add_monster(&mut self, base: &'static BaseMonster, position: usize) -> MonsterReference {
+        let hp_asc = match self.state.battle_state.fight_type {
+            FightType::Boss => 9,
+            FightType::Elite => 8,
+            FightType::Common => 7
+        };
+        let hp_range = if self.state.asc < hp_asc {
+            &base.hp_range
+        } else {
+            &base.hp_range_asc
+        };
+
+        let hp = self.probability.range((hp_range.max - hp_range.min) as usize) as u16 + hp_range.min;
+
+        let mut monster = Monster::new(base, hp);
+        
+        monster.position = position;
+
+        let binding = Binding::Monster(monster.monster_ref());
+        if let Some(range) = &base.n_range {
+            let min = self.eval_amount(&range.min, binding);
+            let max = self.eval_amount(&range.max, binding);
+            let n = self.probability.range((max - min) as usize) as i16 + min;
+            monster.vars.n = n;
+            monster.vars.n_reset = n;
+
+        }
+
+        if let Some(range) = &base.x_range {
+            let min = self.eval_amount(&range.min, binding);
+            let max = self.eval_amount(&range.max, binding);
+            let x = self.probability.range((max - min) as usize) as i16 + min;
+            monster.vars.x = x;
+        }
+
+
+        self.eval_effects(&monster.base.on_create, Binding::Monster(monster.monster_ref()), None);
+
+        for (_, m) in self.state.battle_state.monsters.iter_mut() {
+            if m.position >=  position {
+                m.position += 1;
+            }
+        }
+
+        let monster_ref = MonsterReference {
+            base: base,
+            uuid: monster.uuid
+        };
+
+        self.state.battle_state.monsters.insert(monster.uuid, monster);
+
+        monster_ref
     }
 
     fn generate_card_rewards(&mut self, fight_type: FightType, colorless: bool) -> Vector<CardOffer> {
@@ -1653,7 +1748,7 @@ impl GamePossibility {
             CreatureReference::Creature(uuid) => {
                 let monster = &self.state.battle_state.monsters[&uuid];
 
-                match monster.base.name.as_str() {
+                let dies = match monster.base.name.as_str() {
                     "Awakened One" => {
                         if monster.vars.x == 0 {
                             self.eval_target_when(When::OnDie, creature_ref);
@@ -1685,7 +1780,13 @@ impl GamePossibility {
                         }
                     }
                     _ => true,
+                };
+
+                if dies {
+                    self.remove_monster(uuid);
                 }
+
+                dies
             }
         }
     }

@@ -4,7 +4,7 @@ use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use ::std::hash::{Hash, Hasher};
 
-use super::core::{is_default, Amount, Condition, Effect, FightType, When, WhenEffect};
+use super::core::{is_default, Amount, Condition, Effect, FightType, When};
 
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BaseMonster {
@@ -19,7 +19,7 @@ pub struct BaseMonster {
     #[serde(default, skip_serializing_if = "is_default")]
     pub x_range: Option<Range>,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub effects: Vec<WhenEffect>,
+    pub on_create: Vec<Effect>,
 }
 impl std::fmt::Debug for BaseMonster {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

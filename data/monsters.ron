@@ -97,14 +97,9 @@
         next: "Base",
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Split",
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Split",
       ),
     ],
   ),
@@ -365,45 +360,28 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Curiosity",
-            amount: ByAsc(
-              base: 1,
-              low: 1,
-              high: 2,
-            ),
-          ),
-        ],
-      ),
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Strength",
-            amount: ByAsc(
-              base: 0,
-              low: 2,
-              high: 2,
-            ),
-          ),
-        ],
-      ),
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Regenerate",
-            amount: ByAsc(
-              base: 10,
-              low: 10,
-              high: 15,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Curiosity",
+        amount: ByAsc(
+          base: 1,
+          low: 1,
+          high: 2,
+        ),
+      AddBuff(
+        buff: "Strength",
+        amount: ByAsc(
+          base: 0,
+          low: 2,
+          high: 2,
+        ),
+      AddBuff(
+        buff: "Regenerate",
+        amount: ByAsc(
+          base: 10,
+          low: 10,
+          high: 15,
+        ),
       ),
     ],
   ),
@@ -606,14 +584,9 @@
         ]
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Painful Stabs",
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Painful Stabs",
       ),
     ],
   ),
@@ -741,15 +714,10 @@
         next: "Base",
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Artifact",
-            amount: Fixed(3),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Artifact",
+        amount: Fixed(3),
       ),
     ],
   ),
@@ -946,19 +914,14 @@
         next: "Base",
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Flying",
-            amount: ByAsc(
-              base: 3,
-              low: 3,
-              high: 4,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Flying",
+        amount: ByAsc(
+          base: 3,
+          low: 3,
+          high: 4,
+        ),
       ),
     ],
   ),
@@ -1442,32 +1405,22 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Beat Of Death",
-            amount: ByAsc(
-              base: 1,
-              low: 1,
-              high: 2,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Beat Of Death",
+        amount: ByAsc(
+          base: 1,
+          low: 1,
+          high: 2,
+        ),
       ),
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Invincible",
-            amount: ByAsc(
-              base: 300,
-              low: 300,
-              high: 200,
-            ),
-          ),
-        ],
+      AddBuff(
+        buff: "Invincible",
+        amount: ByAsc(
+          base: 300,
+          low: 300,
+          high: 200,
+        ),
       ),
     ],
   ),
@@ -1703,14 +1656,9 @@
         high: 11,
       ),
     )),
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Life Link",
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Life Link",
       ),
     ],
   ),
@@ -1778,19 +1726,14 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Artifact",
-            amount: ByAsc(
-              base: 2,
-              low: 2,
-              high: 3,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Artifact",
+        amount: ByAsc(
+          base: 2,
+          low: 2,
+          high: 3,
+        ),
       ),
     ],
   ),
@@ -1841,19 +1784,14 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Artifact",
-            amount: ByAsc(
-              base: 2,
-              low: 2,
-              high: 3,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Artifact",
+        amount: ByAsc(
+          base: 2,
+          low: 2,
+          high: 3,
+        ),
       ),
     ],
   ),
@@ -1900,15 +1838,10 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Explode",
-            amount: Fixed(3),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Explode",
+        amount: Fixed(3),
       ),
     ],
   ),
@@ -2014,15 +1947,10 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Spore Cloud",
-            amount: Fixed(2),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Spore Cloud",
+        amount: Fixed(2),
       ),
     ],
   ),
@@ -2125,14 +2053,9 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Slow",
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Slow",
       ),
     ],
   ),
@@ -2212,15 +2135,10 @@
         high: 8,
       ),
     )),
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Curl Up",
-            amount: N,
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Curl Up",
+        amount: N,
       ),
     ],
   ),
@@ -2736,29 +2654,24 @@
         ]
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          If(
-            condition: Act(3),
-            then: [
-              AddBuff(
-                buff: "Strength",
-                amount: ByAsc(
-                  base: 3,
-                  low: 4,
-                  high: 5,
-                ),
-              ),
-              Block(
-                amount: ByAsc(
-                  base: 6,
-                  low: 6,
-                  high: 9,
-                ),
-              ),
-            ],
+    on_create: [
+      If(
+        condition: Act(3),
+        then: [
+          AddBuff(
+            buff: "Strength",
+            amount: ByAsc(
+              base: 3,
+              low: 4,
+              high: 5,
+            ),
+          ),
+          Block(
+            amount: ByAsc(
+              base: 6,
+              low: 6,
+              high: 9,
+            ),
           ),
         ],
       ),
@@ -2863,23 +2776,13 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Metallicize",
-            amount: Fixed(8),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Metallicize",
+        amount: Fixed(8),
       ),
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Asleep",
-          ),
-        ],
+      AddBuff(
+        buff: "Asleep",
       ),
     ],
   ),
@@ -2969,19 +2872,14 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Innate Thievery",
-            amount: ByAsc(
-              base: 15,
-              low: 15,
-              high: 20,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Innate Thievery",
+        amount: ByAsc(
+          base: 15,
+          low: 15,
+          high: 20,
+        ),
       ),
     ],
   ),
@@ -3019,19 +2917,14 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Angry",
-            amount: ByAsc(
-              base: 1,
-              low: 1,
-              high: 2,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Angry",
+        amount: ByAsc(
+          base: 1,
+          low: 1,
+          high: 2,
+        ),
       ),
     ],
   ),
@@ -3121,19 +3014,14 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Innate Thievery",
-            amount: ByAsc(
-              base: 15,
-              low: 15,
-              high: 20,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Innate Thievery",
+        amount: ByAsc(
+          base: 15,
+          low: 15,
+          high: 20,
+        ),
       ),
     ],
   ),
@@ -3344,21 +3232,6 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: AfterEnemyMove,
-        effect: [
-          If(
-            condition: Custom,
-            then: [
-              AddBuff(
-                buff: "Intangible",
-              ),
-            ],
-          ),
-        ],
-      ),
-    ],
   ),
   (
     name: "Orb Walker",
@@ -3427,19 +3300,14 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Strength Up",
-            amount: ByAsc(
-              base: 3,
-              low: 3,
-              high: 5,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Strength Up",
+        amount: ByAsc(
+          base: 3,
+          low: 3,
+          high: 5,
+        ),
       ),
     ],
   ),
@@ -3558,15 +3426,10 @@
         high: 8,
       ),
     )),
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Curl Up",
-            amount: N,
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Curl Up",
+        amount: N,
       ),
     ],
   ),
@@ -4149,15 +4012,10 @@
         next: "Core",
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Plated Armor",
-            amount: Fixed(14),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Plated Armor",
+        amount: Fixed(14),
       ),
     ],
   ),
@@ -4297,14 +4155,9 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Split",
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Split",
       ),
     ],
   ),
@@ -4378,15 +4231,10 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Malleable",
-            amount: Fixed(3),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Malleable",
+        amount: Fixed(3),
       ),
     ],
   ),
@@ -4620,22 +4468,12 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Barricade",
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Barricade",
       ),
-      (
-        when: CombatStart,
-        effect: [
-          Block(
-            amount: Fixed(40),
-          ),
-        ],
+      Block(
+        amount: Fixed(40),
       ),
     ],
   ),
@@ -4720,14 +4558,9 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Split",
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Split",
       ),
     ],
   ),
@@ -4895,19 +4728,14 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Thorns",
-            amount: ByAsc(
-              base: 3,
-              low: 4,
-              high: 7,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Thorns",
+        amount: ByAsc(
+          base: 3,
+          low: 4,
+          high: 7,
+        ),
       ),
     ],
   ),
@@ -5140,19 +4968,14 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Artifact",
-            amount: ByAsc(
-              base: 1,
-              low: 1,
-              high: 2,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Artifact",
+        amount: ByAsc(
+          base: 1,
+          low: 1,
+          high: 2,
+        ),
       ),
     ],
   ),
@@ -5258,19 +5081,14 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Artifact",
-            amount: ByAsc(
-              base: 1,
-              low: 1,
-              high: 2,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Artifact",
+        amount: ByAsc(
+          base: 1,
+          low: 1,
+          high: 2,
+        ),
       ),
     ],
   ),
@@ -6098,19 +5916,14 @@
         next: "Core",
       )
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Mode Shift",
-            amount: ByAsc(
-              base: 30,
-              low: 35,
-              high: 40,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Mode Shift",
+        amount: ByAsc(
+          base: 30,
+          low: 35,
+          high: 40,
+        ),
       ),
     ],
   ),
@@ -6358,15 +6171,10 @@
         next: "Core",
       )
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Time Warp",
-            amount: Fixed(12),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Time Warp",
+        amount: Fixed(12),
       ),
     ],
   ),
@@ -6431,27 +6239,17 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Fading",
-            amount: ByAsc(
-              base: 5,
-              low: 5,
-              high: 6,
-            ),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Fading",
+        amount: ByAsc(
+          base: 5,
+          low: 5,
+          high: 6,
+        ),
       ),
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Shifting",
-          ),
-        ],
+      AddBuff(
+        buff: "Shifting",
       ),
     ],
   ),
@@ -6575,23 +6373,13 @@
         ],
       ),
     ],
-    effects: [
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Malleable",
-            amount: Fixed(3),
-          ),
-        ],
+    on_create: [
+      AddBuff(
+        buff: "Malleable",
+        amount: Fixed(3),
       ),
-      (
-        when: CombatStart,
-        effect: [
-          AddBuff(
-            buff: "Reactive",
-          ),
-        ],
+      AddBuff(
+        buff: "Reactive",
       ),
     ],
   ),
