@@ -26,6 +26,8 @@ pub struct BaseRelic {
     pub replaces_starter: bool,
     #[serde(default, skip_serializing_if = "is_default")]
     pub starting_x: i16,
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub max_floor: u8,
 }
 impl std::fmt::Debug for BaseRelic {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {

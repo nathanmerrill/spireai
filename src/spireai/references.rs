@@ -201,7 +201,7 @@ impl BindingReference for PotionReference {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Eq, Clone, Copy)]
 pub struct RelicReference {
     pub base: &'static BaseRelic,
     pub relic: Uuid,

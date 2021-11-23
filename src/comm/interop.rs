@@ -57,9 +57,9 @@ pub fn convert_shop(state: &external::ShopScreen) -> internal::game::FloorState 
             },
             a.price.unwrap() as u16)
         }).collect(),
-        potions: state.potions.iter().map(|a| (a.name.clone(), a.price.unwrap() as u16)).collect(),
-        relics: state.relics.iter().map(|a| (a.name.clone(), a.price.unwrap() as u16)).collect(),
-        purge_cost: state.purge_cost as u16,
+        potions: state.potions.iter().map(|a| (models::potions::by_name(&a.name), a.price.unwrap() as u16)).collect(),
+        relics: state.relics.iter().map(|a| (models::relics::by_name(&a.name), a.price.unwrap() as u16)).collect(),
+        can_purge: state.purge_available,
     }
 }
 
@@ -247,7 +247,7 @@ fn rewards_match(
 ) -> bool {
     external.rewards.iter().all(|a| {
         internal.iter().any(|b| match a {
-            external::RewardType::Card => unimplemented!(),
+            external::RewardType::Card => match b { internal::game::Reward::CardChoice(_) => true, _ => false },
             external::RewardType::EmeraldKey => b == &internal::game::Reward::EmeraldKey,
             external::RewardType::Gold { gold } => b == &internal::game::Reward::Gold(*gold as u8),
             external::RewardType::Potion { potion } => {

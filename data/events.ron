@@ -1129,30 +1129,30 @@
         ],
       ),
       (
-        name: "I am Awake",
+        name: "I am Rich",
+        condition: Not(OnFloor(41)),
         effects: [
-          If(
-            condition: OnFloor(41),
-            then: [
-              HealPercentage(
-                amount: Fixed(100),
-              ),
-              CreateCard(
-                name: "Doubt",
-                destination: DeckPile,
-              ),
-            ],
-            _else: [
-              AddGold(Fixed(999)),
-              CreateCard(
-                name: "Normality",
-                destination: DeckPile,
-              ),
-              CreateCard(
-                name: "Normality",
-                destination: DeckPile,
-              ),
-            ],
+          AddGold(Fixed(999)),
+          CreateCard(
+            name: "Normality",
+            destination: DeckPile,
+          ),
+          CreateCard(
+            name: "Normality",
+            destination: DeckPile,
+          ),
+        ],
+      ),
+      (
+        name: "I am Healthy",
+        condition: OnFloor(41),
+        effects: [
+          HealPercentage(
+            amount: Fixed(100),
+          ),
+          CreateCard(
+            name: "Doubt",
+            destination: DeckPile,
           ),
         ],
       ),

@@ -59,6 +59,7 @@
             disabled_at: CombatStart,
         ),
         effect: [AddEnergy(Fixed(2))],
+        max_floor: 49,
     ),
     (
         name: "Art Of War",
@@ -105,6 +106,7 @@
     (
         name: "Ceramic Fish",
         activation: Custom,
+        max_floor: 49,
     ),
     (
         name: "Dream Catcher",
@@ -112,6 +114,7 @@
         effect: [ShowReward([
             StandardCard,
         ])],
+        max_floor: 49,
     ),
     (
         name: "Happy Flower",
@@ -126,6 +129,7 @@
     (
         name: "Juzu Bracelet",
         activation: Custom,
+        max_floor: 49,
     ),
     (
         name: "Lantern",
@@ -136,6 +140,7 @@
         name: "Maw Bank",
         activation: When(RoomEnter(All)),
         effect: [AddGold(Fixed(12))],
+        max_floor: 49,
     ),
     (
         name: "Meal Ticket",
@@ -143,6 +148,7 @@
         effect: [Heal(
             amount: Fixed(15),
         )],
+        max_floor: 49,
     ),
     (
         name: "Nunchaku",
@@ -167,6 +173,7 @@
         name: "Omamori",
         activation: Custom,
         starting_x: 2,
+        max_floor: 49,
     ),
     (
         name: "Orichalcum",
@@ -191,10 +198,12 @@
         name: "Potion Belt",
         activation: Immediate,
         effect: [AddPotionSlot(2)],
+        max_floor: 49,
     ),
     (
         name: "Preserved Insect",
         activation: When(RoomEnter(Fight(Elite))),
+        max_floor: 53,
     ),
     (
         name: "Regal Pillow",
@@ -202,6 +211,7 @@
         effect: [Heal(
             amount: Fixed(15),
         )],
+        max_floor: 49,
     ),
     (
         name: "Smiling Mask",
@@ -224,6 +234,7 @@
             auto_reset: true,
             target: 4,
         ),
+        max_floor: 36,
     ),
     (
         name: "Toy Ornithopter",
@@ -301,6 +312,7 @@
         name: "Darkstone Periapt",
         rarity: Uncommon,
         activation: Custom,
+        max_floor: 49,
     ),
     (
         name: "Eternal Feather",
@@ -311,6 +323,7 @@
         name: "Frozen Egg",
         rarity: Uncommon,
         activation: Custom,
+        max_floor: 49,
     ),
     (
         name: "Gremlin Horn",
@@ -375,6 +388,7 @@
     (
         name: "Matryoshka",
         rarity: Uncommon,
+        max_floor: 41,
     ),
     (
         name: "Meat On The Bone",
@@ -386,6 +400,7 @@
                 amount: Fixed(12),
             )],
         )],
+        max_floor: 49,
     ),
     (
         name: "Mercury Hourglass",
@@ -400,6 +415,7 @@
         name: "Molten Egg",
         rarity: Uncommon,
         activation: Custom,
+        max_floor: 49,
     ),
     (
         name: "Mummified Hand",
@@ -436,6 +452,7 @@
     (
         name: "Question Card",
         rarity: Uncommon,
+        max_floor: 49,
     ),
     (
         name: "Shuriken",
@@ -453,6 +470,7 @@
     (
         name: "Singing Bowl",
         rarity: Uncommon,
+        max_floor: 49,
     ),
     (
         name: "Strike Dummy",
@@ -474,11 +492,13 @@
         name: "The Courier",
         rarity: Uncommon,
         activation: Custom,
+        max_floor: 49,
     ),
     (
         name: "Toxic Egg",
         rarity: Uncommon,
         activation: Custom,
+        max_floor: 49,
     ),
     (
         name: "White Beast Statue",
@@ -633,6 +653,7 @@
             buff: "Strength",
             amount: X,
         )],
+        max_floor: 49,
     ),
     (
         name: "Ice Cream",
@@ -674,11 +695,13 @@
         rarity: Rare,
         activation: Immediate,
         effect: [AddGold(Fixed(300))],
+        max_floor: 49,
     ),
     (
         name: "Peace Pipe",
         rarity: Rare,
         activation: Custom,
+        max_floor: 49,
     ),
     (
         name: "Pocketwatch",
@@ -689,11 +712,13 @@
     (
         name: "Prayer Wheel",
         rarity: Rare,
+        max_floor: 49,
     ),
     (
         name: "Shovel",
         rarity: Rare,
         activation: Custom,
+        max_floor: 49,
     ),
     (
         name: "Stone Calendar",
@@ -741,7 +766,7 @@
     (
         name: "Wing Boots",
         rarity: Rare,
-        activation: Custom,
+        max_floor: 49,
     ),
     (
         name: "Champion Belt",
@@ -994,6 +1019,7 @@
         rarity: Boss,
         activation: Custom,
         energy_relic: true,
+        max_floor: 25,
     ),
     (
         name: "Empty Cage",

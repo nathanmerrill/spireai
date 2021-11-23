@@ -724,14 +724,17 @@
   ),
   (
     name: "Invincible",
+    on_add: [
+      SetN(X)
+    ],
     effects: [
       (
-        when: OnHpLoss,
+        when: BeforeEnemyMove,
         effect: [
-          Custom,
-        ],
-      ),
-    ],
+          SetX(N),
+        ]
+      )
+    ]
   ),
   (
     name: "Juggernaut",
@@ -893,14 +896,6 @@
   ),
   (
     name: "Mode Shift",
-    effects: [
-      (
-        when: OnReceiveUnblockedDamage,
-        effect: [
-          Custom,
-        ],
-      ),
-    ],
   ),
   (
     name: "Next Turn Block",
@@ -1078,14 +1073,6 @@
   ),
   (
     name: "Reactive",
-    effects: [
-      (
-        when: OnReceiveUnblockedDamage,
-        effect: [
-          Custom,
-        ],
-      ),
-    ],
   ),
   (
     name: "Rebound",
@@ -1217,9 +1204,15 @@
       (
         when: PlayCard(All),
         effect: [
-          Custom,
+          AddX(1),
         ],
       ),
+      (
+        when: BeforeEnemyMove,
+        effect: [
+          SetX(0),
+        ]
+      )
     ],
   ),
   (
@@ -1244,14 +1237,6 @@
   (
     name: "Stasis",
     singular: true,
-    effects: [
-      (
-        when: OnDie,
-        effect: [
-          Custom,
-        ],
-      ),
-    ],
   ),
   (
     name: "Static Discharge",
@@ -1329,11 +1314,24 @@
     name: "The Bomb",
     repeats: true,
     singular: true,
+    on_add: [
+      SetN(X),
+      SetX(3),
+    ],
+    reduce_at: BeforeEnemyMove,
     effects: [
       (
         when: BeforeEnemyMove,
         effect: [
-          Custom,
+          If(
+            condition: Equals(X, Fixed(1)),
+            then: [
+              Damage(
+                target: AllEnemies,
+                amount: N,
+              )
+            ],
+          ),
         ],
       ),
     ],
@@ -1368,7 +1366,6 @@
   ),
   (
     name: "Time Warp",
-    repeats: true,
     singular: true,
     effects: [
       (

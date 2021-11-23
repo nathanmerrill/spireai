@@ -28,6 +28,7 @@ pub struct GameState {
     pub gold: u16,
     pub keys: Option<KeyState>,
     pub won: Option<bool>,
+    pub base_purge_cost: u16,
     pub card_rarity_offset: u8,
 }
 
@@ -43,6 +44,28 @@ impl GameState {
         .unwrap();
     }
 
+    pub fn purge_cost(&self) -> u16 {
+        if self.has_relic("Smiling Mask") {
+            50
+        } else {
+            let discount = if self.has_relic("Membership Card") {
+                if self.has_relic("The Courier") {
+                    0.6
+                } else {
+                    0.5
+                }
+            } else {
+                if self.has_relic("The Courier") {
+                    0.8
+                } else {
+                    1.0
+                }
+            };
+
+            (self.base_purge_cost as f32 * discount).ceil() as u16
+        }
+    }
+
     pub fn add_card(
         &mut self,
         card: Card,
@@ -55,7 +78,7 @@ impl GameState {
             }
             _ => {
                 self.battle_state.move_in(
-                    card.reference(destination.location()),
+                    card.uuid,
                     destination,
                     probability,
                 );
@@ -278,6 +301,7 @@ impl GameState {
             relic_names: HashMap::new(),
             player,
             gold: 99,
+            base_purge_cost: 50,
             keys: None,
             won: None,
             card_rarity_offset: 0,
@@ -321,6 +345,34 @@ impl GameState {
             location: CardLocation::DeckPile,
             base: c.base,
         })
+    }
+
+    pub fn removable_cards(&self) -> impl Iterator<Item = CardReference> + '_ {
+        self.deck.iter().filter_map(|(u, c)| 
+            if c.removable() {
+                Some(CardReference {
+                    uuid: *u,
+                    location: CardLocation::DeckPile,
+                    base: c.base,
+                })
+            } else {
+                None
+            }
+        )
+    }
+
+    pub fn upgradable_cards(&self) -> impl Iterator<Item = CardReference> + '_ {
+        self.deck.iter().filter_map(|(u, c)| 
+            if c.upgradable() {
+                Some(CardReference {
+                    uuid: *u,
+                    location: CardLocation::DeckPile,
+                    base: c.base,
+                })
+            } else {
+                None
+            }
+        )
     }
 
     pub fn relics(&self) -> impl Iterator<Item = RelicReference> + '_ {
@@ -391,10 +443,10 @@ pub enum FloorState {
     ShopEntrance,
     Shop {
         cards: Vector<(CardOffer, u16)>,
-        potions: Vector<(String, u16)>,
-        relics: Vector<(String, u16)>,
-        purge_cost: u16,
-    }, // Last u8 is remove
+        potions: Vector<(&'static BasePotion, u16)>,
+        relics: Vector<(&'static BaseRelic, u16)>,
+        can_purge: bool,
+    },
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -440,4 +492,6 @@ pub enum CardChoiceEffect {
     Then(&'static Vec<CardEffect>),
     Remove,
     AddToLocation(CardDestination, Vec<CardEffect>),
+    Transform,
+    Upgrade
 }

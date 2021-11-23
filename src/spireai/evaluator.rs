@@ -1,5 +1,5 @@
 use crate::models::cards::BaseCard;
-use crate::models::monsters::{BaseMonster, Move};
+use crate::models::monsters::{BaseMonster, MonsterMove, Move};
 use crate::models::potions::BasePotion;
 use crate::models::relics::BaseRelic;
 use crate::models::{self, core::*, monsters::Intent, relics::Activation};
@@ -328,7 +328,7 @@ impl GamePossibility {
 
                 for creature in self.eval_targets(target, binding, action) {
                     for _ in 0..self.eval_amount(times, binding) {
-                        if self.damage(attack_amount as u16, creature) {
+                        if self.damage(attack_amount as u16, creature, Some(action.unwrap().creature), false) {
                             self.eval_effects(if_fatal, binding, action);
                         }
                     }
@@ -440,7 +440,7 @@ impl GamePossibility {
             Effect::Damage { amount, target } => {
                 let total = self.eval_amount(amount, binding) as u16;
                 let creature = self.eval_target(target, binding, action);
-                self.damage(total, creature);
+                self.damage(total, creature, None, false);
             }
             Effect::Die { target } => {
                 let creature = self.eval_target(target, binding, action);
@@ -491,13 +491,13 @@ impl GamePossibility {
             Effect::LoseHp { amount, target } => {
                 let total = self.eval_amount(amount, binding);
                 for creature in self.eval_targets(target, binding, action) {
-                    self.lose_hp(total as u16, creature);
+                    self.lose_hp(total as u16, creature, false);
                 }
             }
             Effect::LoseHpPercentage(amount) => {
                 let percentage = self.eval_amount(amount, binding) as f64 / 1000.0;
                 let damage = (self.state.player.max_hp as f64 * percentage).floor() as u16;
-                self.lose_hp(damage, CreatureReference::Player);
+                self.lose_hp(damage, CreatureReference::Player, false);
             }
             Effect::RandomChance(chances) => {
                 let evaluated_chances = chances
@@ -518,11 +518,11 @@ impl GamePossibility {
                 self.eval_effects(choice, binding, action);
             }
             Effect::RandomPotion => {
-                let potion = self.random_potion();
+                let potion = self.random_potion(self.state.battle_state.active);
                 self.state.add_potion(potion);
             }
             Effect::RandomRelic => {
-                let relic = self.random_relic(None, None);
+                let relic = self.random_relic(None, None, None, false);
                 self.add_relic(relic)
             }
             Effect::ReduceMaxHpPercentage(amount) => {
@@ -616,15 +616,15 @@ impl GamePossibility {
                             Reward::Relic(Relic::by_name(book))
                         }
                         RewardType::RandomPotion => {
-                            let base = self.random_potion();
+                            let base = self.random_potion(false);
                             Reward::Potion(Potion{base})
                         }
                         RewardType::RandomRelic => {
-                            let base = self.random_relic(None, None);
+                            let base = self.random_relic(None, None, None, false);
                             Reward::Relic(Relic::new(base))
                         }
                         RewardType::Relic(rarity) => {
-                            let base = self.random_relic(None, Some(*rarity));
+                            let base = self.random_relic(None, Some(*rarity), None, false);
                             Reward::Relic(Relic::new(base))
                         }
                         RewardType::RelicName(name) => {
@@ -670,9 +670,48 @@ impl GamePossibility {
                     panic!("Unepxected binding")
                 }
             }
-            _ => unimplemented!(),
+            Effect::TransformCard(count) => {
+                self.state.card_choices = CardChoiceState {
+                    choices: self.state.removable_cards().map(|c| c.uuid).collect(),
+                    location: CardLocation::DeckPile,
+                    count: Some((*count as usize, *count as usize)),
+                    effect: CardChoiceEffect::Transform,
+                }
+            }
+            Effect::TransformRandomCard(count) => {
+                self.probability.choose_multiple(self.state.removable_cards().collect(), *count as usize).iter()
+                    .for_each(|c| self.transform_card(*c));
+            }
+            Effect::Unbuff(buff) => {
+                self.state.get_mut(binding.get_creature()).remove_buff_by_name(buff);
+            }
+            Effect::UpgradeCard => {
+                self.state.card_choices = CardChoiceState {
+                    choices: self.state.upgradable_cards().map(|c| c.uuid).collect(),
+                    location: CardLocation::DeckPile,
+                    count: Some((1, 1)),
+                    effect: CardChoiceEffect::Upgrade,
+                }
+            }
+            Effect::UpgradeRandomCard(count) => {
+                self.probability.choose_multiple(self.state.upgradable_cards().collect(), *count as usize).iter()
+                    .for_each(|c| self.state.get_mut(*c).upgrade());
+            }
         }
     }
+
+    fn transform_card(&mut self, card: CardReference) {
+        self.state.remove_card(card);
+        
+        let choices = models::cards::available_cards_by_class(card.base._class).iter()
+                .filter(|a| a.name != card.base.name)
+                .collect();
+        let new_card = self.probability.choose(choices).unwrap();
+
+        self.add_card(Card::new(new_card), CardDestination::DeckPile);
+    }
+
+    
 
     fn remove_monster(&mut self, uuid: Uuid) -> Monster {
         let removed = self.state.battle_state.monsters.remove(&uuid).unwrap();
@@ -784,7 +823,7 @@ impl GamePossibility {
 
     
 
-    fn generate_card_offer(&mut self, fight_type: Option<FightType>, available: &Vec<&'static BaseCard>) -> CardOffer {
+    pub fn generate_card_offer(&mut self, fight_type: Option<FightType>, available: &Vec<&'static BaseCard>) -> CardOffer {
 
         let has_nloth = self.state.has_relic("N'loth's Gift");
 
@@ -837,7 +876,7 @@ impl GamePossibility {
             common = 0;
         }
 
-        let rarity = *self.probability.choose_weighted(&[
+        let rarity = *self.probability.choose_weighted(&vec![
             (Rarity::Rare, rare),
             (Rarity::Uncommon, uncommon),
             (Rarity::Common, common)
@@ -873,7 +912,7 @@ impl GamePossibility {
                 _ => panic!("Unexpected ascension")
             } / if self.state.asc < 12 { 1 } else { 2 };
 
-            *self.probability.choose_weighted(&[(true, chance), (false, 8 - chance)]).unwrap()
+            *self.probability.choose_weighted(&vec![(true, chance), (false, 8 - chance)]).unwrap()
         };
 
         CardOffer {
@@ -910,8 +949,8 @@ impl GamePossibility {
         };
     }
 
-    fn random_potion(&mut self) -> &'static BasePotion {
-        let rarities = [
+    pub fn random_potion(&mut self, no_healing: bool) -> &'static BasePotion {
+        let rarities = vec![
             (Rarity::Common, 70),
             (Rarity::Uncommon, 25),
             (Rarity::Rare, 5),
@@ -919,11 +958,12 @@ impl GamePossibility {
 
         let rarity = *self.probability.choose_weighted(&rarities).unwrap();
 
-        let in_combat = self.state.battle_state.active;
-
         let potions = models::potions::POTIONS
             .values()
-            .filter(|a| a.rarity == rarity && !(in_combat && a.name == "Fruit Juice"))
+            .filter(|a| 
+                a.rarity == rarity 
+                && !(no_healing && a.name == "Fruit Juice")
+            )
             .collect_vec();
 
         &self.probability.choose(potions).unwrap()
@@ -1120,19 +1160,21 @@ impl GamePossibility {
     }
 
     fn next_monster_move(&mut self, monster: MonsterReference) {
+        let choices = self.state.get(monster).current_move_options.iter().copied().collect();
+        let current_move = self.probability.choose_weighted(&choices).expect("No current moves listed!");
         self.eval_effects(
-            &self.state.get(monster).current_move.effects,
+            &current_move.effects,
             Binding::Monster(monster),
             None,
         );
-        self.next_move(monster);
+        self.next_move(monster, current_move);
     }
 
-    fn next_move(&mut self, monster_ref: MonsterReference) {
+    fn next_move(&mut self, monster_ref: MonsterReference, performed_move: &'static MonsterMove) {
         let (index, phase) = {
             let monster = self.state.get_mut(monster_ref);
             if let Some(last_move) = monster.last_move {
-                if last_move == monster.current_move {
+                if last_move == performed_move {
                     monster.last_move_count += 1;
                 } else {
                     monster.last_move = Some(last_move);
@@ -1291,7 +1333,7 @@ impl GamePossibility {
         }
     }
 
-    fn random_cards_by_type(
+    pub fn random_cards_by_type(
         &mut self,
         amount: usize,
         class: Option<Class>,
@@ -1418,8 +1460,8 @@ impl GamePossibility {
                 move_index = 0;
             }
 
-            let name = match &phase.moves[move_index] {
-                Move::Fixed(name) => Some(name),
+            let next = match &phase.moves[move_index] {
+                Move::Fixed(name) => vec![(name, 1)],
                 Move::Probability(probabilities) => {
                     let available_probabilites = probabilities
                         .iter()
@@ -1435,9 +1477,15 @@ impl GamePossibility {
                         })
                         .collect_vec();
 
-                    self.probability
-                        .choose_weighted(&available_probabilites)
-                        .cloned()
+                    if self.state.has_relic("Runic Dome") {
+                        available_probabilites
+                    } else  {
+                        self.probability
+                            .choose_weighted(&available_probabilites)
+                            .into_iter()
+                            .map(|f| (*f, 1))
+                            .collect_vec()
+                    }
                 }
                 Move::If {
                     condition,
@@ -1459,12 +1507,12 @@ impl GamePossibility {
                         phase_index = position.0;
                         move_index = 0;
                     }
-                    None
+                    vec![]
                 }
             };
 
-            if let Some(value) = name {
-                break value;
+            if !next.is_empty() {
+                break next;
             } else {
                 move_index += 1;
             }
@@ -1472,12 +1520,20 @@ impl GamePossibility {
 
         let monster = self.state.get_mut(monster_ref);
 
-        monster.current_move = monster
-            .base
-            .moveset
-            .iter()
-            .find(|a| &a.name == next_move)
-            .unwrap();
+
+        monster.current_move_options = 
+
+        next_move.into_iter().map(|(m, p)| {
+            (monster
+                .base
+                .moveset
+                .iter()
+                .find(|a| &a.name == m)
+                .unwrap()
+                , p)
+        }).collect();
+        
+
         monster.index = move_index;
         monster.phase = phase_index;
     }
@@ -1614,13 +1670,9 @@ impl GamePossibility {
                             .map(|m| m.uuid);
 
                         if let Some(uuid) = lowest_monster {
-                            let mut orb_damage = orb.n as f64;
                             let creature = CreatureReference::Creature(uuid);
-                            if self.state.get(creature).has_buff("Lock On") {
-                                orb_damage *= 1.5;
-                            }
 
-                            self.damage(orb_damage.floor() as u16, creature);
+                            self.damage(orb.n as u16, creature, None, true);
                         }
                     }
                 }
@@ -1635,38 +1687,28 @@ impl GamePossibility {
                 OrbType::Lightning => {
                     let has_electro_dynamics = self.state.player.has_buff("Electro");
                     let focus = self.state.player.get_buff_amount("Focus");
-                    let orb_damage = std::cmp::max(8 + focus, 0) as f64;
+                    let orb_damage = std::cmp::max(8 + focus, 0) as u16;
                     for _ in 0..times {
                         if has_electro_dynamics {
                             for monster in
                                 self.state.battle_state.available_monsters().collect_vec()
                             {
-                                let multiplier =
-                                    if self.state.get(monster).creature.has_buff("Lock On") {
-                                        1.5
-                                    } else {
-                                        1.0
-                                    };
-
                                 self.damage(
-                                    (orb_damage * multiplier).floor() as u16,
+                                    orb_damage,
                                     monster.creature_ref(),
+                                    None,
+                                    true
                                 );
                             }
                         } else {
                             let monsters =
                                 self.state.battle_state.available_monsters().collect_vec();
                             if let Some(selected) = self.probability.choose(monsters) {
-                                let multiplier =
-                                    if self.state.get(selected).creature.has_buff("Lock On") {
-                                        1.5
-                                    } else {
-                                        1.0
-                                    };
-
                                 self.damage(
-                                    (orb_damage * multiplier).floor() as u16,
+                                    orb_damage,
                                     selected.creature_ref(),
+                                    None,
+                                    true
                                 );
                             }
                         }
@@ -1677,25 +1719,105 @@ impl GamePossibility {
         }
     }
 
-    fn damage(&mut self, amount: u16, creature_ref: CreatureReference) -> bool {
-        let mut block = self.state.get(creature_ref).block;
-        if block < amount as u16 {
-            if self.lose_hp(amount - block, creature_ref) {
+    fn damage(&mut self, amount: u16, creature_ref: CreatureReference, attacker: Option<CreatureReference>, is_orb: bool) -> bool {
+        let hp_loss = {
+            let creature = self.state.get(creature_ref);
+            let mut multiplier = 1.0;
+
+            if let Some(attacker) = attacker {
+                if creature.has_buff("Vulnerable") {
+                    if creature.is_player {
+                        if self.state.has_relic("Odd Mushroom") {
+                            multiplier += 0.25;
+                        } else {
+                            multiplier += 0.5;
+                        }
+                    } else {
+                        if self.state.has_relic("Paper Phrog") {
+                            multiplier += 0.75;
+                        } else {
+                            multiplier += 0.5;
+                        }
+                    }
+                }
+                if self.state.get(attacker).has_buff("Weak") {
+                    if creature.is_player && self.state.has_relic("Paper Krane") {
+                        multiplier -= 0.4;
+                    } else {
+                        multiplier -= 0.25;
+                    }
+                }
+            }
+
+            if is_orb {
+                if creature.has_buff("Lock On") {
+                    multiplier += 0.5;
+                }
+            }
+
+            if let Some(buff) = creature.find_buff("Slow") {
+                multiplier += 0.1 * buff.vars.x as f64;
+            }
+            let mut full_amount = (amount as f64 * multiplier).floor() as u16;
+
+            if creature.has_buff("Intangible") {
+                full_amount = 1;
+            }
+
+            let blocked_amount = full_amount.saturating_sub(creature.block);
+            let mut unblocked_amount = full_amount - blocked_amount;
+
+            if unblocked_amount > 0 {
+                if creature.is_player { 
+                    if unblocked_amount <= 5 && self.state.has_relic("Torii") {
+                        unblocked_amount = 1;
+                    }
+
+                    if self.state.has_relic("Tungsten Rod") {
+                        unblocked_amount -= 1;
+                    }
+                } else {
+                    if unblocked_amount < 5 && self.state.has_relic("The Boot") {
+                        unblocked_amount = 5;
+                    }
+                }
+            }
+            
+            self.state.get_mut(creature_ref).block -= blocked_amount;
+
+            unblocked_amount
+        };
+
+        if hp_loss > 0 {
+            if self.lose_hp(hp_loss, creature_ref, true) {
                 return true;
             }
-            block = 0
-        } else {
-            block -= amount
         }
-
-        self.state.get_mut(creature_ref).block = block;
 
         false
     }
 
-    fn lose_hp(&mut self, amount: u16, creature_ref: CreatureReference) -> bool {
+    fn lose_hp(&mut self, mut amount: u16, creature_ref: CreatureReference, ignore_intangible: bool) -> bool {
         let new_hp = {
             let creature = self.state.get_mut(creature_ref);
+            if !ignore_intangible && creature.has_buff("Intangible") {
+                amount = std::cmp::max(amount, 1);
+            }
+
+            if let Some(buff) = creature.find_buff_mut("Invincible") {
+                amount = std::cmp::min(amount, buff.vars.x as u16);
+                buff.vars.x -= amount as i16;
+            }
+
+            if let Some(mut buff_amount) = creature.find_buff("Mode Shift").map(|b| b.vars.x as u16) {
+                buff_amount = buff_amount.saturating_sub(amount);
+                if buff_amount == 0 {
+                    creature.remove_buff_by_name("Mode Shift")
+                } else {
+                    creature.find_buff_mut("Mode Shift").unwrap().vars.x = buff_amount as i16;
+                }
+            }
+
             creature.hp = creature.hp.saturating_sub(amount);
             creature.hp
         };
@@ -1746,12 +1868,14 @@ impl GamePossibility {
                 }
             }
             CreatureReference::Creature(uuid) => {
-                let monster = &self.state.battle_state.monsters[&uuid];
+                self.eval_target_when(When::OnDie, creature_ref);
 
-                let dies = match monster.base.name.as_str() {
+                let monster_ref = creature_ref.monster_ref(&self.state);
+                let monster_name = self.state.get(monster_ref).base.name.as_str();
+
+                let dies = match monster_name {
                     "Awakened One" => {
-                        if monster.vars.x == 0 {
-                            self.eval_target_when(When::OnDie, creature_ref);
+                        if self.state.get(monster_ref).vars.x == 0 {
                             let monster_mut =
                                 creature_ref.get_monster_mut(&mut self.state).unwrap();
                             monster_mut.vars.x = 1;
@@ -1778,6 +1902,12 @@ impl GamePossibility {
                             monster_mut.creature.hp = 0;
                             false
                         }
+                    },
+                    "Bronze Orb" => {
+                        if let Some(buff) = self.state.get(creature_ref).find_buff("Stasis").map(|b| b.card_stasis.unwrap()) {
+                            self.state.battle_state.move_in(buff, CardDestination::PlayerHand, &mut self.probability);
+                        }
+                        true
                     }
                     _ => true,
                 };
@@ -1808,11 +1938,8 @@ impl GamePossibility {
                         };
                         let available_cards: Vec<CardReference> = self
                             .state
-                            .deck()
-                            .filter(|card_ref| {
-                                let card = self.state.get(*card_ref);
-                                card_type.matches(card.base._type) && card.upgradable()
-                            })
+                            .upgradable_cards()
+                            .filter(|card| card_type.matches(card.base._type))
                             .collect();
 
                         let cards = self.probability.choose_multiple(available_cards, 2);
@@ -1956,23 +2083,24 @@ impl GamePossibility {
         );
     }
 
-    pub fn random_relic(&mut self, chest_type: Option<ChestType>, rarity: Option<Rarity>) -> &'static BaseRelic {
+    pub fn random_relic(&mut self, chest_type: Option<ChestType>, rarity: Option<Rarity>, exclude: Option<&'static BaseRelic>, in_shop: bool) -> &'static BaseRelic {
         let probabilities = match chest_type {
             None => match rarity {
-                None => [50, 33, 17, 0],
-                Some(Rarity::Boss) => [0, 0, 0, 100],
-                Some(Rarity::Rare) => [0, 0, 100, 0],
-                Some(Rarity::Uncommon) => [0, 100, 0, 0],
-                Some(Rarity::Common) => [100, 0, 0, 0],
+                None => [50, 33, 17, 0, 0],
+                Some(Rarity::Shop) => [0, 0, 0, 0, 100],
+                Some(Rarity::Boss) => [0, 0, 0, 100, 0],
+                Some(Rarity::Rare) => [0, 0, 100, 0, 0],
+                Some(Rarity::Uncommon) => [0, 100, 0, 0, 0],
+                Some(Rarity::Common) => [100, 0, 0, 0, 0],
                 _ => panic!("Unexpected rarity"),
             },
-            Some(ChestType::Small) => [75, 25, 0, 0],
-            Some(ChestType::Medium) => [35, 50, 15, 0],
-            Some(ChestType::Large) => [0, 75, 25, 0],
-            Some(ChestType::Boss) => [0, 0, 0, 100],
+            Some(ChestType::Small) => [75, 25, 0, 0, 0],
+            Some(ChestType::Medium) => [35, 50, 15, 0, 0],
+            Some(ChestType::Large) => [0, 75, 25, 0, 0],
+            Some(ChestType::Boss) => [0, 0, 0, 100, 0],
         };
 
-        let rarities = [Rarity::Common, Rarity::Uncommon, Rarity::Rare, Rarity::Boss];
+        let rarities = [Rarity::Common, Rarity::Uncommon, Rarity::Rare, Rarity::Boss, Rarity::Shop];
 
         let choices = rarities
             .iter()
@@ -1987,6 +2115,25 @@ impl GamePossibility {
                 relic.rarity == **rarity
                     && (relic.class == self.state.class || relic.class == Class::All)
                     && !self.state.has_relic(&relic.name)
+                    && (relic.max_floor == 0 || relic.max_floor >= self.state.floor)
+                    && match relic.name.as_str() {
+                        "Maw Bank" | "Smiling Mask" | "The Courier" | "Old Coin" => !in_shop,
+                        "Bottled Flame" => self.state.deck.values().any(|c| c.base._type == CardType::Attack && c.base.rarity != Rarity::Starter),
+                        "Bottled Lightning" => self.state.deck.values().any(|c| c.base._type == CardType::Skill && c.base.rarity != Rarity::Starter),
+                        "Bottled Tornado" => self.state.deck.values().any(|c| c.base._type == CardType::Power),
+                        "Girya" => !self.state.has_relic("Peace Pipe") || !self.state.has_relic("Shovel"),
+                        "Shovel" => !self.state.has_relic("Peace Pipe") || !self.state.has_relic("Girya"),
+                        "Peace Pipe" => !self.state.has_relic("Girya") || !self.state.has_relic("Shovel"),
+                        "Black Blood" => self.state.has_relic("Burning Blood"),
+                        "Frozen Core" => self.state.has_relic("Cracked Core"),
+                        "Holy Water" => self.state.has_relic("Pure Water"),
+                        "Ring of the Snake" => self.state.has_relic("Ring of the Serpent"),
+                        _ => true
+                    }
+                    && match &exclude {
+                        None => true,
+                        Some(e) => relic != e
+                    }
             })
             .collect();
 
@@ -1994,9 +2141,7 @@ impl GamePossibility {
             .choose(available_relics)
             .expect("No available relics to be chosen!")
     }
-    /*
 
-    */
     fn eval_amount(&self, amount: &Amount, binding: Binding) -> i16 {
         match amount {
             Amount::ByAsc { amount, low, high } => {
@@ -2170,15 +2315,14 @@ impl GamePossibility {
             Condition::HasRelic(relic) => self.state.has_relic(relic),
             Condition::HasRemoveableCards { count, card_type } => {
                 self.state
-                    .deck()
-                    .filter(|card_ref| {
-                        let card = self.state.get(*card_ref);
-                        card.removable() && card.base._type.matches(*card_type)
+                    .removable_cards()
+                    .filter(|card| {
+                        card.base._type.matches(*card_type)
                     })
                     .count()
                     > *count as usize
             }
-            Condition::HasUpgradableCard => self.state.deck.values().any(|card| card.upgradable()),
+            Condition::HasUpgradableCard => self.state.upgradable_cards().any(|_| true),
             Condition::InPosition(position) => {
                 if let Some(monster) = binding.get_monster(&self.state) {
                     monster.position == *position

@@ -2056,6 +2056,7 @@
     on_create: [
       AddBuff(
         buff: "Slow",
+        amount: 0,
       ),
     ],
   ),

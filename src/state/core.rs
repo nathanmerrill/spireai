@@ -115,7 +115,9 @@ impl Creature {
     }
 
     pub fn remove_buff_by_name(&mut self, name: &str) {
-        self.remove_buff_by_uuid(self.buff_names[name]);
+        if let Some(uuid) = self.buff_names.get(name).copied() {
+            self.remove_buff_by_uuid(uuid)
+        };
     }
 
     pub fn remove_buff_by_uuid(&mut self, uuid: Uuid) {
@@ -280,6 +282,7 @@ pub struct Buff {
     pub uuid: Uuid,
     pub vars: Vars,
     pub stacked_vars: Vec<Vars>,
+    pub card_stasis: Option<Uuid>,
 }
 
 impl Buff {
@@ -298,6 +301,7 @@ impl Buff {
                     x: amount,
                 },
                 stacked_vars: vec![],
+                card_stasis: None,
             }
         } else {
             Buff {
@@ -309,6 +313,7 @@ impl Buff {
                     n_reset: 0,
                     x: amount,
                 }],
+                card_stasis: None,
             }
         }
     }
@@ -367,7 +372,7 @@ pub struct Monster {
     pub whens: HashMap<When, &'static String>,
     pub phase: usize,
     pub index: usize,
-    pub current_move: &'static MonsterMove,
+    pub current_move_options: Vector<(&'static MonsterMove, u8)>,
     pub last_move: Option<&'static MonsterMove>,
     pub last_move_count: u8,
 }
@@ -390,7 +395,7 @@ impl Monster {
             whens: HashMap::new(),
             phase: 0,
             index: 0,
-            current_move: &base.moveset[0],
+            current_move_options: Vector::new(),
             last_move: None,
             last_move_count: 0,
         }
@@ -402,8 +407,8 @@ pub struct Event {
     pub base: &'static BaseEvent,
     pub vars: Vars,
     pub variant: Option<String>,
-    pub variant_cards: Vec<Card>,
-    pub variant_relic: Option<String>,
+    pub variant_cards: Vec<CardReference>,
+    pub variant_relics: Vec<RelicReference>,
     pub variant_amount: Option<u16>,
     pub available_choices: Vec<String>,
 }
@@ -419,7 +424,7 @@ impl Event {
             vars: Vars::new(),
             variant: None,
             variant_cards: vec![],
-            variant_relic: None,
+            variant_relics: vec![],
             variant_amount: None,
             available_choices: base
                 .choices

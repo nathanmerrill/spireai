@@ -74,7 +74,7 @@ impl BattleState {
         probability: &mut Probability,
     ) -> CardReference {
         self.move_out(card);
-        self.move_in(card, destination, probability);
+        self.move_in(card.uuid, destination, probability);
         card.location = destination.location();
         card
     }
@@ -105,7 +105,7 @@ impl BattleState {
 
     pub fn move_in(
         &mut self,
-        card: CardReference,
+        card: Uuid,
         destination: CardDestination,
         probability: &mut Probability,
     ) {
@@ -114,27 +114,26 @@ impl BattleState {
                 panic!("Deck cannot be moved between")
             }
             CardDestination::DiscardPile => {
-                self.discard.insert(card.uuid);
+                self.discard.insert(card);
             }
             CardDestination::DrawPile(position) => {
-                let uuid = card.uuid;
-                self.draw.insert(uuid);
+                self.draw.insert(card);
                 match position {
                     RelativePosition::All => {
                         panic!("Unexpected RelativePosition::All when inserting into draw pile")
                     }
                     RelativePosition::Bottom => {
                         if self.draw_top_known.len() == self.draw.len() - 1 {
-                            self.draw_top_known.push_front(uuid)
+                            self.draw_top_known.push_front(card)
                         } else {
-                            self.draw_bottom_known.push_back(uuid)
+                            self.draw_bottom_known.push_back(card)
                         }
                     }
-                    RelativePosition::Top => self.draw_top_known.push_back(uuid),
+                    RelativePosition::Top => self.draw_top_known.push_back(card),
                     RelativePosition::Random => {
                         if self.draw_visible {
                             let position = probability.range(self.draw.len());
-                            self.draw_top_known.insert(position, uuid);
+                            self.draw_top_known.insert(position, card);
                         } else {
                             self.draw_top_known = Vector::new();
                             self.draw_bottom_known = Vector::new();
@@ -143,13 +142,13 @@ impl BattleState {
                 };
             }
             CardDestination::ExhaustPile => {
-                self.exhaust.insert(card.uuid);
+                self.exhaust.insert(card);
             }
             CardDestination::PlayerHand => {
                 if self.hand.len() == 10 {
-                    self.discard.insert(card.uuid);
+                    self.discard.insert(card);
                 } else {
-                    self.hand.insert(card.uuid);
+                    self.hand.insert(card);
                 }
             }
         }
