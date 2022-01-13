@@ -3,9 +3,10 @@ use crate::models::acts::MonsterSet;
 use crate::models::core::{CardDestination, CardType, Rarity, FightType, ChestType};
 use crate::spireai::*;
 use crate::spireai::references::{Binding, EventReference};
-use crate::state::core::{Card};
-use crate::state::game::FloorState;
+use crate::state::core::{Card, Event, Relic};
+use crate::state::game::{FloorState, Reward};
 use crate::state::map::MapNodeIcon;
+use im::vector;
 use models::choices::Choice;
 
 use super::evaluator::GamePossibility;
@@ -241,18 +242,23 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
         }
         Choice::NavigateToNode(node) => {
             possibility.state.map.floor += 1;
-            let node = possibility.state.map.nodes[&(possibility.state.map.floor, *node)];
-            let act = models::acts::ACTS[possibility.state.act as usize];
+            if let Some(relic) = possibility.state.find_relic("Maw Bank") {
+                if relic.enabled {
+                    possibility.state.gold += 12;
+                }
+            }
+            let node = possibility.state.map.nodes[&(possibility.state.map.floor, *node)].clone();
+            let act = &models::acts::ACTS[possibility.state.act as usize];
             match node.icon {
                 MapNodeIcon::Boss(name) => {
                     let boss = act.bosses.iter().find(|b| b.name == name).unwrap();
-                    let monsters = eval_monster_set(boss.monsters, &mut possibility);
+                    let monsters = eval_monster_set(&boss.monsters, possibility);
                     possibility.fight(&monsters, FightType::Boss)
                 }
                 MapNodeIcon::BurningElite | MapNodeIcon::Elite => {
                     let options = 
                     if let Some(last) = possibility.state.last_elite {
-                        let vec = (0 .. last).collect_vec();
+                        let mut vec = (0 .. last).collect_vec();
                         vec.extend((last+1) .. act.elites.len());
                         vec
                     } else {
@@ -260,47 +266,190 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
                     };
 
                     let choice = possibility.probability.choose(options).unwrap();
-                    let elite = act.elites[choice];
-                    let monsters = eval_monster_set(elite, &mut possibility);
+                    let monsters = eval_monster_set(&act.elites[choice], possibility);
                     possibility.fight(&monsters, FightType::Elite {burning: node.icon == MapNodeIcon::BurningElite});
                 }
                 MapNodeIcon::Campfire => {
                     possibility.state.floor_state = FloorState::Rest;
                 }
                 MapNodeIcon::Chest => {
-                    let chest_type = possibility.probability.choose_weighted(&vec![
+                    let chests = &vec![
                         (ChestType::Small, 3),
                         (ChestType::Medium, 2),
                         (ChestType::Large, 1),
-                    ]).unwrap();
+                    ];
+                    let chest_type = possibility.probability.choose_weighted(chests).unwrap();
 
                     possibility.state.floor_state = FloorState::Chest(*chest_type);
                 }
                 MapNodeIcon::Monster => {
-                    eval_normal_fight(possibility);
+                    normal_fight(possibility);
                 }
                 MapNodeIcon::Question => {
-                    let probabilities = vec![(
+                    if possibility.state.has_relic("Ssserpent Head") {
+                        possibility.state.gold = 50;
+                    }
 
-                    )];
+                    let mut normal_probability = (possibility.state.unknown_normal_count + 1) * 10;
+                    let mut shop_probability = (possibility.state.unknown_shop_count + 1) * 3;
+                    let mut treasure_probability = (possibility.state.unknown_treasure_count + 1) * 2;
+
+                    match possibility.state.floor_state {
+                         FloorState::Shop {..} | FloorState::ShopEntrance => {
+                            shop_probability = 0
+                        }
+                        _ => {}
+                    }
+
+                    if let Some(relic) = possibility.state.find_relic_mut("Tiny Chest") {
+                        relic.vars.x += 1;
+                        if relic.vars.x == 4 {
+                            relic.vars.x = 0;
+                            shop_probability = 0;
+                            treasure_probability = 100;
+                            normal_probability = 0;
+                        }
+                    }
+
+                    if possibility.state.has_relic("Juzu Bracelet") {
+                        normal_probability = 0;
+                    }
+
+                    let mut total_probability = normal_probability + shop_probability + treasure_probability;
+                    if total_probability > 100 {
+                        let reduction = (total_probability - 100).min(treasure_probability);
+                        treasure_probability -= reduction;
+                        total_probability -= reduction;
+                    }
+                    if total_probability > 100 {
+                        let reduction = (total_probability - 100).min(shop_probability);
+                        shop_probability -= reduction;
+                        total_probability -= reduction;
+                    }
+                    let choices = vec![
+                        (UnknownRoom::Fight, normal_probability),
+                        (UnknownRoom::Shop, shop_probability),
+                        (UnknownRoom::Treasure, treasure_probability),
+                        (UnknownRoom::Event, 100 - total_probability)
+                    ];
+
+                    let choice = *possibility.probability.choose_weighted(&choices).unwrap();
+
+                    match choice {
+                        UnknownRoom::Fight => {
+                            possibility.state.unknown_normal_count = 0;
+                            possibility.state.unknown_shop_count += 1;
+                            possibility.state.unknown_treasure_count += 1;
+                            normal_fight(possibility)
+                        }
+                        UnknownRoom::Shop => {
+                            possibility.state.unknown_normal_count += 1;
+                            possibility.state.unknown_shop_count = 0;
+                            possibility.state.unknown_treasure_count += 1;
+                            shop(possibility);
+                        }
+                        UnknownRoom::Treasure => {
+                            possibility.state.unknown_normal_count += 1;
+                            possibility.state.unknown_shop_count += 1;
+                            possibility.state.unknown_treasure_count = 0;
+                            treasure(possibility);
+                        }
+                        UnknownRoom::Event => {
+                            possibility.state.unknown_normal_count += 1;
+                            possibility.state.unknown_shop_count += 1;
+                            possibility.state.unknown_treasure_count += 1;
+                            event(possibility);
+                        }
+                    }
+                }
+                MapNodeIcon::Shop => {
+                    shop(possibility)
                 }
             }
         }
-        
+        Choice::OpenChest => {
+            if let FloorState::Chest(chest) = possibility.state.floor_state {
+                let relic = possibility.random_relic(Some(chest), None, None, false);
+                let (gold_chance, gold_min, gold_max) = match chest {
+                    ChestType::Small => (50, 23, 27),
+                    ChestType::Medium => (35, 45, 55),
+                    ChestType::Large => (50, 68, 82),
+                    ChestType::Boss => (0, 0, 0)
+                };
+                let gets_gold = *possibility.probability.choose_weighted(&vec![(true, gold_chance), (false, 100-gold_chance)]).unwrap();
+                let mut rewards = vector![
+                    Reward::Relic(Relic::new(relic))
+                ];
+                
+                if gets_gold {
+                    let gold_amount = (possibility.probability.range(gold_max - gold_min) + gold_min) as u16;
+                    rewards.push_back(Reward::Gold(gold_amount));
+                };
+
+                possibility.state.floor_state = FloorState::Rewards(rewards)
+            } else {
+                panic!("Floor state is not a chest!")
+            }
+        }        
         _ => unimplemented!()
     }
 }
 
+
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 enum UnknownRoom {
     Event,
     Fight,
-    Rest,
     Shop,
     Treasure,
 }
 
-fn eval_normal_fight(possibility: &mut GamePossibility) {
-    let act = models::acts::ACTS[possibility.state.act as usize];
+fn event(possibility: &mut GamePossibility) {
+    possibility.state.floor_state = FloorState::Event;
+    let act = &models::acts::ACTS[possibility.state.act as usize];
+    let events = 
+        act.events.iter()
+            .filter(|f| possibility.state.event_history.contains(*f))
+            .map(|n| models::events::by_name(n.as_str()))
+            .filter(|e| possibility.eval_condition(&e.condition, Binding::Event(EventReference {base: e}), None))
+            .collect_vec();    
+
+    let shrines = events.iter().filter(|f| f.shrine).copied().collect_vec();
+    let nonshrines = events.into_iter().filter(|f| !f.shrine).collect_vec();
+
+    let is_shrine = if shrines.is_empty() {
+        false
+    } else if nonshrines.is_empty() {
+        true
+    } else {
+        possibility.probability.range(4) == 0
+    };
+
+    let event_set = if is_shrine { shrines } else {nonshrines};
+    
+    let base_event = possibility.probability.choose(event_set).unwrap();
+
+    possibility.state.event_state = Some(Event::new(base_event))
+}
+
+fn treasure(possibility: &mut GamePossibility) {
+    possibility.state.floor_state = FloorState::ShopEntrance;
+}
+
+fn shop(possibility: &mut GamePossibility) {
+    let types = vec![
+        (ChestType::Small, 3),
+        (ChestType::Medium, 2),
+        (ChestType::Large, 1),
+    ];
+    let chest_type = possibility.probability.choose_weighted(&types).unwrap();
+
+    possibility.state.floor_state = FloorState::Chest(*chest_type);
+}
+
+
+fn normal_fight(possibility: &mut GamePossibility) {
+    let act = &models::acts::ACTS[possibility.state.act as usize];
     if possibility.state.easy_fight_count == act.easy_count {
         possibility.state.last_normal = None
     }
@@ -320,21 +469,22 @@ fn eval_normal_fight(possibility: &mut GamePossibility) {
         fights.iter().collect_vec()
     };
 
-    let fight = possibility.probability.choose_weighted(&options.iter().map(|f| (f.set, f.probability)).collect_vec()).unwrap();
-    let monsters = eval_monster_set(*fight, &mut possibility);
+    let probabilities = options.iter().map(|f| (&f.set, f.probability)).collect_vec();
+    let fight = possibility.probability.choose_weighted(&probabilities).unwrap();
+    let monsters = eval_monster_set(fight, possibility);
     possibility.fight(&monsters, FightType::Common);
 }
 
-fn eval_monster_set(set: MonsterSet, possibility: &mut GamePossibility) -> Vec<String> {
+fn eval_monster_set(set: &MonsterSet, possibility: &mut GamePossibility) -> Vec<String> {
     match set {
         MonsterSet::ChooseN{n, choices} => {
-            possibility.probability.choose_multiple(choices, n as usize)
+            possibility.probability.choose_multiple(choices.to_vec(), *n as usize)
         }
         MonsterSet::Fixed(monsters) => {
-            monsters
+            monsters.to_vec()
         }
         MonsterSet::RandomSet(sets) => {
-            possibility.probability.choose(sets).unwrap()
+            possibility.probability.choose(sets.to_vec()).unwrap()
         }
     }
 }

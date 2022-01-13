@@ -24,7 +24,7 @@ pub fn state_matches(
         && external.current_hp as u16 == internal.player.hp
         && external.max_hp as u16 == internal.player.max_hp
         && external.gold as u16 == internal.gold
-        && external.floor as u8 == internal.floor
+        && external.floor as i8 == internal.map.floor
         && floor_state_matches(external, &internal.floor_state)
         && cards_match(&external.deck, &internal.deck, uuid_map)
         && potions_match(&external.potions, &internal.potions)
@@ -249,7 +249,7 @@ fn rewards_match(
         internal.iter().any(|b| match a {
             external::RewardType::Card => match b { internal::game::Reward::CardChoice(_) => true, _ => false },
             external::RewardType::EmeraldKey => b == &internal::game::Reward::EmeraldKey,
-            external::RewardType::Gold { gold } => b == &internal::game::Reward::Gold(*gold as u8),
+            external::RewardType::Gold { gold } => b == &internal::game::Reward::Gold(*gold as u16),
             external::RewardType::Potion { potion } => {
                 if let internal::game::Reward::Potion(p) = b {
                     potion.name == p.base.name
@@ -265,7 +265,7 @@ fn rewards_match(
                 }
             }
             external::RewardType::StolenGold { gold } => {
-                b == &internal::game::Reward::Gold(*gold as u8)
+                b == &internal::game::Reward::Gold(*gold as u16)
             }
             external::RewardType::SapphireKey { link } => {
                 if let internal::game::Reward::SapphireKey(r) = b {

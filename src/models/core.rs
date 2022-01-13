@@ -456,7 +456,7 @@ pub enum RewardType {
     RelicName(String),
     RandomRelic,
     RandomPotion,
-    Gold { min: u8, max: u8 },
+    Gold { min: u16, max: u16 },
     RandomBook,
 }
 

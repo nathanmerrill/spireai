@@ -1,4 +1,4 @@
-use im::{vector, HashMap, Vector};
+use im::{vector, HashMap, Vector, HashSet};
 use uuid::Uuid;
 
 use crate::{models::{self, core::{CardDestination, CardEffect, CardLocation, ChestType, Class, Condition, When, CardType}, potions::BasePotion, relics::{Activation, BaseRelic}}, spireai::references::{
@@ -16,8 +16,12 @@ pub struct GameState {
     pub last_elite: Option<usize>,
     pub last_normal: Option<usize>,
     pub easy_fight_count: u8,
+    pub unknown_normal_count: u8,
+    pub unknown_shop_count: u8,
+    pub unknown_treasure_count: u8,
     pub battle_state: BattleState,
     pub event_state: Option<Event>,
+    pub event_history: HashSet<String>,
     pub card_choices: CardChoiceState,
     pub act: u8,
     pub asc: u8,
@@ -92,6 +96,14 @@ impl GameState {
     pub fn find_relic_mut(&mut self, name: &str) -> Option<&mut Relic> {
         if let Some(uuid) = self.relic_names.get(name) {
             Some(self.relics.get_mut(uuid).unwrap())
+        } else {
+            None
+        }
+    }
+
+    pub fn find_relic(&self, name: &str) -> Option<&Relic> {
+        if let Some(uuid) = self.relic_names.get(name) {
+            Some(self.relics.get(uuid).unwrap())
         } else {
             None
         }
@@ -301,7 +313,11 @@ impl GameState {
             battle_state: BattleState::new(),
             event_state: Some(Event::by_name("Neow")),
             card_choices: CardChoiceState::new(),
+            event_history: HashSet::new(),
             easy_fight_count: 0,
+            unknown_normal_count: 0,
+            unknown_shop_count: 0,
+            unknown_treasure_count: 0,
             last_normal: None,
             last_elite: None,
             act: 0,
@@ -464,7 +480,7 @@ pub enum FloorState {
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum Reward {
     CardChoice(Vector<CardOffer>), // true if upgraded
-    Gold(u8),
+    Gold(u16),
     Relic(Relic),
     Potion(Potion),
     EmeraldKey,

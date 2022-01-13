@@ -608,7 +608,7 @@ impl GamePossibility {
                             Reward::CardChoice(self.generate_card_rewards(FightType::Elite{burning: false}, false))
                         }
                         RewardType::Gold {min, max} => {
-                            let amount = self.probability.range((max-min) as usize) as u8 + min;
+                            let amount = self.probability.range((max-min) as usize) as u16 + min;
                             Reward::Gold(amount)
                         }
                         RewardType::RandomBook => {
@@ -1004,7 +1004,7 @@ impl GamePossibility {
             }
         }
 
-        let monsters: HashMap<Uuid, Monster> = monster_names
+        let mut monsters: HashMap<Uuid, Monster> = monster_names
             .iter()
             .map(|n| self.create_monster(n))
             .enumerate()
@@ -2232,7 +2232,7 @@ impl GamePossibility {
         }
     }
 
-    fn eval_condition(
+    pub fn eval_condition(
         &self,
         condition: &Condition,
         binding: Binding,
