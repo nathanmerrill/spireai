@@ -65,7 +65,7 @@ impl Default for Stance {
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
 pub enum FightType {
     Common,
-    Elite,
+    Elite{burning: bool},
     Boss,
 }
 

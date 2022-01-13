@@ -31,7 +31,7 @@ pub enum MapNodeIcon {
     Elite,
     BurningElite,
     Campfire,
-    Boss,
+    Boss(String),
     Monster,
     Shop,
     Chest,

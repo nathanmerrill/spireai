@@ -3,13 +3,20 @@ use std::{error::Error, fs::File, io::BufReader, path::Path};
 
 #[derive(Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Act {
+    // Upgrade chance is 0, 25, 50, then (25, 50) if ascension (>12, <11)
     pub num: u8,
     pub easy_count: u8,
     pub easy_fights: Vec<ProbabilisticFight>,
     pub normal_fights: Vec<ProbabilisticFight>,
     pub elites: Vec<MonsterSet>,
-    pub bosses: Vec<MonsterSet>,
+    pub bosses: Vec<Boss>,
     pub events: Vec<String>,
+}
+
+#[derive(Eq, PartialEq, Clone, Deserialize, Serialize)]
+pub struct Boss {
+    pub name: String,
+    pub monsters: MonsterSet
 }
 
 #[derive(Eq, PartialEq, Clone, Deserialize, Serialize)]
@@ -37,6 +44,12 @@ pub fn all_acts() -> Result<Vec<Act>, Box<dyn Error>> {
     let reader = BufReader::new(file);
     let u = ron::de::from_reader(reader)?;
     Ok(u)
+}
+
+lazy_static! {
+    pub static ref ACTS: Vec<Act> = {
+        all_acts().unwrap()
+    };
 }
 
 #[cfg(test)]

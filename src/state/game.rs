@@ -1,7 +1,7 @@
 use im::{vector, HashMap, Vector};
 use uuid::Uuid;
 
-use crate::{models::{self, core::{CardDestination, CardEffect, CardLocation, ChestType, Class, Condition, When}, potions::BasePotion, relics::{Activation, BaseRelic}}, spireai::references::{
+use crate::{models::{self, core::{CardDestination, CardEffect, CardLocation, ChestType, Class, Condition, When, CardType}, potions::BasePotion, relics::{Activation, BaseRelic}}, spireai::references::{
         BindingReference, BuffReference, CardReference, CreatureReference, PotionReference,
         RelicReference,
     }};
@@ -13,10 +13,12 @@ pub struct GameState {
     pub class: Class,
     pub map: MapState,
     pub floor_state: FloorState,
+    pub last_elite: Option<usize>,
+    pub last_normal: Option<usize>,
+    pub easy_fight_count: u8,
     pub battle_state: BattleState,
     pub event_state: Option<Event>,
     pub card_choices: CardChoiceState,
-    pub floor: u8,
     pub act: u8,
     pub asc: u8,
     pub deck: HashMap<Uuid, Card>,
@@ -189,7 +191,15 @@ impl GameState {
             && match card.base.playable_if {
                 Condition::Always => true,
                 Condition::Never => false,
-                Condition::Custom => unimplemented!(),
+                Condition::Custom => {
+                    match card.base.name.as_str() {
+                        "Clash" => self.battle_state.hand().all(|f| f.base._type == CardType::Attack),
+                        "Grand Finale" => self.battle_state.draw().count() == 0,
+                        "Impatience" => self.battle_state.hand().all(|f| f.base._type != CardType::Attack),
+                        "Signature Move" => self.battle_state.hand().filter(|f| f.base._type == CardType::Attack).count() == 1,
+                        _ => panic!("Unexpected custom condition on card: {}", card.base.name),
+                    }
+                }
                 _ => panic!("Unexpected condition!"),
             }
     }
@@ -291,7 +301,9 @@ impl GameState {
             battle_state: BattleState::new(),
             event_state: Some(Event::by_name("Neow")),
             card_choices: CardChoiceState::new(),
-            floor: 0,
+            easy_fight_count: 0,
+            last_normal: None,
+            last_elite: None,
             act: 0,
             asc,
             deck,

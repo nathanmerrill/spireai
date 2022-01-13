@@ -246,15 +246,24 @@
       ]),
     ],
     bosses: [
-      Fixed([
-        "Slime Boss",
-      ]),
-      Fixed([
-        "The Guardian",
-      ]),
-      Fixed([
-        "Hexaghost",
-      ]),
+      (
+        name: "Slime Boss",
+        monsters: Fixed([
+          "Slime Boss",
+        ]),
+      ),
+      (
+        name: "The Guardian",
+        monsters: Fixed([
+          "The Guardian",
+        ]),
+      ),
+      (
+        name: "Hexaghost",
+        monsters: Fixed([
+          "Hexaghost",
+        ]),
+      ),
     ],
     events: [
       "Big Fish",
@@ -517,15 +526,24 @@
       ]),
     ],
     bosses: [
-      Fixed([
-        "Bronze Automaton",
-      ]),
-      Fixed([
-        "The Champ",
-      ]),
-      Fixed([
-        "The Collector",
-      ]),
+      (
+        name: "Bronze Automaton",
+        monsters: Fixed([
+          "Bronze Automaton",
+        ]),
+      ),
+      (
+        name: "The Champ",
+        monsters: Fixed([
+          "The Champ",
+        ]),
+      ),
+      (
+        name: "The Collector",
+        monsters: Fixed([
+          "The Collector",
+        ]),
+      ),
     ],
     events: [
       "Ancient Writing",
@@ -715,16 +733,27 @@
       ]),
     ],
     bosses: [
-      Fixed([
-        "Awakened One",
-      ]),
-      Fixed([
-        "Time Eater",
-      ]),
-      Fixed([
-        "Deca",
-        "Donu",
-      ]),
+      (
+        name: "Awakened One",
+        monsters: Fixed([
+          "Cultist",
+          "Cultist",
+          "Awakened One",
+        ]),
+      ),
+      (
+        name: "Time Eater",
+        monsters: Fixed([
+          "Time Eater",
+        ]),
+      ),
+      (
+        name: "Deca Donu",
+        monsters: Fixed([
+          "Deca",
+          "Donu",
+        ]),
+      ),
     ],
     events: [
       "Falling",
@@ -764,9 +793,12 @@
       ]),
     ],
     bosses: [
-      Fixed([
-        "Corrupt Heart",
-      ]),
+      (
+        name: "Corrupt Heart",
+        monsters: Fixed([
+          "Corrupt Heart",
+        ]),
+      ),
     ],
     events: [],
   ),

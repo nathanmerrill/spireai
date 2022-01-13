@@ -257,7 +257,7 @@ impl GamePossibility {
         card_ref
     }
 
-    fn eval_effects(
+    pub fn eval_effects(
         &mut self,
         effects: &'static [Effect],
         binding: Binding,
@@ -605,7 +605,7 @@ impl GamePossibility {
                             Reward::CardChoice(self.generate_card_rewards(FightType::Common, true))
                         }
                         RewardType::EliteCard => {
-                            Reward::CardChoice(self.generate_card_rewards(FightType::Elite, false))
+                            Reward::CardChoice(self.generate_card_rewards(FightType::Elite{burning: false}, false))
                         }
                         RewardType::Gold {min, max} => {
                             let amount = self.probability.range((max-min) as usize) as u8 + min;
@@ -726,7 +726,7 @@ impl GamePossibility {
     fn add_monster(&mut self, base: &'static BaseMonster, position: usize) -> MonsterReference {
         let hp_asc = match self.state.battle_state.fight_type {
             FightType::Boss => 9,
-            FightType::Elite => 8,
+            FightType::Elite{..} => 8,
             FightType::Common => 7
         };
         let hp_range = if self.state.asc < hp_asc {
@@ -839,7 +839,7 @@ impl GamePossibility {
                     }
                 }
             }
-            Some(FightType::Elite) => {
+            Some(FightType::Elite{..}) => {
                 if has_nloth {
                     if self.state.card_rarity_offset < 31 {
                         [25 + self.state.card_rarity_offset, 40, 35 - self.state.card_rarity_offset]
@@ -969,13 +969,13 @@ impl GamePossibility {
         &self.probability.choose(potions).unwrap()
     }
 
-    fn fight(&mut self, monsters: &'static [String], fight_type: FightType) {
+    pub fn fight(&mut self, monsters: &[String], fight_type: FightType) {
         self.create_battle(monsters, fight_type);
         self.eval_when(When::CombatStart);
         self.start_turn(true);
     }
 
-    fn create_battle(&mut self, monster_names: &'static [String], fight_type: FightType) {
+    fn create_battle(&mut self, monster_names: &[String], fight_type: FightType) {
         let cards: HashMap<Uuid, Card> = self
             .state
             .deck
@@ -1004,7 +1004,7 @@ impl GamePossibility {
             }
         }
 
-        let monsters = monster_names
+        let monsters: HashMap<Uuid, Monster> = monster_names
             .iter()
             .map(|n| self.create_monster(n))
             .enumerate()
@@ -1013,6 +1013,30 @@ impl GamePossibility {
                 (monster.uuid, monster)
             })
             .collect();
+        
+        if let FightType::Elite { burning } = fight_type {
+            let burning_type = if burning {self.probability.range(4)} else {4};
+            let has_preserved_insect = self.state.has_relic("Preserved Insect");
+            if burning || has_preserved_insect {
+                monsters.iter_mut().for_each(|(_, monster)| {
+                    match burning_type {
+                        0 => monster.creature.add_buff("Strength", (self.state.act + 1) as i16),
+                        1 => {
+                            let new_hp = monster.creature.max_hp + monster.creature.max_hp / 4;
+                            monster.creature.max_hp = new_hp;
+                            monster.creature.hp = new_hp;
+                        }
+                        2 => monster.creature.add_buff("Metallicize", (self.state.act*2 + 2) as i16),
+                        3 => monster.creature.add_buff("Regenerate", (self.state.act*2 + 1) as i16),
+                        4 => {},
+                        _ => panic!("Unexpected burning type!")
+                    }
+                    if has_preserved_insect {
+                        monster.creature.hp = monster.creature.max_hp * 3 / 4;
+                    }
+                });
+            }
+        }
 
         self.state.battle_state = BattleState {
             active: true,
@@ -1057,11 +1081,11 @@ impl GamePossibility {
         self.shuffle();
     }
 
-    fn create_monster(&mut self, name: &'static str) -> Monster {
+    fn create_monster(&mut self, name: &str) -> Monster {
         let base = crate::models::monsters::by_name(name);
         let upgrade_asc = match base.fight_type {
             FightType::Common => 7,
-            FightType::Elite => 8,
+            FightType::Elite{..} => 8,
             FightType::Boss => 9,
         };
 
@@ -2115,7 +2139,7 @@ impl GamePossibility {
                 relic.rarity == **rarity
                     && (relic.class == self.state.class || relic.class == Class::All)
                     && !self.state.has_relic(&relic.name)
-                    && (relic.max_floor == 0 || relic.max_floor >= self.state.floor)
+                    && (relic.max_floor == 0 || relic.max_floor as i8 >= self.state.map.floor)
                     && match relic.name.as_str() {
                         "Maw Bank" | "Smiling Mask" | "The Courier" | "Old Coin" => !in_shop,
                         "Bottled Flame" => self.state.deck.values().any(|c| c.base._type == CardType::Attack && c.base.rarity != Rarity::Starter),
@@ -2158,7 +2182,7 @@ impl GamePossibility {
                             *amount
                         }
                     }
-                    FightType::Elite => {
+                    FightType::Elite{..} => {
                         if self.state.asc >= 18 {
                             *high
                         } else if self.state.asc >= 3 {
@@ -2357,7 +2381,7 @@ impl GamePossibility {
             Condition::Never => false,
             Condition::NoBlock => self.state.player.block == 0,
             Condition::Not(condition) => !self.eval_condition(condition, binding, action),
-            Condition::OnFloor(floor) => self.state.floor >= *floor,
+            Condition::OnFloor(floor) => self.state.map.floor >= *floor as i8,
             Condition::RemainingHp { amount, target } => {
                 let creature = self.eval_target(target, binding, action);
                 let hp = self.eval_amount(amount, binding);

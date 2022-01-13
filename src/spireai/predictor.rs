@@ -1,8 +1,11 @@
 use crate::models;
-use crate::models::core::{CardDestination, CardType, Rarity};
+use crate::models::acts::MonsterSet;
+use crate::models::core::{CardDestination, CardType, Rarity, FightType, ChestType};
 use crate::spireai::*;
-use crate::state::core::{Card, Event};
+use crate::spireai::references::{Binding, EventReference};
+use crate::state::core::{Card};
 use crate::state::game::FloorState;
+use crate::state::map::MapNodeIcon;
 use models::choices::Choice;
 
 use super::evaluator::GamePossibility;
@@ -224,29 +227,115 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
             }
         }
         Choice::Event(name) => {
-            let mut event = Event::by_name(name);
-            event.variant = possibility.probability.choose(event.base.variants.clone());
-            match event.base.name.as_str() {
-                "Falling" => {
-                    let choices = [CardType::Attack, CardType::Skill, CardType::Power].iter().map(|t| {
-                        possibility.probability.choose(possibility.state.deck().filter(|c| c.base._type == *t).collect())
-                    }).flatten().collect();
-                   
-                    event.variant_cards = choices;
+            let event = possibility.state.event_state.as_ref().unwrap().base;
+            let choice = event.choices.iter().find(|base| &base.name == name).unwrap();
+            if choice.effects.is_empty() {
+                possibility.state.event_state = None;
+                possibility.state.floor_state = FloorState::Map;
+            } else {
+                possibility.eval_effects(&choice.effects, Binding::Event(EventReference { base: event }), None);
+            }            
+        }
+        Choice::Lift => {
+            possibility.state.find_relic_mut("Girya").unwrap().vars.x += 1;
+        }
+        Choice::NavigateToNode(node) => {
+            possibility.state.map.floor += 1;
+            let node = possibility.state.map.nodes[&(possibility.state.map.floor, *node)];
+            let act = models::acts::ACTS[possibility.state.act as usize];
+            match node.icon {
+                MapNodeIcon::Boss(name) => {
+                    let boss = act.bosses.iter().find(|b| b.name == name).unwrap();
+                    let monsters = eval_monster_set(boss.monsters, &mut possibility);
+                    possibility.fight(&monsters, FightType::Boss)
                 }
-                "Nloth" => {
-                    let choices = possibility.probability.choose_multiple(possibility.state.relics().collect(), 2);
-                    event.variant_relics = choices;
+                MapNodeIcon::BurningElite | MapNodeIcon::Elite => {
+                    let options = 
+                    if let Some(last) = possibility.state.last_elite {
+                        let vec = (0 .. last).collect_vec();
+                        vec.extend((last+1) .. act.elites.len());
+                        vec
+                    } else {
+                        (0..act.elites.len()).collect_vec()
+                    };
+
+                    let choice = possibility.probability.choose(options).unwrap();
+                    let elite = act.elites[choice];
+                    let monsters = eval_monster_set(elite, &mut possibility);
+                    possibility.fight(&monsters, FightType::Elite {burning: node.icon == MapNodeIcon::BurningElite});
                 }
-                "We Meet Again" => {
-                    if possibility.state.gold >= 50 {
-                        event.variant_amount = Some(possibility.probability.range(possibility.state.gold as usize - 50) as u16 + 50)
-                    }
+                MapNodeIcon::Campfire => {
+                    possibility.state.floor_state = FloorState::Rest;
                 }
-                _ => {}
+                MapNodeIcon::Chest => {
+                    let chest_type = possibility.probability.choose_weighted(&vec![
+                        (ChestType::Small, 3),
+                        (ChestType::Medium, 2),
+                        (ChestType::Large, 1),
+                    ]).unwrap();
+
+                    possibility.state.floor_state = FloorState::Chest(*chest_type);
+                }
+                MapNodeIcon::Monster => {
+                    eval_normal_fight(possibility);
+                }
+                MapNodeIcon::Question => {
+                    let probabilities = vec![(
+
+                    )];
+                }
             }
         }
+        
         _ => unimplemented!()
+    }
+}
+
+enum UnknownRoom {
+    Event,
+    Fight,
+    Rest,
+    Shop,
+    Treasure,
+}
+
+fn eval_normal_fight(possibility: &mut GamePossibility) {
+    let act = models::acts::ACTS[possibility.state.act as usize];
+    if possibility.state.easy_fight_count == act.easy_count {
+        possibility.state.last_normal = None
+    }
+
+    possibility.state.easy_fight_count += 1;
+
+    let fights = if possibility.state.easy_fight_count <= act.easy_count {
+        &act.easy_fights
+    } else {
+        &act.normal_fights
+    };
+
+    let options = 
+    if let Some(last) = possibility.state.last_normal {
+        fights[0..last].iter().chain(fights[last+1..fights.len()].iter()).collect_vec()
+    } else {
+        fights.iter().collect_vec()
+    };
+
+    let fight = possibility.probability.choose_weighted(&options.iter().map(|f| (f.set, f.probability)).collect_vec()).unwrap();
+    let monsters = eval_monster_set(*fight, &mut possibility);
+    possibility.fight(&monsters, FightType::Common);
+}
+
+fn eval_monster_set(set: MonsterSet, possibility: &mut GamePossibility) -> Vec<String> {
+    match set {
+        MonsterSet::ChooseN{n, choices} => {
+            possibility.probability.choose_multiple(choices, n as usize)
+        }
+        MonsterSet::Fixed(monsters) => {
+            monsters
+        }
+        MonsterSet::RandomSet(sets) => {
+            possibility.probability.choose(sets).unwrap()
+        }
     }
 }
 
