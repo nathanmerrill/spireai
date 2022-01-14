@@ -89,7 +89,6 @@ pub fn decompose_choice(
         Choice::EnterShop => vec![Response::Simple(String::from("CHOOSE 0"))],
         Choice::Event(name) => vec![Response::Choose(name)],
         Choice::Proceed => vec![Response::Simple(String::from("PROCEED"))],
-        Choice::Return => vec![Response::Simple(String::from("RETURN"))],
         Choice::State => vec![Response::Simple(String::from("STATE"))],
         Choice::Skip => vec![Response::Simple(String::from("SKIP"))],
         Choice::SingingBowl => vec![Response::Simple(String::from("SINGING_BOWL"))],
@@ -103,7 +102,6 @@ pub fn decompose_choice(
         Choice::TakeReward(idx) => vec![Response::Simple(format!("CHOOSE {}", idx))],
         Choice::NavigateToNode(idx) => vec![Response::Choose(format!("x={}", idx))],
         Choice::SelectCard(card) => vec![Response::Choose(card)],
-        Choice::RestDreamCatcher => vec![Response::Choose(String::from("rest"))],
         Choice::Rest => vec![
             Response::Choose(String::from("rest")),
             Response::Simple(String::from("PROCEED")),

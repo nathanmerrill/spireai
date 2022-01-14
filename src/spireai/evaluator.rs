@@ -138,21 +138,11 @@ impl GamePossibility {
                     self.state
                         .battle_state
                         .random_monster(&mut self.probability)
+                        .map(|a| a.creature_ref())
                 } else {
                     None
                 };
-
-                for effect in &card.base.on_play {
-                    self.eval_effect(
-                        effect,
-                        binding,
-                        Some(GameAction {
-                            is_attack: card.base._type == CardType::Attack,
-                            creature: CreatureReference::Player,
-                            target: target.map(|a| a.creature_ref()),
-                        }),
-                    )
-                }
+                self.play_card(card, target);
             }
             CardEffect::CopyTo { destination, then } => {
                 if *destination == CardDestination::DeckPile {
@@ -225,6 +215,23 @@ impl GamePossibility {
                 card.cost = 0;
             }
         }
+    }
+
+    pub fn play_card(&mut self, card: CardReference, target: Option<CreatureReference>) {       
+        for effect in &card.base.on_play {
+            self.eval_effect(
+                effect,
+                Binding::Card(card),
+                Some(GameAction {
+                    is_attack: card.base._type == CardType::Attack,
+                    creature: CreatureReference::Player,
+                    target,
+                }),
+            )
+        }
+
+        self.eval_when(When::PlayCard(CardType::All));
+        self.eval_when(When::PlayCard(card.base._type));
     }
 
     pub fn add_card(&mut self, card: Card, destination: CardDestination) -> Option<CardReference> {
@@ -572,7 +579,9 @@ impl GamePossibility {
             }
             Effect::SelfEffect(effect) => {
                 if let Binding::Card(card) = binding {
-                    self.eval_card_effect(effect, card);
+                    if effect != &CardEffect::Exhaust || !self.state.has_relic("Strange Spoon") || self.probability.range(2) == 0 {
+                        self.eval_card_effect(effect, card);   
+                    }
                 } else {
                     panic!("SelfEffect on a non-card!")
                 }
@@ -1414,7 +1423,7 @@ impl GamePossibility {
         self.eval_target_when(When::OnBlock, target)
     }
 
-    fn eval_when(&mut self, when: When) {
+    pub fn eval_when(&mut self, when: When) {
         self.eval_target_when(when.clone(), CreatureReference::Player);
 
         for creature in self.state.battle_state.available_creatures().collect_vec() {
@@ -1984,7 +1993,7 @@ impl GamePossibility {
         self.heal(amount as f64, CreatureReference::Player)
     }
 
-    fn heal(&mut self, mut amount: f64, creature_ref: CreatureReference) {
+    pub fn heal(&mut self, mut amount: f64, creature_ref: CreatureReference) {
         let creature: &mut Creature = match creature_ref {
             CreatureReference::Player => {
                 if self.state.has_relic("Mark Of The Bloom") {

@@ -1,6 +1,6 @@
 use crate::models;
 use crate::models::acts::MonsterSet;
-use crate::models::core::{CardDestination, CardType, Rarity, FightType, ChestType};
+use crate::models::core::{CardDestination, CardType, Rarity, FightType, ChestType, When, RoomType};
 use crate::spireai::*;
 use crate::spireai::references::{Binding, EventReference};
 use crate::state::core::{Card, Event, Relic};
@@ -10,6 +10,7 @@ use im::vector;
 use models::choices::Choice;
 
 use super::evaluator::GamePossibility;
+use super::references::CreatureReference;
 
 pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
     match choice {
@@ -271,6 +272,7 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
                 }
                 MapNodeIcon::Campfire => {
                     possibility.state.floor_state = FloorState::Rest;
+                    possibility.eval_when(When::RoomEnter(RoomType::Rest))
                 }
                 MapNodeIcon::Chest => {
                     let chests = &vec![
@@ -390,7 +392,29 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
             } else {
                 panic!("Floor state is not a chest!")
             }
-        }        
+        }
+        Choice::PlayCard {card, target} => {
+            possibility.play_card(*card, target.map(|t| t.creature_ref()))
+        }
+        Choice::Proceed => {
+            possibility.state.floor_state = FloorState::Map
+        }
+        Choice::Recall => {
+            possibility.state.keys.as_mut().unwrap().ruby = true;
+        }
+        Choice::Rest => {
+            possibility.heal(possibility.state.player.max_hp as f64 * 0.3, CreatureReference::Player);
+            possibility.eval_when(When::Rest)
+        }
+        Choice::ScryDiscard(cards) => {
+            for card in cards {
+                possibility.state.battle_state.move_card(CardDestination::DiscardPile, *card, &mut possibility.probability);
+            }
+            possibility.eval_when(When::Scry)
+        }
+        Choice::SelectCard(card) => {
+            
+        }
         _ => unimplemented!()
     }
 }

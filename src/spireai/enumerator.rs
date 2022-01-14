@@ -137,11 +137,7 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
         }
         FloorState::Rest => {
             if !state.relic_names.contains_key("Coffee Dripper") {
-                if state.relic_names.contains_key("Dream Catcher") {
-                    choices.push(Choice::RestDreamCatcher)
-                } else {
-                    choices.push(Choice::Rest)
-                }
+                choices.push(Choice::Rest)
             }
             if !state.relic_names.contains_key("Fusion Hammer") {
                 choices.extend(
