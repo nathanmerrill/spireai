@@ -1,188 +1,115 @@
-use im::{vector, HashMap, Vector, HashSet};
+use std::ops::Range;
+
+use im::{vector, HashMap, Vector};
 use uuid::Uuid;
 
-use crate::{models::{self, core::{CardDestination, CardEffect, CardLocation, ChestType, Class, Condition, When, CardType}, potions::BasePotion, relics::{Activation, BaseRelic}}, spireai::references::{
-        BindingReference, BuffReference, CardReference, CreatureReference, PotionReference,
-        RelicReference,
-    }};
+use crate::{
+    models::{
+        self,
+        cards::BaseCard,
+        core::{CardEffect, CardType, ChestType, Class, DeckOperation, When},
+        potions::BasePotion,
+        relics::{Activation, BaseRelic},
+    },
+    spireai::references::{
+        BuffReference, CardReference, CreatureReference, PotionReference, RelicReference,
+    },
+};
 
-use super::{battle::BattleState, core::{Card, CardOffer, Creature, Event, Potion, Relic}, map::MapState, probability::Probability};
+use super::{
+    battle::BattleState,
+    core::{Buff, Card, CardOffer, Creature, Event, Potion, Relic},
+    map::MapState,
+};
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct GameState {
     pub class: Class,
     pub map: MapState,
     pub floor_state: FloorState,
-    pub last_elite: Option<usize>,
-    pub last_normal: Option<usize>,
-    pub easy_fight_count: u8,
-    pub unknown_normal_count: u8,
-    pub unknown_shop_count: u8,
-    pub unknown_treasure_count: u8,
-    pub battle_state: BattleState,
-    pub event_state: Option<Event>,
-    pub event_history: HashSet<String>,
-    pub card_choices: CardChoiceState,
+    pub screen_state: ScreenState,
+    pub relics: Relics,
     pub act: u8,
     pub asc: u8,
     pub deck: HashMap<Uuid, Card>,
     pub potions: Vector<Option<Potion>>,
-    pub relics: HashMap<Uuid, Relic>,
-    pub relic_whens: HashMap<When, Vector<Uuid>>,
-    pub relic_names: HashMap<String, Uuid>,
-    pub player: Creature,
+    pub player: Player,
     pub gold: u16,
     pub keys: Option<KeyState>,
     pub won: Option<bool>,
-    pub base_purge_cost: u16,
-    pub card_rarity_offset: u8,
+    pub purge_count: u8,
+    pub rare_probability_offset: u8,
 }
 
 impl GameState {
-    pub fn remove_card(&mut self, card: CardReference) {
-        match card.location {
-            CardLocation::DeckPile => self.deck.remove(&card.uuid),
-            _ => {
-                self.battle_state.move_out(card);
-                self.battle_state.cards.remove(&card.uuid)
-            }
-        }
-        .unwrap();
+    pub fn remove_card(&mut self, card: Uuid) {
+        self.deck.remove(&card);
     }
 
     pub fn purge_cost(&self) -> u16 {
-        if self.has_relic("Smiling Mask") {
+        if self.relics.contains("Smiling Mask") {
             50
         } else {
-            let discount = if self.has_relic("Membership Card") {
-                if self.has_relic("The Courier") {
+            let discount = if self.relics.contains("Membership Card") {
+                if self.relics.contains("The Courier") {
                     0.6
                 } else {
                     0.5
                 }
+            } else if self.relics.contains("The Courier") {
+                0.8
             } else {
-                if self.has_relic("The Courier") {
-                    0.8
-                } else {
-                    1.0
-                }
+                1.0
             };
 
-            (self.base_purge_cost as f32 * discount).ceil() as u16
+            ((self.purge_count * 25 + 75) as f32 * discount).ceil() as u16
         }
     }
 
-    pub fn add_card(
-        &mut self,
-        card: Card,
-        destination: CardDestination,
-        probability: &mut Probability,
-    ) {
-        match destination {
-            CardDestination::DeckPile => {
-                self.deck.insert(card.uuid, card);
-            }
-            _ => {
-                self.battle_state.move_in(
-                    card.uuid,
-                    destination,
-                    probability,
-                );
-                self.battle_state.cards.insert(card.uuid, card);
-            }
-        }
-    }
-
-    pub fn find_relic_mut(&mut self, name: &str) -> Option<&mut Relic> {
-        if let Some(uuid) = self.relic_names.get(name) {
-            Some(self.relics.get_mut(uuid).unwrap())
-        } else {
-            None
-        }
-    }
-
-    pub fn find_relic(&self, name: &str) -> Option<&Relic> {
-        if let Some(uuid) = self.relic_names.get(name) {
-            Some(self.relics.get(uuid).unwrap())
-        } else {
-            None
-        }
-    }
-
-    pub fn has_relic(&self, name: &str) -> bool {
-        self.relic_names.contains_key(name)
-    }
-
-    pub fn add_relic(&mut self, base: &'static BaseRelic) -> RelicReference {
-        let relic = Relic::new(base);
-        self.relic_names
-            .insert(relic.base.name.to_string(), relic.uuid);
-        let whens = match &relic.base.activation {
-            Activation::Immediate | Activation::Custom => {
-                vec![]
-            }
-            Activation::Counter {
-                increment, reset, ..
-            } => {
-                if increment == reset {
-                    vec![increment]
-                } else {
-                    vec![increment, reset]
+    pub fn add_card(&mut self, card: Card) {
+        if card.base._type == CardType::Curse {
+            if let Some(relic) = self.relics.find_mut("Omamori") {
+                if relic.vars.x > 0 {
+                    relic.vars.x -= 1;
+                    return;
                 }
             }
-            Activation::Uses { use_when, .. } => vec![use_when],
-            Activation::When(when) => vec![when],
-            Activation::WhenEnabled {
-                activated_at,
-                enabled_at,
-                disabled_at,
-            } => {
-                if activated_at == enabled_at {
-                    if activated_at == disabled_at {
-                        vec![activated_at]
-                    } else {
-                        vec![activated_at, disabled_at]
-                    }
-                } else if enabled_at == disabled_at {
-                    vec![activated_at, enabled_at]
-                } else {
-                    vec![activated_at, enabled_at, disabled_at]
-                }
-            }
-        };
 
-        for when in whens {
-            self.relic_whens
-                .entry(when.clone())
-                .or_insert_with(Vector::new)
-                .push_back(relic.uuid)
+            if self.relics.contains("Darkstone Periapt") {
+                self.player.add_max_hp(6, &self.relics);
+            }
         }
 
-        let reference = relic.reference();
-
-        self.relics.insert(relic.uuid, relic);
-
-        reference
-    }
-
-    pub fn remove_relic(&mut self, name: &str) {
-        let uuid = self.relic_names.remove(name).unwrap();
-        self.relics.remove(&uuid);
-        for (_, uuids) in self.relic_whens.iter_mut() {
-            if let Some(index) = uuids.index_of(&uuid) {
-                uuids.remove(index);
-            }
+        if self.relics.contains("Ceramic Fish") {
+            self.add_gold(9);
         }
     }
 
-    pub fn reduce_max_hp(&mut self, reduction: u16) {
-        self.player.max_hp -= reduction;
-        self.player.hp = std::cmp::min(self.player.hp, self.player.max_hp);
+    pub fn add_gold(&mut self, amount: u16) {
+        if self.relics.contains("Ectoplasm") {
+            return;
+        }
+
+        if self.relics.contains("Bloody Idol") {
+            self.player.heal(5_f64, &self.relics);
+        }
+
+        self.gold += amount;
+    }
+
+    pub fn spend_gold(&mut self, amount: u16) {
+        self.gold -= amount;
+
+        if let FloorState::Shop(_) = self.floor_state {
+            if let Some(relic) = self.relics.find_mut("Maw Bank") {
+                relic.enabled = false;
+            }
+        }
     }
 
     pub fn add_potion(&mut self, base: &'static BasePotion) {
         if let Some(slot) = self.potions.iter().position(|a| a.is_none()) {
-            self.potions.set(slot, Some(Potion{base}));
+            self.potions.set(slot, Some(Potion { base }));
         }
     }
 
@@ -195,25 +122,6 @@ impl GameState {
         self.potions[slot]
             .as_ref()
             .map(|potion| potion.reference(slot))
-    }
-
-    pub fn card_playable(&self, card: CardReference) -> bool {
-        let card = self.get(card);
-        card.cost <= self.battle_state.energy
-            && match card.base.playable_if {
-                Condition::Always => true,
-                Condition::Never => false,
-                Condition::Custom => {
-                    match card.base.name.as_str() {
-                        "Clash" => self.battle_state.hand().all(|f| f.base._type == CardType::Attack),
-                        "Grand Finale" => self.battle_state.draw().count() == 0,
-                        "Impatience" => self.battle_state.hand().all(|f| f.base._type != CardType::Attack),
-                        "Signature Move" => self.battle_state.hand().filter(|f| f.base._type == CardType::Attack).count() == 1,
-                        _ => panic!("Unexpected custom condition on card: {}", card.base.name),
-                    }
-                }
-                _ => panic!("Unexpected condition!"),
-            }
     }
 
     pub fn new(class: Class, asc: u8) -> Self {
@@ -303,110 +211,61 @@ impl GameState {
             _ => panic!("Unexpected class!"),
         };
 
-        let mut player = Creature::new(hp);
-        player.hp = hp;
+        let player = Player::new(hp);
 
         let mut state = Self {
             class,
             map: MapState::new(),
-            floor_state: FloorState::Event,
-            battle_state: BattleState::new(),
-            event_state: Some(Event::by_name("Neow")),
-            card_choices: CardChoiceState::new(),
-            event_history: HashSet::new(),
-            easy_fight_count: 0,
-            unknown_normal_count: 0,
-            unknown_shop_count: 0,
-            unknown_treasure_count: 0,
-            last_normal: None,
-            last_elite: None,
-            act: 0,
+            floor_state: FloorState::Event(Event::by_name("Neow")),
+            screen_state: ScreenState::Normal,
+            relics: Relics::new(),
+            act: 1,
             asc,
             deck,
             potions,
-            relics: HashMap::new(),
-            relic_whens: HashMap::new(),
-            relic_names: HashMap::new(),
             player,
             gold: 99,
-            base_purge_cost: 50,
             keys: None,
             won: None,
-            card_rarity_offset: 0,
+            purge_count: 0,
+            rare_probability_offset: 0,
         };
 
-        state.add_relic(models::relics::by_name(starting_relic));
+        state.relics.add(models::relics::by_name(starting_relic));
 
         state
     }
 
-    pub fn get<A>(&self, _ref: A) -> &A::Item
-    where
-        A: BindingReference,
-    {
-        _ref.get(self).unwrap()
-    }
-
-    pub fn get_opt<A>(&self, _ref: A) -> Option<&A::Item>
-    where
-        A: BindingReference,
-    {
-        _ref.get(self)
-    }
-
-    pub fn get_mut<A>(&mut self, _ref: A) -> &mut A::Item
-    where
-        A: BindingReference,
-    {
-        _ref.get_mut(self).unwrap()
-    }
-
-    pub fn get_mut_ref<A>(&mut self, _ref: A) -> Option<&mut A::Item>
-    where
-        A: BindingReference,
-    {
-        _ref.get_mut(self)
-    }
-    pub fn deck(&self) -> impl Iterator<Item = CardReference> + '_ {
-        self.deck.iter().map(|(u, c)| CardReference {
+    pub fn deck(&self) -> impl Iterator<Item = DeckCard> + '_ {
+        self.deck.iter().map(|(u, c)| DeckCard {
             uuid: *u,
-            location: CardLocation::DeckPile,
             base: c.base,
         })
     }
 
-    pub fn removable_cards(&self) -> impl Iterator<Item = CardReference> + '_ {
-        self.deck.iter().filter_map(|(u, c)| 
+    pub fn removable_cards(&self) -> impl Iterator<Item = DeckCard> + '_ {
+        self.deck.iter().filter_map(|(u, c)| {
             if c.removable() {
-                Some(CardReference {
+                Some(DeckCard {
                     uuid: *u,
-                    location: CardLocation::DeckPile,
                     base: c.base,
                 })
             } else {
                 None
             }
-        )
+        })
     }
 
-    pub fn upgradable_cards(&self) -> impl Iterator<Item = CardReference> + '_ {
-        self.deck.iter().filter_map(|(u, c)| 
+    pub fn upgradable_cards(&self) -> impl Iterator<Item = DeckCard> + '_ {
+        self.deck.iter().filter_map(|(u, c)| {
             if c.upgradable() {
-                Some(CardReference {
+                Some(DeckCard {
                     uuid: *u,
-                    location: CardLocation::DeckPile,
                     base: c.base,
                 })
             } else {
                 None
             }
-        )
-    }
-
-    pub fn relics(&self) -> impl Iterator<Item = RelicReference> + '_ {
-        self.relics.iter().map(|(u, c)| RelicReference {
-            base: c.base,
-            relic: *u,
         })
     }
 
@@ -421,60 +280,279 @@ impl GameState {
             .map(|(position, opt)| opt.as_ref().map(|potion| potion.reference(position)))
     }
 
-    pub fn player_buffs(&self) -> impl Iterator<Item = BuffReference> + '_ {
-        self.player.buffs.values().map(move |b| BuffReference {
+    pub fn get_buff(&self, buff: BuffReference) -> Option<&Buff> {
+        self.get_creature(buff.creature)
+            .and_then(|f| f.buffs.get(&buff.buff))
+    }
+
+    pub fn get_buff_mut(&mut self, buff: BuffReference) -> Option<&mut Buff> {
+        self.get_creature_mut(buff.creature)
+            .and_then(|f| f.buffs.get_mut(&buff.buff))
+    }
+
+    pub fn get_creature(&self, creature: CreatureReference) -> Option<&Creature> {
+        match creature {
+            CreatureReference::Player => Some(&self.player.creature),
+            CreatureReference::Creature(monster) => self
+                .floor_state
+                .battle()
+                .get_monster(monster)
+                .map(|m| &m.creature),
+        }
+    }
+    pub fn get_creature_mut(&mut self, creature: CreatureReference) -> Option<&mut Creature> {
+        match creature {
+            CreatureReference::Player => Some(&mut self.player.creature),
+            CreatureReference::Creature(monster) => self
+                .floor_state
+                .battle_mut()
+                .get_monster_mut(monster)
+                .map(|m| &mut m.creature),
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+pub struct DeckCard {
+    pub uuid: Uuid,
+    pub base: &'static BaseCard,
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+pub struct Relics {
+    pub relics: HashMap<Uuid, Relic>,
+    pub relic_whens: HashMap<When, Vector<Uuid>>,
+    pub relic_names: HashMap<String, Uuid>,
+}
+
+impl Relics {
+    pub fn new() -> Self {
+        Self {
+            relics: HashMap::new(),
+            relic_whens: HashMap::new(),
+            relic_names: HashMap::new(),
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = RelicReference> + '_ {
+        self.relics.iter().map(|(u, c)| RelicReference {
+            base: c.base,
+            relic: *u,
+        })
+    }
+
+    pub fn find_mut(&mut self, name: &str) -> Option<&mut Relic> {
+        if let Some(uuid) = self.relic_names.get(name) {
+            Some(self.relics.get_mut(uuid).unwrap())
+        } else {
+            None
+        }
+    }
+
+    pub fn find(&self, name: &str) -> Option<&Relic> {
+        if let Some(uuid) = self.relic_names.get(name) {
+            Some(self.relics.get(uuid).unwrap())
+        } else {
+            None
+        }
+    }
+
+    pub fn contains(&self, name: &str) -> bool {
+        self.relic_names.contains_key(name)
+    }
+
+    pub fn add(&mut self, base: &'static BaseRelic) -> RelicReference {
+        let relic = Relic::new(base);
+        self.relic_names
+            .insert(relic.base.name.to_string(), relic.uuid);
+        let whens = match &relic.base.activation {
+            Activation::Immediate | Activation::Custom => {
+                vec![]
+            }
+            Activation::Counter {
+                increment, reset, ..
+            } => {
+                if increment == reset {
+                    vec![increment]
+                } else {
+                    vec![increment, reset]
+                }
+            }
+            Activation::Uses { use_when, .. } => vec![use_when],
+            Activation::When(when) => vec![when],
+            Activation::WhenEnabled {
+                activated_at,
+                enabled_at,
+                disabled_at,
+            } => {
+                if activated_at == enabled_at {
+                    if activated_at == disabled_at {
+                        vec![activated_at]
+                    } else {
+                        vec![activated_at, disabled_at]
+                    }
+                } else if enabled_at == disabled_at {
+                    vec![activated_at, enabled_at]
+                } else {
+                    vec![activated_at, enabled_at, disabled_at]
+                }
+            }
+        };
+
+        for when in whens {
+            self.relic_whens
+                .entry(when.clone())
+                .or_insert_with(Vector::new)
+                .push_back(relic.uuid)
+        }
+
+        let reference = relic.reference();
+
+        self.relics.insert(relic.uuid, relic);
+
+        reference
+    }
+
+    pub fn remove(&mut self, name: &str) {
+        let uuid = self.relic_names.remove(name).unwrap();
+        self.relics.remove(&uuid);
+        for (_, uuids) in self.relic_whens.iter_mut() {
+            if let Some(index) = uuids.index_of(&uuid) {
+                uuids.remove(index);
+            }
+        }
+    }
+
+    pub fn get(&self, relic: RelicReference) -> &Relic {
+        self.relics.get(&relic.relic).unwrap()
+    }
+
+    pub fn get_mut(&mut self, relic: RelicReference) -> &mut Relic {
+        self.relics.get_mut(&relic.relic).unwrap()
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+pub struct Player {
+    pub creature: Creature,
+}
+
+impl Player {
+    pub fn new(max_hp: u16) -> Player {
+        Player {
+            creature: Creature::new(max_hp),
+        }
+    }
+
+    pub fn add_max_hp(&mut self, amount: u16, relics: &Relics) {
+        self.creature.max_hp += amount;
+        self.heal(amount as f64, relics);
+    }
+
+    pub fn reduce_max_hp(&mut self, reduction: u16) {
+        self.creature.max_hp -= reduction;
+        self.creature.hp = std::cmp::min(self.creature.hp, self.creature.max_hp);
+    }
+
+    pub fn heal(&mut self, mut amount: f64, relics: &Relics) {
+        if relics.contains("Mark Of The Bloom") {
+            return;
+        }
+
+        if let Some(relic) = relics.find("Magic Flower") {
+            if relic.enabled {
+                amount *= 1.5;
+            }
+        }
+
+        self.creature.hp = std::cmp::min(
+            (amount - 0.0001).ceil() as u16 + self.creature.hp,
+            self.creature.max_hp,
+        )
+    }
+
+    pub fn buffs(&self) -> impl Iterator<Item = BuffReference> + '_ {
+        self.creature.buffs.values().map(move |b| BuffReference {
             base: b.base,
             creature: CreatureReference::Player,
             buff: b.uuid,
         })
     }
+}
 
-    pub fn card_choices(&self) -> impl Iterator<Item = CardReference> + '_ {
-        self.card_choices
-            .choices
-            .iter()
-            .map(move |u| CardReference {
-                uuid: *u,
-                location: self.card_choices.location,
-                base: match self.card_choices.location {
-                    CardLocation::DeckPile => self.deck[u].base,
-                    _ => self.battle_state.cards[u].base,
-                },
-            })
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+pub enum FloorState {
+    Event(Event),
+    Rest,
+    Chest(ChestType),
+    Battle(BattleState),
+    GameOver,
+    Rewards(Vector<Reward>),
+    Shop(ShopState),
+}
+
+impl FloorState {
+    pub fn battle(&self) -> &BattleState {
+        match &self {
+            FloorState::Battle(a) => a,
+            _ => panic!("Not in a battle!"),
+        }
     }
 
-    pub fn in_location(&self, location: CardLocation) -> Vec<CardReference> {
-        match location {
-            CardLocation::DeckPile => self.deck().collect(),
-            CardLocation::DiscardPile => self.battle_state.discard().collect(),
-            CardLocation::ExhaustPile => self.battle_state.exhaust().collect(),
-            CardLocation::PlayerHand => self.battle_state.hand().collect(),
-            CardLocation::DrawPile => self.battle_state.draw().collect(),
-            CardLocation::Stasis => panic!("Cannot get cards in stasis"),
+    pub fn battle_mut(&mut self) -> &mut BattleState {
+        match self {
+            FloorState::Battle(a) => a,
+            _ => panic!("Not in a battle!"),
+        }
+    }
+
+    pub fn event(&self) -> &Event {
+        match &self {
+            FloorState::Event(a) => a,
+            _ => panic!("Not in an event!"),
+        }
+    }
+
+    pub fn event_mut(&mut self) -> &mut Event {
+        match self {
+            FloorState::Event(a) => a,
+            _ => panic!("Not in an event!"),
+        }
+    }
+
+    pub fn shop(&self) -> &ShopState {
+        match &self {
+            FloorState::Shop(a) => a,
+            _ => panic!("Not in a shop!"),
+        }
+    }
+
+    pub fn shop_mut(&mut self) -> &mut ShopState {
+        match self {
+            FloorState::Shop(a) => a,
+            _ => panic!("Not in a shop!"),
         }
     }
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub enum FloorState {
-    Event,
-    EventUpgrade(u8),
-    EventTransform(u8, bool), // true if it upgrades cards
-    EventRemove(u8),
-    Rest,
-    Chest(ChestType),
-    Battle,
+pub struct ShopState {
+    pub generated: bool,
+    pub cards: Vector<(CardOffer, u16)>,
+    pub potions: Vector<(&'static BasePotion, u16)>,
+    pub relics: Vector<(&'static BaseRelic, u16)>,
+    pub can_purge: bool,
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+pub enum ScreenState {
+    Normal,
+    InShop,
+    CardReward(Vector<CardOffer>),
+    CardChoose(CardChoiceState),
+    DeckChoose(u8, DeckOperation),
+    Proceed,
     Map,
-    GameOver,
-    Rewards(Vector<Reward>),
-    CardReward(Vector<CardOffer>), // true if upgraded
-    ShopEntrance,
-    Shop {
-        cards: Vector<(CardOffer, u16)>,
-        potions: Vector<(&'static BasePotion, u16)>,
-        relics: Vector<(&'static BaseRelic, u16)>,
-        can_purge: bool,
-    },
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -496,30 +574,7 @@ pub struct KeyState {
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct CardChoiceState {
-    pub choices: Vector<Uuid>,
-    pub location: CardLocation,
-    pub count: Option<(usize, usize)>,
-    pub effect: CardChoiceEffect,
-}
-
-impl CardChoiceState {
-    pub fn new() -> Self {
-        Self {
-            choices: Vector::new(),
-            location: CardLocation::Stasis,
-            count: None,
-            effect: CardChoiceEffect::None,
-        }
-    }
-}
-
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub enum CardChoiceEffect {
-    None,
-    Scry,
-    Then(&'static Vec<CardEffect>),
-    Remove,
-    AddToLocation(CardDestination, Vec<CardEffect>),
-    Transform,
-    Upgrade
+    pub choices: Vector<CardReference>,
+    pub count_range: Range<usize>,
+    pub then: Vector<CardEffect>,
 }

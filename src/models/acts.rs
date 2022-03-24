@@ -16,7 +16,7 @@ pub struct Act {
 #[derive(Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Boss {
     pub name: String,
-    pub monsters: MonsterSet
+    pub monsters: MonsterSet,
 }
 
 #[derive(Eq, PartialEq, Clone, Deserialize, Serialize)]
@@ -47,9 +47,7 @@ pub fn all_acts() -> Result<Vec<Act>, Box<dyn Error>> {
 }
 
 lazy_static! {
-    pub static ref ACTS: Vec<Act> = {
-        all_acts().unwrap()
-    };
+    pub static ref ACTS: Vec<Act> = all_acts().unwrap();
 }
 
 #[cfg(test)]

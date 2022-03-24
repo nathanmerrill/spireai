@@ -3,8 +3,8 @@ use uuid::Uuid;
 
 use crate::comm::request::*;
 use crate::models::choices::Choice;
-use crate::models::core::CardLocation;
 use crate::spireai::references::{CardReference, MonsterReference};
+use crate::state::game::DeckCard;
 use std::iter::once;
 
 pub fn serialize_response(response: &Response, state: &Option<GameState>) -> String {
@@ -97,7 +97,7 @@ pub fn decompose_choice(
         Choice::BuyRelic(relic) => vec![Response::Choose(relic)],
         Choice::BuyRemoveCard(card) => vec![
             Response::Choose(String::from("purge")),
-            Response::CardInDeck(get_card_position(card, request, uuid_map)),
+            Response::CardInDeck(get_card_position_in_deck(card, request, uuid_map)),
         ],
         Choice::TakeReward(idx) => vec![Response::Simple(format!("CHOOSE {}", idx))],
         Choice::NavigateToNode(idx) => vec![Response::Choose(format!("x={}", idx))],
@@ -108,7 +108,7 @@ pub fn decompose_choice(
         ],
         Choice::Smith(card) => vec![
             Response::Choose(String::from("smith")),
-            Response::CardInDeck(get_card_position(card, request, uuid_map)),
+            Response::CardInDeck(get_card_position_in_deck(card, request, uuid_map)),
             Response::Simple(String::from("CONFIRM")),
             Response::Simple(String::from("PROCEED")),
         ],
@@ -126,9 +126,9 @@ pub fn decompose_choice(
         ],
         Choice::Toke(card) => vec![
             Response::Choose(String::from("toke")),
-            Response::CardInDeck(get_card_position(card, request, uuid_map)),
+            Response::CardInDeck(get_card_position_in_deck(card, request, uuid_map)),
         ],
-        Choice::ScryDiscard(cards) => {
+        Choice::SelectCards(cards) => {
             let available_cards = &request
                 .game_state
                 .as_ref()
@@ -153,11 +153,9 @@ pub fn decompose_choice(
                 .collect()
         }
 
-        Choice::DeckUpgrade(cards)
-        | Choice::DeckTransform(cards, _)
-        | Choice::DeckRemove(cards) => cards
+        Choice::DeckSelect(cards, _) => cards
             .into_iter()
-            .map(|card| Response::CardInDeck(get_card_position(card, request, uuid_map)))
+            .map(|card| Response::CardInDeck(get_card_position_in_deck(card, request, uuid_map)))
             .chain(once(Response::Simple(String::from("CONFIRM"))))
             .collect(),
 
@@ -189,53 +187,57 @@ fn get_monster_position(
         .unwrap()
 }
 
+fn get_card_position_in_deck(
+    card: DeckCard,
+    request: &Request,
+    uuid_map: &HashMap<String, Uuid>,
+) -> usize {
+    let id = uuid_to_id(card.uuid, uuid_map);
+    request
+        .game_state
+        .as_ref()
+        .unwrap()
+        .deck
+        .iter()
+        .position(|card| &card.id == id)
+        .unwrap()
+}
+
 fn get_card_position(
     card: CardReference,
     request: &Request,
     uuid_map: &HashMap<String, Uuid>,
 ) -> usize {
     let id = uuid_to_id(card.uuid, uuid_map);
-    match card.location {
-        CardLocation::DeckPile => request
-            .game_state
-            .as_ref()
-            .unwrap()
-            .deck
-            .iter()
-            .position(|card| &card.id == id)
-            .unwrap(),
-        _ => {
-            let combat_state = request
-                .game_state
-                .as_ref()
-                .unwrap()
-                .combat_state
-                .as_ref()
-                .unwrap();
+    let combat_state = request
+        .game_state
+        .as_ref()
+        .unwrap()
+        .combat_state
+        .as_ref()
+        .unwrap();
+    combat_state
+        .limbo
+        .iter()
+        .position(|card| &card.id == id)
+        .or_else(|| combat_state.hand.iter().position(|card| &card.id == id))
+        .or_else(|| {
             combat_state
-                .limbo
+                .draw_pile
                 .iter()
                 .position(|card| &card.id == id)
-                .or_else(|| combat_state.hand.iter().position(|card| &card.id == id))
-                .or_else(|| {
-                    combat_state
-                        .draw_pile
-                        .iter()
-                        .position(|card| &card.id == id)
-                })
-                .or_else(|| {
-                    combat_state
-                        .discard_pile
-                        .iter()
-                        .position(|card| &card.id == id)
-                })
-                .or_else(|| {
-                    combat_state
-                        .exhaust_pile
-                        .iter()
-                        .position(|card| &card.id == id)
-                })
-                .unwrap()
-        }
-    }
+        })
+        .or_else(|| {
+            combat_state
+                .discard_pile
+                .iter()
+                .position(|card| &card.id == id)
+        })
+        .or_else(|| {
+            combat_state
+                .exhaust_pile
+                .iter()
+                .position(|card| &card.id == id)
+        })
+        .unwrap()
 }

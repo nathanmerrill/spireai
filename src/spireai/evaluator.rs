@@ -5,10 +5,9 @@ use crate::models::relics::BaseRelic;
 use crate::models::{self, core::*, monsters::Intent, relics::Activation};
 use crate::state::battle::BattleState;
 use crate::state::core::{Card, CardOffer, Creature, Monster, Orb, Potion, Relic};
-use crate::state::game::{CardChoiceEffect, CardChoiceState, FloorState, GameState, Reward};
+use crate::state::game::{CardChoiceState, DeckCard, FloorState, GameState, Reward, ScreenState};
 use crate::state::probability::Probability;
-use im::HashMap;
-use im::{HashSet, Vector};
+use im::{vector, HashMap, Vector};
 use itertools::Itertools;
 use uuid::Uuid;
 
@@ -28,102 +27,6 @@ pub struct GamePossibility {
 }
 
 impl GamePossibility {
-    fn eval_targets(
-        &mut self,
-        target: &Target,
-        binding: Binding,
-        action: Option<GameAction>,
-    ) -> Vec<CreatureReference> {
-        let creatures = match target {
-            Target::AllEnemies => match binding.get_monster(&self.state) {
-                Some(_) => vec![CreatureReference::Player],
-                None => self.state.battle_state.available_creatures().collect(),
-            },
-            Target::AnyFriendly => match binding.get_monster(&self.state) {
-                Some(_) => self.state.battle_state.available_creatures().collect(),
-                None => vec![CreatureReference::Player],
-            },
-            Target::RandomEnemy => match binding.get_monster(&self.state) {
-                Some(_) => vec![CreatureReference::Player],
-                None => self
-                    .state
-                    .battle_state
-                    .random_monster(&mut self.probability)
-                    .map(|a| a.creature_ref())
-                    .into_iter()
-                    .collect(),
-            },
-            Target::RandomFriendly => {
-                let creature_reference = match binding {
-                    Binding::Buff(buff) => buff.creature,
-                    Binding::Creature(creature) => creature,
-                    _ => CreatureReference::Player,
-                };
-                match creature_reference {
-                    CreatureReference::Player => vec![CreatureReference::Player],
-                    CreatureReference::Creature(uuid) => {
-                        let monsters = self
-                            .state
-                            .battle_state
-                            .available_monsters()
-                            .filter(|a| a.uuid != uuid)
-                            .collect_vec();
-
-                        self.probability
-                            .choose(monsters)
-                            .into_iter()
-                            .map(|a| a.creature_ref())
-                            .collect()
-                    }
-                }
-            }
-            _ => vec![self.eval_target(target, binding, action)],
-        };
-
-        creatures
-    }
-
-    fn eval_target(
-        &self,
-        target: &Target,
-        binding: Binding,
-        action: Option<GameAction>,
-    ) -> CreatureReference {
-        match target {
-            Target::_Self => match binding {
-                Binding::Buff(buff) => buff.creature,
-                Binding::Creature(creature) => creature,
-                _ => CreatureReference::Player,
-            },
-            Target::Attacker => match action {
-                Some(_action) => match _action.is_attack {
-                    true => _action.creature,
-                    false => panic!("Expected attack action!"),
-                },
-                None => panic!("Expected action!"),
-            },
-            Target::TargetEnemy => match action {
-                Some(_action) => match _action.creature {
-                    CreatureReference::Player => _action.target.expect("Expected target!"),
-                    CreatureReference::Creature(_) => CreatureReference::Player,
-                },
-                None => panic!("Expected action!"),
-            },
-            Target::Player => CreatureReference::Player,
-            _ => panic!("Target does not resolve to a single creature! {:?}", target),
-        }
-    }
-
-    pub fn spend_money(&mut self, amount: u16, at_shop: bool) {
-        self.state.gold -= amount;
-
-        if at_shop {
-            if let Some(relic) = self.state.find_relic_mut("Maw Bank") {
-                relic.enabled = false;
-            }
-        }
-    }
-
     fn eval_card_effects(&mut self, effects: &[CardEffect], card: CardReference) {
         for effect in effects {
             self.eval_card_effect(effect, card);
@@ -136,7 +39,8 @@ impl GamePossibility {
                 let binding = Binding::Card(card);
                 let target = if self.eval_condition(&card.base.targeted, binding, None) {
                     self.state
-                        .battle_state
+                        .floor_state
+                        .battle()
                         .random_monster(&mut self.probability)
                         .map(|a| a.creature_ref())
                 } else {
@@ -145,35 +49,25 @@ impl GamePossibility {
                 self.play_card(card, target);
             }
             CardEffect::CopyTo { destination, then } => {
-                if *destination == CardDestination::DeckPile {
-                    let upgrades = self.state.get(card).upgrades;
-                    if let Some(card_ref) = self.add_card(Card::new(card.base), *destination) {
-                        let card = self.state.get_mut(card_ref);
-                        card.upgrades = std::cmp::max(card.upgrades, upgrades);
-                        self.eval_card_effects(then, card_ref)
-                    }
-                } else {
-                    let new_card = self.state.get(card).duplicate();
-                    if let Some(card_ref) = self.add_card(new_card, *destination) {
-                        self.eval_card_effects(then, card_ref)
-                    }
-                }
+                let new_card = self.state.floor_state.battle().get_card(card).duplicate();
+                let card_ref = self.add_card(new_card, *destination);
+                self.eval_card_effects(then, card_ref);
             }
             CardEffect::Custom => panic!("Unexpected custom card effect"),
             CardEffect::Discard => {
-                if !self.state.battle_state.discard.contains(&card.uuid) {
-                    self.state.battle_state.move_card(
+                if !self.state.floor_state.battle().discard.contains(&card.uuid) {
+                    self.state.floor_state.battle_mut().move_card(
                         CardDestination::DiscardPile,
                         card,
                         &mut self.probability,
                     );
                     self.eval_effects(&card.base.on_discard, Binding::Card(card), None);
-                    self.state.battle_state.discard_count += 1;
+                    self.state.floor_state.battle_mut().discard_count += 1;
                 }
             }
             CardEffect::Exhaust => {
-                if !self.state.battle_state.exhaust.contains(&card.uuid) {
-                    self.state.battle_state.move_card(
+                if !self.state.floor_state.battle().exhaust.contains(&card.uuid) {
+                    self.state.floor_state.battle_mut().move_card(
                         CardDestination::ExhaustPile,
                         card,
                         &mut self.probability,
@@ -182,42 +76,52 @@ impl GamePossibility {
                 }
             }
             CardEffect::MoveTo(destination) => {
-                self.state
-                    .battle_state
-                    .move_card(*destination, card, &mut self.probability);
+                self.state.floor_state.battle_mut().move_card(
+                    *destination,
+                    card,
+                    &mut self.probability,
+                );
             }
             CardEffect::ReduceCost(amount) => {
                 let reduction = self.eval_amount(amount, Binding::Card(card));
-                let card = self.state.get_mut(card);
+                let card = self.state.floor_state.battle_mut().get_card_mut(card);
                 if card.base.cost != Amount::X {
                     card.cost = std::cmp::max(card.cost as i16 - reduction, 0) as u8;
                     card.base_cost = std::cmp::max(card.base_cost as i16 - reduction, 0) as u8;
                 }
             }
             CardEffect::Retain => {
-                self.state.get_mut(card).retain = true;
+                self.state
+                    .floor_state
+                    .battle_mut()
+                    .get_card_mut(card)
+                    .retain = true;
             }
             CardEffect::Upgrade => {
-                self.state.get_mut(card).upgrade();
+                self.state
+                    .floor_state
+                    .battle_mut()
+                    .get_card_mut(card)
+                    .upgrade();
             }
             CardEffect::ZeroCombatCost => {
-                let card = self.state.get_mut(card);
+                let card = self.state.floor_state.battle_mut().get_card_mut(card);
                 card.cost = 0;
                 card.base_cost = 0;
             }
             CardEffect::ZeroCostUntilPlayed => {
-                let card = self.state.get_mut(card);
+                let card = self.state.floor_state.battle_mut().get_card_mut(card);
                 card.cost = 0;
                 card.cost_until_played = true;
             }
             CardEffect::ZeroTurnCost => {
-                let card = self.state.get_mut(card);
+                let card = self.state.floor_state.battle_mut().get_card_mut(card);
                 card.cost = 0;
             }
         }
     }
 
-    pub fn play_card(&mut self, card: CardReference, target: Option<CreatureReference>) {       
+    pub fn play_card(&mut self, card: CardReference, target: Option<CreatureReference>) {
         for effect in &card.base.on_play {
             self.eval_effect(
                 effect,
@@ -234,34 +138,11 @@ impl GamePossibility {
         self.eval_when(When::PlayCard(card.base._type));
     }
 
-    pub fn add_card(&mut self, card: Card, destination: CardDestination) -> Option<CardReference> {
-        if destination == CardDestination::DeckPile {
-            if card.base._type == CardType::Curse {
-                if let Some(relic) = self.state.find_relic_mut("Omamori") {
-                    if relic.vars.x > 0 {
-                        relic.vars.x -= 1;
-                        return None;
-                    }
-                }
-
-                if self.state.has_relic("Darkstone Periapt") {
-                    self.add_max_hp(6);
-                }
-            }
-
-            if self.state.has_relic("Ceramic Fish") {
-                self.add_gold(9);
-            }
-        }
-        let card_ref = Some(CardReference {
-            location: destination.location(),
-            uuid: card.uuid,
-            base: card.base,
-        });
-
+    pub fn add_card(&mut self, card: Card, destination: CardDestination) -> CardReference {
         self.state
-            .add_card(card, destination, &mut self.probability);
-        card_ref
+            .floor_state
+            .battle_mut()
+            .new_card(card, destination, &mut self.probability)
     }
 
     pub fn eval_effects(
@@ -288,21 +169,28 @@ impl GamePossibility {
                 target,
             } => {
                 let amount = self.eval_amount(buff_amount, binding);
-                for creature in self.eval_targets(target, binding, action) {
-                    self.state.get_mut(creature).add_buff(buff_name, amount);
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self.state.floor_state.battle(),
+                    &mut self.probability,
+                ) {
+                    if let Some(creature) = self.state.get_creature_mut(creature) {
+                        creature.add_buff(buff_name, amount);
+                    }
                 }
             }
             Effect::AddEnergy(energy_amount) => {
                 let amount = self.eval_amount(energy_amount, binding) as u8;
-                self.state.battle_state.energy += amount
+                self.state.floor_state.battle_mut().energy += amount
             }
             Effect::AddGold(gold_amount) => {
                 let amount = self.eval_amount(gold_amount, binding) as u16;
-                self.add_gold(amount)
+                self.state.add_gold(amount)
             }
             Effect::AddMaxHp(hp_amount) => {
                 let amount = self.eval_amount(hp_amount, binding) as u16;
-                self.add_max_hp(amount)
+                self.state.player.add_max_hp(amount, &self.state.relics)
             }
             Effect::AddN(n_amount) => {
                 let amount = self.eval_amount(n_amount, binding);
@@ -310,9 +198,9 @@ impl GamePossibility {
             }
             Effect::AddOrbSlot(amount) => {
                 let count = self.eval_amount(amount, binding) as u8;
-                self.state.battle_state.orb_slots =
-                    std::cmp::min(count + self.state.battle_state.orb_slots, 10)
-                        - self.state.battle_state.orb_slots;
+                self.state.floor_state.battle_mut().orb_slots =
+                    std::cmp::min(count + self.state.floor_state.battle().orb_slots, 10)
+                        - self.state.floor_state.battle().orb_slots;
             }
             Effect::AddPotionSlot(amount) => {
                 for _ in 0..*amount {
@@ -333,9 +221,19 @@ impl GamePossibility {
             } => {
                 let attack_amount = self.eval_amount(amount, binding);
 
-                for creature in self.eval_targets(target, binding, action) {
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self.state.floor_state.battle(),
+                    &mut self.probability,
+                ) {
                     for _ in 0..self.eval_amount(times, binding) {
-                        if self.damage(attack_amount as u16, creature, Some(action.unwrap().creature), false) {
+                        if self.damage(
+                            attack_amount as u16,
+                            creature,
+                            Some(action.unwrap().creature),
+                            false,
+                        ) {
                             self.eval_effects(if_fatal, binding, action);
                         }
                     }
@@ -344,10 +242,16 @@ impl GamePossibility {
             Effect::Block { amount, target } => {
                 let block_amount = self.eval_amount(amount, binding) as u16;
 
-                for creature in self.eval_targets(target, binding, action) {
-                    let mut_creature = self.state.get_mut(creature);
-                    let new_block = std::cmp::min(mut_creature.block + block_amount, 999);
-                    mut_creature.block = new_block;
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self.state.floor_state.battle(),
+                    &mut self.probability,
+                ) {
+                    if let Some(creature) = self.state.get_creature_mut(creature) {
+                        let new_block = std::cmp::min(creature.block + block_amount, 999);
+                        creature.block = new_block;
+                    }
                 }
             }
             Effect::ChannelOrb(orb_type) => self.channel_orb(*orb_type),
@@ -360,30 +264,34 @@ impl GamePossibility {
                 choices,
                 exclude_healing,
             } => {
-                let amount = self.eval_amount(choices, binding);
+                let amount = self.eval_amount(choices, binding) as usize;
 
-                let choice = self.random_cards_by_type(
-                    amount as usize,
-                    *class,
-                    *_type,
-                    *rarity,
-                    *exclude_healing,
-                );
+                let choice =
+                    self.random_cards_by_type(amount, *class, *_type, *rarity, *exclude_healing);
 
                 let mut card_choices = Vector::new();
                 for base_card in choice {
                     card_choices.push_back(Card::new(base_card));
                 }
 
-                self.state.card_choices = CardChoiceState {
-                    choices: card_choices.iter().map(|card| card.uuid).collect(),
-                    location: CardLocation::Stasis,
-                    count: Some((amount as usize, amount as usize)),
-                    effect: CardChoiceEffect::AddToLocation(*destination, then.clone()),
-                };
+                let mut effects = vector![CardEffect::MoveTo(*destination)];
+                effects.extend(then.clone());
+
+                self.state.screen_state = ScreenState::CardChoose(CardChoiceState {
+                    choices: card_choices
+                        .iter()
+                        .map(|card| card.reference(CardLocation::None))
+                        .collect(),
+                    count_range: (amount..amount + 1),
+                    then: effects,
+                });
 
                 for card in card_choices {
-                    self.state.battle_state.cards.insert(card.uuid, card);
+                    self.state
+                        .floor_state
+                        .battle_mut()
+                        .cards
+                        .insert(card.uuid, card);
                 }
             }
 
@@ -393,31 +301,25 @@ impl GamePossibility {
                 min,
                 max,
             } => {
-                let min_count = self.eval_amount(min, binding);
-                let max_count = self.eval_amount(max, binding);
-                let cards: Vector<Uuid> = match location {
-                    CardLocation::DeckPile => self.state.deck().map(|c| c.uuid).collect(),
+                let min_count = self.eval_amount(min, binding) as usize;
+                let max_count = self.eval_amount(max, binding) as usize;
+                let choices = match location {
                     CardLocation::DiscardPile => {
-                        self.state.battle_state.discard().map(|c| c.uuid).collect()
+                        self.state.floor_state.battle().discard().collect()
                     }
-                    CardLocation::DrawPile => {
-                        self.state.battle_state.draw().map(|c| c.uuid).collect()
-                    }
+                    CardLocation::DrawPile => self.state.floor_state.battle().draw().collect(),
                     CardLocation::ExhaustPile => {
-                        self.state.battle_state.exhaust().map(|c| c.uuid).collect()
+                        self.state.floor_state.battle().exhaust().collect()
                     }
-                    CardLocation::PlayerHand => {
-                        self.state.battle_state.hand().map(|c| c.uuid).collect()
-                    }
-                    CardLocation::Stasis => panic!("Cannot choose from stasis!"),
+                    CardLocation::PlayerHand => self.state.floor_state.battle().hand().collect(),
+                    CardLocation::None => panic!("Cannot choose from None!"),
                 };
 
-                self.state.card_choices = CardChoiceState {
-                    choices: cards,
-                    location: *location,
-                    count: Some((min_count as usize, max_count as usize)),
-                    effect: CardChoiceEffect::Then(then),
-                };
+                self.state.screen_state = ScreenState::CardChoose(CardChoiceState {
+                    choices,
+                    count_range: (min_count..max_count + 1),
+                    then: Vector::from(then),
+                });
             }
             Effect::CreateCard {
                 name,
@@ -425,10 +327,10 @@ impl GamePossibility {
                 then,
             } => {
                 let card = Card::by_name(name);
-                if let Some(card_ref) = self.add_card(card, *destination) {
-                    self.eval_card_effects(then, card_ref);
-                }
+                let card_ref = self.add_card(card, *destination);
+                self.eval_card_effects(then, card_ref);
             }
+
             Effect::CreateCardByType {
                 destination,
                 _type,
@@ -439,18 +341,23 @@ impl GamePossibility {
             } => {
                 let card =
                     self.random_cards_by_type(1, *class, *_type, *rarity, *exclude_healing)[0];
-                if let Some(card_ref) = self.add_card(Card::new(card), *destination) {
-                    self.eval_card_effects(then, card_ref);
-                }
+                let card = self.add_card(Card::new(card), *destination);
+                self.eval_card_effects(then, card);
             }
             Effect::Custom => unimplemented!(),
             Effect::Damage { amount, target } => {
                 let total = self.eval_amount(amount, binding) as u16;
-                let creature = self.eval_target(target, binding, action);
+                let creature = target.to_creature(binding, action);
                 self.damage(total, creature, None, false);
             }
+            Effect::DeckAdd(_) => unimplemented!(),
+            Effect::DeckOperation {
+                random,
+                count,
+                operation,
+            } => unimplemented!(),
             Effect::Die { target } => {
-                let creature = self.eval_target(target, binding, action);
+                let creature = target.to_creature(binding, action);
                 self.die(creature);
             }
             Effect::DoCardEffect {
@@ -472,14 +379,25 @@ impl GamePossibility {
             }
             Effect::Heal { amount, target } => {
                 let total = self.eval_amount(amount, binding);
-                for creature in self.eval_targets(target, binding, action) {
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self.state.floor_state.battle(),
+                    &mut self.probability,
+                ) {
                     self.heal(total as f64, creature);
                 }
             }
             Effect::HealPercentage { amount, target } => {
                 let percentage = self.eval_amount(amount, binding) as f64 / 100.0;
-                for creature in self.eval_targets(target, binding, action) {
-                    let total = self.state.get(creature).hp as f64 * percentage;
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self.state.floor_state.battle(),
+                    &mut self.probability,
+                ) {
+                    let total =
+                        self.state.get_creature(creature).unwrap().max_hp as f64 * percentage;
                     self.heal(total, creature);
                 }
             }
@@ -497,13 +415,18 @@ impl GamePossibility {
             Effect::LoseAllGold => self.state.gold = 0,
             Effect::LoseHp { amount, target } => {
                 let total = self.eval_amount(amount, binding);
-                for creature in self.eval_targets(target, binding, action) {
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self.state.floor_state.battle(),
+                    &mut self.probability,
+                ) {
                     self.lose_hp(total as u16, creature, false);
                 }
             }
             Effect::LoseHpPercentage(amount) => {
                 let percentage = self.eval_amount(amount, binding) as f64 / 1000.0;
-                let damage = (self.state.player.max_hp as f64 * percentage).floor() as u16;
+                let damage = (self.state.player.creature.max_hp as f64 * percentage).floor() as u16;
                 self.lose_hp(damage, CreatureReference::Player, false);
             }
             Effect::RandomChance(chances) => {
@@ -525,7 +448,7 @@ impl GamePossibility {
                 self.eval_effects(choice, binding, action);
             }
             Effect::RandomPotion => {
-                let potion = self.random_potion(self.state.battle_state.active);
+                let potion = self.random_potion(self.state.floor_state.battle().active);
                 self.state.add_potion(potion);
             }
             Effect::RandomRelic => {
@@ -534,34 +457,26 @@ impl GamePossibility {
             }
             Effect::ReduceMaxHpPercentage(amount) => {
                 let percentage = self.eval_amount(amount, binding);
-                let total =
-                    (self.state.player.max_hp as f64 * (percentage as f64 / 100.0)).floor() as u16;
-                self.state.reduce_max_hp(total);
-            }
-            Effect::RemoveCard(count) => {
-                self.state.card_choices = CardChoiceState {
-                    choices: self.state.deck().map(|a| a.uuid).collect(),
-                    location: CardLocation::DeckPile,
-                    count: Some((*count as usize, *count as usize)),
-                    effect: CardChoiceEffect::Remove,
-                }
+                let total = (self.state.player.creature.max_hp as f64 * (percentage as f64 / 100.0))
+                    .floor() as u16;
+                self.state.player.reduce_max_hp(total);
             }
             Effect::RemoveDebuffs => {
                 let creature_ref = binding.get_creature();
-                let creature = self.state.get(creature_ref);
-                let debuffs = creature
-                    .buffs
-                    .values()
-                    .filter(|buff| buff.base.debuff || buff.vars.x < 0)
-                    .map(|buff| buff.reference(creature_ref))
-                    .collect_vec();
-
-                for debuff in debuffs {
-                    self.state.get_mut(debuff.creature).remove_buff(debuff);
+                if let Some(creature) = self.state.get_creature_mut(creature_ref) {
+                    let buffs: Vec<Uuid> = creature
+                        .buffs
+                        .values()
+                        .filter(|buff| buff.base.debuff || buff.vars.x < 0)
+                        .map(|buff| buff.uuid)
+                        .collect_vec();
+                    for buff in buffs {
+                        creature.remove_buff_by_uuid(buff)
+                    }
                 }
             }
             Effect::RemoveRelic(relic) => {
-                self.state.remove_relic(relic);
+                self.state.relics.remove(relic);
             }
             Effect::Repeat { n, effect } => {
                 let amount = self.eval_amount(n, binding);
@@ -579,8 +494,11 @@ impl GamePossibility {
             }
             Effect::SelfEffect(effect) => {
                 if let Binding::Card(card) = binding {
-                    if effect != &CardEffect::Exhaust || !self.state.has_relic("Strange Spoon") || self.probability.range(2) == 0 {
-                        self.eval_card_effect(effect, card);   
+                    if effect != &CardEffect::Exhaust
+                        || !self.state.relics.contains("Strange Spoon")
+                        || self.probability.range(2) == 0
+                    {
+                        self.eval_card_effect(effect, card);
                     }
                 } else {
                     panic!("SelfEffect on a non-card!")
@@ -593,7 +511,7 @@ impl GamePossibility {
                 vars.n_reset = amount;
             }
             Effect::SetStance(stance) => {
-                self.state.battle_state.stance = *stance;
+                self.state.floor_state.battle_mut().stance = *stance;
             }
             Effect::SetX(x) => {
                 let amount = self.eval_amount(x, binding);
@@ -601,56 +519,69 @@ impl GamePossibility {
                 vars.x = amount;
             }
             Effect::ShowChoices(choices) => {
-                if let Some(event) = self.state.event_state.as_mut() {
-                    event.available_choices = choices.clone();
-                } else {
-                    panic!("Unexpected ShowChoices when not in an event!")
-                }
+                let event = self.state.floor_state.event_mut();
+                event.available_choices = choices.clone();
             }
             Effect::ShowReward(rewards) => {
-                self.state.floor_state = FloorState::Rewards(rewards.iter().map(|reward| {
-                    match reward {
-                        RewardType::ColorlessCard => {
-                            Reward::CardChoice(self.generate_card_rewards(FightType::Common, true))
-                        }
-                        RewardType::EliteCard => {
-                            Reward::CardChoice(self.generate_card_rewards(FightType::Elite{burning: false}, false))
-                        }
-                        RewardType::Gold {min, max} => {
-                            let amount = self.probability.range((max-min) as usize) as u16 + min;
-                            Reward::Gold(amount)
-                        }
-                        RewardType::RandomBook => {
-                            let book = self.probability.choose(vec!["Necronomicon", "Enchiridion", "Nilry's Codex"]).unwrap();
-                            Reward::Relic(Relic::by_name(book))
-                        }
-                        RewardType::RandomPotion => {
-                            let base = self.random_potion(false);
-                            Reward::Potion(Potion{base})
-                        }
-                        RewardType::RandomRelic => {
-                            let base = self.random_relic(None, None, None, false);
-                            Reward::Relic(Relic::new(base))
-                        }
-                        RewardType::Relic(rarity) => {
-                            let base = self.random_relic(None, Some(*rarity), None, false);
-                            Reward::Relic(Relic::new(base))
-                        }
-                        RewardType::RelicName(name) => {
-                            Reward::Relic(Relic::by_name(name))
-                        }
-                        RewardType::StandardCard => {
-                            Reward::CardChoice(self.generate_card_rewards(FightType::Common, false))
-                        }
-                    }
-                }).collect())
+                self.state.floor_state = FloorState::Rewards(
+                    rewards
+                        .iter()
+                        .map(|reward| match reward {
+                            RewardType::ColorlessCard => Reward::CardChoice(
+                                self.generate_card_rewards(FightType::Common, true),
+                            ),
+                            RewardType::EliteCard => {
+                                Reward::CardChoice(self.generate_card_rewards(
+                                    FightType::Elite { burning: false },
+                                    false,
+                                ))
+                            }
+                            RewardType::Gold { min, max } => {
+                                let amount =
+                                    self.probability.range((max - min) as usize) as u16 + min;
+                                Reward::Gold(amount)
+                            }
+                            RewardType::RandomBook => {
+                                let book = self
+                                    .probability
+                                    .choose(vec!["Necronomicon", "Enchiridion", "Nilry's Codex"])
+                                    .unwrap();
+                                Reward::Relic(Relic::by_name(book))
+                            }
+                            RewardType::RandomPotion => {
+                                let base = self.random_potion(false);
+                                Reward::Potion(Potion { base })
+                            }
+                            RewardType::RandomRelic => {
+                                let base = self.random_relic(None, None, None, false);
+                                Reward::Relic(Relic::new(base))
+                            }
+                            RewardType::Relic(rarity) => {
+                                let base = self.random_relic(None, Some(*rarity), None, false);
+                                Reward::Relic(Relic::new(base))
+                            }
+                            RewardType::RelicName(name) => Reward::Relic(Relic::by_name(name)),
+                            RewardType::StandardCard => Reward::CardChoice(
+                                self.generate_card_rewards(FightType::Common, false),
+                            ),
+                        })
+                        .collect(),
+                )
             }
             Effect::Shuffle => {
-                self.state.battle_state.draw.extend(self.state.battle_state.discard.iter().copied());
-                self.state.battle_state.discard.clear();
+                let cards = self
+                    .state
+                    .floor_state
+                    .battle()
+                    .discard
+                    .iter()
+                    .copied()
+                    .collect_vec();
+                self.state.floor_state.battle_mut().draw.extend(cards);
+                self.state.floor_state.battle_mut().discard.clear();
                 self.shuffle();
             }
-            Effect::Spawn{ choices, count} => {
+            Effect::Spawn { choices, count } => {
                 let amount = self.eval_amount(count, binding);
                 for _ in 0..amount {
                     let choice = self.probability.choose(choices.clone()).unwrap();
@@ -659,84 +590,72 @@ impl GamePossibility {
                 }
             }
             Effect::Split(left, right) => {
-                if let Binding::Monster(monster_ref) = binding {
+                if let Binding::Creature(CreatureReference::Creature(monster_ref)) = binding {
                     let monster = self.remove_monster(monster_ref.uuid);
                     let hp = monster.creature.hp;
-                    
+
                     let left_base = models::monsters::by_name(left);
                     let right_base = models::monsters::by_name(right);
                     let left_ref = self.add_monster(left_base, monster.position);
                     let right_ref = self.add_monster(right_base, monster.position + 1);
 
-                    let left = &mut self.state.get_mut(left_ref).creature;
+                    let left = self
+                        .state
+                        .get_creature_mut(left_ref.creature_ref())
+                        .unwrap();
                     left.max_hp = hp;
                     left.hp = hp;
 
-                    let right = &mut self.state.get_mut(right_ref).creature;
+                    let right = self
+                        .state
+                        .get_creature_mut(right_ref.creature_ref())
+                        .unwrap();
                     right.max_hp = hp;
-                    right.hp = hp;   
+                    right.hp = hp;
                 } else {
                     panic!("Unepxected binding")
                 }
             }
-            Effect::TransformCard(count) => {
-                self.state.card_choices = CardChoiceState {
-                    choices: self.state.removable_cards().map(|c| c.uuid).collect(),
-                    location: CardLocation::DeckPile,
-                    count: Some((*count as usize, *count as usize)),
-                    effect: CardChoiceEffect::Transform,
-                }
-            }
-            Effect::TransformRandomCard(count) => {
-                self.probability.choose_multiple(self.state.removable_cards().collect(), *count as usize).iter()
-                    .for_each(|c| self.transform_card(*c));
-            }
             Effect::Unbuff(buff) => {
-                self.state.get_mut(binding.get_creature()).remove_buff_by_name(buff);
-            }
-            Effect::UpgradeCard => {
-                self.state.card_choices = CardChoiceState {
-                    choices: self.state.upgradable_cards().map(|c| c.uuid).collect(),
-                    location: CardLocation::DeckPile,
-                    count: Some((1, 1)),
-                    effect: CardChoiceEffect::Upgrade,
+                if let Some(creature) = self.state.get_creature_mut(binding.get_creature()) {
+                    creature.remove_buff_by_name(buff);
                 }
-            }
-            Effect::UpgradeRandomCard(count) => {
-                self.probability.choose_multiple(self.state.upgradable_cards().collect(), *count as usize).iter()
-                    .for_each(|c| self.state.get_mut(*c).upgrade());
             }
         }
     }
 
     fn transform_card(&mut self, card: CardReference) {
-        self.state.remove_card(card);
-        
-        let choices = models::cards::available_cards_by_class(card.base._class).iter()
-                .filter(|a| a.name != card.base.name)
-                .collect();
-        let new_card = self.probability.choose(choices).unwrap();
+        self.state.remove_card(card.uuid);
 
-        self.add_card(Card::new(new_card), CardDestination::DeckPile);
+        let choices = models::cards::available_cards_by_class(card.base._class)
+            .iter()
+            .filter(|a| a.name != card.base.name)
+            .collect();
+        let new_card = self.probability.choose(choices).unwrap();
+        self.state.add_card(Card::new(new_card));
     }
 
-    
-
     fn remove_monster(&mut self, uuid: Uuid) -> Monster {
-        let removed = self.state.battle_state.monsters.remove(&uuid).unwrap();
-        for (_, monster) in self.state.battle_state.monsters.iter_mut() {
+        let removed = self
+            .state
+            .floor_state
+            .battle_mut()
+            .monsters
+            .remove(&uuid)
+            .unwrap();
+        for (_, monster) in self.state.floor_state.battle_mut().monsters.iter_mut() {
             if monster.position > removed.position {
                 monster.position -= 1;
             }
         }
         removed
-    } 
+    }
 
     fn add_monster(&mut self, base: &'static BaseMonster, position: usize) -> MonsterReference {
-        let hp_asc = match self.state.battle_state.fight_type {
+        let hp_asc = match self.state.floor_state.battle().fight_type {
             FightType::Boss => 9,
-            FightType::Elite{..} => 8,
-            FightType::Common => 7
+            FightType::Elite { .. } => 8,
+            FightType::Common => 7,
         };
         let hp_range = if self.state.asc < hp_asc {
             &base.hp_range
@@ -744,20 +663,22 @@ impl GamePossibility {
             &base.hp_range_asc
         };
 
-        let hp = self.probability.range((hp_range.max - hp_range.min) as usize) as u16 + hp_range.min;
+        let hp = self
+            .probability
+            .range((hp_range.max - hp_range.min) as usize) as u16
+            + hp_range.min;
 
         let mut monster = Monster::new(base, hp);
-        
+
         monster.position = position;
 
-        let binding = Binding::Monster(monster.monster_ref());
+        let binding = Binding::Creature(CreatureReference::Creature(monster.monster_ref()));
         if let Some(range) = &base.n_range {
             let min = self.eval_amount(&range.min, binding);
             let max = self.eval_amount(&range.max, binding);
             let n = self.probability.range((max - min) as usize) as i16 + min;
             monster.vars.n = n;
             monster.vars.n_reset = n;
-
         }
 
         if let Some(range) = &base.x_range {
@@ -767,100 +688,150 @@ impl GamePossibility {
             monster.vars.x = x;
         }
 
+        self.eval_effects(&monster.base.on_create, binding, None);
 
-        self.eval_effects(&monster.base.on_create, Binding::Monster(monster.monster_ref()), None);
-
-        for (_, m) in self.state.battle_state.monsters.iter_mut() {
-            if m.position >=  position {
+        for (_, m) in self.state.floor_state.battle_mut().monsters.iter_mut() {
+            if m.position >= position {
                 m.position += 1;
             }
         }
 
         let monster_ref = MonsterReference {
-            base: base,
-            uuid: monster.uuid
+            base,
+            uuid: monster.uuid,
         };
 
-        self.state.battle_state.monsters.insert(monster.uuid, monster);
+        self.state
+            .floor_state
+            .battle_mut()
+            .monsters
+            .insert(monster.uuid, monster);
 
         monster_ref
     }
 
-    fn generate_card_rewards(&mut self, fight_type: FightType, colorless: bool) -> Vector<CardOffer> {
+    fn generate_card_rewards(
+        &mut self,
+        fight_type: FightType,
+        colorless: bool,
+    ) -> Vector<CardOffer> {
         let cards = {
             if colorless {
                 models::cards::available_cards_by_class(Class::None)
+            } else if self.state.relics.contains("Prismatic Shard") {
+                models::cards::available_cards_by_class(Class::All)
             } else {
-                if self.state.has_relic("Prismatic Shard") {
-                    models::cards::available_cards_by_class(Class::All)
-                } else {
-                    models::cards::available_cards_by_class(self.state.class)
-                }
+                models::cards::available_cards_by_class(self.state.class)
             }
         };
 
-        let count = 1 + {
-            if self.state.has_relic("Busted Crown") {
-                0
-            } else {
-                2
-            }
-        } + {
-            if self.state.has_relic("Question Card") {
-                1
-            } else {
-                0
-            }
-        };
+        let count =
+            1 + {
+                if self.state.relics.contains("Busted Crown") {
+                    0
+                } else {
+                    2
+                }
+            } + {
+                if self.state.relics.contains("Question Card") {
+                    1
+                } else {
+                    0
+                }
+            };
 
         self.generate_card_offers(Some(fight_type), cards, count, true)
     }
 
-    fn generate_card_offers(&mut self, fight_type: Option<FightType>, available: &Vec<&'static BaseCard>, count: usize, reset_rarity: bool) -> Vector<CardOffer> {
-        let mut cards = available.clone();
+    fn generate_card_offers(
+        &mut self,
+        fight_type: Option<FightType>,
+        available: &[&'static BaseCard],
+        count: usize,
+        reset_rarity: bool,
+    ) -> Vector<CardOffer> {
+        let mut cards = available.to_owned();
 
-        (0..count).map(|_| {
-            let offer = self.generate_card_offer(fight_type, &cards);
-            let index = cards.iter().position(|b| b == &offer.base).unwrap();
-            cards.remove(index);
-            if reset_rarity && offer.base.rarity == Rarity::Rare {
-                self.state.card_rarity_offset = 0;
-            }
-            offer
-        }).collect()
+        (0..count)
+            .map(|_| {
+                let offer = self.generate_card_offer(fight_type, &cards);
+                let index = cards.iter().position(|b| b == &offer.base).unwrap();
+                cards.remove(index);
+                match offer.base.rarity {
+                    Rarity::Rare => {
+                        if reset_rarity {
+                            self.state.rare_probability_offset = 0;
+                        }
+                    }
+                    Rarity::Common => {
+                        self.state.rare_probability_offset =
+                            std::cmp::min(self.state.rare_probability_offset + 1, 40);
+                    }
+                    _ => {}
+                }
+                offer
+            })
+            .collect()
     }
 
-    
-
-    pub fn generate_card_offer(&mut self, fight_type: Option<FightType>, available: &Vec<&'static BaseCard>) -> CardOffer {
-
-        let has_nloth = self.state.has_relic("N'loth's Gift");
+    pub fn generate_card_offer(
+        &mut self,
+        fight_type: Option<FightType>,
+        available: &[&'static BaseCard],
+    ) -> CardOffer {
+        let has_nloth = self.state.relics.contains("N'loth's Gift");
 
         let rarity_probabilities = match fight_type {
             Some(FightType::Common) => {
                 if has_nloth {
-                    [4 + self.state.card_rarity_offset, 37, 59 - self.state.card_rarity_offset]
+                    [
+                        4 + self.state.rare_probability_offset,
+                        37,
+                        59 - self.state.rare_probability_offset,
+                    ]
+                } else if self.state.rare_probability_offset < 2 {
+                    [
+                        0,
+                        35 + self.state.rare_probability_offset,
+                        65 - self.state.rare_probability_offset,
+                    ]
                 } else {
-                    if self.state.card_rarity_offset < 2 {
-                        [0, 35 + self.state.card_rarity_offset, 65 - self.state.card_rarity_offset]
-                    } else {
-                        [self.state.card_rarity_offset - 2, 37, 65 - self.state.card_rarity_offset]
-                    }
+                    [
+                        self.state.rare_probability_offset - 2,
+                        37,
+                        65 - self.state.rare_probability_offset,
+                    ]
                 }
             }
-            Some(FightType::Elite{..}) => {
+            Some(FightType::Elite { .. }) => {
                 if has_nloth {
-                    if self.state.card_rarity_offset < 31 {
-                        [25 + self.state.card_rarity_offset, 40, 35 - self.state.card_rarity_offset]
+                    if self.state.rare_probability_offset < 31 {
+                        [
+                            25 + self.state.rare_probability_offset,
+                            40,
+                            35 - self.state.rare_probability_offset,
+                        ]
                     } else {
-                        [25 + self.state.card_rarity_offset, 75 - self.state.card_rarity_offset, 0]
-                    }   
+                        [
+                            25 + self.state.rare_probability_offset,
+                            75 - self.state.rare_probability_offset,
+                            0,
+                        ]
+                    }
                 } else {
-                    [5 + self.state.card_rarity_offset, 40, 55 - self.state.card_rarity_offset]
+                    [
+                        5 + self.state.rare_probability_offset,
+                        40,
+                        55 - self.state.rare_probability_offset,
+                    ]
                 }
-            },
+            }
             Some(FightType::Boss) => [100, 0, 0],
-            None => [4 + self.state.card_rarity_offset, 37, 59 - self.state.card_rarity_offset],
+            None => [
+                4 + self.state.rare_probability_offset,
+                37,
+                59 - self.state.rare_probability_offset,
+            ],
         };
 
         let [mut rare, mut uncommon, mut common] = rarity_probabilities;
@@ -871,7 +842,7 @@ impl GamePossibility {
                 Rarity::Rare => has_rare = true,
                 Rarity::Uncommon => has_uncommon = true,
                 Rarity::Common => has_common = true,
-                _ => panic!("Unexpected rarity!")
+                _ => panic!("Unexpected rarity!"),
             }
         }
 
@@ -885,32 +856,30 @@ impl GamePossibility {
             common = 0;
         }
 
-        let rarity = *self.probability.choose_weighted(&vec![
-            (Rarity::Rare, rare),
-            (Rarity::Uncommon, uncommon),
-            (Rarity::Common, common)
-        ]).unwrap();
+        let rarity = *self
+            .probability
+            .choose_weighted(&[
+                (Rarity::Rare, rare),
+                (Rarity::Uncommon, uncommon),
+                (Rarity::Common, common),
+            ])
+            .unwrap();
 
-        if rarity == Rarity::Rare {
-            self.state.card_rarity_offset = 0;
-        } else {
-            self.state.card_rarity_offset = std::cmp::min(self.state.card_rarity_offset + 1, 40);
-        }
+        let card = self
+            .probability
+            .choose(
+                available
+                    .iter()
+                    .filter(|card| card.rarity == rarity)
+                    .collect(),
+            )
+            .unwrap();
 
-        let card = self.probability.choose(available.iter().filter(|card| card.rarity == rarity).collect()).unwrap();
-
-        let is_default_upgraded = 
-        match card._type {
-            CardType::Attack => {
-                self.state.has_relic("Molten Egg")
-            }
-            CardType::Skill => {
-                self.state.has_relic("Toxic Egg")
-            }
-            CardType::Power => {
-                self.state.has_relic("Frozen Egg")
-            }
-            _ => panic!("Unexpected card type!")
+        let is_default_upgraded = match card._type {
+            CardType::Attack => self.state.relics.contains("Molten Egg"),
+            CardType::Skill => self.state.relics.contains("Toxic Egg"),
+            CardType::Power => self.state.relics.contains("Frozen Egg"),
+            _ => panic!("Unexpected card type!"),
         };
 
         let is_upgraded = is_default_upgraded || {
@@ -918,10 +887,13 @@ impl GamePossibility {
                 1 => 0,
                 2 => 2,
                 3 | 4 => 4,
-                _ => panic!("Unexpected ascension")
+                _ => panic!("Unexpected ascension"),
             } / if self.state.asc < 12 { 1 } else { 2 };
 
-            *self.probability.choose_weighted(&vec![(true, chance), (false, 8 - chance)]).unwrap()
+            *self
+                .probability
+                .choose_weighted(&[(true, chance), (false, 8 - chance)])
+                .unwrap()
         };
 
         CardOffer {
@@ -931,11 +903,11 @@ impl GamePossibility {
     }
 
     fn scry(&mut self, count: usize) {
-        let cards = self.state.battle_state.draw_top_known.take(count);
+        let cards = self.state.floor_state.battle().draw_top_known.take(count);
 
         let remaining_cards = count - cards.len();
         if remaining_cards > 0 {
-            let mut to_draw = self.state.battle_state.draw.clone();
+            let mut to_draw = self.state.floor_state.battle().draw.clone();
             for card in cards {
                 to_draw.remove(&card);
             }
@@ -944,18 +916,48 @@ impl GamePossibility {
                 .probability
                 .choose_multiple(to_draw.into_iter().collect(), remaining_cards);
             for card in additional_cards {
-                self.state.battle_state.draw_top_known.push_back(card);
+                self.state
+                    .floor_state
+                    .battle_mut()
+                    .draw_top_known
+                    .push_back(card);
+            }
+        }
+        let battle = self.state.floor_state.battle();
+        let mut choices = vec![];
+        let mut unknown_cards = battle.draw.clone();
+        for card in &battle.draw_top_known {
+            unknown_cards.remove(card);
+        }
+        for card in &battle.draw_bottom_known {
+            unknown_cards.remove(card);
+        }
+
+        let mut unknown_cards = unknown_cards.into_iter().collect_vec();
+
+        for i in 0..count {
+            if let Some(top) = battle.draw_top_known.get(i) {
+                choices.push(*top);
+            } else if let Some(bottom) = battle.draw_bottom_known.get(battle.draw.len() - i - 1) {
+                choices.push(*bottom);
+            } else {
+                let choice = self.probability.range(unknown_cards.len());
+                choices.push(unknown_cards.remove(choice));
             }
         }
 
-        let choices = self.state.battle_state.draw_top_known.take(count);
-
-        self.state.card_choices = CardChoiceState {
-            count: Some((0, choices.len())),
-            choices,
-            location: CardLocation::DeckPile,
-            effect: CardChoiceEffect::Scry,
-        };
+        self.state.screen_state = ScreenState::CardChoose(CardChoiceState {
+            count_range: (0..choices.len() + 1),
+            choices: choices
+                .into_iter()
+                .map(|uuid| CardReference {
+                    location: CardLocation::DrawPile,
+                    uuid,
+                    base: battle.cards[&uuid].base,
+                })
+                .collect(),
+            then: vector![CardEffect::MoveTo(CardDestination::DiscardPile)],
+        });
     }
 
     pub fn random_potion(&mut self, no_healing: bool) -> &'static BasePotion {
@@ -969,13 +971,10 @@ impl GamePossibility {
 
         let potions = models::potions::POTIONS
             .values()
-            .filter(|a| 
-                a.rarity == rarity 
-                && !(no_healing && a.name == "Fruit Juice")
-            )
+            .filter(|a| a.rarity == rarity && !(no_healing && a.name == "Fruit Juice"))
             .collect_vec();
 
-        &self.probability.choose(potions).unwrap()
+        self.probability.choose(potions).unwrap()
     }
 
     pub fn fight(&mut self, monsters: &[String], fight_type: FightType) {
@@ -991,7 +990,7 @@ impl GamePossibility {
             .values()
             .map(|c| (c.uuid, c.duplicate()))
             .collect();
-        let draw_top = if self.state.has_relic("Frozen Eye") {
+        let draw_top = if self.state.relics.contains("Frozen Eye") {
             cards.values().map(|c| c.uuid).collect()
         } else {
             Vector::new()
@@ -999,7 +998,7 @@ impl GamePossibility {
 
         let orb_slots = if self.state.class == Class::Defect {
             3
-        } else if self.state.has_relic("Prismatic Shard") {
+        } else if self.state.relics.contains("Prismatic Shard") {
             1
         } else {
             0
@@ -1007,7 +1006,7 @@ impl GamePossibility {
 
         let mut energy = 3;
 
-        for relic in self.state.relics.values() {
+        for relic in self.state.relics.relics.values() {
             if relic.base.energy_relic {
                 energy += 1;
             }
@@ -1022,23 +1021,33 @@ impl GamePossibility {
                 (monster.uuid, monster)
             })
             .collect();
-        
+
         if let FightType::Elite { burning } = fight_type {
-            let burning_type = if burning {self.probability.range(4)} else {4};
-            let has_preserved_insect = self.state.has_relic("Preserved Insect");
+            let burning_type = if burning {
+                self.probability.range(4)
+            } else {
+                4
+            };
+            let has_preserved_insect = self.state.relics.contains("Preserved Insect");
             if burning || has_preserved_insect {
                 monsters.iter_mut().for_each(|(_, monster)| {
                     match burning_type {
-                        0 => monster.creature.add_buff("Strength", (self.state.act + 1) as i16),
+                        0 => monster
+                            .creature
+                            .add_buff("Strength", (self.state.act + 1) as i16),
                         1 => {
                             let new_hp = monster.creature.max_hp + monster.creature.max_hp / 4;
                             monster.creature.max_hp = new_hp;
                             monster.creature.hp = new_hp;
                         }
-                        2 => monster.creature.add_buff("Metallicize", (self.state.act*2 + 2) as i16),
-                        3 => monster.creature.add_buff("Regenerate", (self.state.act*2 + 1) as i16),
-                        4 => {},
-                        _ => panic!("Unexpected burning type!")
+                        2 => monster
+                            .creature
+                            .add_buff("Metallicize", (self.state.act * 2 + 2) as i16),
+                        3 => monster
+                            .creature
+                            .add_buff("Regenerate", (self.state.act * 2 + 1) as i16),
+                        4 => {}
+                        _ => panic!("Unexpected burning type!"),
                     }
                     if has_preserved_insect {
                         monster.creature.hp = monster.creature.max_hp * 3 / 4;
@@ -1047,7 +1056,7 @@ impl GamePossibility {
             }
         }
 
-        self.state.battle_state = BattleState {
+        let mut battle_state = BattleState {
             active: true,
             fight_type,
             draw_top_known: draw_top,
@@ -1063,7 +1072,11 @@ impl GamePossibility {
             ..BattleState::new()
         };
 
-        for monster_ref in self.state.battle_state.available_monsters().collect_vec() {
+        if let Some(relic) = self.state.relics.find_mut("Magic Flower") {
+            relic.enabled = true;
+        }
+
+        for monster_ref in battle_state.available_monsters().collect_vec() {
             let creature_ref = monster_ref.creature_ref();
             if let Some(x) = monster_ref
                 .base
@@ -1071,7 +1084,7 @@ impl GamePossibility {
                 .as_ref()
                 .map(|a| self.eval_range(a, creature_ref))
             {
-                self.state.get_mut(monster_ref).vars.x = x
+                battle_state.get_monster_mut(monster_ref).unwrap().vars.x = x
             }
             if let Some(n) = monster_ref
                 .base
@@ -1079,13 +1092,15 @@ impl GamePossibility {
                 .as_ref()
                 .map(|a| self.eval_range(a, creature_ref))
             {
-                let monster = self.state.get_mut(monster_ref);
+                let monster = battle_state.get_monster_mut(monster_ref).unwrap();
                 monster.vars.n = n;
                 monster.vars.n_reset = n;
             }
 
             self.set_monster_move(0, 0, monster_ref);
         }
+
+        self.state.floor_state = FloorState::Battle(battle_state);
 
         self.shuffle();
     }
@@ -1094,7 +1109,7 @@ impl GamePossibility {
         let base = crate::models::monsters::by_name(name);
         let upgrade_asc = match base.fight_type {
             FightType::Common => 7,
-            FightType::Elite{..} => 8,
+            FightType::Elite { .. } => 8,
             FightType::Boss => 9,
         };
 
@@ -1125,16 +1140,20 @@ impl GamePossibility {
 
     pub fn end_turn(&mut self) {
         self.eval_when(When::BeforeHandDiscard);
-        let has_runic_pyramid = self.state.has_relic("Runic Pyramid");
-        for card_ref in self.state.battle_state.hand().collect_vec() {
+        let has_runic_pyramid = self.state.relics.contains("Runic Pyramid");
+        for card_ref in self.state.floor_state.battle().hand().collect_vec() {
             let binding = Binding::Card(card_ref);
-            if self.state.get(card_ref).retain {
+            if self.state.floor_state.battle().get_card(card_ref).retain {
                 self.eval_effects(&card_ref.base.on_retain, binding, None);
                 if !self.eval_condition(&card_ref.base.retain, binding, None) {
-                    self.state.get_mut(card_ref).retain = false;
+                    self.state
+                        .floor_state
+                        .battle_mut()
+                        .get_card_mut(card_ref)
+                        .retain = false;
                 }
             } else if !has_runic_pyramid {
-                self.state.battle_state.move_card(
+                self.state.floor_state.battle_mut().move_card(
                     CardDestination::DiscardPile,
                     card_ref,
                     &mut self.probability,
@@ -1143,22 +1162,21 @@ impl GamePossibility {
             self.eval_effects(&card_ref.base.on_turn_end, binding, None);
         }
         self.eval_when(When::BeforeEnemyMove);
-        let monsters = self
-            .state
-            .battle_state
-            .monsters
-            .values()
-            .sorted_by_key(|a| a.index)
-            .map(|a| a.monster_ref())
-            .collect_vec();
-        for monster_ref in &monsters {
-            let monster = self.state.get_mut(*monster_ref);
-            if !monster.creature.has_buff("Barricade") {
-                monster.creature.block = 0;
+        {
+            let battle_state = self.state.floor_state.battle_mut();
+            for (_, monster) in battle_state
+                .monsters
+                .iter_mut()
+                .sorted_by_key(|(_, a)| a.index)
+            {
+                if !monster.creature.has_buff("Barricade") {
+                    monster.creature.block = 0;
+                }
             }
-        }
-        for monster in monsters {
-            self.next_monster_move(monster);
+
+            for monster in battle_state.available_monsters().collect_vec() {
+                self.next_monster_move(monster);
+            }
         }
         self.eval_when(When::AfterEnemyMove);
         self.eval_when(When::TurnEnd);
@@ -1166,26 +1184,29 @@ impl GamePossibility {
     }
 
     fn start_turn(&mut self, combat_start: bool) {
-        if !self.state.player.has_buff("Barricade") && !self.state.player.has_buff("Blur") {
-            if self.state.has_relic("Calipers") {
-                self.state.player.block = self.state.player.block.saturating_sub(15);
+        if !self.state.player.creature.has_buff("Barricade")
+            && !self.state.player.creature.has_buff("Blur")
+        {
+            if self.state.relics.contains("Calipers") {
+                self.state.player.creature.block =
+                    self.state.player.creature.block.saturating_sub(15);
             } else {
-                self.state.player.block = 0;
+                self.state.player.creature.block = 0;
             }
         }
 
         self.eval_when(When::BeforeHandDraw);
 
         let mut cards_to_draw = 5;
-        if self.state.has_relic("Snecko Eye") {
+        if self.state.relics.contains("Snecko Eye") {
             cards_to_draw += 2;
         }
-        if combat_start && self.state.has_relic("Bag of Preparation") {
+        if combat_start && self.state.relics.contains("Bag of Preparation") {
             cards_to_draw += 2;
         }
-        if let Some(buff) = self.state.player.find_buff("Draw Card") {
+        if let Some(buff) = self.state.player.creature.find_buff("Draw Card") {
             cards_to_draw += buff.vars.x;
-            self.state.player.remove_buff_by_name("Draw Card");
+            self.state.player.creature.remove_buff_by_name("Draw Card");
         }
         self.draw(cards_to_draw as u8);
 
@@ -1193,61 +1214,84 @@ impl GamePossibility {
     }
 
     fn next_monster_move(&mut self, monster: MonsterReference) {
-        let choices = self.state.get(monster).current_move_options.iter().copied().collect();
-        let current_move = self.probability.choose_weighted(&choices).expect("No current moves listed!");
-        self.eval_effects(
-            &current_move.effects,
-            Binding::Monster(monster),
-            None,
-        );
-        self.next_move(monster, current_move);
+        let current_move =
+            if let Some(monster) = self.state.floor_state.battle().get_monster(monster) {
+                let choices = monster.current_move_options.iter().copied().collect_vec();
+                let choice = self
+                    .probability
+                    .choose_weighted(&choices)
+                    .expect("No current moves listed!");
+                Some(*choice)
+            } else {
+                None
+            };
+
+        if let Some(current_move) = current_move {
+            self.eval_effects(
+                &current_move.effects,
+                Binding::Creature(CreatureReference::Creature(monster)),
+                None,
+            );
+            self.next_move(monster, current_move);
+        }
     }
 
     fn next_move(&mut self, monster_ref: MonsterReference, performed_move: &'static MonsterMove) {
-        let (index, phase) = {
-            let monster = self.state.get_mut(monster_ref);
-            if let Some(last_move) = monster.last_move {
-                if last_move == performed_move {
-                    monster.last_move_count += 1;
-                } else {
-                    monster.last_move = Some(last_move);
-                    monster.last_move_count = 1;
-                }
-            };
-            (monster.index, monster.phase)
-        };
-
-        self.set_monster_move(index + 1, phase, monster_ref);
+        if let Some((index, phase)) = self
+            .state
+            .floor_state
+            .battle_mut()
+            .get_monster_mut(monster_ref)
+            .map(|monster| {
+                if let Some(last_move) = monster.last_move {
+                    if last_move == performed_move {
+                        monster.last_move_count += 1;
+                    } else {
+                        monster.last_move = Some(last_move);
+                        monster.last_move_count = 1;
+                    }
+                };
+                (monster.index, monster.phase)
+            })
+        {
+            self.set_monster_move(index + 1, phase, monster_ref);
+        }
     }
 
-    fn draw(&mut self, n: u8) {
-        let mut cards = Vec::new();
-        for _ in 0..n {
-            if self.state.battle_state.draw.is_empty() {
-                self.shuffle();
-            }
-            if self.state.battle_state.draw.is_empty() {
+    fn draw(&mut self, mut n: u8) {
+        let mut cards = vec![];
+        while n > 0 {
+            if self.state.floor_state.battle().hand.len() == 10 {
                 break;
             }
-            let next_card = self.state.battle_state.draw_top_known.pop_back();
+            if self.state.floor_state.battle().draw.is_empty() {
+                self.shuffle();
+            }
 
-            let uuid = match next_card {
-                Some(uuid) => uuid,
-                None => {
-                    let choices = self.state.battle_state.draw.iter().cloned().collect_vec();
-                    self.probability.choose(choices).unwrap()
-                }
-            };
+            let battle = self.state.floor_state.battle_mut();
 
-            self.state.battle_state.draw.remove(&uuid);
-            let card = self
-                .state
-                .battle_state
-                .cards
-                .get(&uuid)
-                .unwrap()
-                .reference(CardLocation::DrawPile);
-            cards.push(card)
+            if battle.draw.is_empty() {
+                break;
+            }
+
+            battle.peek_top(n, &mut self.probability);
+
+            let mut to_draw = battle
+                .draw_top_known
+                .split_off(battle.draw_top_known.len().min(n as usize));
+            std::mem::swap(&mut to_draw, &mut battle.draw_top_known); // Split off splits the wrong way, so we swap the two vectors
+
+            n -= to_draw.len() as u8;
+
+            for uuid in to_draw {
+                let reference = battle
+                    .cards
+                    .get(&uuid)
+                    .unwrap()
+                    .reference(CardLocation::DrawPile);
+                battle.draw.remove(&uuid).unwrap();
+                cards.push(reference);
+            }
         }
 
         for card in cards {
@@ -1258,11 +1302,11 @@ impl GamePossibility {
     }
 
     fn shuffle(&mut self) {
-        if self.state.has_relic("Frozen Eye") {
-            self.shuffle()
+        if self.state.relics.contains("Frozen Eye") {
+            unimplemented!();
         } else {
-            self.state.battle_state.draw_top_known = Vector::new();
-            self.state.battle_state.draw_bottom_known = Vector::new();
+            self.state.floor_state.battle_mut().draw_top_known = Vector::new();
+            self.state.floor_state.battle_mut().draw_bottom_known = Vector::new();
         }
     }
 
@@ -1272,97 +1316,35 @@ impl GamePossibility {
         position: RelativePosition,
     ) -> Vec<CardReference> {
         match position {
-            RelativePosition::All => self.state.in_location(location),
+            RelativePosition::All => self.state.floor_state.battle().cards_in_location(location),
             RelativePosition::Random => self
                 .probability
-                .choose(self.state.in_location(location))
+                .choose(self.state.floor_state.battle().cards_in_location(location))
                 .into_iter()
                 .collect(),
             RelativePosition::Top => match location {
                 CardLocation::DrawPile => {
-                    let uuid = self
-                        .state
-                        .battle_state
-                        .draw_top_known
-                        .back()
-                        .cloned()
-                        .unwrap_or_else(|| {
-                            let draw_top: HashSet<Uuid> = self
-                                .state
-                                .battle_state
-                                .draw_top_known
-                                .iter()
-                                .cloned()
-                                .collect();
-                            let difference = self
-                                .state
-                                .battle_state
-                                .draw
-                                .iter()
-                                .filter(|uuid| draw_top.contains(uuid))
-                                .cloned()
-                                .collect_vec();
-                            self.probability.choose(difference).unwrap()
-                        });
+                    self.state
+                        .floor_state
+                        .battle_mut()
+                        .peek_top(1, &mut self.probability);
 
-                    vec![CardReference {
-                        location: CardLocation::DrawPile,
-                        uuid,
-                        base: self.state.battle_state.cards[&uuid].base,
-                    }]
-                }
-                _ => panic!("Unepxected location in RelativePosition::Bottom"),
-            },
-            RelativePosition::Bottom => match location {
-                CardLocation::DrawPile => {
-                    if self.state.battle_state.draw_top_known.len()
-                        == self.state.battle_state.draw.len()
-                    {
-                        self.state
-                            .battle_state
-                            .draw_top_known
-                            .front()
-                            .map(|uuid| CardReference {
-                                location: CardLocation::DrawPile,
-                                uuid: *uuid,
-                                base: self.state.battle_state.cards[uuid].base,
-                            })
-                            .into_iter()
-                            .collect_vec()
-                    } else {
-                        let uuid = self
-                            .state
-                            .battle_state
-                            .draw_bottom_known
-                            .back()
-                            .cloned()
-                            .unwrap_or_else(|| {
-                                let draw_top: HashSet<Uuid> = self
-                                    .state
-                                    .battle_state
-                                    .draw_top_known
-                                    .iter()
-                                    .cloned()
-                                    .collect();
-                                let difference = self
-                                    .state
-                                    .battle_state
-                                    .draw
-                                    .iter()
-                                    .filter(|uuid| draw_top.contains(uuid))
-                                    .cloned()
-                                    .collect_vec();
-                                self.probability.choose(difference).unwrap()
-                            });
-                        vec![CardReference {
+                    self.state
+                        .floor_state
+                        .battle()
+                        .draw_top_known
+                        .get(0)
+                        .map(|uuid| CardReference {
                             location: CardLocation::DrawPile,
-                            uuid,
-                            base: self.state.battle_state.cards[&uuid].base,
-                        }]
-                    }
+                            uuid: *uuid,
+                            base: self.state.floor_state.battle().cards[uuid].base,
+                        })
+                        .into_iter()
+                        .collect()
                 }
                 _ => panic!("Unepxected location in RelativePosition::Bottom"),
             },
+            RelativePosition::Bottom => panic!("Unepxected RelativePosition::Bottom"),
         }
     }
 
@@ -1398,14 +1380,16 @@ impl GamePossibility {
     }
 
     fn channel_orb(&mut self, orb_type: OrbType) {
-        if self.state.battle_state.orbs.len() == self.state.battle_state.orb_slots as usize {
+        if self.state.floor_state.battle().orbs.len()
+            == self.state.floor_state.battle().orb_slots as usize
+        {
             self.evoke_orb(1);
         }
 
         let n = match orb_type {
             OrbType::Any => panic!("Unexpected Any orb type"),
             OrbType::Dark => {
-                let focus = self.state.player.get_buff_amount("Focus");
+                let focus = self.state.player.creature.get_buff_amount("Focus");
                 std::cmp::max(focus + 6, 0) as u16
             }
             _ => 0,
@@ -1413,36 +1397,43 @@ impl GamePossibility {
 
         let orb = Orb { base: orb_type, n };
 
-        self.state.battle_state.orbs.push_back(orb);
+        self.state.floor_state.battle_mut().orbs.push_back(orb);
     }
 
     fn add_block(&mut self, amount: u16, target: CreatureReference) {
-        let mut_creature = self.state.get_mut(target);
-        let new_block = std::cmp::min(mut_creature.block + amount, 999);
-        mut_creature.block = new_block;
-        self.eval_target_when(When::OnBlock, target)
+        if let Some(mut_creature) = self.state.get_creature_mut(target) {
+            let new_block = std::cmp::min(mut_creature.block + amount, 999);
+            mut_creature.block = new_block;
+            self.eval_target_when(When::OnBlock, target)
+        }
     }
 
     pub fn eval_when(&mut self, when: When) {
         self.eval_target_when(when.clone(), CreatureReference::Player);
 
-        for creature in self.state.battle_state.available_creatures().collect_vec() {
+        for creature in self
+            .state
+            .floor_state
+            .battle()
+            .available_creatures()
+            .collect_vec()
+        {
             self.eval_target_when(when.clone(), creature);
         }
     }
 
     fn eval_target_when(&mut self, when: When, target: CreatureReference) {
         self.eval_creature_buff_when(target, when.clone());
-        if target == CreatureReference::Player {
-            self.eval_relic_when(when);
+        if let Some(monster_ref) = target.monster_ref() {
+            self.eval_monster_when(monster_ref, when);
         } else {
-            self.eval_monster_when(target.monster_ref(&self.state), when);
+            self.eval_relic_when(when);
         }
     }
 
     fn eval_monster_when(&mut self, monster_ref: MonsterReference, when: When) {
         let phase = {
-            if let Some(monster) = self.state.get_opt(monster_ref) {
+            if let Some(monster) = self.state.floor_state.battle().get_monster(monster_ref) {
                 monster.whens.get(&when).map(|a| a.as_str())
             } else {
                 None
@@ -1457,7 +1448,10 @@ impl GamePossibility {
     fn set_monster_phase(&mut self, phase: &str, monster: MonsterReference) {
         let new_phase = self
             .state
-            .get_mut(monster)
+            .floor_state
+            .battle()
+            .get_monster(monster)
+            .unwrap()
             .base
             .phases
             .iter()
@@ -1473,10 +1467,16 @@ impl GamePossibility {
         monster_ref: MonsterReference,
     ) {
         let (base, last_move, last_move_count) = {
-            let monster = self.state.get(monster_ref);
+            let monster = self
+                .state
+                .floor_state
+                .battle()
+                .get_monster(monster_ref)
+                .unwrap();
             (monster.base, monster.last_move, monster.last_move_count)
         };
-        let binding = Binding::Monster(monster_ref);
+
+        let binding = Binding::Creature(CreatureReference::Creature(monster_ref));
 
         let next_move = loop {
             let mut phase = base.phases.get(phase_index).unwrap();
@@ -1510,9 +1510,9 @@ impl GamePossibility {
                         })
                         .collect_vec();
 
-                    if self.state.has_relic("Runic Dome") {
+                    if self.state.relics.contains("Runic Dome") {
                         available_probabilites
-                    } else  {
+                    } else {
                         self.probability
                             .choose_weighted(&available_probabilites)
                             .into_iter()
@@ -1551,31 +1551,32 @@ impl GamePossibility {
             }
         };
 
-        let monster = self.state.get_mut(monster_ref);
+        let monster = self
+            .state
+            .floor_state
+            .battle_mut()
+            .get_monster_mut(monster_ref)
+            .unwrap();
 
-
-        monster.current_move_options = 
-
-        next_move.into_iter().map(|(m, p)| {
-            (monster
-                .base
-                .moveset
-                .iter()
-                .find(|a| &a.name == m)
-                .unwrap()
-                , p)
-        }).collect();
-        
+        monster.current_move_options = next_move
+            .into_iter()
+            .map(|(m, p)| {
+                (
+                    monster.base.moveset.iter().find(|a| &a.name == m).unwrap(),
+                    p,
+                )
+            })
+            .collect();
 
         monster.index = move_index;
         monster.phase = phase_index;
     }
 
     fn eval_relic_when(&mut self, when: When) {
-        if let Some(relic_ids) = self.state.relic_whens.get(&when).cloned() {
+        if let Some(relic_ids) = self.state.relics.relic_whens.get(&when).cloned() {
             for relic_id in relic_ids {
                 let (base, mut x, mut enabled, relic_ref) = {
-                    let relic = &self.state.relics[&relic_id];
+                    let relic = &self.state.relics.relics[&relic_id];
                     (
                         relic.base,
                         relic.vars.x as u16,
@@ -1631,7 +1632,7 @@ impl GamePossibility {
                     }
                 }
                 {
-                    let relic = self.state.get_mut(relic_ref);
+                    let relic = self.state.relics.get_mut(relic_ref);
                     relic.vars.x = x as i16;
                     relic.enabled = enabled;
                 }
@@ -1640,10 +1641,14 @@ impl GamePossibility {
     }
 
     fn eval_creature_buff_when(&mut self, creature_ref: CreatureReference, when: When) {
-        if let Some(buff_ids) = self.state.get(creature_ref).buffs_when.get(&when).cloned() {
+        if let Some(buff_ids) = self
+            .state
+            .get_creature(creature_ref)
+            .and_then(|c| c.buffs_when.get(&when).cloned())
+        {
             for buff_id in buff_ids {
                 let (base, buff_ref) = {
-                    let buff = &self.state.get(creature_ref).buffs[&buff_id];
+                    let buff = &self.state.get_creature(creature_ref).unwrap().buffs[&buff_id];
                     (buff.base, buff.reference(creature_ref))
                 };
 
@@ -1658,29 +1663,38 @@ impl GamePossibility {
                 }
 
                 if base.expire_at == when {
-                    self.state.get_mut(creature_ref).remove_buff(buff_ref);
+                    self.state
+                        .get_creature_mut(creature_ref)
+                        .unwrap()
+                        .remove_buff(buff_ref);
                 } else if base.reduce_at == when {
                     let should_remove = {
-                        let buff = self.state.get_mut(buff_ref);
-                        if buff.stacked_vars.is_empty() {
-                            buff.vars.x += 1;
-                        } else {
-                            for mut var in buff.stacked_vars.iter_mut() {
-                                var.x -= 1;
-                            }
+                        if let Some(buff) = self.state.get_buff_mut(buff_ref) {
+                            if buff.stacked_vars.is_empty() {
+                                buff.vars.x += 1;
+                            } else {
+                                for mut var in buff.stacked_vars.iter_mut() {
+                                    var.x -= 1;
+                                }
 
-                            buff.stacked_vars = buff
-                                .stacked_vars
-                                .iter()
-                                .filter(|var| var.x > 0)
-                                .cloned()
-                                .collect();
+                                buff.stacked_vars = buff
+                                    .stacked_vars
+                                    .iter()
+                                    .filter(|var| var.x > 0)
+                                    .cloned()
+                                    .collect();
+                            }
+                            buff.stacked_vars.is_empty() && buff.vars.x == 0
+                        } else {
+                            false
                         }
-                        buff.stacked_vars.is_empty() && buff.vars.x == 0
                     };
 
                     if should_remove {
-                        self.state.get_mut(creature_ref).remove_buff(buff_ref);
+                        self.state
+                            .get_creature_mut(creature_ref)
+                            .unwrap()
+                            .remove_buff(buff_ref);
                     }
                 }
             }
@@ -1688,29 +1702,28 @@ impl GamePossibility {
     }
 
     fn evoke_orb(&mut self, times: u8) {
-        if let Some(orb) = self.state.battle_state.orbs.pop_front() {
+        if let Some(orb) = self.state.floor_state.battle_mut().orbs.pop_front() {
             match orb.base {
                 OrbType::Any => panic!("Unexpected OrbType of any"),
                 OrbType::Dark => {
                     for _ in 0..times {
                         let lowest_monster = self
                             .state
-                            .battle_state
+                            .floor_state
+                            .battle()
                             .monsters
                             .values()
                             .filter(|m| m.targetable)
                             .min_by_key(|m| m.creature.hp)
-                            .map(|m| m.uuid);
+                            .map(|m| m.creature_ref());
 
-                        if let Some(uuid) = lowest_monster {
-                            let creature = CreatureReference::Creature(uuid);
-
-                            self.damage(orb.n as u16, creature, None, true);
+                        if let Some(creature_ref) = lowest_monster {
+                            self.damage(orb.n as u16, creature_ref, None, true);
                         }
                     }
                 }
                 OrbType::Frost => {
-                    let focus = self.state.player.get_buff_amount("Focus");
+                    let focus = self.state.player.creature.get_buff_amount("Focus");
                     let block_amount = std::cmp::max(focus + 5, 0) as u16;
 
                     for _ in 0..times {
@@ -1718,145 +1731,151 @@ impl GamePossibility {
                     }
                 }
                 OrbType::Lightning => {
-                    let has_electro_dynamics = self.state.player.has_buff("Electro");
-                    let focus = self.state.player.get_buff_amount("Focus");
+                    let has_electro_dynamics = self.state.player.creature.has_buff("Electro");
+                    let focus = self.state.player.creature.get_buff_amount("Focus");
                     let orb_damage = std::cmp::max(8 + focus, 0) as u16;
                     for _ in 0..times {
                         if has_electro_dynamics {
-                            for monster in
-                                self.state.battle_state.available_monsters().collect_vec()
+                            for monster in self
+                                .state
+                                .floor_state
+                                .battle()
+                                .available_monsters()
+                                .collect_vec()
                             {
-                                self.damage(
-                                    orb_damage,
-                                    monster.creature_ref(),
-                                    None,
-                                    true
-                                );
+                                self.damage(orb_damage, monster.creature_ref(), None, true);
                             }
                         } else {
-                            let monsters =
-                                self.state.battle_state.available_monsters().collect_vec();
+                            let monsters = self
+                                .state
+                                .floor_state
+                                .battle()
+                                .available_monsters()
+                                .collect_vec();
                             if let Some(selected) = self.probability.choose(monsters) {
-                                self.damage(
-                                    orb_damage,
-                                    selected.creature_ref(),
-                                    None,
-                                    true
-                                );
+                                self.damage(orb_damage, selected.creature_ref(), None, true);
                             }
                         }
                     }
                 }
-                OrbType::Plasma => self.state.battle_state.energy += 2 * times,
+                OrbType::Plasma => self.state.floor_state.battle_mut().energy += 2 * times,
             }
         }
     }
 
-    fn damage(&mut self, amount: u16, creature_ref: CreatureReference, attacker: Option<CreatureReference>, is_orb: bool) -> bool {
+    fn damage(
+        &mut self,
+        amount: u16,
+        creature_ref: CreatureReference,
+        attacker: Option<CreatureReference>,
+        is_orb: bool,
+    ) -> bool {
         let hp_loss = {
-            let creature = self.state.get(creature_ref);
-            let mut multiplier = 1.0;
-
-            if let Some(attacker) = attacker {
-                if creature.has_buff("Vulnerable") {
-                    if creature.is_player {
-                        if self.state.has_relic("Odd Mushroom") {
+            if let Some(creature) = self.state.get_creature(creature_ref) {
+                let mut multiplier = 1.0;
+                if let Some(attacker) = attacker {
+                    if creature.has_buff("Vulnerable") {
+                        if creature.is_player && self.state.relics.contains("Odd Mushroom") {
                             multiplier += 0.25;
-                        } else {
-                            multiplier += 0.5;
-                        }
-                    } else {
-                        if self.state.has_relic("Paper Phrog") {
+                        } else if !creature.is_player && self.state.relics.contains("Paper Phrog") {
                             multiplier += 0.75;
                         } else {
                             multiplier += 0.5;
                         }
                     }
-                }
-                if self.state.get(attacker).has_buff("Weak") {
-                    if creature.is_player && self.state.has_relic("Paper Krane") {
-                        multiplier -= 0.4;
-                    } else {
-                        multiplier -= 0.25;
+                    if let Some(attacker_creature) = self.state.get_creature(attacker) {
+                        if attacker_creature.has_buff("Weak") {
+                            if creature.is_player && self.state.relics.contains("Paper Krane") {
+                                multiplier -= 0.4;
+                            } else {
+                                multiplier -= 0.25;
+                            }
+                        }
                     }
                 }
-            }
 
-            if is_orb {
-                if creature.has_buff("Lock On") {
+                if is_orb && creature.has_buff("Lock On") {
                     multiplier += 0.5;
                 }
-            }
 
-            if let Some(buff) = creature.find_buff("Slow") {
-                multiplier += 0.1 * buff.vars.x as f64;
-            }
-            let mut full_amount = (amount as f64 * multiplier).floor() as u16;
+                if let Some(buff) = creature.find_buff("Slow") {
+                    multiplier += 0.1 * buff.vars.x as f64;
+                }
+                let mut full_amount = (amount as f64 * multiplier).floor() as u16;
 
-            if creature.has_buff("Intangible") {
-                full_amount = 1;
-            }
+                if creature.has_buff("Intangible") {
+                    full_amount = 1;
+                }
 
-            let blocked_amount = full_amount.saturating_sub(creature.block);
-            let mut unblocked_amount = full_amount - blocked_amount;
+                let blocked_amount = full_amount.saturating_sub(creature.block);
+                let mut unblocked_amount = full_amount - blocked_amount;
 
-            if unblocked_amount > 0 {
-                if creature.is_player { 
-                    if unblocked_amount <= 5 && self.state.has_relic("Torii") {
-                        unblocked_amount = 1;
-                    }
+                if unblocked_amount > 0 {
+                    if creature.is_player {
+                        if unblocked_amount <= 5 && self.state.relics.contains("Torii") {
+                            unblocked_amount = 1;
+                        }
 
-                    if self.state.has_relic("Tungsten Rod") {
-                        unblocked_amount -= 1;
-                    }
-                } else {
-                    if unblocked_amount < 5 && self.state.has_relic("The Boot") {
+                        if self.state.relics.contains("Tungsten Rod") {
+                            unblocked_amount -= 1;
+                        }
+                    } else if unblocked_amount < 5 && self.state.relics.contains("The Boot") {
                         unblocked_amount = 5;
                     }
                 }
-            }
-            
-            self.state.get_mut(creature_ref).block -= blocked_amount;
 
-            unblocked_amount
+                self.state.get_creature_mut(creature_ref).unwrap().block -= blocked_amount;
+
+                unblocked_amount
+            } else {
+                0
+            }
         };
 
-        if hp_loss > 0 {
-            if self.lose_hp(hp_loss, creature_ref, true) {
-                return true;
-            }
+        if hp_loss > 0 && self.lose_hp(hp_loss, creature_ref, true) {
+            return true;
         }
 
         false
     }
 
-    fn lose_hp(&mut self, mut amount: u16, creature_ref: CreatureReference, ignore_intangible: bool) -> bool {
+    fn lose_hp(
+        &mut self,
+        mut amount: u16,
+        creature_ref: CreatureReference,
+        ignore_intangible: bool,
+    ) -> bool {
         let new_hp = {
-            let creature = self.state.get_mut(creature_ref);
-            if !ignore_intangible && creature.has_buff("Intangible") {
-                amount = std::cmp::max(amount, 1);
-            }
-
-            if let Some(buff) = creature.find_buff_mut("Invincible") {
-                amount = std::cmp::min(amount, buff.vars.x as u16);
-                buff.vars.x -= amount as i16;
-            }
-
-            if let Some(mut buff_amount) = creature.find_buff("Mode Shift").map(|b| b.vars.x as u16) {
-                buff_amount = buff_amount.saturating_sub(amount);
-                if buff_amount == 0 {
-                    creature.remove_buff_by_name("Mode Shift")
-                } else {
-                    creature.find_buff_mut("Mode Shift").unwrap().vars.x = buff_amount as i16;
+            if let Some(creature) = self.state.get_creature_mut(creature_ref) {
+                if !ignore_intangible && creature.has_buff("Intangible") {
+                    amount = std::cmp::max(amount, 1);
                 }
-            }
 
-            creature.hp = creature.hp.saturating_sub(amount);
-            creature.hp
+                if let Some(buff) = creature.find_buff_mut("Invincible") {
+                    amount = std::cmp::min(amount, buff.vars.x as u16);
+                    buff.vars.x -= amount as i16;
+                }
+
+                if let Some(mut buff_amount) =
+                    creature.find_buff("Mode Shift").map(|b| b.vars.x as u16)
+                {
+                    buff_amount = buff_amount.saturating_sub(amount);
+                    if buff_amount == 0 {
+                        creature.remove_buff_by_name("Mode Shift")
+                    } else {
+                        creature.find_buff_mut("Mode Shift").unwrap().vars.x = buff_amount as i16;
+                    }
+                }
+
+                creature.hp = creature.hp.saturating_sub(amount);
+                creature.hp
+            } else {
+                return false;
+            }
         };
 
         if amount > 0 && creature_ref == CreatureReference::Player {
-            self.state.battle_state.hp_loss_count += 1;
+            self.state.floor_state.battle_mut().hp_loss_count += 1;
         }
 
         if new_hp == 0 {
@@ -1872,12 +1891,12 @@ impl GamePossibility {
                 let recovery: f64 =
                     if let Some(potion_ref) = self.state.find_potion("Fairy In A Bottle") {
                         self.state.potions[potion_ref.index] = None;
-                        if self.state.has_relic("Sacred Bark") {
+                        if self.state.relics.contains("Sacred Bark") {
                             0.6
                         } else {
                             0.3
                         }
-                    } else if let Some(relic) = self.state.find_relic_mut("Lizard Tail") {
+                    } else if let Some(relic) = self.state.relics.find_mut("Lizard Tail") {
                         if relic.enabled {
                             relic.enabled = false;
                             0.5
@@ -1889,31 +1908,34 @@ impl GamePossibility {
                     };
 
                 if recovery != 0.0 {
-                    let max_hp = self.state.get(creature_ref).max_hp;
+                    let max_hp = self.state.player.creature.max_hp;
                     self.heal(max_hp as f64 * recovery, creature_ref);
                 }
 
-                if self.state.player.hp == 0 {
+                if self.state.player.creature.hp == 0 {
                     self.state.won = Some(false);
                     true
                 } else {
                     false
                 }
             }
-            CreatureReference::Creature(uuid) => {
+            CreatureReference::Creature(monster_ref) => {
                 self.eval_target_when(When::OnDie, creature_ref);
 
-                let monster_ref = creature_ref.monster_ref(&self.state);
-                let monster_name = self.state.get(monster_ref).base.name.as_str();
+                let monster_name = monster_ref.base.name.as_str();
 
                 let dies = match monster_name {
                     "Awakened One" => {
-                        if self.state.get(monster_ref).vars.x == 0 {
-                            let monster_mut =
-                                creature_ref.get_monster_mut(&mut self.state).unwrap();
-                            monster_mut.vars.x = 1;
-                            monster_mut.targetable = false;
-                            monster_mut.creature.hp = 0;
+                        let monster = self
+                            .state
+                            .floor_state
+                            .battle_mut()
+                            .get_monster_mut(monster_ref)
+                            .unwrap();
+                        if monster.vars.x == 0 {
+                            monster.vars.x = 1;
+                            monster.targetable = false;
+                            monster.creature.hp = 0;
                             false
                         } else {
                             true
@@ -1922,23 +1944,37 @@ impl GamePossibility {
                     "Darkling" => {
                         if self
                             .state
-                            .battle_state
+                            .floor_state
+                            .battle()
                             .monsters
                             .values()
-                            .all(|a| !a.targetable || a.uuid == uuid)
+                            .all(|a| !a.targetable || a.uuid == monster_ref.uuid)
                         {
                             true
                         } else {
-                            let monster_mut =
-                                creature_ref.get_monster_mut(&mut self.state).unwrap();
+                            let monster_mut = self
+                                .state
+                                .floor_state
+                                .battle_mut()
+                                .get_monster_mut(monster_ref)
+                                .unwrap();
                             monster_mut.targetable = false;
                             monster_mut.creature.hp = 0;
                             false
                         }
-                    },
+                    }
                     "Bronze Orb" => {
-                        if let Some(buff) = self.state.get(creature_ref).find_buff("Stasis").map(|b| b.card_stasis.unwrap()) {
-                            self.state.battle_state.move_in(buff, CardDestination::PlayerHand, &mut self.probability);
+                        if let Some(buff) = self
+                            .state
+                            .get_creature(creature_ref)
+                            .and_then(|a| a.find_buff("Stasis"))
+                            .map(|b| b.card_stasis.unwrap())
+                        {
+                            self.state.floor_state.battle_mut().move_in(
+                                buff,
+                                CardDestination::PlayerHand,
+                                &mut self.probability,
+                            );
                         }
                         true
                     }
@@ -1946,7 +1982,7 @@ impl GamePossibility {
                 };
 
                 if dies {
-                    self.remove_monster(uuid);
+                    self.remove_monster(monster_ref.uuid);
                 }
 
                 dies
@@ -1955,7 +1991,7 @@ impl GamePossibility {
     }
 
     pub fn add_relic(&mut self, base: &'static BaseRelic) {
-        let reference = self.state.add_relic(base);
+        let reference = self.state.relics.add(base);
 
         match reference.base.activation {
             Activation::Immediate => {
@@ -1969,7 +2005,7 @@ impl GamePossibility {
                         } else {
                             CardType::Attack
                         };
-                        let available_cards: Vec<CardReference> = self
+                        let available_cards: Vec<DeckCard> = self
                             .state
                             .upgradable_cards()
                             .filter(|card| card_type.matches(card.base._type))
@@ -1978,7 +2014,7 @@ impl GamePossibility {
                         let cards = self.probability.choose_multiple(available_cards, 2);
 
                         for card in cards {
-                            self.state.get_mut(card).upgrade();
+                            self.state.deck[&card.uuid].upgrade();
                         }
                     }
                     _ => panic!("Unexpected custom activation"),
@@ -1988,25 +2024,28 @@ impl GamePossibility {
         }
     }
 
-    fn add_max_hp(&mut self, amount: u16) {
-        self.state.player.max_hp += amount;
-        self.heal(amount as f64, CreatureReference::Player)
-    }
-
     pub fn heal(&mut self, mut amount: f64, creature_ref: CreatureReference) {
         let creature: &mut Creature = match creature_ref {
             CreatureReference::Player => {
-                if self.state.has_relic("Mark Of The Bloom") {
+                if self.state.relics.contains("Mark Of The Bloom") {
                     return;
                 }
 
-                if self.state.battle_state.active && self.state.has_relic("Magic Flower") {
+                if self.state.floor_state.battle().active
+                    && self.state.relics.contains("Magic Flower")
+                {
                     amount *= 1.5;
                 }
-                &mut self.state.player
+
+                &mut self.state.player.creature
             }
-            CreatureReference::Creature(_) => {
-                let monster = creature_ref.get_monster_mut(&mut self.state).unwrap();
+            CreatureReference::Creature(monster_ref) => {
+                let monster = self
+                    .state
+                    .floor_state
+                    .battle_mut()
+                    .get_monster_mut(monster_ref)
+                    .unwrap();
                 monster.targetable = true;
                 &mut monster.creature
             }
@@ -2016,18 +2055,6 @@ impl GamePossibility {
             (amount - 0.0001).ceil() as u16 + creature.hp,
             creature.max_hp,
         )
-    }
-
-    fn add_gold(&mut self, amount: u16) {
-        if self.state.has_relic("Ectoplasm") {
-            return;
-        }
-
-        if self.state.has_relic("Bloody Idol") {
-            self.heal(5_f64, CreatureReference::Player);
-        }
-
-        self.state.gold += amount;
     }
     /*
 
@@ -2042,13 +2069,13 @@ impl GamePossibility {
             Amount::Custom => {
                 match name {
                     "Blood for Blood" => {
-                        4 - std::cmp::min(self.state.battle_state.hp_loss_count, 4)
+                        4 - std::cmp::min(self.state.floor_state.battle().hp_loss_count, 4)
                     },
                     "Eviscerate" => {
-                        3 - std::cmp::min(self.state.battle_state.discard_count, 3)
+                        3 - std::cmp::min(self.state.floor_state.battle().discard_count, 3)
                     },
                     "Force Field" => {
-                        4 - std::cmp::min(self.state.battle_state.power_count, 4)
+                        4 - std::cmp::min(self.state.floor_state.battle().power_count, 4)
                     },
                     _ => panic!("Custom cost amount on an unknown card")
                 }
@@ -2056,7 +2083,7 @@ impl GamePossibility {
             _ => panic!("Unexpected cost amount")
         };
 
-        let upgrades = match self.state.battle_state.active {
+        let upgrades = match self.state.floor_state.battle().active {
             true => {
                 if self.state.player.buff_names.contains_key("Master Reality") {
                     if base.name == "Searing Blow" {
@@ -2070,9 +2097,9 @@ impl GamePossibility {
             }
             false => {
                 if match base._type {
-                    CardType::Attack => self.state.has_relic("Molten Egg"),
-                    CardType::Skill => self.state.has_relic("Toxic Egg"),
-                    CardType::Power => self.state.has_relic("Frozen Egg"),
+                    CardType::Attack => self.state.relics.contains("Molten Egg"),
+                    CardType::Skill => self.state.relics.contains("Toxic Egg"),
+                    CardType::Power => self.state.relics.contains("Frozen Egg"),
                     CardType::Curse => false,
                     CardType::Status => false,
                     CardType::All => panic!("Unexpected card type of All"),
@@ -2116,7 +2143,13 @@ impl GamePossibility {
         );
     }
 
-    pub fn random_relic(&mut self, chest_type: Option<ChestType>, rarity: Option<Rarity>, exclude: Option<&'static BaseRelic>, in_shop: bool) -> &'static BaseRelic {
+    pub fn random_relic(
+        &mut self,
+        chest_type: Option<ChestType>,
+        rarity: Option<Rarity>,
+        exclude: Option<&'static BaseRelic>,
+        in_shop: bool,
+    ) -> &'static BaseRelic {
         let probabilities = match chest_type {
             None => match rarity {
                 None => [50, 33, 17, 0, 0],
@@ -2133,7 +2166,13 @@ impl GamePossibility {
             Some(ChestType::Boss) => [0, 0, 0, 100, 0],
         };
 
-        let rarities = [Rarity::Common, Rarity::Uncommon, Rarity::Rare, Rarity::Boss, Rarity::Shop];
+        let rarities = [
+            Rarity::Common,
+            Rarity::Uncommon,
+            Rarity::Rare,
+            Rarity::Boss,
+            Rarity::Shop,
+        ];
 
         let choices = rarities
             .iter()
@@ -2147,25 +2186,42 @@ impl GamePossibility {
             .filter(|relic| {
                 relic.rarity == **rarity
                     && (relic.class == self.state.class || relic.class == Class::All)
-                    && !self.state.has_relic(&relic.name)
+                    && !self.state.relics.contains(&relic.name)
                     && (relic.max_floor == 0 || relic.max_floor as i8 >= self.state.map.floor)
                     && match relic.name.as_str() {
                         "Maw Bank" | "Smiling Mask" | "The Courier" | "Old Coin" => !in_shop,
-                        "Bottled Flame" => self.state.deck.values().any(|c| c.base._type == CardType::Attack && c.base.rarity != Rarity::Starter),
-                        "Bottled Lightning" => self.state.deck.values().any(|c| c.base._type == CardType::Skill && c.base.rarity != Rarity::Starter),
-                        "Bottled Tornado" => self.state.deck.values().any(|c| c.base._type == CardType::Power),
-                        "Girya" => !self.state.has_relic("Peace Pipe") || !self.state.has_relic("Shovel"),
-                        "Shovel" => !self.state.has_relic("Peace Pipe") || !self.state.has_relic("Girya"),
-                        "Peace Pipe" => !self.state.has_relic("Girya") || !self.state.has_relic("Shovel"),
-                        "Black Blood" => self.state.has_relic("Burning Blood"),
-                        "Frozen Core" => self.state.has_relic("Cracked Core"),
-                        "Holy Water" => self.state.has_relic("Pure Water"),
-                        "Ring of the Snake" => self.state.has_relic("Ring of the Serpent"),
-                        _ => true
+                        "Bottled Flame" => self.state.deck.values().any(|c| {
+                            c.base._type == CardType::Attack && c.base.rarity != Rarity::Starter
+                        }),
+                        "Bottled Lightning" => self.state.deck.values().any(|c| {
+                            c.base._type == CardType::Skill && c.base.rarity != Rarity::Starter
+                        }),
+                        "Bottled Tornado" => self
+                            .state
+                            .deck
+                            .values()
+                            .any(|c| c.base._type == CardType::Power),
+                        "Girya" => {
+                            !self.state.relics.contains("Peace Pipe")
+                                || !self.state.relics.contains("Shovel")
+                        }
+                        "Shovel" => {
+                            !self.state.relics.contains("Peace Pipe")
+                                || !self.state.relics.contains("Girya")
+                        }
+                        "Peace Pipe" => {
+                            !self.state.relics.contains("Girya")
+                                || !self.state.relics.contains("Shovel")
+                        }
+                        "Black Blood" => self.state.relics.contains("Burning Blood"),
+                        "Frozen Core" => self.state.relics.contains("Cracked Core"),
+                        "Holy Water" => self.state.relics.contains("Pure Water"),
+                        "Ring of the Snake" => self.state.relics.contains("Ring of the Serpent"),
+                        _ => true,
                     }
                     && match &exclude {
                         None => true,
-                        Some(e) => relic != e
+                        Some(e) => relic != e,
                     }
             })
             .collect();
@@ -2179,8 +2235,11 @@ impl GamePossibility {
         match amount {
             Amount::ByAsc { amount, low, high } => {
                 let fight_type = binding
-                    .get_monster(&self.state)
-                    .map_or_else(|| self.state.battle_state.fight_type, |a| a.base.fight_type);
+                    .get_monster(self.state.floor_state.battle())
+                    .map_or_else(
+                        || self.state.floor_state.battle().fight_type,
+                        |a| a.base.fight_type,
+                    );
                 match fight_type {
                     FightType::Common => {
                         if self.state.asc >= 17 {
@@ -2191,7 +2250,7 @@ impl GamePossibility {
                             *amount
                         }
                     }
-                    FightType::Elite{..} => {
+                    FightType::Elite { .. } => {
                         if self.state.asc >= 18 {
                             *high
                         } else if self.state.asc >= 3 {
@@ -2212,13 +2271,18 @@ impl GamePossibility {
                 }
             }
             Amount::Custom => panic!("Unhandled custom amount: {:?}", binding),
-            Amount::EnemyCount => self.state.battle_state.monsters.len() as i16,
+            Amount::EnemyCount => self.state.floor_state.battle().monsters.len() as i16,
             Amount::N => binding.get_vars(&self.state).n as i16,
             Amount::NegX => -binding.get_vars(&self.state).x as i16,
-            Amount::OrbCount => self.state.battle_state.orbs.len() as i16,
-            Amount::MaxHp => self.state.get(binding.get_creature()).max_hp as i16,
+            Amount::OrbCount => self.state.floor_state.battle().orbs.len() as i16,
+            Amount::MaxHp => {
+                self.state
+                    .get_creature(binding.get_creature())
+                    .unwrap()
+                    .max_hp as i16
+            }
             Amount::X => binding.get_vars(&self.state).x as i16,
-            Amount::PlayerBlock => self.state.player.block as i16,
+            Amount::PlayerBlock => self.state.player.creature.block as i16,
             Amount::Fixed(amount) => *amount,
             Amount::Mult(amount_mult) => {
                 let mut product = 1;
@@ -2251,19 +2315,30 @@ impl GamePossibility {
             Condition::Act(act) => &self.state.act == act,
             Condition::Always => true,
             Condition::Asc(asc) => &self.state.asc >= asc,
-            Condition::Attacking { target } => match self.eval_target(target, binding, action) {
-                CreatureReference::Creature(uuid) => matches!(
-                    self.state.battle_state.monsters[&uuid].intent,
-                    Intent::Attack
-                        | Intent::AttackBuff
-                        | Intent::AttackDebuff
-                        | Intent::AttackDefend
-                ),
+            Condition::Attacking { target } => match target.to_creature(binding, action) {
+                CreatureReference::Creature(monster) => self
+                    .state
+                    .floor_state
+                    .battle()
+                    .get_monster(monster)
+                    .map(|m| {
+                        matches!(
+                            m.intent,
+                            Intent::Attack
+                                | Intent::AttackBuff
+                                | Intent::AttackDebuff
+                                | Intent::AttackDefend
+                        )
+                    })
+                    .unwrap_or(false),
                 _ => panic!("Unexpected target that is not a monster in Condition::Attacking"),
             },
             Condition::Buff { target, buff } => {
-                let creature = self.eval_target(target, binding, action);
-                self.state.get(creature).buff_names.contains_key(buff)
+                let creature = target.to_creature(binding, action);
+                self.state
+                    .get_creature(creature)
+                    .map(|c| c.buff_names.contains_key(buff))
+                    .unwrap_or(false)
             }
             Condition::BuffX {
                 target,
@@ -2271,9 +2346,9 @@ impl GamePossibility {
                 amount: x,
             } => {
                 let val = self.eval_amount(x, binding);
-                let creature = self.state.get(self.eval_target(target, binding, action));
+                let creature = self.state.get_creature(target.to_creature(binding, action));
 
-                if let Some(b) = creature.find_buff(buff) {
+                if let Some(b) = creature.and_then(|f| f.find_buff(buff)) {
                     b.vars.x >= val
                 } else {
                     false
@@ -2286,50 +2361,55 @@ impl GamePossibility {
             }
             Condition::FriendlyDead(name) => self
                 .state
-                .battle_state
+                .floor_state
+                .battle()
                 .monsters
                 .values()
                 .any(|m| m.base.name == *name),
-            Condition::HalfHp => {
-                let creature = self.state.get(match binding {
+            Condition::HalfHp => self
+                .state
+                .get_creature(match binding {
                     Binding::Creature(creature) => creature,
                     _ => CreatureReference::Player,
-                });
-
-                creature.hp * 2 <= creature.max_hp
-            }
+                })
+                .map(|creature| creature.hp * 2 <= creature.max_hp)
+                .unwrap_or(false),
             Condition::HasCard { location, card } => match location {
-                CardLocation::DeckPile => self.state.deck().any(|c| c.base._type == *card),
                 CardLocation::DiscardPile => self
                     .state
-                    .battle_state
+                    .floor_state
+                    .battle()
                     .discard()
                     .any(|c| c.base._type == *card),
                 CardLocation::PlayerHand => self
                     .state
-                    .battle_state
+                    .floor_state
+                    .battle()
                     .hand()
                     .any(|c| c.base._type == *card),
                 CardLocation::ExhaustPile => self
                     .state
-                    .battle_state
+                    .floor_state
+                    .battle()
                     .exhaust()
                     .any(|c| c.base._type == *card),
                 CardLocation::DrawPile => self
                     .state
-                    .battle_state
+                    .floor_state
+                    .battle()
                     .draw()
                     .any(|c| c.base._type == *card),
-                &CardLocation::Stasis => panic!("Cannot detect if card is in stasis"),
+                CardLocation::None => false,
             },
-            Condition::HasDiscarded => self.state.battle_state.discard_count > 0,
+            Condition::HasDiscarded => self.state.floor_state.battle().discard_count > 0,
             Condition::HasFriendlies(count) => {
                 let creature = binding
-                    .get_monster(&self.state)
+                    .get_monster(self.state.floor_state.battle())
                     .expect("Monster did not resolve");
                 let friendly_count = self
                     .state
-                    .battle_state
+                    .floor_state
+                    .battle()
                     .monsters
                     .values()
                     .filter(|a| a.targetable && a.creature != creature.creature)
@@ -2344,29 +2424,28 @@ impl GamePossibility {
             Condition::HasGold(amount) => {
                 self.state.gold >= self.eval_amount(amount, binding) as u16
             }
-            Condition::HasOrbSlot => self.state.battle_state.orb_slots > 0,
-            Condition::HasRelic(relic) => self.state.has_relic(relic),
+            Condition::HasOrbSlot => self.state.floor_state.battle().orb_slots > 0,
+            Condition::HasRelic(relic) => self.state.relics.contains(relic),
             Condition::HasRemoveableCards { count, card_type } => {
                 self.state
                     .removable_cards()
-                    .filter(|card| {
-                        card.base._type.matches(*card_type)
-                    })
+                    .filter(|card| card.base._type.matches(*card_type))
                     .count()
                     > *count as usize
             }
             Condition::HasUpgradableCard => self.state.upgradable_cards().any(|_| true),
             Condition::InPosition(position) => {
-                if let Some(monster) = binding.get_monster(&self.state) {
+                if let Some(monster) = binding.get_monster(self.state.floor_state.battle()) {
                     monster.position == *position
                 } else {
                     panic!("Unexpected player in InPosition check")
                 }
             }
             Condition::IsVariant(variant) => match binding {
-                Binding::Event(event) => {
+                Binding::CurrentEvent => {
                     self.state
-                        .get(event)
+                        .floor_state
+                        .event()
                         .variant
                         .as_ref()
                         .expect("Expected variant")
@@ -2374,7 +2453,7 @@ impl GamePossibility {
                 }
                 _ => panic!("Unexpected binding!"),
             },
-            Condition::LastCard(_type) => match self.state.battle_state.last_card_played {
+            Condition::LastCard(_type) => match self.state.floor_state.battle().last_card_played {
                 Some(last_type) => last_type == *_type,
                 None => false,
             },
@@ -2388,15 +2467,18 @@ impl GamePossibility {
                 .iter()
                 .any(|condition| self.eval_condition(condition, binding, action)),
             Condition::Never => false,
-            Condition::NoBlock => self.state.player.block == 0,
+            Condition::NoBlock => self.state.player.creature.block == 0,
             Condition::Not(condition) => !self.eval_condition(condition, binding, action),
             Condition::OnFloor(floor) => self.state.map.floor >= *floor as i8,
             Condition::RemainingHp { amount, target } => {
-                let creature = self.eval_target(target, binding, action);
+                let creature = target.to_creature(binding, action);
                 let hp = self.eval_amount(amount, binding);
-                self.state.get(creature).hp >= hp as u16
+                self.state
+                    .get_creature(creature)
+                    .map(|c| c.hp >= hp as u16)
+                    .unwrap_or(false)
             }
-            Condition::Stance(stance) => &self.state.battle_state.stance == stance,
+            Condition::Stance(stance) => &self.state.floor_state.battle().stance == stance,
             Condition::Upgraded => binding.is_upgraded(&self.state),
         }
     }

@@ -1,7 +1,8 @@
 use crate::models;
-use crate::state::battle::BattleState;
-use crate::state::game::FloorState;
+use crate::models::core::DeckOperation;
+use crate::state::game::DeckCard;
 use crate::state::game::GameState;
+use crate::state::game::ScreenState;
 use itertools::Itertools;
 use models::choices::Choice;
 
@@ -16,14 +17,57 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
             .map(|(position, _)| Choice::DiscardPotion { slot: position }),
     );
 
+    match &state.screen_state {
+        ScreenState::CardChoose(card_choice_state) => choices.extend(
+            card_choice_state
+                .count_range
+                .clone()
+                .flat_map(|i| card_choice_state.choices.iter().copied().combinations(i))
+                .map(Choice::SelectCards),
+        ),
+        ScreenState::CardReward(offers) => {
+            choices.push(Choice::Skip);
+            for card in offers {
+                choices.push(Choice::SelectCard(card.base.name.to_string()))
+            }
+
+            if state.relics.contains("Singing Bowl") {
+                choices.push(Choice::SingingBowl)
+            }
+        }
+        ScreenState::DeckChoose(count, operation) => {
+            let cards: Vec<DeckCard> = match operation {
+                DeckOperation::Duplicate => state.deck().collect(),
+                DeckOperation::Remove
+                | DeckOperation::Transform
+                | DeckOperation::TransformUpgrade => state.removable_cards().collect(),
+                DeckOperation::Upgrade => state.upgradable_cards().collect(),
+            };
+
+            let mut real_count = *count as usize;
+            if cards.len() > real_count {
+                real_count = cards.len()
+            }
+
+            choices.extend(
+                cards
+                    .into_iter()
+                    .combinations(real_count)
+                    .map(|cards| Choice::DeckSelect(cards, *operation)),
+            )
+        }
+        _ => unimplemented!(),
+    }
+
+    choices
+    /*
     match &state.floor_state {
-        FloorState::Battle => {
-            let battle_state: &BattleState = &state.battle_state;
+        FloorState::Battle(battle_state) => {
 
             choices.push(Choice::End);
             for card_ref in battle_state.hand() {
-                if state.card_playable(card_ref) {
-                    if state.get(card_ref).targeted() {
+                if battle_state.card_playable(card_ref) {
+                    if battle_state.get_card(card_ref).targeted() {
                         choices.extend(battle_state.available_monsters().map(|monster| {
                             Choice::PlayCard {
                                 card: card_ref,
@@ -54,14 +98,15 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                     });
                 }
             }
-                
+
         }
-        FloorState::Event => {
-            for available_choice in &state.event_state.as_ref().unwrap().available_choices {
+        FloorState::Event(event) => {
+            for available_choice in &event.available_choices {
                  choices.push(Choice::Event(available_choice.to_string()))
             }
         }
-        FloorState::Map => {
+
+        FloorState::Map(maps) => {
             let map = &state.map;
             match &map.floor {
                 -1 => {
@@ -87,47 +132,32 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
                 choices.push(Choice::TakeReward(index))
             }
         }
-        FloorState::CardReward(card_choices) => {
-            choices.push(Choice::Skip);
-            for card in card_choices {
-                choices.push(Choice::SelectCard(card.base.name.to_string()))
-            }
-
-            if state.relic_names.contains_key("Singing Bowl") {
-                choices.push(Choice::SingingBowl)
-            }
-        }
         FloorState::ShopEntrance => {
             choices.push(Choice::EnterShop);
             choices.push(Choice::Proceed);
         }
-        FloorState::Shop {
-            cards,
-            relics,
-            potions,
-            can_purge,
-        } => {
-            for (card, cost) in cards {
+        FloorState::Shop(shop_state) => {
+            for (card, cost) in &shop_state.cards {
                 if *cost <= state.gold {
                     choices.push(Choice::BuyCard(card.base.name.to_string()))
                 }
             }
 
-            for (relic, cost) in relics {
+            for (relic, cost) in &shop_state.relics {
                 if *cost <= state.gold {
                     choices.push(Choice::BuyRelic(relic.name.to_string()))
                 }
             }
 
             if state.potions.iter().any(|a| a.is_none()) {
-                for (potion, cost) in potions {
+                for (potion, cost) in shop_state.potions {
                     if *cost <= state.gold {
                         choices.push(Choice::BuyPotion(potion.name.to_string()))
                     }
                 }
             }
 
-            if *can_purge && state.purge_cost() <= state.gold {
+            if shop_state.can_purge && state.purge_cost() <= state.gold {
                 choices.extend(
                     state
                         .removable_cards()
@@ -197,4 +227,6 @@ pub fn all_choices(state: &GameState) -> Vec<Choice> {
     }
 
     choices
+
+         */
 }

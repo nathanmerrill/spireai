@@ -34,7 +34,7 @@ impl Probability {
         self.rng.gen_range(0..max)
     }
 
-    pub fn choose_weighted<'a, T>(&mut self, choices: &'a Vec<(T, u8)>) -> Option<&'a T> {
+    pub fn choose_weighted<'a, T>(&mut self, choices: &'a [(T, u8)]) -> Option<&'a T> {
         if choices.is_empty() {
             None
         } else {

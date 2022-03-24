@@ -32,7 +32,9 @@
       (
         name: "Elegance",
         effects: [
-          RemoveCard(1),
+          DeckOperation(
+            operation: Remove,
+          ),
           ShowChoices([
             "Leave",
           ]),
@@ -59,10 +61,7 @@
       (
         name: "Test J.A.X.",
         effects: [
-          CreateCard(
-            name: "Jax",
-            destination: DeckPile,
-          ),
+          DeckAdd("Jax"),
           ShowChoices([
             "Leave",
           ]),
@@ -71,7 +70,10 @@
       (
         name: "Become Test Subject",
         effects: [
-          TransformCard(2),
+          DeckOperation(
+            operation: Transform,
+            count: 2,
+          ),
           ShowChoices([
             "Leave",
           ]),
@@ -118,10 +120,7 @@
       (
         name: "Box",
         effects: [
-          CreateCard(
-            name: "Regret",
-            destination: DeckPile,
-          ),
+          DeckAdd("Regret"),
           ShowReward([
             RandomRelic,
           ]),
@@ -169,10 +168,7 @@
               high: 3,
             ),
             effect: [
-              CreateCard(
-                name: "Apparition",
-                destination: DeckPile,
-              ),
+              DeckAdd("Apparition"),
             ],
           ),
           ShowChoices([
@@ -300,7 +296,7 @@
                       monsters: [
                         "Gremlin Nob",
                       ],
-                      room: Elite,
+                      room: Elite(),
                     ),
                   ],
                   _else: [
@@ -311,7 +307,7 @@
                           monsters: [
                             "Lagavulin",
                           ],
-                          room: Elite,
+                          room: Elite(),
                         ),
                       ],
                       _else: [
@@ -321,7 +317,7 @@
                             "Sentry",
                             "Sentry",
                           ],
-                          room: Elite,
+                          room: Elite(),
                         ),
                       ],
                     ),
@@ -532,10 +528,16 @@
               IsVariant("Designer Inspire Trans_2"),
             ]),
             then: [
-              UpgradeCard,
+              DeckOperation(
+                operation: Upgrade,
+              )
             ],
             _else: [
-              UpgradeRandomCard(2),
+              DeckOperation(
+                operation: Upgrade,
+                amount: 2,
+                random: true,
+              )
             ],
           ),
         ],
@@ -562,10 +564,16 @@
               IsVariant("Designer Inspire Up_2"),
             ]),
             then: [
-              RemoveCard(1),
+              DeckOperation(
+                operation: Remove,
+              )
             ],
             _else: [
-              TransformRandomCard(2),
+              DeckOperation(
+                random: true,
+                count: 2,
+                operation: Transform,
+              )
             ],
           ),
         ],
@@ -603,8 +611,13 @@
             low: -110,
             high: -110,
           )),
-          RemoveCard(1),
-          UpgradeRandomCard(1),
+          DeckOperation(
+            operation: Upgrade,
+            random: true
+          ),
+          DeckOperation(
+            operation: Remove,
+          )
         ],
         condition: MultipleAnd([
           HasRemoveableCards(),
@@ -643,13 +656,8 @@
       (
         name: "Pray",
         effects: [
-          ChooseCards(
-            location: DeckPile,
-            then: [
-              CopyTo(
-                destination: DeckPile,
-              ),
-            ],
+          DeckOperation(
+            operation: Duplicate,
           ),
         ],
       ),
@@ -791,10 +799,7 @@
       (
         name: "Desecrate",
         effects: [
-          CreateCard(
-            name: "Decay",
-            destination: DeckPile,
-          ),
+          DeckAdd("Decay"),
         ],
       ),
     ],
@@ -816,10 +821,7 @@
       (
         name: "Golden Idol Outrun",
         effects: [
-          CreateCard(
-            name: "Injury",
-            destination: DeckPile,
-          ),
+          DeckAdd("Injury"),
         ],
         initial: false,
       ),
@@ -867,10 +869,7 @@
         name: "Desecrate",
         effects: [
           AddGold(Fixed(275)),
-          CreateCard(
-            name: "Regret",
-            destination: DeckPile,
-          ),
+          DeckAdd("Regret"),
         ],
       ),
       (
@@ -891,12 +890,7 @@
               Custom,
             ]),
           ),
-          CreateCardByType(
-            destination: DeckPile,
-            type: All,
-            class: Some(None),
-            exclude_healing: false,
-          ),
+          Custom,
           ShowChoices([
             "Knowing Skull Success",
             "Knowing Skull Pick Me Up",
@@ -988,7 +982,9 @@
       (
         name: "Forget",
         effects: [
-          RemoveCard(1),
+          DeckOperation(
+            operation: Remove,
+          ),
           ShowChoices([
             "Leave",
           ]),
@@ -997,7 +993,9 @@
       (
         name: "Change",
         effects: [
-          TransformCard(1),
+          DeckOperation(
+            operation: Transform
+          ),
           ShowChoices([
             "Leave",
           ]),
@@ -1006,7 +1004,9 @@
       (
         name: "Grow",
         effects: [
-          UpgradeCard,
+          DeckOperation(
+            operation: Upgrade,
+          ),
           ShowChoices([
             "Leave",
           ]),
@@ -1133,14 +1133,8 @@
         condition: Not(OnFloor(41)),
         effects: [
           AddGold(Fixed(999)),
-          CreateCard(
-            name: "Normality",
-            destination: DeckPile,
-          ),
-          CreateCard(
-            name: "Normality",
-            destination: DeckPile,
-          ),
+          DeckAdd("Normality"),
+          DeckAdd("Normality"),
         ],
       ),
       (
@@ -1150,10 +1144,7 @@
           HealPercentage(
             amount: Fixed(100),
           ),
-          CreateCard(
-            name: "Doubt",
-            destination: DeckPile,
-          ),
+          DeckAdd("Doubt"),
         ],
       ),
       (
@@ -1191,10 +1182,7 @@
           HealPercentage(
             amount: Fixed(25),
           ),
-          CreateCard(
-            name: "Parasite",
-            destination: DeckPile,
-          ),
+          DeckAdd("Parasite"),
         ],
       ),
     ],
@@ -1329,7 +1317,9 @@
         name: "Offer Gold",
         effects: [
           AddGold(Fixed(-75)),
-          RemoveCard(1),
+          DeckOperation(
+            operation: Remove,
+          )
         ],
         condition: MultipleAnd([
           HasRemoveableCards(),
@@ -1348,7 +1338,9 @@
       (
         name: "Forge",
         effects: [
-          UpgradeCard,
+          DeckOperation(
+            operation: Upgrade,
+          ),
         ],
         condition: HasUpgradableCard,
       ),
@@ -1356,10 +1348,7 @@
         name: "Rummage",
         effects: [
           AddRelic("Warped Tongs"),
-          CreateCard(
-            name: "Pain",
-            destination: DeckPile,
-          ),
+          DeckAdd("Pain"),
         ],
       ),
       (
@@ -1382,10 +1371,7 @@
         name: "Rob",
         effects: [
           RandomRelic,
-          CreateCard(
-            name: "Shame",
-            destination: DeckPile,
-          ),
+          DeckAdd("Shame"),
         ],
       ),
       (
@@ -1399,7 +1385,9 @@
       (
         name: "Pray",
         effects: [
-          RemoveCard(1),
+          DeckOperation(
+            operation: Remove,
+          )
         ],
         condition: HasRemoveableCards(),
       ),
@@ -1523,7 +1511,11 @@
       (
         name: "Enter",
         effects: [
-          UpgradeRandomCard(2),
+          DeckOperation(
+            operation: Upgrade,
+            random: true,
+            amount: 2,
+          ),
           LoseHpPercentage(ByAsc(
             base: 20,
             low: 30,
@@ -1560,7 +1552,9 @@
             low: -75,
             high: -75,
           )),
-          RemoveCard(1),
+          DeckOperation(
+            operation: Remove,
+          ),
           ShowChoices([
             "Leave",
           ]),
@@ -1608,7 +1602,7 @@
               "Taskmaster",
               "Gremlin Nob",
             ],
-            room: Elite,
+            room: Elite(),
           ),
           ShowReward([
             Gold(
@@ -1639,10 +1633,7 @@
       ),
     ],
     shrine: true,
-    condition: HasCard(
-      location: DeckPile,
-      card: Curse,
-    ),
+    condition: Custom,
   ),
   (
     name: "The Joust",
@@ -1693,12 +1684,7 @@
       (
         name: "Read",
         effects: [
-          ChooseCardByType(
-            destination: DeckPile,
-            type: All,
-            choices: Fixed(20),
-            exclude_healing: false,
-          ),
+          Custom,
         ],
       ),
       (
@@ -1729,10 +1715,7 @@
                 high: 100,
               ),
               effect: [
-                CreateCard(
-                  name: "Writhe",
-                  destination: DeckPile,
-                ),
+                DeckAdd("Writhe"),
               ],
             ),
             (
@@ -1800,10 +1783,7 @@
           LoseHp(
             amount: Fixed(6),
           ),
-          CreateCard(
-            name: "Ritual Dagger",
-            destination: DeckPile,
-          ),
+          DeckAdd("Ritual Dagger"),
         ],
       ),
     ],
@@ -1819,10 +1799,7 @@
             low: 150,
             high: 150,
           )),
-          CreateCard(
-            name: "Doubt",
-            destination: DeckPile,
-          ),
+          DeckAdd("Doubt"),
         ],
       ),
       (
@@ -1907,7 +1884,9 @@
       (
         name: "Pray",
         effects: [
-          TransformCard(1),
+          DeckOperation(
+            operation: Transform
+          ),
         ],
         condition: HasRemoveableCards(),
       ),
@@ -1923,7 +1902,9 @@
       (
         name: "Pray",
         effects: [
-          UpgradeCard,
+          DeckOperation(
+            operation: Upgrade
+          ),
         ],
         condition: HasUpgradableCard,
       ),
@@ -1944,10 +1925,7 @@
           Repeat(
             n: Fixed(5),
             effect: [
-              CreateCard(
-                name: "Bite",
-                destination: DeckPile,
-              ),
+              DeckAdd("Bite"),
             ],
           ),
         ],
@@ -1961,10 +1939,7 @@
           Repeat(
             n: Fixed(5),
             effect: [
-              CreateCard(
-                name: "Bite",
-                destination: DeckPile,
-              ),
+              DeckAdd("Bite"),
             ],
           ),
         ],
@@ -2052,16 +2027,15 @@
             (
               amount: Fixed(1),
               effect: [
-                CreateCard(
-                  name: "Decay",
-                  destination: DeckPile,
-                ),
+                DeckAdd("Decay"),
               ],
             ),
             (
               amount: Fixed(1),
               effect: [
-                RemoveCard(1),
+                DeckOperation(
+                  operation: Remove,
+                )
               ],
             ),
             (
@@ -2086,24 +2060,15 @@
       (
         name: "Embrace Madness",
         effects: [
-          CreateCard(
-            name: "Madness",
-            destination: DeckPile,
-          ),
-          CreateCard(
-            name: "Madness",
-            destination: DeckPile,
-          ),
+          DeckAdd("Madness"),
+          DeckAdd("Madness"),
           LoseHpPercentage(Custom),
         ],
       ),
       (
         name: "Focus",
         effects: [
-          CreateCard(
-            name: "Writhe",
-            destination: DeckPile,
-          ),
+          DeckAdd("Writhe"),
           HealPercentage(
             amount: ByAsc(
               base: 25,
@@ -2127,7 +2092,9 @@
       (
         name: "Pray",
         effects: [
-          RemoveCard(1),
+          DeckOperation(
+            operation: Remove,
+          ),
           LoseHp(
             amount: Fixed(7),
           ),

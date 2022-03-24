@@ -132,11 +132,10 @@ impl Creature {
     }
 }
 
-
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct CardOffer {
     pub base: &'static BaseCard,
-    pub upgraded: bool
+    pub upgraded: bool,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]

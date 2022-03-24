@@ -4,11 +4,12 @@ use ::std::hash::{Hash, Hasher};
 
 use crate::{
     models::{
-        self, buffs::BaseBuff, core::CardLocation, events::BaseEvent, monsters::BaseMonster,
-        potions::BasePotion, relics::BaseRelic,
+        self, buffs::BaseBuff, core::CardLocation, monsters::BaseMonster, potions::BasePotion,
+        relics::BaseRelic,
     },
     state::{
-        core::{Buff, Card, Creature, Event, Monster, Potion, Relic, Vars},
+        battle::BattleState,
+        core::{Monster, Vars},
         game::GameState,
     },
 };
@@ -33,23 +34,6 @@ impl Hash for CardReference {
     }
 }
 
-impl BindingReference for CardReference {
-    type Item = Card;
-    fn get(self, state: &GameState) -> Option<&Card> {
-        match self.location {
-            CardLocation::DeckPile => state.deck.get(&self.uuid),
-            _ => state.battle_state.cards.get(&self.uuid),
-        }
-    }
-
-    fn get_mut(self, state: &mut GameState) -> Option<&mut Card> {
-        match self.location {
-            CardLocation::DeckPile => state.deck.get_mut(&self.uuid),
-            _ => state.battle_state.cards.get_mut(&self.uuid),
-        }
-    }
-}
-
 #[derive(Eq, Debug, Clone, Copy)]
 pub struct MonsterReference {
     pub base: &'static BaseMonster,
@@ -68,71 +52,23 @@ impl Hash for MonsterReference {
     }
 }
 
-impl BindingReference for MonsterReference {
-    type Item = Monster;
-    fn get(self, state: &GameState) -> Option<&Monster> {
-        state.battle_state.monsters.get(&self.uuid)
-    }
-
-    fn get_mut(self, state: &mut GameState) -> Option<&mut Monster> {
-        state.battle_state.monsters.get_mut(&self.uuid)
-    }
-}
-
 impl MonsterReference {
     pub fn creature_ref(self) -> CreatureReference {
-        CreatureReference::Creature(self.uuid)
+        CreatureReference::Creature(self)
     }
 }
 
 #[derive(Eq, Debug, Clone, Copy, PartialEq, Hash)]
 pub enum CreatureReference {
     Player,
-    Creature(Uuid),
-}
-
-impl BindingReference for CreatureReference {
-    type Item = Creature;
-    fn get(self, state: &GameState) -> Option<&Creature> {
-        match self {
-            CreatureReference::Creature(uuid) => {
-                state.battle_state.monsters.get(&uuid).map(|m| &m.creature)
-            }
-            CreatureReference::Player => Some(&state.player),
-        }
-    }
-
-    fn get_mut(self, state: &mut GameState) -> Option<&mut Creature> {
-        match self {
-            CreatureReference::Creature(uuid) => state
-                .battle_state
-                .monsters
-                .get_mut(&uuid)
-                .map(|m| &mut m.creature),
-            CreatureReference::Player => Some(&mut state.player),
-        }
-    }
+    Creature(MonsterReference),
 }
 
 impl CreatureReference {
-    pub fn get_monster(self, state: &GameState) -> Option<&Monster> {
+    pub fn monster_ref(self) -> Option<MonsterReference> {
         match self {
-            CreatureReference::Creature(uuid) => state.battle_state.monsters.get(&uuid),
             CreatureReference::Player => None,
-        }
-    }
-
-    pub fn get_monster_mut(self, state: &mut GameState) -> Option<&mut Monster> {
-        match self {
-            CreatureReference::Creature(uuid) => state.battle_state.monsters.get_mut(&uuid),
-            CreatureReference::Player => None,
-        }
-    }
-
-    pub fn monster_ref(self, state: &GameState) -> MonsterReference {
-        match self {
-            CreatureReference::Player => panic!("Cannot convert player to monster reference"),
-            CreatureReference::Creature(uuid) => state.battle_state.monsters[&uuid].monster_ref(),
+            CreatureReference::Creature(monster) => Some(monster),
         }
     }
 }
@@ -144,6 +80,8 @@ pub struct BuffReference {
     pub buff: Uuid,
 }
 
+impl BuffReference {}
+
 impl PartialEq for BuffReference {
     fn eq(&self, other: &BuffReference) -> bool {
         self.creature == other.creature && self.buff == other.buff
@@ -154,21 +92,6 @@ impl Hash for BuffReference {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.buff.hash(state);
         self.creature.hash(state)
-    }
-}
-
-impl BindingReference for BuffReference {
-    type Item = Buff;
-    fn get(self, state: &GameState) -> Option<&Buff> {
-        self.creature
-            .get(state)
-            .and_then(|c| c.buffs.get(&self.buff))
-    }
-
-    fn get_mut(self, state: &mut GameState) -> Option<&mut Buff> {
-        self.creature
-            .get_mut(state)
-            .and_then(|c| c.buffs.get_mut(&self.buff))
     }
 }
 
@@ -190,17 +113,6 @@ impl Hash for PotionReference {
     }
 }
 
-impl BindingReference for PotionReference {
-    type Item = Potion;
-    fn get(self, state: &GameState) -> Option<&Potion> {
-        state.potions.get(self.index).unwrap().as_ref()
-    }
-
-    fn get_mut(self, state: &mut GameState) -> Option<&mut Potion> {
-        state.potions.get_mut(self.index).unwrap().as_mut()
-    }
-}
-
 #[derive(Debug, Eq, Clone, Copy)]
 pub struct RelicReference {
     pub base: &'static BaseRelic,
@@ -219,61 +131,14 @@ impl Hash for RelicReference {
     }
 }
 
-impl BindingReference for RelicReference {
-    type Item = Relic;
-    fn get(self, state: &GameState) -> Option<&Relic> {
-        state.relics.get(&self.relic)
-    }
-
-    fn get_mut(self, state: &mut GameState) -> Option<&mut Relic> {
-        state.relics.get_mut(&self.relic)
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct EventReference {
-    pub base: &'static BaseEvent,
-}
-
-impl PartialEq for EventReference {
-    fn eq(&self, other: &EventReference) -> bool {
-        self.base.name == other.base.name
-    }
-}
-
-impl Hash for EventReference {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.base.name.hash(state);
-    }
-}
-
-impl BindingReference for EventReference {
-    type Item = Event;
-    fn get(self, state: &GameState) -> Option<&Event> {
-        state.event_state.as_ref()
-    }
-
-    fn get_mut(self, state: &mut GameState) -> Option<&mut Event> {
-        state.event_state.as_mut()
-    }
-}
-
-pub trait BindingReference {
-    type Item;
-
-    fn get(self, state: &GameState) -> Option<&Self::Item>;
-    fn get_mut(self, state: &mut GameState) -> Option<&mut Self::Item>;
-}
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Binding {
     Buff(BuffReference),
     Card(CardReference),
     Creature(CreatureReference),
-    Monster(MonsterReference),
     Potion(PotionReference),
     Relic(RelicReference),
-    Event(EventReference),
+    CurrentEvent,
 }
 
 impl Binding {
@@ -284,52 +149,69 @@ impl Binding {
             Binding::Potion(_) => CreatureReference::Player,
             Binding::Relic(_) => CreatureReference::Player,
             Binding::Creature(creature) => creature,
-            Binding::Monster(monster) => monster.creature_ref(),
-            Binding::Event(_) => CreatureReference::Player,
+            Binding::CurrentEvent => CreatureReference::Player,
         }
     }
 
-    pub fn get_monster(self, state: &GameState) -> Option<&Monster> {
+    pub fn get_monster(self, state: &BattleState) -> Option<&Monster> {
         match self {
-            Binding::Buff(buff) => buff.creature.get_monster(state),
-            Binding::Creature(creature) => creature.get_monster(state),
-            Binding::Monster(monster) => monster.creature_ref().get_monster(state),
-            Binding::Card(_) | Binding::Potion(_) | Binding::Relic(_) | Binding::Event(_) => None,
+            Binding::Buff(buff) => buff
+                .creature
+                .monster_ref()
+                .and_then(|m| state.get_monster(m)),
+            Binding::Creature(creature) => {
+                creature.monster_ref().and_then(|m| state.get_monster(m))
+            }
+            Binding::Card(_) | Binding::Potion(_) | Binding::Relic(_) | Binding::CurrentEvent => {
+                None
+            }
         }
     }
 
     pub fn get_vars(self, state: &GameState) -> &Vars {
         match self {
-            Binding::Buff(buff) => &state.get(buff).vars,
-            Binding::Card(card) => &state.get(card).vars,
-            Binding::Creature(creature) => &creature.get_monster(state).unwrap().vars,
-            Binding::Monster(monster) => &state.get(monster).vars,
+            Binding::Buff(buff) => &state.get_buff(buff).unwrap().vars,
+            Binding::Card(card) => &state.floor_state.battle().get_card(card).vars,
+            Binding::Creature(creature) => {
+                &state
+                    .floor_state
+                    .battle()
+                    .get_monster(creature.monster_ref().unwrap())
+                    .unwrap()
+                    .vars
+            }
             Binding::Potion(potion) => {
                 panic!("Unexpected vars check on potion: {}", potion.index)
             }
-            Binding::Event(event) => &state.get(event).vars,
-            Binding::Relic(relic) => &state.get(relic).vars,
+            Binding::CurrentEvent => &state.floor_state.event().vars,
+            Binding::Relic(relic) => &state.relics.get(relic).vars,
         }
     }
 
     pub fn get_mut_vars(self, state: &mut GameState) -> &mut Vars {
         match self {
-            Binding::Buff(buff) => &mut state.get_mut(buff).vars,
-            Binding::Card(card) => &mut state.get_mut(card).vars,
-            Binding::Creature(creature) => &mut creature.get_monster_mut(state).unwrap().vars,
-            Binding::Monster(monster) => &mut state.get_mut(monster).vars,
+            Binding::Buff(buff) => &mut state.get_buff_mut(buff).unwrap().vars,
+            Binding::Card(card) => &mut state.floor_state.battle_mut().get_card_mut(card).vars,
+            Binding::Creature(creature) => {
+                &mut state
+                    .floor_state
+                    .battle_mut()
+                    .get_monster_mut(creature.monster_ref().unwrap())
+                    .unwrap()
+                    .vars
+            }
             Binding::Potion(potion) => {
                 panic!("Unexpected vars check on potion: {}", potion.index)
             }
-            Binding::Event(event) => &mut state.get_mut(event).vars,
-            Binding::Relic(relic) => &mut state.get_mut(relic).vars,
+            Binding::CurrentEvent => &mut state.floor_state.event_mut().vars,
+            Binding::Relic(relic) => &mut state.relics.get_mut(relic).vars,
         }
     }
 
-    pub fn is_upgraded(self, game_state: &GameState) -> bool {
+    pub fn is_upgraded(self, state: &GameState) -> bool {
         match self {
-            Binding::Card(card) => game_state.get(card).upgrades > 0,
-            Binding::Potion(_) => game_state.relic_names.contains_key("Sacred Bark"),
+            Binding::Card(card) => state.floor_state.battle().get_card(card).upgrades > 0,
+            Binding::Potion(_) => state.relics.contains("Sacred Bark"),
             _ => panic!("Unexpected is_upgraded check on {:?}", self),
         }
     }
@@ -344,7 +226,7 @@ impl Monster {
     }
 
     pub fn creature_ref(&self) -> CreatureReference {
-        CreatureReference::Creature(self.uuid)
+        CreatureReference::Creature(self.monster_ref())
     }
 
     pub fn buffs(&self) -> impl Iterator<Item = BuffReference> + '_ {

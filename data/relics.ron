@@ -202,7 +202,7 @@
     ),
     (
         name: "Preserved Insect",
-        activation: When(RoomEnter(Fight(Elite))),
+        activation: When(RoomEnter(Fight(Elite()))),
         max_floor: 53,
     ),
     (
@@ -908,7 +908,7 @@
     (
         name: "Sling Of Courage",
         rarity: Shop,
-        activation: When(RoomEnter(Fight(Elite))),
+        activation: When(RoomEnter(Fight(Elite()))),
         effect: [AddBuff(
             buff: "Strength",
             amount: Fixed(2),
@@ -992,10 +992,7 @@
         rarity: Boss,
         activation: Immediate,
         effect: [
-            CreateCard(
-                name: "Curse Of The Bell",
-                destination: DeckPile,
-            ),
+            DeckAdd("Curse Of The Bell"),
             ShowReward([
                 RandomRelic,
                 RandomRelic,
@@ -1025,7 +1022,10 @@
         name: "Empty Cage",
         rarity: Boss,
         activation: Immediate,
-        effect: [RemoveCard(2)],
+        effect: [DeckOperation(
+            operation: Remove,
+            amount: 2,
+        )],
     ),
     (
         name: "Fusion Hammer",
@@ -1087,7 +1087,10 @@
         activation: Immediate,
         effect: [
             AddMaxHp(Fixed(6)),
-            UpgradeRandomCard(1),
+            DeckOperation(
+                operation: Upgrade,
+                random: true,
+            ),
             ShowReward([
                 RandomPotion,
                 StandardCard,

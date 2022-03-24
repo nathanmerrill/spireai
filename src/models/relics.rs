@@ -78,7 +78,13 @@ impl Default for Activation {
 }
 
 pub fn by_name(name: &str) -> &'static BaseRelic {
-    RELICS.get(name).unwrap_or_else(|| panic!("Unrecognized relic: {}, Available relics: {:?}", name, RELICS.keys().cloned().collect_vec()))
+    RELICS.get(name).unwrap_or_else(|| {
+        panic!(
+            "Unrecognized relic: {}, Available relics: {:?}",
+            name,
+            RELICS.keys().cloned().collect_vec()
+        )
+    })
 }
 
 lazy_static! {

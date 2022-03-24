@@ -1,6 +1,7 @@
 use crate::{
     models::core::*,
     spireai::references::{CardReference, MonsterReference},
+    state::game::DeckCard,
 };
 
 #[derive(PartialEq, Eq, Clone, Debug, Hash)]
@@ -24,21 +25,19 @@ pub enum Choice {
     NavigateToNode(i8),
     TakeReward(usize),
     SelectCard(String),
+    SelectCards(Vec<CardReference>),
     BuyCard(String),
     BuyRelic(String),
     BuyPotion(String),
-    BuyRemoveCard(CardReference),
-    DeckRemove(Vec<CardReference>),
-    DeckTransform(Vec<CardReference>, bool), //And upgrade if true
-    DeckUpgrade(Vec<CardReference>),
+    BuyRemoveCard(DeckCard),
+    DeckSelect(Vec<DeckCard>, DeckOperation),
     OpenChest,
     Rest,
-    Smith(CardReference),
+    Smith(DeckCard),
     Lift,
     Dig,
-    ScryDiscard(Vec<CardReference>),
     Recall,
-    Toke(CardReference),
+    Toke(DeckCard),
     EnterShop,
     End,
     Proceed,

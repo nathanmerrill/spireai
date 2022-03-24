@@ -65,7 +65,10 @@ impl Default for Stance {
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
 pub enum FightType {
     Common,
-    Elite{burning: bool},
+    Elite {
+        #[serde(default, skip_serializing_if = "is_default")]
+        burning: bool 
+    },
     Boss,
 }
 
@@ -129,7 +132,6 @@ impl Default for Amount {
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum CardDestination {
-    DeckPile,
     DrawPile(RelativePosition),
     PlayerHand,
     ExhaustPile,
@@ -139,7 +141,6 @@ pub enum CardDestination {
 impl CardDestination {
     pub fn location(self) -> CardLocation {
         match self {
-            CardDestination::DeckPile => CardLocation::DeckPile,
             CardDestination::DrawPile(_) => CardLocation::DrawPile,
             CardDestination::PlayerHand => CardLocation::PlayerHand,
             CardDestination::ExhaustPile => CardLocation::ExhaustPile,
@@ -150,12 +151,11 @@ impl CardDestination {
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
 pub enum CardLocation {
-    DeckPile,
     DrawPile,
     PlayerHand,
     ExhaustPile,
     DiscardPile,
-    Stasis,
+    None, // Only for cards that are to be picked
 }
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize, Hash)]
@@ -242,6 +242,15 @@ impl Default for RelativePosition {
     fn default() -> Self {
         RelativePosition::Bottom
     }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum DeckOperation {
+    Upgrade,
+    Transform,
+    TransformUpgrade,
+    Remove,
+    Duplicate,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
@@ -381,14 +390,17 @@ pub enum Effect {
     // Meta-scaling
     AddRelic(String),
     RandomRelic,
+    DeckOperation {
+        #[serde(default, skip_serializing_if = "is_default")]
+        random: bool,
+        #[serde(default = "one", skip_serializing_if = "is_one")]
+        count: u8,
+        operation: DeckOperation,
+    },
+    DeckAdd(String),
     ShowReward(Vec<RewardType>),
-    RemoveCard(u8),
     RemoveRelic(String),
-    TransformCard(u8),
-    TransformRandomCard(u8),
     RandomPotion,
-    UpgradeRandomCard(u8),
-    UpgradeCard,
 
     // Monster
     Split(String, String),
@@ -460,12 +472,12 @@ pub enum RewardType {
     RandomBook,
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Target {
     _Self,
     Player,
     RandomEnemy,
-    TargetEnemy,
+    OneEnemy,
     AllEnemies,
     Attacker,
     AnyFriendly,    // Includes self
@@ -477,6 +489,7 @@ impl Default for Target {
         Target::_Self
     }
 }
+
 #[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
 pub struct WhenEffect {
     pub when: When,

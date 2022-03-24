@@ -50,7 +50,7 @@ impl SpireAi {
                 panic!("No matching state found!")
             }
         }
-        
+
         let next_choice = search(&mut self.tree, self.state.clone(), 50000, 10, 2.0f64.sqrt());
 
         self.last_choice = Some(next_choice.clone());
@@ -217,7 +217,7 @@ fn descend(
 }
 
 fn evaluate(state: &GameState) -> f64 {
-    state.map.floor as f64 * 100.0 + state.player.hp as f64
+    state.map.floor as f64 * 100.0 + state.player.creature.hp as f64
     // Neural net
 }
 

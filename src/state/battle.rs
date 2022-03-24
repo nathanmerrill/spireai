@@ -1,9 +1,16 @@
 use im::{HashMap, HashSet, Vector};
+use itertools::Itertools;
 use uuid::Uuid;
 
 use crate::{
-    models::core::{CardDestination, CardLocation, CardType, FightType, RelativePosition, Stance},
-    spireai::references::{CardReference, CreatureReference, MonsterReference},
+    models::core::{
+        CardDestination, CardLocation, CardType, Condition, FightType, RelativePosition, Stance,
+        Target,
+    },
+    spireai::{
+        evaluator::GameAction,
+        references::{Binding, CardReference, CreatureReference, MonsterReference},
+    },
 };
 
 use super::{
@@ -67,6 +74,19 @@ impl BattleState {
         }
     }
 
+    pub fn new_card(
+        &mut self,
+        card: Card,
+        destination: CardDestination,
+        probability: &mut Probability,
+    ) -> CardReference {
+        let reference = card.reference(destination.location());
+        let uuid = card.uuid;
+        self.cards.insert(uuid, card);
+        self.move_in(uuid, destination, probability);
+        reference
+    }
+
     pub fn move_card(
         &mut self,
         destination: CardDestination,
@@ -79,11 +99,40 @@ impl BattleState {
         card
     }
 
+    pub fn cards_in_location(&self, location: CardLocation) -> Vec<CardReference> {
+        match location {
+            CardLocation::DiscardPile => self.discard().collect(),
+            CardLocation::ExhaustPile => self.exhaust().collect(),
+            CardLocation::PlayerHand => self.hand().collect(),
+            CardLocation::DrawPile => self.draw().collect(),
+            CardLocation::None => vec![],
+        }
+    }
+
+    pub fn card_playable(&self, card: CardReference) -> bool {
+        let card = self.get_card(card);
+        card.cost <= self.energy
+            && match card.base.playable_if {
+                Condition::Always => true,
+                Condition::Never => false,
+                Condition::Custom => match card.base.name.as_str() {
+                    "Clash" => self.hand().all(|f| f.base._type == CardType::Attack),
+                    "Grand Finale" => self.draw().count() == 0,
+                    "Impatience" => self.hand().all(|f| f.base._type != CardType::Attack),
+                    "Signature Move" => {
+                        self.hand()
+                            .filter(|f| f.base._type == CardType::Attack)
+                            .count()
+                            == 1
+                    }
+                    _ => panic!("Unexpected custom condition on card: {}", card.base.name),
+                },
+                _ => panic!("Unexpected condition!"),
+            }
+    }
+
     pub fn move_out(&mut self, card: CardReference) {
         match card.location {
-            CardLocation::DeckPile => {
-                panic!("Deck cannot be moved between")
-            }
             CardLocation::DiscardPile => self.discard.remove(&card.uuid),
             CardLocation::DrawPile => {
                 if let Some(index) = self.draw_top_known.iter().position(|a| a == &card.uuid) {
@@ -96,11 +145,8 @@ impl BattleState {
             }
             CardLocation::ExhaustPile => self.exhaust.remove(&card.uuid),
             CardLocation::PlayerHand => self.hand.remove(&card.uuid),
-            CardLocation::Stasis => {
-                return;
-            }
-        }
-        .unwrap();
+            CardLocation::None => None,
+        };
     }
 
     pub fn move_in(
@@ -110,9 +156,6 @@ impl BattleState {
         probability: &mut Probability,
     ) {
         match destination {
-            CardDestination::DeckPile => {
-                panic!("Deck cannot be moved between")
-            }
             CardDestination::DiscardPile => {
                 self.discard.insert(card);
             }
@@ -187,30 +230,176 @@ impl BattleState {
     }
 
     pub fn all_monsters(&self) -> impl Iterator<Item = MonsterReference> + '_ {
-        self.monsters.values().map(|m| MonsterReference {
-            base: m.base,
-            uuid: m.uuid,
-        })
+        self.monsters.values().map(|m| m.monster_ref())
     }
 
     pub fn available_monsters(&self) -> impl Iterator<Item = MonsterReference> + '_ {
         self.monsters
             .values()
             .filter(|m| m.targetable)
-            .map(|m| MonsterReference {
-                base: m.base,
-                uuid: m.uuid,
-            })
+            .map(|m| m.monster_ref())
     }
 
     pub fn available_creatures(&self) -> impl Iterator<Item = CreatureReference> + '_ {
         self.monsters
             .values()
             .filter(|m| m.targetable)
-            .map(|m| CreatureReference::Creature(m.uuid))
+            .map(|m| m.creature_ref())
     }
 
     pub fn random_monster(&self, probability: &mut Probability) -> Option<MonsterReference> {
         probability.choose(self.available_monsters().collect())
+    }
+
+    pub fn get_monster(&self, monster: MonsterReference) -> Option<&Monster> {
+        self.monsters.get(&monster.uuid)
+    }
+
+    pub fn get_monster_mut(&mut self, monster: MonsterReference) -> Option<&mut Monster> {
+        self.monsters.get_mut(&monster.uuid)
+    }
+
+    pub fn get_card(&self, card: CardReference) -> &Card {
+        debug_assert!(self.location_matches(card));
+        self.cards.get(&card.uuid).unwrap()
+    }
+
+    pub fn get_card_mut(&mut self, card: CardReference) -> &mut Card {
+        debug_assert!(self.location_matches(card));
+        self.cards.get_mut(&card.uuid).unwrap()
+    }
+
+    fn location_matches(&self, card: CardReference) -> bool {
+        match card.location {
+            CardLocation::DiscardPile => self.discard.contains(&card.uuid),
+            CardLocation::ExhaustPile => self.exhaust.contains(&card.uuid),
+            CardLocation::PlayerHand => self.hand.contains(&card.uuid),
+            CardLocation::DrawPile => self.draw.contains(&card.uuid),
+            CardLocation::None => {
+                !self.draw.contains(&card.uuid)
+                    && !self.hand.contains(&card.uuid)
+                    && !self.discard.contains(&card.uuid)
+                    && !self.exhaust.contains(&card.uuid)
+            }
+        }
+    }
+
+    pub fn peek_top(&mut self, n: u8, probability: &mut Probability) {
+        if self.draw.is_empty() {
+            return;
+        }
+
+        let remaining_picks = n as usize - self.draw_top_known.len();
+
+        let choices = self
+            .draw
+            .clone()
+            .difference(self.draw_top_known.iter().copied().collect())
+            .difference(self.draw_bottom_known.iter().copied().collect())
+            .iter()
+            .cloned()
+            .collect_vec();
+        let max_picks = choices.len().min(remaining_picks);
+
+        let choices = probability.choose_multiple(choices, max_picks);
+
+        self.draw_top_known.extend(choices);
+
+        if max_picks < remaining_picks {
+            let bottom_peek = (remaining_picks - max_picks).min(self.draw_bottom_known.len());
+            let mut top = self.draw_bottom_known.split_off(bottom_peek);
+            std::mem::swap(&mut top, &mut self.draw_bottom_known);
+            self.draw_top_known.extend(top);
+        }
+    }
+
+    pub fn peek_bottom(&mut self, n: u8, probability: &mut Probability) {
+        if self.draw.is_empty() {
+            return;
+        }
+
+        let remaining_picks = n as usize - self.draw_bottom_known.len();
+
+        let choices = self
+            .draw
+            .clone()
+            .difference(self.draw_top_known.iter().copied().collect())
+            .difference(self.draw_bottom_known.iter().copied().collect())
+            .iter()
+            .cloned()
+            .collect_vec();
+        let max_picks = choices.len().min(remaining_picks);
+
+        let choices = probability.choose_multiple(choices, max_picks);
+
+        self.draw_bottom_known.extend(choices);
+
+        if max_picks < remaining_picks {
+            let bottom_peek = (remaining_picks - max_picks).min(self.draw_bottom_known.len());
+            let mut bottom = self.draw_bottom_known.split_off(bottom_peek);
+            std::mem::swap(&mut bottom, &mut self.draw_bottom_known);
+            self.draw_top_known.extend(bottom);
+        }
+    }
+}
+
+impl Target {
+    pub fn to_creature(self, binding: Binding, action: Option<GameAction>) -> CreatureReference {
+        match self {
+            Target::_Self => binding.get_creature(),
+            Target::Attacker => {
+                let action = action.expect("Expected action!");
+                debug_assert!(action.is_attack, "Expected attack action!");
+                action.creature
+            }
+            Target::OneEnemy => {
+                let action = action.expect("Expected action!");
+                match action.creature {
+                    CreatureReference::Player => action.target.expect("Expected target!"),
+                    CreatureReference::Creature(_) => CreatureReference::Player,
+                }
+            }
+            Target::Player => CreatureReference::Player,
+            _ => panic!("Target does not resolve to a single creature! {:?}", self),
+        }
+    }
+
+    pub fn to_creatures(
+        self,
+        binding: Binding,
+        action: Option<GameAction>,
+        state: &BattleState,
+        probability: &mut Probability,
+    ) -> Vec<CreatureReference> {
+        let creatures = match self {
+            Target::AllEnemies => match binding.get_creature() {
+                CreatureReference::Player => state.available_creatures().collect(),
+                _ => vec![CreatureReference::Player],
+            },
+            Target::AnyFriendly => state.available_creatures().collect(),
+            Target::RandomEnemy => state
+                .random_monster(probability)
+                .map(|a| a.creature_ref())
+                .into_iter()
+                .collect(),
+            Target::RandomFriendly => match binding.get_creature() {
+                CreatureReference::Player => vec![CreatureReference::Player],
+                CreatureReference::Creature(uuid) => {
+                    let monsters = state
+                        .available_monsters()
+                        .filter(|a| *a != uuid)
+                        .collect_vec();
+
+                    probability
+                        .choose(monsters)
+                        .into_iter()
+                        .map(|a| a.creature_ref())
+                        .collect()
+                }
+            },
+            _ => vec![self.to_creature(binding, action)],
+        };
+
+        creatures
     }
 }

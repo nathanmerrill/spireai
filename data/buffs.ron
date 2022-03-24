@@ -458,7 +458,7 @@
           AddBuff(
             buff: "Poison",
             amount: X,
-            target: TargetEnemy,
+            target: OneEnemy,
           ),
         ],
       ),
@@ -1204,13 +1204,13 @@
       (
         when: PlayCard(All),
         effect: [
-          AddX(1),
+          AddX(Fixed(1)),
         ],
       ),
       (
         when: BeforeEnemyMove,
         effect: [
-          SetX(0),
+          SetX(Fixed(0)),
         ]
       )
     ],
@@ -1316,7 +1316,7 @@
     singular: true,
     on_add: [
       SetN(X),
-      SetX(3),
+      SetX(Fixed(3)),
     ],
     reduce_at: BeforeEnemyMove,
     effects: [
