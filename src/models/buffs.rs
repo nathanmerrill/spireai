@@ -5,7 +5,7 @@ use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use ::std::hash::{Hash, Hasher};
 
-use super::core::{is_default, Effect, When, WhenEffect};
+use super::core::{is_default, BattleEffect, When, WhenEffect};
 
 #[derive(Clone, Eq, Deserialize, Serialize)]
 pub struct BaseBuff {
@@ -17,7 +17,7 @@ pub struct BaseBuff {
     #[serde(default, skip_serializing_if = "is_default")]
     pub debuff: bool,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_add: Vec<Effect>,
+    pub on_add: Vec<BattleEffect>,
     #[serde(default, skip_serializing_if = "is_default")]
     pub reduce_at: When,
     #[serde(default, skip_serializing_if = "is_default")]

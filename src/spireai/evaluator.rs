@@ -4,8 +4,8 @@ use crate::models::potions::BasePotion;
 use crate::models::relics::BaseRelic;
 use crate::models::{self, core::*, monsters::Intent, relics::Activation};
 use crate::state::battle::BattleState;
-use crate::state::core::{Card, CardOffer, Creature, Monster, Orb, Potion};
-use crate::state::game::{CardChoiceState, DeckCard, FloorState, GameState, Reward, ScreenState};
+use crate::state::core::{Card, CardOffer, Creature, Monster, Orb, Potion, Vars};
+use crate::state::game::{CardChoiceState, DeckCard, FloorState, GameState, Reward, ScreenState, Relics};
 use crate::state::probability::Probability;
 use im::{vector, HashMap, Vector};
 use itertools::Itertools;
@@ -18,6 +18,684 @@ pub struct GameAction {
     pub is_attack: bool,
     pub creature: CreatureReference,
     pub target: Option<CreatureReference>,
+}
+
+impl BattleState {
+    pub fn get_monster_binding(&self, binding: Binding) -> Option<&Monster> {
+        match binding {
+            Binding::Buff(buff) => buff
+                .creature
+                .monster_ref()
+                .and_then(|m| self.get_monster(m)),
+            Binding::Creature(creature) => {
+                creature.monster_ref().and_then(|m| self.get_monster(m))
+            }
+            Binding::Card(_) | Binding::Potion(_) | Binding::Relic(_) => {
+                None
+            }
+        }
+    }
+
+    pub fn get_vars<'a>(&'a self, binding: Binding, relics: &'a Relics) -> &'a Vars {
+        match binding {
+            Binding::Buff(buff) => &self.get_buff(buff).unwrap().vars,
+            Binding::Card(card) => &self.get_card(card).vars,
+            Binding::Creature(creature) => {
+                &self.get_monster(creature.monster_ref().unwrap())
+                    .unwrap()
+                    .vars
+            }
+            Binding::Potion(potion) => {
+                panic!("Unexpected vars check on potion: {}", potion.index)
+            }
+            Binding::Relic(relic) => &relics.get(relic).vars,
+        }
+    }
+
+    pub fn get_mut_vars<'a>(&'a self, binding: Binding, relics: &'a Relics) -> &'a mut Vars {
+        match binding {
+            Binding::Buff(buff) => &mut state.get_buff_mut(buff).unwrap().vars,
+            Binding::Card(card) => &mut state.floor_state.battle_mut().get_card_mut(card).vars,
+            Binding::Creature(creature) => {
+                &mut state
+                    .floor_state
+                    .battle_mut()
+                    .get_monster_mut(creature.monster_ref().unwrap())
+                    .unwrap()
+                    .vars
+            }
+            Binding::Potion(potion) => {
+                panic!("Unexpected vars check on potion: {}", potion.index)
+            }
+            Binding::CurrentEvent => &mut state.floor_state.event_mut().vars,
+            Binding::Relic(relic) => &mut state.relics.get_mut(relic).vars,
+        }
+    }
+
+    pub fn is_upgraded(self, state: &GameState) -> bool {
+        match self {
+            Binding::Card(card) => state.floor_state.battle().get_card(card).upgrades > 0,
+            Binding::Potion(_) => state.relics.contains("Sacred Bark"),
+            _ => panic!("Unexpected is_upgraded check on {:?}", self),
+        }
+    }
+
+    fn eval_amount(&self, amount: &Amount, binding: Binding) -> i16 {
+        match amount {
+            Amount::ByAsc { amount, low, high } => {
+                let fight_type = binding
+                    .get_monster(self)
+                    .map_or_else(
+                        || self.state.floor_state.battle().fight_type,
+                        |a| a.base.fight_type,
+                    );
+                match fight_type {
+                    FightType::Common => {
+                        if self.state.asc >= 17 {
+                            *high
+                        } else if self.state.asc >= 2 {
+                            *low
+                        } else {
+                            *amount
+                        }
+                    }
+                    FightType::Elite { .. } => {
+                        if self.state.asc >= 18 {
+                            *high
+                        } else if self.state.asc >= 3 {
+                            *low
+                        } else {
+                            *amount
+                        }
+                    }
+                    FightType::Boss => {
+                        if self.state.asc >= 19 {
+                            *high
+                        } else if self.state.asc >= 4 {
+                            *low
+                        } else {
+                            *amount
+                        }
+                    }
+                }
+            }
+            Amount::Custom => unimplemented!(),
+            Amount::EnemyCount => self.state.floor_state.battle().monsters.len() as i16,
+            Amount::N => binding.get_vars(&self.state).n as i16,
+            Amount::NegX => -binding.get_vars(&self.state).x as i16,
+            Amount::OrbCount => self.state.floor_state.battle().orbs.len() as i16,
+            Amount::MaxHp => {
+                self.state
+                    .get_creature(binding.get_creature())
+                    .unwrap()
+                    .max_hp as i16
+            }
+            Amount::X => binding.get_vars(&self.state).x as i16,
+            Amount::PlayerBlock => self.state.player.creature.block as i16,
+            Amount::Fixed(amount) => *amount,
+            Amount::Mult(amount_mult) => {
+                let mut product = 1;
+                for amount in amount_mult {
+                    product *= self.eval_amount(amount, binding);
+                }
+                product
+            }
+            Amount::Sum(amount_sum) => {
+                let mut sum = 0;
+                for amount in amount_sum {
+                    sum += self.eval_amount(amount, binding);
+                }
+                sum
+            }
+            Amount::Upgradable { amount, upgraded } => match binding.is_upgraded(&self.state) {
+                true => *upgraded,
+                false => *amount,
+            },
+        }
+    }
+
+    fn eval_battle_effect(&mut self, effect: &BattleEffect, binding: Binding, action: Option<GameAction>, probability: &mut Probability) {
+        match effect {
+            BattleEffect::AddBuff {
+                buff: buff_name,
+                amount: buff_amount,
+                target,
+            } => {
+                let amount = self.eval_amount(buff_amount, binding);
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self,
+                    &mut probability,
+                ) {
+                    if let Some(creature) = self.get_creature_mut(creature) {
+                        creature.add_buff(buff_name, amount);
+                    }
+                }
+            }
+            BattleEffect::AddEnergy(energy_amount) => {
+                let amount = self.eval_amount(energy_amount, binding) as u8;
+                self.energy += amount
+            }
+            BattleEffect::AddGold(gold_amount) => {
+                let amount = self.eval_amount(gold_amount, binding) as u16;
+                self.state.add_gold(amount)
+            }
+            BattleEffect::AddMaxHp(hp_amount) => {
+                let amount = self.eval_amount(hp_amount, binding) as u16;
+                self.state.add_max_hp(amount)
+            }
+            BattleEffect::AddN(n_amount) => {
+                let amount = self.eval_amount(n_amount, binding);
+                binding.get_mut_vars(&mut self.state).n += amount;
+            }
+            BattleEffect::AddOrbSlot(amount) => {
+                let count = self.eval_amount(amount, binding) as u8;
+                self.state.floor_state.battle_mut().orb_slots =
+                    std::cmp::min(count + self.state.floor_state.battle().orb_slots, 10)
+                        - self.state.floor_state.battle().orb_slots;
+            }
+            BattleEffect::AddPotionSlot(amount) => {
+                for _ in 0..*amount {
+                    self.state.potions.push_back(None)
+                }
+            }
+            BattleEffect::AddRelic(name) => {
+                self.add_relic(models::relics::by_name(name));
+            }
+            BattleEffect::AddX(amount) => {
+                binding.get_mut_vars(&mut self.state).x += self.eval_amount(amount, binding);
+            }
+            BattleEffect::AttackDamage {
+                amount,
+                target,
+                if_fatal,
+                times,
+            } => {
+                let mut attack_amount = self.eval_amount(amount, binding);
+                if let Some(creature) = self.state.floor_state.battle().get_creature_mut(binding.get_creature()) {
+                    if let Some(buff) = creature.find_buff("Vigor").map(|a| a.vars.x) {
+                        attack_amount += buff;
+                        creature.remove_buff_by_name("Vigor")
+                    }
+                    if let Some(buff) = creature.find_buff("Strength").map(|a| a.vars.x) {
+                        attack_amount += buff;
+                    }
+                }
+
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self.state.floor_state.battle(),
+                    &mut self.probability,
+                ) {
+                    for _ in 0..self.eval_amount(times, binding) {
+                        if self.damage(
+                            attack_amount as u16,
+                            creature,
+                            Some(action.unwrap().creature),
+                            false,
+                        ) {
+                            self.eval_effects(if_fatal, binding, action);
+                        }
+                    }
+                }
+            }
+            BattleEffect::Block { amount, target } => {
+                let block_amount = self.eval_amount(amount, binding) as u16;
+                let battle = self.state.floor_state.battle_mut();
+
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    battle,
+                    &mut self.probability,
+                ) {
+                    if let Some(creature) = battle.get_creature_mut(creature) {
+                        let new_block = std::cmp::min(creature.block + block_amount, 999);
+                        creature.block = new_block;
+                    }
+                }
+            }
+            BattleEffect::ChannelOrb(orb_type) => self.channel_orb(*orb_type),
+            BattleEffect::ChooseCardByType {
+                destination,
+                _type,
+                rarity,
+                class,
+                then,
+                choices,
+                exclude_healing,
+            } => {
+                let amount = self.eval_amount(choices, binding) as usize;
+
+                let choice =
+                    self.random_cards_by_type(amount, *class, *_type, *rarity, *exclude_healing);
+
+                let mut card_choices = Vector::new();
+                for base_card in choice {
+                    card_choices.push_back(Card::new(base_card));
+                }
+
+                let mut effects = vector![CardBattleEffect::MoveTo(*destination)];
+                effects.extend(then.clone());
+
+                self.state.screen_state = ScreenState::CardChoose(CardChoiceState {
+                    choices: card_choices
+                        .iter()
+                        .map(|card| card.reference(CardLocation::None))
+                        .collect(),
+                    count_range: (amount..amount + 1),
+                    then: effects,
+                    scry: false,
+                });
+
+                for card in card_choices {
+                    self.state
+                        .floor_state
+                        .battle_mut()
+                        .cards
+                        .insert(card.uuid, card);
+                }
+            }
+
+            BattleEffect::ChooseCards {
+                location,
+                then,
+                min,
+                max,
+            } => {
+                let min_count = self.eval_amount(min, binding) as usize;
+                let max_count = self.eval_amount(max, binding) as usize;
+                let choices = match location {
+                    CardLocation::DiscardPile => {
+                        self.state.floor_state.battle().discard().collect()
+                    }
+                    CardLocation::DrawPile => self.state.floor_state.battle().draw().collect(),
+                    CardLocation::ExhaustPile => {
+                        self.state.floor_state.battle().exhaust().collect()
+                    }
+                    CardLocation::PlayerHand => self.state.floor_state.battle().hand().collect(),
+                    CardLocation::None => panic!("Cannot choose from None!"),
+                };
+
+                self.state.screen_state = ScreenState::CardChoose(CardChoiceState {
+                    choices,
+                    count_range: (min_count..max_count + 1),
+                    then: Vector::from(then),
+                    scry: false,
+                });
+            }
+            BattleEffect::CreateCard {
+                name,
+                destination,
+                then,
+            } => {
+                let card = Card::by_name(name);
+                let card_ref = self.state.floor_state.battle().add_card(card, *destination, &mut self.probability);
+                self.eval_card_effects(then, card_ref);
+            }
+
+            BattleEffect::CreateCardByType {
+                destination,
+                _type,
+                rarity,
+                class,
+                exclude_healing,
+                then,
+            } => {
+                let card =
+                    self.random_cards_by_type(1, *class, *_type, *rarity, *exclude_healing)[0];
+                let card = self.state.floor_state.battle().add_card(Card::new(card), *destination, &mut self.probability);
+                self.eval_card_effects(then, card);
+            }
+            BattleEffect::Custom => {
+                match binding {
+                    Binding::Buff(buff) => {
+                        match buff.base.name.as_str() {
+                            "Time Warp" => {
+                                self.state.floor_state.battle_mut().end_turn = true
+                            }
+                            _ => panic!("Unexpected custom effect in {}", buff.base.name)
+                        }
+                    }
+                    Binding::Card(card) => {
+                        match card.base.name.as_str() {
+                            "All For One" => {
+                                let battle = self.state.floor_state.battle_mut();
+                                let card_count = (10 - battle.hand.len()).min(battle.discard.len());
+                                let mut cards = battle.discard.split_off(card_count);
+                                std::mem::swap(&mut cards, &mut battle.discard);
+                                battle.hand.extend(cards);
+                            }
+                            "Calculated Gamble" => {
+                                let battle = self.state.floor_state.battle_mut();
+                                let card_count = battle.hand.len();
+                                let cards = battle.hand().collect_vec();
+                                for card in &cards {
+                                    battle.move_card(
+                                        CardDestination::DiscardPile,
+                                        *card,
+                                        &mut self.probability,
+                                    );
+                                    battle.discard_count += 1;
+                                }
+
+                                self.draw(card_count as u8);
+                                
+                                for card in cards {
+                                    self.eval_effects(&card.base.on_discard, Binding::Card(card), None);
+                                }
+                            }
+                            "Claw" => {
+                                let battle = self.state.floor_state.battle_mut();
+                                for (_, card) in battle.cards.iter_mut() {
+                                    if card.base.name == "Claw" {
+                                        card.vars.x += 2;
+                                    }
+                                }
+                            }
+                            "Conjure Blade" => {
+                                let battle = self.state.floor_state.battle_mut();
+                                let mut card = Card::by_name("Expunger");
+                                card.vars.n = battle.energy as i16;
+                                battle.add_card(card, CardDestination::DrawPile(RelativePosition::Random), &mut self.probability);
+                                
+                                battle.energy = 0;
+                            }
+                            "Darkness" => {
+                                let orbs = self.state.floor_state.battle().orbs.iter().map(|a| a.base).enumerate().filter(|(_, a)| *a == OrbType::Dark).collect_vec();
+                                for (index, orb) in orbs {
+                                    self.trigger_passive(orb, index)
+                                }
+                            }
+                            _ => unimplemented!()
+                        }
+                    }
+                    _ => unimplemented!()
+                }
+            },
+            BattleEffect::Damage { amount, target } => {
+                let total = self.eval_amount(amount, binding) as u16;
+                let creature = target.to_creature(binding, action);
+                self.damage(total, creature, None, false);
+            }
+            BattleEffect::DeckAdd(name) =>  {
+                self.state.add_card(Card::by_name(name));
+            },
+            BattleEffect::DeckOperation {
+                random,
+                count,
+                operation,
+            } => {
+                if *random {
+                    assert!(*operation == DeckOperation::Upgrade);
+                    let choices = self.state.upgradable_cards().collect_vec();
+                    let selected = self.probability.choose_multiple(choices, *count as usize);
+                    for card in selected {
+                        self.state.deck.get_mut(&card.uuid).unwrap().upgrade();
+                    }
+                } else {
+                    self.state.screen_state = ScreenState::DeckChoose(*count, *operation);
+                }
+            },
+            BattleEffect::Die { target } => {
+                let creature = target.to_creature(binding, action);
+                self.die(creature);
+            }
+            BattleEffect::DoCardBattleEffect {
+                location,
+                position,
+                effect,
+            } => {
+                for card in self.get_cards_in_location(*location, *position) {
+                    self.eval_card_effect(effect, card)
+                }
+            }
+            BattleEffect::Draw(amount) => {
+                let n = self.eval_amount(amount, binding);
+                self.draw(n as u8);
+            }
+            BattleEffect::EvokeOrb(amount) => self.evoke_orb(self.eval_amount(amount, binding) as u8),
+            BattleEffect::Fight { monsters, room } => {
+                self.fight(monsters, *room);
+            }
+            BattleEffect::Heal { amount, target } => {
+                let total = self.eval_amount(amount, binding);
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self.state.floor_state.battle(),
+                    &mut self.probability,
+                ) {
+                    self.heal(total as f64, creature);
+                }
+            }
+            BattleEffect::HealPercentage { amount, target } => {
+                let percentage = self.eval_amount(amount, binding) as f64 / 100.0;
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self.state.floor_state.battle(),
+                    &mut self.probability,
+                ) {
+
+                    let total = self.state.max_hp() as f64 * percentage;
+                    self.heal(total, creature);
+                }
+            }
+            BattleEffect::If {
+                condition,
+                then,
+                _else,
+            } => {
+                if self.eval_condition(condition, binding, action) {
+                    self.eval_effects(then, binding, action);
+                } else {
+                    self.eval_effects(_else, binding, action);
+                }
+            }
+            BattleEffect::LoseAllGold => self.state.gold = 0,
+            BattleEffect::LoseHp { amount, target } => {
+                let total = self.eval_amount(amount, binding);
+                for creature in target.to_creatures(
+                    binding,
+                    action,
+                    self.state.floor_state.battle(),
+                    &mut self.probability,
+                ) {
+                    self.lose_hp(total as u16, creature, false);
+                }
+            }
+            BattleEffect::LoseHpPercentage(amount) => {
+                let percentage = self.eval_amount(amount, binding) as f64 / 1000.0;
+                let damage = (self.state.max_hp() as f64 * percentage).floor() as u16;
+                self.lose_hp(damage, CreatureReference::Player, false);
+            }
+            BattleEffect::RandomChance(chances) => {
+                let evaluated_chances = chances
+                    .iter()
+                    .map(|chance| {
+                        (
+                            &chance.effect,
+                            self.eval_amount(&chance.amount, binding) as u8,
+                        )
+                    })
+                    .collect_vec();
+
+                let choice = self
+                    .probability
+                    .choose_weighted(&evaluated_chances)
+                    .unwrap();
+
+                self.eval_effects(choice, binding, action);
+            }
+            BattleEffect::RandomPotion => {
+                let potion = self.random_potion(matches!(self.state.floor_state, FloorState::Battle(_)));
+                self.state.add_potion(potion);
+            }
+            BattleEffect::RandomRelic => {
+                let relic = self.random_relic(None, None, None, false);
+                self.add_relic(relic)
+            }
+            BattleEffect::ReduceMaxHpPercentage(amount) => {
+                let percentage = self.eval_amount(amount, binding);
+                let total = (self.state.max_hp() as f64 * (percentage as f64 / 100.0))
+                    .floor() as u16;
+                self.state.reduce_max_hp(total);
+            }
+            BattleEffect::RemoveDebuffs => {
+                let creature_ref = binding.get_creature();
+                if let Some(creature) = self.state.floor_state.battle_mut().get_creature_mut(creature_ref) {
+                    let buffs: Vec<Uuid> = creature
+                        .buffs
+                        .values()
+                        .filter(|buff| buff.base.debuff || buff.vars.x < 0)
+                        .map(|buff| buff.uuid)
+                        .collect_vec();
+                    for buff in buffs {
+                        creature.remove_buff_by_uuid(buff)
+                    }
+                }
+            }
+            BattleEffect::RemoveRelic(relic) => {
+                self.state.relics.remove(relic);
+            }
+            BattleEffect::Repeat { n, effect } => {
+                let amount = self.eval_amount(n, binding);
+                for _ in 0..amount {
+                    self.eval_effects(effect, binding, action);
+                }
+            }
+            BattleEffect::ResetN => {
+                let vars = binding.get_mut_vars(&mut self.state);
+                vars.n = vars.n_reset;
+            }
+            BattleEffect::Scry(count) => {
+                let amount = self.eval_amount(count, binding);
+                self.scry(amount as usize);
+            }
+            BattleEffect::SelfBattleEffect(effect) => {
+                if let Binding::Card(card) = binding {
+                    if effect != &CardBattleEffect::Exhaust
+                        || !self.state.relics.contains("Strange Spoon")
+                        || self.probability.range(2) == 0
+                    {
+                        self.eval_card_effect(effect, card);
+                    }
+                } else {
+                    panic!("SelfBattleEffect on a non-card!")
+                }
+            }
+            BattleEffect::SetN(n) => {
+                let amount = self.eval_amount(n, binding);
+                let vars = binding.get_mut_vars(&mut self.state);
+                vars.n = amount;
+                vars.n_reset = amount;
+            }
+            BattleEffect::SetStance(stance) => {
+                self.state.floor_state.battle_mut().stance = *stance;
+            }
+            BattleEffect::SetX(x) => {
+                let amount = self.eval_amount(x, binding);
+                let vars = binding.get_mut_vars(&mut self.state);
+                vars.x = amount;
+            }
+            BattleEffect::ShowChoices(choices) => {
+                let event = self.state.floor_state.event_mut();
+                event.available_choices = choices.clone();
+            }
+            BattleEffect::ShowReward(rewards) => {
+                self.state.floor_state = FloorState::Rewards(
+                    rewards
+                        .iter()
+                        .map(|reward| match reward {
+                            RewardType::ColorlessCard => Reward::CardChoice(vector![], FightType::Common, true),
+                            RewardType::EliteCard => Reward::CardChoice(vector![], FightType::Common, false),
+                            RewardType::Gold { min, max } => {
+                                let amount =
+                                    self.probability.range((max - min) as usize) as u16 + min;
+                                Reward::Gold(amount)
+                            }
+                            RewardType::RandomBook => {
+                                let book = self
+                                    .probability
+                                    .choose(vec!["Necronomicon", "Enchiridion", "Nilry's Codex"])
+                                    .unwrap();
+                                Reward::Relic(models::relics::by_name(book))
+                            }
+                            RewardType::RandomPotion => {
+                                let base = self.random_potion(false);
+                                Reward::Potion(Potion { base })
+                            }
+                            RewardType::RandomRelic => {
+                                let base = self.random_relic(None, None, None, false);
+                                Reward::Relic(base)
+                            }
+                            RewardType::Relic(rarity) => {
+                                let base = self.random_relic(None, Some(*rarity), None, false);
+                                Reward::Relic(base)
+                            }
+                            RewardType::RelicName(name) => Reward::Relic(models::relics::by_name(name)),
+                            RewardType::StandardCard => Reward::CardChoice(vector![], FightType::Common, false),
+                        })
+                        .collect(),
+                )
+            }
+            BattleEffect::Shuffle => {
+                let cards = self
+                    .state
+                    .floor_state
+                    .battle()
+                    .discard
+                    .iter()
+                    .copied()
+                    .collect_vec();
+                self.state.floor_state.battle_mut().draw.extend(cards);
+                self.state.floor_state.battle_mut().discard.clear();
+                self.shuffle();
+            }
+            BattleEffect::Spawn { choices, count } => {
+                let amount = self.eval_amount(count, binding);
+                for _ in 0..amount {
+                    let choice = self.probability.choose(choices.clone()).unwrap();
+                    let base = models::monsters::by_name(&choice);
+                    self.add_monster(base, 0);
+                }
+            }
+            BattleEffect::Split(left, right) => {
+                if let Binding::Creature(CreatureReference::Creature(monster_ref)) = binding {
+                    let monster = self.remove_monster(monster_ref.uuid);
+                    let hp = monster.creature.hp;
+
+                    let left_base = models::monsters::by_name(left);
+                    let right_base = models::monsters::by_name(right);
+                    let left_ref = self.add_monster(left_base, monster.position);
+                    let right_ref = self.add_monster(right_base, monster.position + 1);
+                    let battle = self.state.floor_state.battle_mut();
+                    
+                    {
+                        let left = battle.get_creature_mut(left_ref.creature_ref()).unwrap();
+                        left.max_hp = hp;
+                        left.hp = hp;
+                    }
+                    {
+                        let right = battle.get_creature_mut(right_ref.creature_ref()).unwrap();
+                        right.max_hp = hp;
+                        right.hp = hp;
+
+                    }
+                } else {
+                    panic!("Unepxected binding")
+                }
+            }
+            BattleEffect::Unbuff(buff) => {
+                if let Some(creature) = self.state.floor_state.battle_mut().get_creature_mut(binding.get_creature()) {
+                    creature.remove_buff_by_name(buff);
+                }
+            }
+        }
+    }
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -46,11 +724,14 @@ impl GamePossibility {
                 } else {
                     None
                 };
-                self.play_card(card, target);
+                if !self.state.floor_state.battle().end_turn {
+                    self.play_card(card, target);
+                }
             }
             CardEffect::CopyTo { destination, then } => {
-                let new_card = self.state.floor_state.battle().get_card(card).duplicate();
-                let card_ref = self.add_card(new_card, *destination);
+                let battle = self.state.floor_state.battle_mut();
+                let card = battle.get_card(card).duplicate();
+                let card_ref = battle.add_card(card, *destination, &mut self.probability);
                 self.eval_card_effects(then, card_ref);
             }
             CardEffect::Custom => panic!("Unexpected custom card effect"),
@@ -131,6 +812,7 @@ impl GamePossibility {
     }
 
     pub fn play_card(&mut self, card: CardReference, target: Option<CreatureReference>) {
+        self.state.floor_state.battle_mut().move_out(card);
         for effect in &card.base.on_play {
             self.eval_effect(
                 effect,
@@ -145,13 +827,13 @@ impl GamePossibility {
 
         self.eval_when(When::PlayCard(CardType::All));
         self.eval_when(When::PlayCard(card.base._type));
-    }
 
-    pub fn add_card(&mut self, card: Card, destination: CardDestination) -> CardReference {
-        self.state
-            .floor_state
-            .battle_mut()
-            .new_card(card, destination, &mut self.probability)
+        let battle_mut = self.state.floor_state.battle_mut();
+        if !battle_mut.exhaust.contains(&card.uuid) {
+            battle_mut.discard.push_back(card.uuid);
+        }
+        
+        self.state.floor_state.battle_mut().move_out(card);
     }
 
     pub fn eval_effects(
@@ -172,471 +854,12 @@ impl GamePossibility {
         action: Option<GameAction>,
     ) {
         match effect {
-            Effect::AddBuff {
-                buff: buff_name,
-                amount: buff_amount,
-                target,
-            } => {
-                let amount = self.eval_amount(buff_amount, binding);
-                for creature in target.to_creatures(
-                    binding,
-                    action,
-                    self.state.floor_state.battle(),
-                    &mut self.probability,
-                ) {
-                    if let Some(creature) = self.state.get_creature_mut(creature) {
-                        creature.add_buff(buff_name, amount);
-                    }
-                }
-            }
-            Effect::AddEnergy(energy_amount) => {
-                let amount = self.eval_amount(energy_amount, binding) as u8;
-                self.state.floor_state.battle_mut().energy += amount
-            }
-            Effect::AddGold(gold_amount) => {
-                let amount = self.eval_amount(gold_amount, binding) as u16;
-                self.state.add_gold(amount)
-            }
-            Effect::AddMaxHp(hp_amount) => {
-                let amount = self.eval_amount(hp_amount, binding) as u16;
-                self.state.player.add_max_hp(amount, &self.state.relics)
-            }
-            Effect::AddN(n_amount) => {
-                let amount = self.eval_amount(n_amount, binding);
-                binding.get_mut_vars(&mut self.state).n += amount;
-            }
-            Effect::AddOrbSlot(amount) => {
-                let count = self.eval_amount(amount, binding) as u8;
-                self.state.floor_state.battle_mut().orb_slots =
-                    std::cmp::min(count + self.state.floor_state.battle().orb_slots, 10)
-                        - self.state.floor_state.battle().orb_slots;
-            }
-            Effect::AddPotionSlot(amount) => {
-                for _ in 0..*amount {
-                    self.state.potions.push_back(None)
-                }
-            }
-            Effect::AddRelic(name) => {
-                self.add_relic(models::relics::by_name(name));
-            }
-            Effect::AddX(amount) => {
-                binding.get_mut_vars(&mut self.state).x += self.eval_amount(amount, binding);
-            }
-            Effect::AttackDamage {
-                amount,
-                target,
-                if_fatal,
-                times,
-            } => {
-                let attack_amount = self.eval_amount(amount, binding);
-
-                for creature in target.to_creatures(
-                    binding,
-                    action,
-                    self.state.floor_state.battle(),
-                    &mut self.probability,
-                ) {
-                    for _ in 0..self.eval_amount(times, binding) {
-                        if self.damage(
-                            attack_amount as u16,
-                            creature,
-                            Some(action.unwrap().creature),
-                            false,
-                        ) {
-                            self.eval_effects(if_fatal, binding, action);
-                        }
-                    }
-                }
-            }
-            Effect::Block { amount, target } => {
-                let block_amount = self.eval_amount(amount, binding) as u16;
-
-                for creature in target.to_creatures(
-                    binding,
-                    action,
-                    self.state.floor_state.battle(),
-                    &mut self.probability,
-                ) {
-                    if let Some(creature) = self.state.get_creature_mut(creature) {
-                        let new_block = std::cmp::min(creature.block + block_amount, 999);
-                        creature.block = new_block;
-                    }
-                }
-            }
-            Effect::ChannelOrb(orb_type) => self.channel_orb(*orb_type),
-            Effect::ChooseCardByType {
-                destination,
-                _type,
-                rarity,
-                class,
-                then,
-                choices,
-                exclude_healing,
-            } => {
-                let amount = self.eval_amount(choices, binding) as usize;
-
-                let choice =
-                    self.random_cards_by_type(amount, *class, *_type, *rarity, *exclude_healing);
-
-                let mut card_choices = Vector::new();
-                for base_card in choice {
-                    card_choices.push_back(Card::new(base_card));
-                }
-
-                let mut effects = vector![CardEffect::MoveTo(*destination)];
-                effects.extend(then.clone());
-
-                self.state.screen_state = ScreenState::CardChoose(CardChoiceState {
-                    choices: card_choices
-                        .iter()
-                        .map(|card| card.reference(CardLocation::None))
-                        .collect(),
-                    count_range: (amount..amount + 1),
-                    then: effects,
-                    scry: false,
-                });
-
-                for card in card_choices {
-                    self.state
-                        .floor_state
-                        .battle_mut()
-                        .cards
-                        .insert(card.uuid, card);
-                }
-            }
-
-            Effect::ChooseCards {
-                location,
-                then,
-                min,
-                max,
-            } => {
-                let min_count = self.eval_amount(min, binding) as usize;
-                let max_count = self.eval_amount(max, binding) as usize;
-                let choices = match location {
-                    CardLocation::DiscardPile => {
-                        self.state.floor_state.battle().discard().collect()
-                    }
-                    CardLocation::DrawPile => self.state.floor_state.battle().draw().collect(),
-                    CardLocation::ExhaustPile => {
-                        self.state.floor_state.battle().exhaust().collect()
-                    }
-                    CardLocation::PlayerHand => self.state.floor_state.battle().hand().collect(),
-                    CardLocation::None => panic!("Cannot choose from None!"),
-                };
-
-                self.state.screen_state = ScreenState::CardChoose(CardChoiceState {
-                    choices,
-                    count_range: (min_count..max_count + 1),
-                    then: Vector::from(then),
-                    scry: false,
-                });
-            }
-            Effect::CreateCard {
-                name,
-                destination,
-                then,
-            } => {
-                let card = Card::by_name(name);
-                let card_ref = self.add_card(card, *destination);
-                self.eval_card_effects(then, card_ref);
-            }
-
-            Effect::CreateCardByType {
-                destination,
-                _type,
-                rarity,
-                class,
-                exclude_healing,
-                then,
-            } => {
-                let card =
-                    self.random_cards_by_type(1, *class, *_type, *rarity, *exclude_healing)[0];
-                let card = self.add_card(Card::new(card), *destination);
-                self.eval_card_effects(then, card);
-            }
-            Effect::Custom => unimplemented!(),
-            Effect::Damage { amount, target } => {
-                let total = self.eval_amount(amount, binding) as u16;
-                let creature = target.to_creature(binding, action);
-                self.damage(total, creature, None, false);
-            }
-            Effect::DeckAdd(name) =>  {
-                self.state.add_card(Card::by_name(name));
-            },
-            Effect::DeckOperation {
-                random,
-                count,
-                operation,
-            } => {
-                if *random {
-                    assert!(*operation == DeckOperation::Upgrade);
-                    let choices = self.state.upgradable_cards().collect_vec();
-                    let selected = self.probability.choose_multiple(choices, *count as usize);
-                    for card in selected {
-                         self.state.deck.get_mut(&card.uuid).unwrap().upgrade();
-                    }
-                } else {
-                    self.state.screen_state = ScreenState::DeckChoose(*count, *operation);
-                }
-            },
-            Effect::Die { target } => {
-                let creature = target.to_creature(binding, action);
-                self.die(creature);
-            }
-            Effect::DoCardEffect {
-                location,
-                position,
-                effect,
-            } => {
-                for card in self.get_cards_in_location(*location, *position) {
-                    self.eval_card_effect(effect, card)
-                }
-            }
-            Effect::Draw(amount) => {
-                let n = self.eval_amount(amount, binding);
-                self.draw(n as u8);
-            }
-            Effect::EvokeOrb(amount) => self.evoke_orb(self.eval_amount(amount, binding) as u8),
-            Effect::Fight { monsters, room } => {
-                self.fight(monsters, *room);
-            }
-            Effect::Heal { amount, target } => {
-                let total = self.eval_amount(amount, binding);
-                for creature in target.to_creatures(
-                    binding,
-                    action,
-                    self.state.floor_state.battle(),
-                    &mut self.probability,
-                ) {
-                    self.heal(total as f64, creature);
-                }
-            }
-            Effect::HealPercentage { amount, target } => {
-                let percentage = self.eval_amount(amount, binding) as f64 / 100.0;
-                for creature in target.to_creatures(
-                    binding,
-                    action,
-                    self.state.floor_state.battle(),
-                    &mut self.probability,
-                ) {
-                    let total =
-                        self.state.get_creature(creature).unwrap().max_hp as f64 * percentage;
-                    self.heal(total, creature);
-                }
-            }
-            Effect::If {
-                condition,
-                then,
-                _else,
-            } => {
-                if self.eval_condition(condition, binding, action) {
-                    self.eval_effects(then, binding, action);
-                } else {
-                    self.eval_effects(_else, binding, action);
-                }
-            }
-            Effect::LoseAllGold => self.state.gold = 0,
-            Effect::LoseHp { amount, target } => {
-                let total = self.eval_amount(amount, binding);
-                for creature in target.to_creatures(
-                    binding,
-                    action,
-                    self.state.floor_state.battle(),
-                    &mut self.probability,
-                ) {
-                    self.lose_hp(total as u16, creature, false);
-                }
-            }
-            Effect::LoseHpPercentage(amount) => {
-                let percentage = self.eval_amount(amount, binding) as f64 / 1000.0;
-                let damage = (self.state.player.creature.max_hp as f64 * percentage).floor() as u16;
-                self.lose_hp(damage, CreatureReference::Player, false);
-            }
-            Effect::RandomChance(chances) => {
-                let evaluated_chances = chances
-                    .iter()
-                    .map(|chance| {
-                        (
-                            &chance.effect,
-                            self.eval_amount(&chance.amount, binding) as u8,
-                        )
-                    })
-                    .collect_vec();
-
-                let choice = self
-                    .probability
-                    .choose_weighted(&evaluated_chances)
-                    .unwrap();
-
-                self.eval_effects(choice, binding, action);
-            }
-            Effect::RandomPotion => {
-                let potion = self.random_potion(self.state.floor_state.battle().active);
-                self.state.add_potion(potion);
-            }
-            Effect::RandomRelic => {
-                let relic = self.random_relic(None, None, None, false);
-                self.add_relic(relic)
-            }
-            Effect::ReduceMaxHpPercentage(amount) => {
-                let percentage = self.eval_amount(amount, binding);
-                let total = (self.state.player.creature.max_hp as f64 * (percentage as f64 / 100.0))
-                    .floor() as u16;
-                self.state.player.reduce_max_hp(total);
-            }
-            Effect::RemoveDebuffs => {
-                let creature_ref = binding.get_creature();
-                if let Some(creature) = self.state.get_creature_mut(creature_ref) {
-                    let buffs: Vec<Uuid> = creature
-                        .buffs
-                        .values()
-                        .filter(|buff| buff.base.debuff || buff.vars.x < 0)
-                        .map(|buff| buff.uuid)
-                        .collect_vec();
-                    for buff in buffs {
-                        creature.remove_buff_by_uuid(buff)
-                    }
-                }
-            }
-            Effect::RemoveRelic(relic) => {
-                self.state.relics.remove(relic);
-            }
-            Effect::Repeat { n, effect } => {
-                let amount = self.eval_amount(n, binding);
-                for _ in 0..amount {
-                    self.eval_effects(effect, binding, action);
-                }
-            }
-            Effect::ResetN => {
-                let vars = binding.get_mut_vars(&mut self.state);
-                vars.n = vars.n_reset;
-            }
-            Effect::Scry(count) => {
-                let amount = self.eval_amount(count, binding);
-                self.scry(amount as usize);
-            }
-            Effect::SelfEffect(effect) => {
-                if let Binding::Card(card) = binding {
-                    if effect != &CardEffect::Exhaust
-                        || !self.state.relics.contains("Strange Spoon")
-                        || self.probability.range(2) == 0
-                    {
-                        self.eval_card_effect(effect, card);
-                    }
-                } else {
-                    panic!("SelfEffect on a non-card!")
-                }
-            }
-            Effect::SetN(n) => {
-                let amount = self.eval_amount(n, binding);
-                let vars = binding.get_mut_vars(&mut self.state);
-                vars.n = amount;
-                vars.n_reset = amount;
-            }
-            Effect::SetStance(stance) => {
-                self.state.floor_state.battle_mut().stance = *stance;
-            }
-            Effect::SetX(x) => {
-                let amount = self.eval_amount(x, binding);
-                let vars = binding.get_mut_vars(&mut self.state);
-                vars.x = amount;
-            }
-            Effect::ShowChoices(choices) => {
-                let event = self.state.floor_state.event_mut();
-                event.available_choices = choices.clone();
-            }
-            Effect::ShowReward(rewards) => {
-                self.state.floor_state = FloorState::Rewards(
-                    rewards
-                        .iter()
-                        .map(|reward| match reward {
-                            RewardType::ColorlessCard => Reward::CardChoice(vector![], FightType::Common, true),
-                            RewardType::EliteCard => Reward::CardChoice(vector![], FightType::Common, false),
-                            RewardType::Gold { min, max } => {
-                                let amount =
-                                    self.probability.range((max - min) as usize) as u16 + min;
-                                Reward::Gold(amount)
-                            }
-                            RewardType::RandomBook => {
-                                let book = self
-                                    .probability
-                                    .choose(vec!["Necronomicon", "Enchiridion", "Nilry's Codex"])
-                                    .unwrap();
-                                Reward::Relic(models::relics::by_name(book))
-                            }
-                            RewardType::RandomPotion => {
-                                let base = self.random_potion(false);
-                                Reward::Potion(Potion { base })
-                            }
-                            RewardType::RandomRelic => {
-                                let base = self.random_relic(None, None, None, false);
-                                Reward::Relic(base)
-                            }
-                            RewardType::Relic(rarity) => {
-                                let base = self.random_relic(None, Some(*rarity), None, false);
-                                Reward::Relic(base)
-                            }
-                            RewardType::RelicName(name) => Reward::Relic(models::relics::by_name(name)),
-                            RewardType::StandardCard => Reward::CardChoice(vector![], FightType::Common, false),
-                        })
-                        .collect(),
-                )
-            }
-            Effect::Shuffle => {
-                let cards = self
-                    .state
-                    .floor_state
-                    .battle()
-                    .discard
-                    .iter()
-                    .copied()
-                    .collect_vec();
-                self.state.floor_state.battle_mut().draw.extend(cards);
-                self.state.floor_state.battle_mut().discard.clear();
-                self.shuffle();
-            }
-            Effect::Spawn { choices, count } => {
-                let amount = self.eval_amount(count, binding);
-                for _ in 0..amount {
-                    let choice = self.probability.choose(choices.clone()).unwrap();
-                    let base = models::monsters::by_name(&choice);
-                    self.add_monster(base, 0);
-                }
-            }
-            Effect::Split(left, right) => {
-                if let Binding::Creature(CreatureReference::Creature(monster_ref)) = binding {
-                    let monster = self.remove_monster(monster_ref.uuid);
-                    let hp = monster.creature.hp;
-
-                    let left_base = models::monsters::by_name(left);
-                    let right_base = models::monsters::by_name(right);
-                    let left_ref = self.add_monster(left_base, monster.position);
-                    let right_ref = self.add_monster(right_base, monster.position + 1);
-
-                    let left = self
-                        .state
-                        .get_creature_mut(left_ref.creature_ref())
-                        .unwrap();
-                    left.max_hp = hp;
-                    left.hp = hp;
-
-                    let right = self
-                        .state
-                        .get_creature_mut(right_ref.creature_ref())
-                        .unwrap();
-                    right.max_hp = hp;
-                    right.hp = hp;
-                } else {
-                    panic!("Unepxected binding")
-                }
-            }
-            Effect::Unbuff(buff) => {
-                if let Some(creature) = self.state.get_creature_mut(binding.get_creature()) {
-                    creature.remove_buff_by_name(buff);
-                }
-            }
+            
         }
+    }
+
+    fn custom() {
+
     }
 
     fn transform_card(&mut self, card: CardReference) {
@@ -1055,7 +1278,6 @@ impl GamePossibility {
         }
 
         let mut battle_state = BattleState {
-            active: true,
             fight_type,
             draw_top_known: draw_top,
             draw: cards.values().map(|card| card.uuid).collect(),
@@ -1067,12 +1289,8 @@ impl GamePossibility {
             orb_slots,
             monsters,
             base_energy: energy,
-            ..BattleState::new()
+            ..BattleState::new(self.state.max_hp, self.state.hp)
         };
-
-        if let Some(relic) = self.state.relics.find_mut("Magic Flower") {
-            relic.enabled = true;
-        }
 
         for monster_ref in battle_state.available_monsters().collect_vec() {
             let creature_ref = monster_ref.creature_ref();
@@ -1159,9 +1377,18 @@ impl GamePossibility {
             }
             self.eval_effects(&card_ref.base.on_turn_end, binding, None);
         }
+
+        let passives = self.state.floor_state.battle().orbs.iter().map(|a| a.base).enumerate().filter(|(_, a)| *a != OrbType::Plasma).collect_vec();
+
+        for (index, orb) in passives {
+            self.trigger_passive(orb, index);
+        }
+
         self.eval_when(When::BeforeEnemyMove);
         {
             let battle_state = self.state.floor_state.battle_mut();
+            
+
             for (_, monster) in battle_state
                 .monsters
                 .iter_mut()
@@ -1182,7 +1409,8 @@ impl GamePossibility {
     }
 
     fn start_turn(&mut self, combat_start: bool) {
-        if !self.state.player.creature.has_buff("Barricade")
+        
+        if !self.state.creature.has_buff("Barricade")
             && !self.state.player.creature.has_buff("Blur")
         {
             if self.state.relics.contains("Calipers") {
@@ -2054,80 +2282,6 @@ impl GamePossibility {
             creature.max_hp,
         )
     }
-    /*
-
-    fn create_card(&self, name: &str) -> Card {
-        let base = models::cards::by_name(name);
-        let uuid = Uuid::new_v4();
-
-        let cost = match base.cost {
-            Amount::Fixed(cost) => cost as u8,
-            Amount::Upgradable{amount, ..} => amount as u8,
-            Amount::X => 0,
-            Amount::Custom => {
-                match name {
-                    "Blood for Blood" => {
-                        4 - std::cmp::min(self.state.floor_state.battle().hp_loss_count, 4)
-                    },
-                    "Eviscerate" => {
-                        3 - std::cmp::min(self.state.floor_state.battle().discard_count, 3)
-                    },
-                    "Force Field" => {
-                        4 - std::cmp::min(self.state.floor_state.battle().power_count, 4)
-                    },
-                    _ => panic!("Custom cost amount on an unknown card")
-                }
-            },
-            _ => panic!("Unexpected cost amount")
-        };
-
-        let upgrades = match self.state.floor_state.battle().active {
-            true => {
-                if self.state.player.buff_names.contains_key("Master Reality") {
-                    if base.name == "Searing Blow" {
-                        2
-                    } else {
-                        1
-                    }
-                } else {
-                    0
-                }
-            }
-            false => {
-                if match base._type {
-                    CardType::Attack => self.state.relics.contains("Molten Egg"),
-                    CardType::Skill => self.state.relics.contains("Toxic Egg"),
-                    CardType::Power => self.state.relics.contains("Frozen Egg"),
-                    CardType::Curse => false,
-                    CardType::Status => false,
-                    CardType::All => panic!("Unexpected card type of All"),
-                } {1} else {0}
-            }
-        };
-
-        let retain = match base.retain {
-            Condition::Always => true,
-            Condition::Never => false,
-            Condition::Upgraded => upgrades > 0,
-            _ => panic!("Unexpected retain condition")
-        };
-
-
-
-        Card {
-            base,
-            uuid,
-            base_cost: cost,
-            cost,
-            cost_until_played: false,
-            retain,
-            vars: empty_vars(),
-            upgrades,
-            bottled: false,
-        }
-    }
-
-    */
 
     pub fn drink_potion(&mut self, potion: PotionReference, target: Option<CreatureReference>) {
         self.eval_effects(
@@ -2229,77 +2383,30 @@ impl GamePossibility {
             .expect("No available relics to be chosen!")
     }
 
-    fn eval_amount(&self, amount: &Amount, binding: Binding) -> i16 {
-        match amount {
-            Amount::ByAsc { amount, low, high } => {
-                let fight_type = binding
-                    .get_monster(self.state.floor_state.battle())
-                    .map_or_else(
-                        || self.state.floor_state.battle().fight_type,
-                        |a| a.base.fight_type,
-                    );
-                match fight_type {
-                    FightType::Common => {
-                        if self.state.asc >= 17 {
-                            *high
-                        } else if self.state.asc >= 2 {
-                            *low
-                        } else {
-                            *amount
-                        }
+    
+
+    pub fn trigger_passive(&mut self, orb: OrbType, orb_index: usize) {
+        let focus = self.state.player.creature.get_buff_amount("Focus");
+        match orb {
+            OrbType::Any => panic!("Unexpected any type of orb"),
+            OrbType::Dark => self.state.floor_state.battle_mut().orbs.get_mut(orb_index).unwrap().n += (6 + focus).max(0) as u16,
+            OrbType::Frost => self.state.player.creature.block += (2 + focus).max(0) as u16,
+            OrbType::Lightning => {
+                let amount = (3 + focus).max(0) as u16;
+                if self.state.player.creature.has_buff("Electro") {
+                    for creature in self.state.floor_state.battle().available_creatures().collect_vec() {
+                        self.damage(amount, creature, None, true);
                     }
-                    FightType::Elite { .. } => {
-                        if self.state.asc >= 18 {
-                            *high
-                        } else if self.state.asc >= 3 {
-                            *low
-                        } else {
-                            *amount
-                        }
-                    }
-                    FightType::Boss => {
-                        if self.state.asc >= 19 {
-                            *high
-                        } else if self.state.asc >= 4 {
-                            *low
-                        } else {
-                            *amount
-                        }
-                    }
+                } else {
+                    let creatures = self.state.floor_state.battle().available_creatures().collect_vec();
+                    if let Some(creature) = self.probability.choose(creatures) {
+                        self.damage(amount, creature, None, true);
+                    }                        
                 }
             }
-            Amount::Custom => panic!("Unhandled custom amount: {:?}", binding),
-            Amount::EnemyCount => self.state.floor_state.battle().monsters.len() as i16,
-            Amount::N => binding.get_vars(&self.state).n as i16,
-            Amount::NegX => -binding.get_vars(&self.state).x as i16,
-            Amount::OrbCount => self.state.floor_state.battle().orbs.len() as i16,
-            Amount::MaxHp => {
-                self.state
-                    .get_creature(binding.get_creature())
-                    .unwrap()
-                    .max_hp as i16
+            OrbType::Plasma => {
+                self.state.floor_state.battle_mut().energy += 1;
             }
-            Amount::X => binding.get_vars(&self.state).x as i16,
-            Amount::PlayerBlock => self.state.player.creature.block as i16,
-            Amount::Fixed(amount) => *amount,
-            Amount::Mult(amount_mult) => {
-                let mut product = 1;
-                for amount in amount_mult {
-                    product *= self.eval_amount(amount, binding);
-                }
-                product
-            }
-            Amount::Sum(amount_sum) => {
-                let mut sum = 0;
-                for amount in amount_sum {
-                    sum += self.eval_amount(amount, binding);
-                }
-                sum
-            }
-            Amount::Upgradable { amount, upgraded } => match binding.is_upgraded(&self.state) {
-                true => *upgraded,
-                false => *amount,
-            },
         }
     }
 
@@ -2353,7 +2460,7 @@ impl GamePossibility {
                 }
             }
             Condition::Class(class) => self.state.class == *class,
-            Condition::Custom => panic!("Unhandled custom condition: {:?}", binding),
+            Condition::Custom => unimplemented!(),
             Condition::Equals(amount1, amount2) => {
                 self.eval_amount(amount1, binding) == self.eval_amount(amount2, binding)
             }

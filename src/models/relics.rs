@@ -5,7 +5,7 @@ use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use ron::de::from_reader;
 
-use super::core::{is_default, Class, Effect, Rarity, When};
+use super::core::{is_default, Class, BattleEffect, Rarity, When};
 
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BaseRelic {
@@ -15,7 +15,7 @@ pub struct BaseRelic {
     #[serde(default, skip_serializing_if = "is_default")]
     pub activation: Activation,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub effect: Vec<Effect>,
+    pub effect: Vec<BattleEffect>,
     #[serde(default, skip_serializing_if = "is_default")]
     pub disable_at: When,
     #[serde(default, skip_serializing_if = "is_default")]

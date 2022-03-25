@@ -1379,6 +1379,7 @@
                 buff: "Strength",
                 amount: Fixed(2),
               ),
+              SetN(Fixed(0)),
               Custom,
             ],
           ),
@@ -1412,15 +1413,6 @@
   ),
   (
     name: "Vigor",
-    expire_at: PlayCard(Attack),
-    effects: [
-      (
-        when: PlayCard(Attack),
-        effect: [
-          Custom,
-        ],
-      ),
-    ],
   ),
   (
     name: "Vulnerable",

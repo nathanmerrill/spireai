@@ -93,7 +93,7 @@
     ),
     rarity: Rare,
     on_play: [
-      Custom,
+      RandomPotion,
     ],
   ),
   (
@@ -1162,9 +1162,15 @@
     cost: Fixed(0),
     on_play: [
       AttackDamage(
-        amount: Custom,
+        amount: Sum([
+          Upgradable(
+            base: 3, 
+            upgraded: 5),
+          X
+        ]),
         target: OneEnemy,
       ),
+      Custom,
     ],
     targeted: Always,
   ),

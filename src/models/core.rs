@@ -254,7 +254,43 @@ pub enum DeckOperation {
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub enum Effect {
+pub enum EventEffect {
+    ShowReward(Vec<RewardType>),
+    RemoveRelic(String),
+    RandomRelic,
+    AddRelic(String),
+    Fight {
+        monsters: Vec<String>,
+        room: FightType,
+    },
+    GameEffect(GameEffect),
+    AddPotionSlot(u8),
+    Custom,
+}
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub enum GameEffect {
+    DeckOperation {
+        #[serde(default, skip_serializing_if = "is_default")]
+        random: bool,
+        #[serde(default = "one", skip_serializing_if = "is_one")]
+        count: u8,
+        operation: DeckOperation,
+    },
+    DeckAdd(String),
+    RandomPotion,
+    LoseHp(Amount),
+    LoseHpPercentage(Amount),
+    Heal(Amount),
+    AddMaxHp(Amount),
+    ReduceMaxHpPercentage(Amount),    
+    AddGold(Amount),
+    LoseAllGold,
+}
+
+
+#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
+pub enum BattleEffect {
     //Targeted
     Block {
         #[serde(default, skip_serializing_if = "is_default")]
@@ -276,7 +312,7 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         times: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
-        if_fatal: Vec<Effect>,
+        if_fatal: Vec<BattleEffect>,
     },
     LoseHp {
         #[serde(default, skip_serializing_if = "is_default")]
@@ -298,7 +334,6 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    LoseHpPercentage(Amount),
     RemoveDebuffs,
     Die {
         #[serde(default, skip_serializing_if = "is_default")]
@@ -316,8 +351,6 @@ pub enum Effect {
     Draw(Amount),
     Scry(Amount),
     AddEnergy(Amount),
-    AddMaxHp(Amount),
-    ReduceMaxHpPercentage(Amount),
 
     Heal {
         #[serde(default, skip_serializing_if = "is_default")]
@@ -327,9 +360,6 @@ pub enum Effect {
     },
     SetStance(Stance),
     ChannelOrb(OrbType),
-    AddGold(Amount),
-    LoseAllGold,
-    AddPotionSlot(u8),
     AddOrbSlot(Amount),
     EvokeOrb(Amount),
 
@@ -387,20 +417,7 @@ pub enum Effect {
         exclude_healing: bool,
     },
 
-    // Meta-scaling
-    AddRelic(String),
-    RandomRelic,
-    DeckOperation {
-        #[serde(default, skip_serializing_if = "is_default")]
-        random: bool,
-        #[serde(default = "one", skip_serializing_if = "is_one")]
-        count: u8,
-        operation: DeckOperation,
-    },
-    DeckAdd(String),
-    ShowReward(Vec<RewardType>),
-    RemoveRelic(String),
-    RandomPotion,
+    GameEffect(GameEffect),
 
     // Monster
     Split(String, String),
@@ -410,25 +427,21 @@ pub enum Effect {
         count: Amount,
     },
 
-    Fight {
-        monsters: Vec<String>,
-        room: FightType,
-    },
 
     ShowChoices(Vec<String>),
 
-    //Meta
+    //Control Structures
     If {
         condition: Condition,
         #[serde(default, skip_serializing_if = "is_default")]
-        then: Vec<Effect>,
+        then: Vec<BattleEffect>,
         #[serde(default, skip_serializing_if = "is_default")]
-        _else: Vec<Effect>,
+        _else: Vec<BattleEffect>,
     },
     RandomChance(Vec<EffectChance>),
     Repeat {
         n: Amount,
-        effect: Vec<Effect>,
+        effect: Vec<BattleEffect>,
     },
     Custom,
 }
@@ -436,7 +449,7 @@ pub enum Effect {
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct EffectChance {
     pub amount: Amount,
-    pub effect: Vec<Effect>,
+    pub effect: Vec<BattleEffect>,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug, Deserialize, Serialize)]
@@ -494,7 +507,7 @@ impl Default for Target {
 #[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
 pub struct WhenEffect {
     pub when: When,
-    pub effect: Vec<Effect>,
+    pub effect: Vec<BattleEffect>,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, strum_macros::AsStaticStr, Deserialize, Serialize)]

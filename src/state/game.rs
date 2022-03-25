@@ -33,15 +33,59 @@ pub struct GameState {
     pub asc: u8,
     pub deck: HashMap<Uuid, Card>,
     pub potions: Vector<Option<Potion>>,
-    pub player: Player,
     pub gold: u16,
     pub keys: Option<KeyState>,
     pub won: Option<bool>,
     pub purge_count: u8,
     pub rare_probability_offset: u8,
+    pub max_hp: u16,
+    pub hp: u16,
 }
 
 impl GameState {
+    pub fn add_max_hp(&mut self, amount: u16) {
+        if let FloorState::Battle(battle) = self.floor_state {
+            battle.player.max_hp += amount;
+        } else {
+            self.max_hp += amount;
+        }
+
+        self.heal(amount as f64);
+    }
+
+    pub fn reduce_max_hp(&mut self, reduction: u16) {
+        if let FloorState::Battle(battle) = self.floor_state {
+            battle.player.max_hp -= reduction;
+            battle.player.hp = battle.player.hp.min(battle.player.max_hp);
+        } else {
+            self.max_hp += reduction;
+            self.hp = self.hp.min(self.max_hp);
+        }
+    }
+
+    pub fn heal(&mut self, mut amount: f64) {
+        if self.relics.contains("Mark Of The Bloom") {
+            return;
+        }
+        
+        if let FloorState::Battle(battle) = self.floor_state {
+            if self.relics.contains("Magic Flower") {
+                amount *= 1.5;
+            }
+            battle.player.hp = battle.player.max_hp.min((amount - 0.0001).ceil() as u16 + battle.player.hp)
+        } else {
+            self.hp = self.max_hp.min((amount - 0.0001).ceil() as u16 + self.hp)
+        }        
+    }
+
+    pub fn max_hp(&self) -> u16 {
+        if let FloorState::Battle(battle) = self.floor_state {
+            battle.player.max_hp
+        } else {
+            self.max_hp
+        }
+    }
+
     pub fn remove_card(&mut self, card: Uuid) {
         self.deck.remove(&card);
     }
@@ -66,7 +110,7 @@ impl GameState {
         }
     }
 
-    pub fn add_card(&mut self, card: Card) {
+    pub fn add_card(&mut self, mut card: Card) {
         if card.base._type == CardType::Curse {
             if let Some(relic) = self.relics.find_mut("Omamori") {
                 if relic.vars.x > 0 {
@@ -76,13 +120,30 @@ impl GameState {
             }
 
             if self.relics.contains("Darkstone Periapt") {
-                self.player.add_max_hp(6, &self.relics);
+                self.add_max_hp(6);
             }
         }
 
         if self.relics.contains("Ceramic Fish") {
             self.add_gold(9);
         }
+        let should_upgrade = 
+        match card.base._type {
+            CardType::Attack => self.relics.contains("Molten Egg"),
+            CardType::Skill => self.relics.contains("Toxic Egg"),
+            CardType::Power => self.relics.contains("Frozen Egg"),
+            CardType::Curse => false,
+            CardType::Status => false,
+            CardType::All => panic!("Unexpected card type of All"),
+        };
+
+        if should_upgrade && card.upgrades == 0 {
+            card.upgrades = 1;
+        }
+
+        card.bottled = false;
+
+        self.deck.insert(card.uuid, card);
     }
 
     pub fn add_gold(&mut self, amount: u16) {
@@ -91,7 +152,7 @@ impl GameState {
         }
 
         if self.relics.contains("Bloody Idol") {
-            self.player.heal(5_f64, &self.relics);
+            self.heal(5_f64);
         }
 
         self.gold += amount;
@@ -211,8 +272,6 @@ impl GameState {
             _ => panic!("Unexpected class!"),
         };
 
-        let player = Player::new(hp);
-
         let mut state = Self {
             class,
             map: MapState::new(),
@@ -223,7 +282,8 @@ impl GameState {
             asc,
             deck,
             potions,
-            player,
+            max_hp: hp,
+            hp,
             gold: 99,
             keys: None,
             won: None,
@@ -278,37 +338,6 @@ impl GameState {
             .iter()
             .enumerate()
             .map(|(position, opt)| opt.as_ref().map(|potion| potion.reference(position)))
-    }
-
-    pub fn get_buff(&self, buff: BuffReference) -> Option<&Buff> {
-        self.get_creature(buff.creature)
-            .and_then(|f| f.buffs.get(&buff.buff))
-    }
-
-    pub fn get_buff_mut(&mut self, buff: BuffReference) -> Option<&mut Buff> {
-        self.get_creature_mut(buff.creature)
-            .and_then(|f| f.buffs.get_mut(&buff.buff))
-    }
-
-    pub fn get_creature(&self, creature: CreatureReference) -> Option<&Creature> {
-        match creature {
-            CreatureReference::Player => Some(&self.player.creature),
-            CreatureReference::Creature(monster) => self
-                .floor_state
-                .battle()
-                .get_monster(monster)
-                .map(|m| &m.creature),
-        }
-    }
-    pub fn get_creature_mut(&mut self, creature: CreatureReference) -> Option<&mut Creature> {
-        match creature {
-            CreatureReference::Player => Some(&mut self.player.creature),
-            CreatureReference::Creature(monster) => self
-                .floor_state
-                .battle_mut()
-                .get_monster_mut(monster)
-                .map(|m| &mut m.creature),
-        }
     }
 }
 
@@ -432,53 +461,6 @@ impl Relics {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct Player {
-    pub creature: Creature,
-}
-
-impl Player {
-    pub fn new(max_hp: u16) -> Player {
-        Player {
-            creature: Creature::new(max_hp),
-        }
-    }
-
-    pub fn add_max_hp(&mut self, amount: u16, relics: &Relics) {
-        self.creature.max_hp += amount;
-        self.heal(amount as f64, relics);
-    }
-
-    pub fn reduce_max_hp(&mut self, reduction: u16) {
-        self.creature.max_hp -= reduction;
-        self.creature.hp = std::cmp::min(self.creature.hp, self.creature.max_hp);
-    }
-
-    pub fn heal(&mut self, mut amount: f64, relics: &Relics) {
-        if relics.contains("Mark Of The Bloom") {
-            return;
-        }
-
-        if let Some(relic) = relics.find("Magic Flower") {
-            if relic.enabled {
-                amount *= 1.5;
-            }
-        }
-
-        self.creature.hp = std::cmp::min(
-            (amount - 0.0001).ceil() as u16 + self.creature.hp,
-            self.creature.max_hp,
-        )
-    }
-
-    pub fn buffs(&self) -> impl Iterator<Item = BuffReference> + '_ {
-        self.creature.buffs.values().map(move |b| BuffReference {
-            base: b.base,
-            creature: CreatureReference::Player,
-            buff: b.uuid,
-        })
-    }
-}
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum FloorState {

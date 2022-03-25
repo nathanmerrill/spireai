@@ -4,7 +4,7 @@ use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use ::std::hash::{Hash, Hasher};
 
-use super::core::{is_default, Amount, Condition, Effect, FightType, When};
+use super::core::{is_default, Amount, Condition, FightType, When, BattleEffect};
 
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BaseMonster {
@@ -19,7 +19,7 @@ pub struct BaseMonster {
     #[serde(default, skip_serializing_if = "is_default")]
     pub x_range: Option<Range>,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_create: Vec<Effect>,
+    pub on_create: Vec<BattleEffect>,
 }
 impl std::fmt::Debug for BaseMonster {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -61,7 +61,7 @@ pub struct Phase {
 pub struct MonsterMove {
     pub name: String,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub effects: Vec<Effect>,
+    pub effects: Vec<BattleEffect>,
     pub intent: Intent,
 }
 

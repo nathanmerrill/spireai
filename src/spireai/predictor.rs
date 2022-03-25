@@ -590,8 +590,10 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                 panic!("Floor state is not rewards!")
             }
         }
-        
-        _ => unimplemented!(),
+        Choice::Toke(card) => {
+            possibility.state.deck.remove(&card.uuid);
+            possibility.state.screen_state = ScreenState::Proceed;
+        }
     }
 }
 
@@ -713,22 +715,4 @@ fn eval_monster_set(set: &MonsterSet, possibility: &mut GamePossibility) -> Vec<
         MonsterSet::Fixed(monsters) => monsters.to_vec(),
         MonsterSet::RandomSet(sets) => possibility.probability.choose(sets.to_vec()).unwrap(),
     }
-}
-
-#[allow(unused_variables)]
-pub fn verify_prediction<'a>(outcome: &'a GameState, choice: &'a GamePossibility) -> &'a GameState {
-    unimplemented!()
-    /*
-    let matches: Vec<&GameState> = prediction
-        .states
-        .iter()
-        .map(|a| &a.state)
-        .filter(|a| a == &outcome)
-        .collect();
-    match matches.len() {
-        0 => panic!("New state did not match any of the predicted states.\n New state: {:?}.\n\n Expected states: {:?}", outcome, prediction.states),
-        1 => matches.get(0).unwrap(),
-        _ => panic!("New state matched multiple predicted states.\n New state: {:?}.\n\n Expected states: {:?}", outcome, prediction.states),
-    }
-    */
 }

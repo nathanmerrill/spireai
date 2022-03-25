@@ -137,82 +137,17 @@ pub enum Binding {
     Card(CardReference),
     Creature(CreatureReference),
     Potion(PotionReference),
-    Relic(RelicReference),
-    CurrentEvent,
+    Relic(RelicReference)
 }
 
 impl Binding {
-    pub fn get_creature(self) -> CreatureReference {
+    pub fn creature_ref(self) -> CreatureReference {
         match self {
             Binding::Buff(buff) => buff.creature,
             Binding::Card(_) => CreatureReference::Player,
             Binding::Potion(_) => CreatureReference::Player,
             Binding::Relic(_) => CreatureReference::Player,
             Binding::Creature(creature) => creature,
-            Binding::CurrentEvent => CreatureReference::Player,
-        }
-    }
-
-    pub fn get_monster(self, state: &BattleState) -> Option<&Monster> {
-        match self {
-            Binding::Buff(buff) => buff
-                .creature
-                .monster_ref()
-                .and_then(|m| state.get_monster(m)),
-            Binding::Creature(creature) => {
-                creature.monster_ref().and_then(|m| state.get_monster(m))
-            }
-            Binding::Card(_) | Binding::Potion(_) | Binding::Relic(_) | Binding::CurrentEvent => {
-                None
-            }
-        }
-    }
-
-    pub fn get_vars(self, state: &GameState) -> &Vars {
-        match self {
-            Binding::Buff(buff) => &state.get_buff(buff).unwrap().vars,
-            Binding::Card(card) => &state.floor_state.battle().get_card(card).vars,
-            Binding::Creature(creature) => {
-                &state
-                    .floor_state
-                    .battle()
-                    .get_monster(creature.monster_ref().unwrap())
-                    .unwrap()
-                    .vars
-            }
-            Binding::Potion(potion) => {
-                panic!("Unexpected vars check on potion: {}", potion.index)
-            }
-            Binding::CurrentEvent => &state.floor_state.event().vars,
-            Binding::Relic(relic) => &state.relics.get(relic).vars,
-        }
-    }
-
-    pub fn get_mut_vars(self, state: &mut GameState) -> &mut Vars {
-        match self {
-            Binding::Buff(buff) => &mut state.get_buff_mut(buff).unwrap().vars,
-            Binding::Card(card) => &mut state.floor_state.battle_mut().get_card_mut(card).vars,
-            Binding::Creature(creature) => {
-                &mut state
-                    .floor_state
-                    .battle_mut()
-                    .get_monster_mut(creature.monster_ref().unwrap())
-                    .unwrap()
-                    .vars
-            }
-            Binding::Potion(potion) => {
-                panic!("Unexpected vars check on potion: {}", potion.index)
-            }
-            Binding::CurrentEvent => &mut state.floor_state.event_mut().vars,
-            Binding::Relic(relic) => &mut state.relics.get_mut(relic).vars,
-        }
-    }
-
-    pub fn is_upgraded(self, state: &GameState) -> bool {
-        match self {
-            Binding::Card(card) => state.floor_state.battle().get_card(card).upgrades > 0,
-            Binding::Potion(_) => state.relics.contains("Sacred Bark"),
-            _ => panic!("Unexpected is_upgraded check on {:?}", self),
         }
     }
 }

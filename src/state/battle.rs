@@ -9,24 +9,24 @@ use crate::{
     },
     spireai::{
         evaluator::GameAction,
-        references::{Binding, CardReference, CreatureReference, MonsterReference},
+        references::{Binding, CardReference, CreatureReference, MonsterReference, BuffReference},
     },
 };
 
 use super::{
-    core::{Card, Monster, Orb},
+    core::{Card, Monster, Orb, Creature, Buff},
     probability::Probability,
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct BattleState {
-    pub active: bool,
     pub deck_references: HashMap<Uuid, Uuid>,
+    pub player: Creature,
     pub cards: HashMap<Uuid, Card>,
     pub draw: HashSet<Uuid>,
     pub draw_top_known: Vector<Uuid>,
     pub draw_bottom_known: Vector<Uuid>,
-    pub discard: HashSet<Uuid>,
+    pub discard: Vector<Uuid>,
     pub exhaust: HashSet<Uuid>,
     pub hand: HashSet<Uuid>,
     pub monsters: HashMap<Uuid, Monster>,
@@ -43,22 +43,26 @@ pub struct BattleState {
     pub hp_loss_count: u8,
     pub power_count: u8,
     pub last_card_played: Option<CardType>,
+    pub end_turn: bool,
 }
 
 impl BattleState {
-    pub fn new() -> Self {
+    pub fn new(max_hp: u16, current_hp: u16) -> Self {
+        let player = Creature::new(max_hp);
+        player.hp = current_hp;
+
         Self {
-            active: false,
             deck_references: HashMap::new(),
             draw_top_known: Vector::new(),
             draw_bottom_known: Vector::new(),
             draw: HashSet::new(),
-            discard: HashSet::new(),
+            discard: Vector::new(),
             exhaust: HashSet::new(),
             hand: HashSet::new(),
             cards: HashMap::new(),
             monsters: HashMap::new(),
             orbs: Vector::new(),
+            player,
             orb_slots: 0,
             base_energy: 0,
             energy: 0,
@@ -71,15 +75,38 @@ impl BattleState {
             hp_loss_count: 0,
             power_count: 0,
             last_card_played: None,
+            end_turn: false,
         }
     }
 
-    pub fn new_card(
+    pub fn add_card(
         &mut self,
-        card: Card,
+        mut card: Card,
         destination: CardDestination,
-        probability: &mut Probability,
+        probability: &mut Probability
     ) -> CardReference {
+        if self.player.has_buff("Master Reality") {
+            if card.base.name == "Searing Blow" {
+                card.upgrades = 2;
+            }
+            card.upgrades = 1;
+        }
+
+        let cost = match card.base.name.as_str() {
+            "Blood for Blood" => {
+                4_u8.saturating_sub(self.hp_loss_count)
+            }
+            "Eviscerate" => {
+                3_u8.saturating_sub(self.discard_count)
+            }
+            "Force Field" => {
+                4_u8.saturating_sub(self.power_count)
+            }
+            _ => card.cost
+        };
+
+        card.cost = card.cost.min(cost);
+
         let reference = card.reference(destination.location());
         let uuid = card.uuid;
         self.cards.insert(uuid, card);
@@ -133,7 +160,7 @@ impl BattleState {
 
     pub fn move_out(&mut self, card: CardReference) {
         match card.location {
-            CardLocation::DiscardPile => self.discard.remove(&card.uuid),
+            CardLocation::DiscardPile => self.discard.index_of(&card.uuid).map(|i| self.discard.remove(i)),
             CardLocation::DrawPile => {
                 if let Some(index) = self.draw_top_known.iter().position(|a| a == &card.uuid) {
                     self.draw_top_known.remove(index);
@@ -157,7 +184,7 @@ impl BattleState {
     ) {
         match destination {
             CardDestination::DiscardPile => {
-                self.discard.insert(card);
+                self.discard.push_back(card);
             }
             CardDestination::DrawPile(position) => {
                 self.draw.insert(card);
@@ -189,7 +216,7 @@ impl BattleState {
             }
             CardDestination::PlayerHand => {
                 if self.hand.len() == 10 {
-                    self.discard.insert(card);
+                    self.discard.push_back(card);
                 } else {
                     self.hand.insert(card);
                 }
@@ -257,6 +284,32 @@ impl BattleState {
 
     pub fn get_monster_mut(&mut self, monster: MonsterReference) -> Option<&mut Monster> {
         self.monsters.get_mut(&monster.uuid)
+    }
+
+    pub fn get_buff(&self, buff: BuffReference) -> Option<&Buff> {
+        self.get_creature(buff.creature)
+            .and_then(|f| f.buffs.get(&buff.buff))
+    }
+
+    pub fn get_buff_mut(&mut self, buff: BuffReference) -> Option<&mut Buff> {
+        self.get_creature_mut(buff.creature)
+            .and_then(|f| f.buffs.get_mut(&buff.buff))
+    }
+
+    pub fn get_creature(&self, creature: CreatureReference) -> Option<&Creature> {
+        match creature {
+            CreatureReference::Player => Some(&self.player),
+            CreatureReference::Creature(monster) => self.get_monster(monster)
+                .map(|m| &m.creature),
+        }
+    }
+    pub fn get_creature_mut(&mut self, creature: CreatureReference) -> Option<&mut Creature> {
+        match creature {
+            CreatureReference::Player => Some(&mut self.player),
+            CreatureReference::Creature(monster) => self
+                .get_monster_mut(monster)
+                .map(|m| &mut m.creature),
+        }
     }
 
     pub fn get_card(&self, card: CardReference) -> &Card {
@@ -401,5 +454,30 @@ impl Target {
         };
 
         creatures
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+pub struct Player {
+    pub creature: Creature,
+}
+
+impl Player {
+    pub fn new(max_hp: u16, current_hp: u16) -> Player {
+        let creature = Creature::new(max_hp);
+        creature.hp = current_hp;
+        Player {
+            creature,
+        }
+    }
+
+    
+
+    pub fn buffs(&self) -> impl Iterator<Item = BuffReference> + '_ {
+        self.creature.buffs.values().map(move |b| BuffReference {
+            base: b.base,
+            creature: CreatureReference::Player,
+            buff: b.uuid,
+        })
     }
 }

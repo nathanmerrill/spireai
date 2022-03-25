@@ -111,9 +111,7 @@
     (
         name: "Dream Catcher",
         activation: When(Rest),
-        effect: [ShowReward([
-            StandardCard,
-        ])],
+        effect: [Custom],
         max_floor: 49,
     ),
     (
@@ -202,7 +200,6 @@
     ),
     (
         name: "Preserved Insect",
-        activation: When(RoomEnter(Fight(Elite()))),
         max_floor: 53,
     ),
     (
@@ -318,6 +315,9 @@
         name: "Eternal Feather",
         rarity: Uncommon,
         activation: When(RoomEnter(Rest)),
+        effect: [
+            Custom,
+        ]
     ),
     (
         name: "Frozen Egg",
@@ -1003,7 +1003,6 @@
     (
         name: "Coffee Dripper",
         rarity: Boss,
-        activation: When(RoomEnter(Rest)),
         energy_relic: true,
     ),
     (
@@ -1030,7 +1029,6 @@
     (
         name: "Fusion Hammer",
         rarity: Boss,
-        activation: When(RoomEnter(Rest)),
         energy_relic: true,
     ),
     (
