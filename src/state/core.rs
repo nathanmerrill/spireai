@@ -435,7 +435,7 @@ impl Event {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug, Copy)]
 pub struct Potion {
     pub base: &'static BasePotion,
 }

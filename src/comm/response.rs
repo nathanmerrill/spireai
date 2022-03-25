@@ -101,7 +101,7 @@ pub fn decompose_choice(
         ],
         Choice::TakeReward(idx) => vec![Response::Simple(format!("CHOOSE {}", idx))],
         Choice::NavigateToNode(idx) => vec![Response::Choose(format!("x={}", idx))],
-        Choice::SelectCard(card) => vec![Response::Choose(card)],
+        Choice::AddCardToDeck(card) => vec![Response::Choose(card)],
         Choice::Rest => vec![
             Response::Choose(String::from("rest")),
             Response::Simple(String::from("PROCEED")),
@@ -128,7 +128,7 @@ pub fn decompose_choice(
             Response::Choose(String::from("toke")),
             Response::CardInDeck(get_card_position_in_deck(card, request, uuid_map)),
         ],
-        Choice::SelectCards(cards) => {
+        Choice::SelectCards(cards) | Choice::Scry(cards) => {
             let available_cards = &request
                 .game_state
                 .as_ref()
@@ -153,7 +153,7 @@ pub fn decompose_choice(
                 .collect()
         }
 
-        Choice::DeckSelect(cards, _) => cards
+        Choice::DeckSelect(cards) => cards
             .into_iter()
             .map(|card| Response::CardInDeck(get_card_position_in_deck(card, request, uuid_map)))
             .chain(once(Response::Simple(String::from("CONFIRM"))))

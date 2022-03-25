@@ -231,7 +231,7 @@ pub fn floor_state_matches(
             }
         }
         external::ScreenState::CardReward(external_rewards) => {
-            if let internal::game::ScreenState::CardReward(internal_rewards) = screen_state {
+            if let internal::game::ScreenState::CardReward(internal_rewards, _) = screen_state {
                 external_rewards.cards.iter().all(|card| {
                     internal_rewards.iter().any(|offer| {
                         card.name == offer.base.name && (card.upgrades > 0) == offer.upgraded
@@ -324,7 +324,7 @@ fn rewards_match(
 ) -> bool {
     external.rewards.iter().all(|a| {
         internal.iter().any(|b| match a {
-            external::RewardType::Card => matches!(b, &internal::game::Reward::CardChoice(_)),
+            external::RewardType::Card => matches!(b, &internal::game::Reward::CardChoice(_, _, _)),
             external::RewardType::EmeraldKey => b == &internal::game::Reward::EmeraldKey,
             external::RewardType::Gold { gold } => b == &internal::game::Reward::Gold(*gold as u16),
             external::RewardType::Potion { potion } => {
@@ -336,7 +336,7 @@ fn rewards_match(
             }
             external::RewardType::Relic { relic } => {
                 if let internal::game::Reward::Relic(r) = b {
-                    relic.name == r.base.name
+                    relic.name == r.name
                 } else {
                     false
                 }
@@ -345,8 +345,8 @@ fn rewards_match(
                 b == &internal::game::Reward::Gold(*gold as u16)
             }
             external::RewardType::SapphireKey { link } => {
-                if let internal::game::Reward::SapphireKey(r) = b {
-                    link.name == r.base.name
+                if let internal::game::Reward::SapphireLinkedRelic(r) = b {
+                    link.name == r.name
                 } else {
                     false
                 }

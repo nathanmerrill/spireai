@@ -453,6 +453,7 @@ pub enum CardEffect {
         #[serde(default, skip_serializing_if = "is_default")]
         then: Vec<CardEffect>,
     },
+    Scry,
     AutoPlay,
     Retain,
     ReduceCost(Amount),

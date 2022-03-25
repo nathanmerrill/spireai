@@ -4,7 +4,7 @@ use crate::models::potions::BasePotion;
 use crate::models::relics::BaseRelic;
 use crate::models::{self, core::*, monsters::Intent, relics::Activation};
 use crate::state::battle::BattleState;
-use crate::state::core::{Card, CardOffer, Creature, Monster, Orb, Potion, Relic};
+use crate::state::core::{Card, CardOffer, Creature, Monster, Orb, Potion};
 use crate::state::game::{CardChoiceState, DeckCard, FloorState, GameState, Reward, ScreenState};
 use crate::state::probability::Probability;
 use im::{vector, HashMap, Vector};
@@ -27,7 +27,7 @@ pub struct GamePossibility {
 }
 
 impl GamePossibility {
-    fn eval_card_effects(&mut self, effects: &[CardEffect], card: CardReference) {
+    pub fn eval_card_effects(&mut self, effects: &[CardEffect], card: CardReference) {
         for effect in effects {
             self.eval_card_effect(effect, card);
         }
@@ -97,6 +97,15 @@ impl GamePossibility {
                     .get_card_mut(card)
                     .retain = true;
             }
+            CardEffect::Scry => {
+                if !self.state.floor_state.battle().discard.contains(&card.uuid) {
+                    self.state.floor_state.battle_mut().move_card(
+                        CardDestination::DiscardPile,
+                        card,
+                        &mut self.probability,
+                    );
+                }
+            }
             CardEffect::Upgrade => {
                 self.state
                     .floor_state
@@ -147,7 +156,7 @@ impl GamePossibility {
 
     pub fn eval_effects(
         &mut self,
-        effects: &'static [Effect],
+        effects: &[Effect],
         binding: Binding,
         action: Option<GameAction>,
     ) {
@@ -158,7 +167,7 @@ impl GamePossibility {
 
     fn eval_effect(
         &mut self,
-        effect: &'static Effect,
+        effect: &Effect,
         binding: Binding,
         action: Option<GameAction>,
     ) {
@@ -284,6 +293,7 @@ impl GamePossibility {
                         .collect(),
                     count_range: (amount..amount + 1),
                     then: effects,
+                    scry: false,
                 });
 
                 for card in card_choices {
@@ -319,6 +329,7 @@ impl GamePossibility {
                     choices,
                     count_range: (min_count..max_count + 1),
                     then: Vector::from(then),
+                    scry: false,
                 });
             }
             Effect::CreateCard {
@@ -350,12 +361,25 @@ impl GamePossibility {
                 let creature = target.to_creature(binding, action);
                 self.damage(total, creature, None, false);
             }
-            Effect::DeckAdd(_) => unimplemented!(),
+            Effect::DeckAdd(name) =>  {
+                self.state.add_card(Card::by_name(name));
+            },
             Effect::DeckOperation {
                 random,
                 count,
                 operation,
-            } => unimplemented!(),
+            } => {
+                if *random {
+                    assert!(*operation == DeckOperation::Upgrade);
+                    let choices = self.state.upgradable_cards().collect_vec();
+                    let selected = self.probability.choose_multiple(choices, *count as usize);
+                    for card in selected {
+                         self.state.deck.get_mut(&card.uuid).unwrap().upgrade();
+                    }
+                } else {
+                    self.state.screen_state = ScreenState::DeckChoose(*count, *operation);
+                }
+            },
             Effect::Die { target } => {
                 let creature = target.to_creature(binding, action);
                 self.die(creature);
@@ -527,15 +551,8 @@ impl GamePossibility {
                     rewards
                         .iter()
                         .map(|reward| match reward {
-                            RewardType::ColorlessCard => Reward::CardChoice(
-                                self.generate_card_rewards(FightType::Common, true),
-                            ),
-                            RewardType::EliteCard => {
-                                Reward::CardChoice(self.generate_card_rewards(
-                                    FightType::Elite { burning: false },
-                                    false,
-                                ))
-                            }
+                            RewardType::ColorlessCard => Reward::CardChoice(vector![], FightType::Common, true),
+                            RewardType::EliteCard => Reward::CardChoice(vector![], FightType::Common, false),
                             RewardType::Gold { min, max } => {
                                 let amount =
                                     self.probability.range((max - min) as usize) as u16 + min;
@@ -546,7 +563,7 @@ impl GamePossibility {
                                     .probability
                                     .choose(vec!["Necronomicon", "Enchiridion", "Nilry's Codex"])
                                     .unwrap();
-                                Reward::Relic(Relic::by_name(book))
+                                Reward::Relic(models::relics::by_name(book))
                             }
                             RewardType::RandomPotion => {
                                 let base = self.random_potion(false);
@@ -554,16 +571,14 @@ impl GamePossibility {
                             }
                             RewardType::RandomRelic => {
                                 let base = self.random_relic(None, None, None, false);
-                                Reward::Relic(Relic::new(base))
+                                Reward::Relic(base)
                             }
                             RewardType::Relic(rarity) => {
                                 let base = self.random_relic(None, Some(*rarity), None, false);
-                                Reward::Relic(Relic::new(base))
+                                Reward::Relic(base)
                             }
-                            RewardType::RelicName(name) => Reward::Relic(Relic::by_name(name)),
-                            RewardType::StandardCard => Reward::CardChoice(
-                                self.generate_card_rewards(FightType::Common, false),
-                            ),
+                            RewardType::RelicName(name) => Reward::Relic(models::relics::by_name(name)),
+                            RewardType::StandardCard => Reward::CardChoice(vector![], FightType::Common, false),
                         })
                         .collect(),
                 )
@@ -710,7 +725,7 @@ impl GamePossibility {
         monster_ref
     }
 
-    fn generate_card_rewards(
+    pub fn generate_card_rewards(
         &mut self,
         fight_type: FightType,
         colorless: bool,
@@ -903,27 +918,9 @@ impl GamePossibility {
     }
 
     fn scry(&mut self, count: usize) {
-        let cards = self.state.floor_state.battle().draw_top_known.take(count);
-
-        let remaining_cards = count - cards.len();
-        if remaining_cards > 0 {
-            let mut to_draw = self.state.floor_state.battle().draw.clone();
-            for card in cards {
-                to_draw.remove(&card);
-            }
-
-            let additional_cards = self
-                .probability
-                .choose_multiple(to_draw.into_iter().collect(), remaining_cards);
-            for card in additional_cards {
-                self.state
-                    .floor_state
-                    .battle_mut()
-                    .draw_top_known
-                    .push_back(card);
-            }
-        }
-        let battle = self.state.floor_state.battle();
+        let battle = self.state.floor_state.battle_mut();
+        battle.peek_top(count, &mut self.probability);
+        
         let mut choices = vec![];
         let mut unknown_cards = battle.draw.clone();
         for card in &battle.draw_top_known {
@@ -956,7 +953,8 @@ impl GamePossibility {
                     base: battle.cards[&uuid].base,
                 })
                 .collect(),
-            then: vector![CardEffect::MoveTo(CardDestination::DiscardPile)],
+            then: vector![],
+            scry: true,
         });
     }
 
@@ -1274,7 +1272,7 @@ impl GamePossibility {
                 break;
             }
 
-            battle.peek_top(n, &mut self.probability);
+            battle.peek_top(n as usize, &mut self.probability);
 
             let mut to_draw = battle
                 .draw_top_known
@@ -1302,11 +1300,11 @@ impl GamePossibility {
     }
 
     fn shuffle(&mut self) {
+        let battle = self.state.floor_state.battle_mut();
+        battle.draw_top_known = Vector::new();
+        battle.draw_bottom_known = Vector::new();
         if self.state.relics.contains("Frozen Eye") {
-            unimplemented!();
-        } else {
-            self.state.floor_state.battle_mut().draw_top_known = Vector::new();
-            self.state.floor_state.battle_mut().draw_bottom_known = Vector::new();
+            battle.peek_top(battle.draw.len(), &mut self.probability)
         }
     }
 

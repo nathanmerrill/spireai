@@ -1,9 +1,9 @@
 use crate::models;
 use crate::models::acts::MonsterSet;
-use crate::models::core::{CardType, ChestType, DeckOperation, FightType, Rarity, RoomType, When};
+use crate::models::core::{CardType, ChestType, DeckOperation, FightType, Rarity, RoomType, When, CardDestination};
 use crate::spireai::references::Binding;
 use crate::spireai::*;
-use crate::state::core::{Card, Event, Relic};
+use crate::state::core::{Card, Event};
 use crate::state::game::{FloorState, Reward, ScreenState, ShopState};
 use crate::state::map::MapNodeIcon;
 use im::vector;
@@ -12,44 +12,44 @@ use models::choices::Choice;
 use super::evaluator::GamePossibility;
 use super::references::CreatureReference;
 
-pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
+pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
     match choice {
         Choice::BuyCard(name) => {
             let cards = &mut possibility.state.floor_state.shop_mut().cards;
 
             let position = cards
                 .iter()
-                .position(|(card, _)| &card.base.name == name)
+                .position(|(card, _)| card.base.name == name)
                 .expect("Unable to find card that matches in shop");
 
             let (_, cost) = cards.remove(position);
 
             possibility.state.spend_gold(cost);
-            possibility.state.add_card(Card::by_name(name));
+            possibility.state.add_card(Card::by_name(&name));
         }
         Choice::BuyPotion(name) => {
             let potions = &mut possibility.state.floor_state.shop_mut().potions;
             let position = potions
                 .iter()
-                .position(|(potion, _)| &potion.name == name)
+                .position(|(potion, _)| potion.name == name)
                 .expect("Unable to find potion that matches in shop");
 
             let (_, cost) = potions.remove(position);
 
             possibility.state.spend_gold(cost);
-            possibility.state.add_potion(models::potions::by_name(name));
+            possibility.state.add_potion(models::potions::by_name(&name));
         }
         Choice::BuyRelic(name) => {
             let relics = &mut possibility.state.floor_state.shop_mut().relics;
 
             let position = relics
                 .iter()
-                .position(|(relic, _)| &relic.name == name)
+                .position(|(relic, _)| relic.name == name)
                 .expect("Unable to find relic that matches in shop");
             let (_, cost) = relics.remove(position);
 
             possibility.state.spend_gold(cost);
-            possibility.add_relic(models::relics::by_name(name));
+            possibility.add_relic(models::relics::by_name(&name));
         }
         Choice::BuyRemoveCard(card) => {
             let cost = possibility.state.purge_cost();
@@ -58,61 +58,65 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
             possibility.state.purge_count += 1;
             possibility.state.floor_state.shop_mut().can_purge = false;
         }
-        Choice::DeckSelect(cards, operation) => match operation {
-            DeckOperation::Duplicate => {
-                for card in cards {
-                    let mut new_card = possibility.state.deck[&card.uuid].clone();
-                    new_card.uuid = Uuid::new_v4();
-                    possibility.state.deck.insert(new_card.uuid, new_card);
-                }
-            }
-            DeckOperation::Remove => {
-                for card in cards {
-                    possibility.state.remove_card(card.uuid);
-                }
-            }
-            DeckOperation::Transform | DeckOperation::TransformUpgrade => {
-                let sets: Vec<Vec<&&'static models::cards::BaseCard>> = cards
-                    .iter()
-                    .map(|p| {
-                        let available_cards: Vec<&&'static models::cards::BaseCard> =
-                            models::cards::available_cards_by_class(p.base._class)
-                                .iter()
-                                .filter(move |c| c.name != p.base.name)
-                                .collect();
-
-                        available_cards
-                    })
-                    .collect();
-
-                for card in cards {
-                    possibility.state.remove_card(card.uuid);
-                }
-
-                for set in sets {
-                    let base = possibility.probability.choose(set).unwrap();
-                    let mut card = Card::new(base);
-                    if *operation == DeckOperation::TransformUpgrade {
-                        card.upgrade()
+        Choice::DeckSelect(cards) => if let ScreenState::DeckChoose(_, operation) = possibility.state.screen_state {
+            match operation {
+                DeckOperation::Duplicate => {
+                    for card in cards {
+                        let mut new_card = possibility.state.deck[&card.uuid].clone();
+                        new_card.uuid = Uuid::new_v4();
+                        possibility.state.deck.insert(new_card.uuid, new_card);
                     }
-                    possibility.state.add_card(card);
+                }
+                DeckOperation::Remove => {
+                    for card in cards {
+                        possibility.state.remove_card(card.uuid);
+                    }
+                }
+                DeckOperation::Transform | DeckOperation::TransformUpgrade => {
+                    let sets: Vec<Vec<&&'static models::cards::BaseCard>> = cards
+                        .iter()
+                        .map(|p| {
+                            let available_cards: Vec<&&'static models::cards::BaseCard> =
+                                models::cards::available_cards_by_class(p.base._class)
+                                    .iter()
+                                    .filter(move |c| c.name != p.base.name)
+                                    .collect();
+
+                            available_cards
+                        })
+                        .collect();
+
+                    for card in cards {
+                        possibility.state.remove_card(card.uuid);
+                    }
+
+                    for set in sets {
+                        let base = possibility.probability.choose(set).unwrap();
+                        let mut card = Card::new(base);
+                        if operation == DeckOperation::TransformUpgrade {
+                            card.upgrade()
+                        }
+                        possibility.state.add_card(card);
+                    }
+                }
+                DeckOperation::Upgrade => {
+                    for card in cards {
+                        possibility.state.deck[&card.uuid].upgrade();
+                    }
                 }
             }
-            DeckOperation::Upgrade => {
-                for card in cards {
-                    possibility.state.deck[&card.uuid].upgrade();
-                }
-            }
+        } else {
+            panic!("DeckSelect choice not in deck choose screen");
         },
         Choice::Dig => {
             let relic = possibility.random_relic(None, None, None, false);
             possibility.add_relic(relic);
         }
         Choice::DiscardPotion { slot } => {
-            possibility.state.potions[*slot] = None;
+            possibility.state.potions[slot] = None;
         }
         Choice::DrinkPotion { slot, target } => possibility.drink_potion(
-            possibility.state.potion_at(*slot).unwrap(),
+            possibility.state.potion_at(slot).unwrap(),
             target.map(|m| m.creature_ref()),
         ),
         Choice::End => possibility.end_turn(),
@@ -268,7 +272,7 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
             let choice = event
                 .choices
                 .iter()
-                .find(|base| &base.name == name)
+                .find(|base| base.name == name)
                 .unwrap();
             if choice.effects.is_empty() {
                 possibility.state.screen_state = ScreenState::Map;
@@ -286,7 +290,7 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
                     possibility.state.gold += 12;
                 }
             }
-            let node = possibility.state.map.nodes[&(possibility.state.map.floor, *node)].clone();
+            let node = possibility.state.map.nodes[&(possibility.state.map.floor, node)].clone();
             let act = &models::acts::ACTS[possibility.state.act as usize];
             match node.icon {
                 MapNodeIcon::Boss(name) => {
@@ -423,7 +427,31 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
                     .probability
                     .choose_weighted(&[(true, gold_chance), (false, 100 - gold_chance)])
                     .unwrap();
-                let mut rewards = vector![Reward::Relic(Relic::new(relic))];
+                let mut rewards = 
+                if !possibility.state.keys.map(|k| k.sapphire).unwrap_or(true) {
+                    vector![
+                        Reward::SapphireKey,
+                        Reward::SapphireLinkedRelic(relic)
+                    ]
+                } else {
+                    vector![Reward::Relic(relic)]
+                };
+
+                let extra_relic = if let Some(relic) = possibility.state.relics.find_mut("Matryoshka") {
+                    if relic.vars.x < 2 {
+                        relic.vars.x += 1;
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                };
+
+                if extra_relic {
+                    let relic = possibility.random_relic(Some(chest), None, Some(relic), false);
+                    rewards.insert(0, Reward::Relic(relic))
+                }
 
                 if gets_gold {
                     let gold_amount =
@@ -437,29 +465,150 @@ pub fn predict_outcome(choice: &Choice, possibility: &mut GamePossibility) {
             }
         }
         Choice::PlayCard { card, target } => {
-            possibility.play_card(*card, target.map(|t| t.creature_ref()))
+            possibility.play_card(card, target.map(|t| t.creature_ref()))
         }
         Choice::Proceed => possibility.state.screen_state = ScreenState::Map,
         Choice::Recall => {
             possibility.state.keys.as_mut().unwrap().ruby = true;
+            possibility.state.screen_state = ScreenState::Proceed;
         }
         Choice::Rest => {
             possibility.heal(
                 possibility.state.player.creature.max_hp as f64 * 0.3,
                 CreatureReference::Player,
             );
-            possibility.eval_when(When::Rest)
+            possibility.eval_when(When::Rest);
+            possibility.state.screen_state = ScreenState::Proceed;
         }
-        /*
-        Choice::ScryDiscard(cards) => {
+        Choice::Scry(cards) => {
+            let battle = possibility.state.floor_state.battle_mut();
+            
             for card in cards {
-                possibility.state.floor_state.battle().move_card(CardDestination::DiscardPile, *card, &mut possibility.probability);
+                battle.move_card(CardDestination::DiscardPile, card, &mut possibility.probability);
             }
+
             possibility.eval_when(When::Scry)
-        }*/
-        Choice::SelectCard(card) => {}
+        }
+        Choice::AddCardToDeck(card) => {
+            let card = Card::by_name(&card);
+            possibility.state.add_card(card);
+            remove_card_reward(possibility);
+        }
+        Choice::SelectCards(cards) => {
+            let effects = 
+            if let ScreenState::CardChoose(choice_state) = &possibility.state.screen_state {
+                choice_state.then.iter().cloned().collect_vec()
+            } else {
+                panic!("Screen state is not card choose!")
+            };
+            
+            for card in cards {
+                possibility.eval_card_effects(&effects, card)
+            }
+        }
+        Choice::SingingBowl => {
+            possibility.state.player.add_max_hp(2, &possibility.state.relics);
+            remove_card_reward(possibility);
+        }
+        Choice::Skip => {
+            possibility.state.screen_state = ScreenState::Normal;
+        }
+        Choice::Smith(card) => {
+            possibility.state.deck[&card.uuid].upgrade();
+            possibility.state.screen_state = ScreenState::Proceed;
+        }
+        Choice::Start {player_class, ascension} => {
+            *possibility = GamePossibility {
+                state: GameState::new(player_class, ascension.unwrap_or(0)),
+                probability: Probability::new()
+            };
+        }
+        Choice::State => {}
+        Choice::TakeReward(reward_index) => {
+            let (card_reward, gold_reward) = if let FloorState::Rewards(rewards) = &possibility.state.floor_state {
+                let reward = &rewards[reward_index];
+                match reward {
+                    Reward::CardChoice(_, fight_type, colorless) => {
+                        (Some((*fight_type, *colorless)), None)
+                    }
+                    Reward::Gold(amount) => {
+                        (None, Some(*amount))
+                    }
+                    _ => (None, None)
+                }
+            } else {
+                panic!("Floor state is not rewards!")
+            };
+
+            let card_offers = card_reward.map(|(fight_type, colorless)| {
+                possibility.generate_card_rewards(fight_type, colorless)
+            });
+
+            if let Some(gold) = gold_reward {
+                possibility.state.add_gold(gold);
+            }
+
+
+            if let FloorState::Rewards(rewards) = &mut possibility.state.floor_state {
+                let reward = &mut rewards[reward_index];
+                match reward {
+                    Reward::CardChoice(offer, _, _) => {
+                        if offer.is_empty() {
+                            offer.extend(card_offers.unwrap());
+                        }
+                    }
+                    Reward::EmeraldKey => {
+                        possibility.state.keys.as_mut().unwrap().emerald = true;
+                        rewards.remove(reward_index);
+                    }
+                    Reward::Gold(_) => {
+                        rewards.remove(reward_index);
+                    }
+                    Reward::Potion(potion) => {
+                        if let Some(empty) = possibility.state.potions.iter_mut().find(|f| f.is_none()) {
+                            *empty = Some(*potion);
+                            rewards.remove(reward_index);
+                        }
+                    }
+                    Reward::Relic(relic) => {
+                        possibility.state.relics.add(relic);
+                        rewards.remove(reward_index);
+                    }
+                    Reward::SapphireKey => {
+                        possibility.state.keys.as_mut().unwrap().sapphire = true;
+                        rewards.remove(reward_index);
+                        rewards.remove(reward_index);//Remove linked relic
+                    }
+                    Reward::SapphireLinkedRelic(relic) => {
+                        possibility.state.relics.add(relic);
+                        rewards.remove(reward_index-1); //Remove linked key
+                        rewards.remove(reward_index-1);
+                    }
+                    
+                }
+            } else {
+                panic!("Floor state is not rewards!")
+            }
+        }
+        
         _ => unimplemented!(),
     }
+}
+
+fn remove_card_reward(possibility: &mut GamePossibility) {
+    if let ScreenState::CardReward(_, index) = possibility.state.screen_state {    
+        if let Some(index) = index {
+            if let FloorState::Rewards(rewards) = &mut possibility.state.floor_state {
+                rewards.remove(index);
+            } else {
+                panic!("Floor state is not a rewards!")
+            }
+        }
+    } else {
+        panic!("Not in card reward screen!")
+    }
+
+    possibility.state.screen_state = ScreenState::Normal;
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]

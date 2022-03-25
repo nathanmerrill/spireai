@@ -231,7 +231,7 @@ fn resolve_choice(
         probability: Probability::new(),
     };
 
-    predictor::predict_outcome(&choice, &mut possibility);
+    predictor::predict_outcome(choice, &mut possibility);
 
     let state = Rc::new(possibility.state);
 

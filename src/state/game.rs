@@ -7,7 +7,7 @@ use crate::{
     models::{
         self,
         cards::BaseCard,
-        core::{CardEffect, CardType, ChestType, Class, DeckOperation, When},
+        core::{CardEffect, CardType, ChestType, Class, DeckOperation, When, FightType},
         potions::BasePotion,
         relics::{Activation, BaseRelic},
     },
@@ -548,7 +548,7 @@ pub struct ShopState {
 pub enum ScreenState {
     Normal,
     InShop,
-    CardReward(Vector<CardOffer>),
+    CardReward(Vector<CardOffer>, Option<usize>), // usize is the index of the reward in the rewards
     CardChoose(CardChoiceState),
     DeckChoose(u8, DeckOperation),
     Proceed,
@@ -557,15 +557,16 @@ pub enum ScreenState {
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum Reward {
-    CardChoice(Vector<CardOffer>), // true if upgraded
+    CardChoice(Vector<CardOffer>, FightType, bool), // True if colorless
     Gold(u16),
-    Relic(Relic),
+    Relic(&'static BaseRelic),
     Potion(Potion),
     EmeraldKey,
-    SapphireKey(Relic),
+    SapphireKey,
+    SapphireLinkedRelic(&'static BaseRelic),
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy,Debug)]
 pub struct KeyState {
     pub ruby: bool,
     pub emerald: bool,
@@ -577,4 +578,5 @@ pub struct CardChoiceState {
     pub choices: Vector<CardReference>,
     pub count_range: Range<usize>,
     pub then: Vector<CardEffect>,
+    pub scry: bool,
 }

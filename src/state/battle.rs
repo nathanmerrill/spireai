@@ -284,12 +284,12 @@ impl BattleState {
         }
     }
 
-    pub fn peek_top(&mut self, n: u8, probability: &mut Probability) {
+    pub fn peek_top(&mut self, n: usize, probability: &mut Probability) {
         if self.draw.is_empty() {
             return;
         }
 
-        let remaining_picks = n as usize - self.draw_top_known.len();
+        let remaining_picks = n - self.draw_top_known.len();
 
         let choices = self
             .draw
