@@ -13,9 +13,11 @@ use crate::{
         relics::BaseRelic,
     },
     spireai::references::{
-        BuffReference, CardReference, CreatureReference, PotionReference, RelicReference,
+        BuffReference, CardReference, CreatureReference, PotionReference, RelicReference, MonsterReference,
     },
 };
+
+use super::game::GameState;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Vars {
@@ -40,11 +42,35 @@ pub struct Orb {
     pub n: u16,
 }
 
+
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
+pub struct HpRange {
+    pub amount: u16,
+    pub max: u16
+}
+
+impl HpRange {
+    pub fn reduce_max_hp(&mut self, reduction: u16) {
+        self.max -= reduction;
+        self.amount = self.max.min(self.amount);
+    }
+
+    pub fn add(&mut self, amount: f64) {
+        self.amount = self.max.min((amount - 0.0001).ceil() as u16 + self.amount)
+    }
+
+    pub fn new(amount: u16) -> Self {
+        Self {
+            amount,
+            max: amount
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Creature {
-    pub hp: u16,
-    pub max_hp: u16,
-    pub is_player: bool,
+    pub hp: HpRange,
+    pub monster: Option<MonsterReference>,
     pub buffs_when: HashMap<When, Vector<Uuid>>,
     pub buff_names: HashMap<String, Uuid>,
     pub buffs: HashMap<Uuid, Buff>,
@@ -79,15 +105,45 @@ impl Creature {
         }
     }
 
+    pub fn creature_ref(&self) -> CreatureReference 
+    {
+        match self.monster {
+            Some(_ref) => CreatureReference::Creature(_ref),
+            None => CreatureReference::Player
+        }
+    }
+
+    pub fn is_player(&self) -> bool {
+        self.monster.is_none()
+    }
+
+    pub fn buffs(&self) -> impl Iterator<Item = BuffReference> + '_ {
+        self.buffs.values().map(move |b| BuffReference {
+            base: b.base,
+            creature: self.creature_ref(),
+            buff: b.uuid,
+        })
+    }
+
     pub fn has_buff(&self, name: &str) -> bool {
         self.buff_names.contains_key(name)
     }
 
-    pub fn new(max_hp: u16) -> Creature {
+    pub fn player(hp: HpRange) -> Creature {
         Creature {
-            hp: max_hp,
-            max_hp,
-            is_player: false,
+            hp,
+            monster: None,
+            buffs_when: HashMap::new(),
+            buff_names: HashMap::new(),
+            buffs: HashMap::new(),
+            block: 0,
+        }
+    }
+
+    pub fn monster(hp: HpRange, monster: MonsterReference) -> Creature {
+        Creature {
+            hp,
+            monster: Some(monster),
             buffs_when: HashMap::new(),
             buff_names: HashMap::new(),
             buffs: HashMap::new(),
@@ -383,10 +439,15 @@ impl Monster {
 
     pub fn new(base: &'static BaseMonster, max_hp: u16) -> Self {
         let uuid = Uuid::new_v4();
+        let reference = MonsterReference {
+            base,
+            uuid,
+        };
+
         Monster {
             base,
             uuid,
-            creature: Creature::new(max_hp),
+            creature: Creature::monster(HpRange::new(max_hp), reference),
             position: 0,
             targetable: true,
             intent: Intent::None,
@@ -402,8 +463,9 @@ impl Monster {
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct Event {
+pub struct EventState {
     pub base: &'static BaseEvent,
+    pub game_state: GameState,
     pub vars: Vars,
     pub variant: Option<String>,
     pub variant_cards: Vec<CardReference>,
@@ -412,12 +474,12 @@ pub struct Event {
     pub available_choices: Vec<String>,
 }
 
-impl Event {
-    pub fn by_name(name: &str) -> Self {
-        Self::new(models::events::by_name(name))
+impl EventState {
+    pub fn by_name(name: &str, game_state: GameState) -> Self {
+        Self::new(models::events::by_name(name), game_state)
     }
 
-    pub fn new(base: &'static BaseEvent) -> Self {
+    pub fn new(base: &'static BaseEvent, game_state: GameState) -> Self {
         Self {
             base,
             vars: Vars::new(),
@@ -431,6 +493,7 @@ impl Event {
                 .filter(|c| c.initial)
                 .map(|c| c.name.to_string())
                 .collect(),
+            game_state,
         }
     }
 }

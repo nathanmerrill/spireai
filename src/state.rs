@@ -3,3 +3,4 @@ pub mod core;
 pub mod game;
 pub mod map;
 pub mod probability;
+pub mod shop;

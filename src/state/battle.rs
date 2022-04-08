@@ -15,7 +15,7 @@ use crate::{
 
 use super::{
     core::{Card, Monster, Orb, Creature, Buff},
-    probability::Probability,
+    probability::Probability, game::{GameState, CardChoiceState},
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -44,13 +44,12 @@ pub struct BattleState {
     pub power_count: u8,
     pub last_card_played: Option<CardType>,
     pub end_turn: bool,
+    pub game_state: GameState,
+    pub card_choose: CardChoiceState,
 }
 
 impl BattleState {
-    pub fn new(max_hp: u16, current_hp: u16) -> Self {
-        let player = Creature::new(max_hp);
-        player.hp = current_hp;
-
+    pub fn new(state: GameState) -> Self {
         Self {
             deck_references: HashMap::new(),
             draw_top_known: Vector::new(),
@@ -62,8 +61,8 @@ impl BattleState {
             cards: HashMap::new(),
             monsters: HashMap::new(),
             orbs: Vector::new(),
-            player,
             orb_slots: 0,
+            player: Creature::player(state.hp),
             base_energy: 0,
             energy: 0,
             event_battle: false,
@@ -76,7 +75,18 @@ impl BattleState {
             power_count: 0,
             last_card_played: None,
             end_turn: false,
+            game_state: state
         }
+    }
+
+    pub fn heal(&mut self, mut amount: f64) 
+    {
+        if self.game_state.relics.contains("Magic Flower") 
+        {
+            amount *= 1.5;
+        }
+
+        self.game_state.heal(amount)
     }
 
     pub fn add_card(
@@ -399,7 +409,7 @@ impl BattleState {
 impl Target {
     pub fn to_creature(self, binding: Binding, action: Option<GameAction>) -> CreatureReference {
         match self {
-            Target::_Self => binding.get_creature(),
+            Target::_Self => binding.creature_ref(),
             Target::Attacker => {
                 let action = action.expect("Expected action!");
                 debug_assert!(action.is_attack, "Expected attack action!");
@@ -425,7 +435,7 @@ impl Target {
         probability: &mut Probability,
     ) -> Vec<CreatureReference> {
         let creatures = match self {
-            Target::AllEnemies => match binding.get_creature() {
+            Target::AllEnemies => match binding.creature_ref() {
                 CreatureReference::Player => state.available_creatures().collect(),
                 _ => vec![CreatureReference::Player],
             },
@@ -435,7 +445,7 @@ impl Target {
                 .map(|a| a.creature_ref())
                 .into_iter()
                 .collect(),
-            Target::RandomFriendly => match binding.get_creature() {
+            Target::RandomFriendly => match binding.creature_ref() {
                 CreatureReference::Player => vec![CreatureReference::Player],
                 CreatureReference::Creature(uuid) => {
                     let monsters = state
@@ -454,30 +464,5 @@ impl Target {
         };
 
         creatures
-    }
-}
-
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct Player {
-    pub creature: Creature,
-}
-
-impl Player {
-    pub fn new(max_hp: u16, current_hp: u16) -> Player {
-        let creature = Creature::new(max_hp);
-        creature.hp = current_hp;
-        Player {
-            creature,
-        }
-    }
-
-    
-
-    pub fn buffs(&self) -> impl Iterator<Item = BuffReference> + '_ {
-        self.creature.buffs.values().map(move |b| BuffReference {
-            base: b.base,
-            creature: CreatureReference::Player,
-            buff: b.uuid,
-        })
     }
 }

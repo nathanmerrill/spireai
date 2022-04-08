@@ -2,12 +2,11 @@ use crate::models;
 use crate::models::core::DeckOperation;
 use crate::state::game::DeckCard;
 use crate::state::game::FloorState;
-use crate::state::game::GameState;
 use crate::state::game::ScreenState;
 use itertools::Itertools;
 use models::choices::Choice;
 
-pub fn all_choices(state: &GameState) -> Vec<Choice> {
+pub fn all_choices(state: &FloorState) -> Vec<Choice> {
     let mut choices: Vec<Choice> = Vec::new();
     choices.extend(
         state

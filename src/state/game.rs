@@ -12,78 +12,46 @@ use crate::{
         relics::{Activation, BaseRelic},
     },
     spireai::references::{
-        BuffReference, CardReference, CreatureReference, PotionReference, RelicReference,
+        CardReference, PotionReference, RelicReference,
     },
 };
 
 use super::{
     battle::BattleState,
-    core::{Buff, Card, CardOffer, Creature, Event, Potion, Relic},
-    map::MapState,
+    core::{Buff, Card, CardOffer, Creature, Event, Potion, Relic, HpRange},
+    map::MapState, shop::ShopState,
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct GameState {
     pub class: Class,
-    pub map: MapState,
-    pub floor_state: FloorState,
-    pub screen_state: ScreenState,
     pub relics: Relics,
     pub act: u8,
     pub asc: u8,
     pub deck: HashMap<Uuid, Card>,
     pub potions: Vector<Option<Potion>>,
     pub gold: u16,
+    pub hp: HpRange,
+    pub map: MapState,
+    pub screen_state: ScreenState,
     pub keys: Option<KeyState>,
     pub won: Option<bool>,
     pub purge_count: u8,
     pub rare_probability_offset: u8,
-    pub max_hp: u16,
-    pub hp: u16,
 }
 
 impl GameState {
     pub fn add_max_hp(&mut self, amount: u16) {
-        if let FloorState::Battle(battle) = self.floor_state {
-            battle.player.max_hp += amount;
-        } else {
-            self.max_hp += amount;
-        }
-
+        self.hp.max += amount;
         self.heal(amount as f64);
     }
 
-    pub fn reduce_max_hp(&mut self, reduction: u16) {
-        if let FloorState::Battle(battle) = self.floor_state {
-            battle.player.max_hp -= reduction;
-            battle.player.hp = battle.player.hp.min(battle.player.max_hp);
-        } else {
-            self.max_hp += reduction;
-            self.hp = self.hp.min(self.max_hp);
-        }
-    }
-
-    pub fn heal(&mut self, mut amount: f64) {
+    pub fn heal(&mut self, amount: f64) {
         if self.relics.contains("Mark Of The Bloom") {
             return;
         }
-        
-        if let FloorState::Battle(battle) = self.floor_state {
-            if self.relics.contains("Magic Flower") {
-                amount *= 1.5;
-            }
-            battle.player.hp = battle.player.max_hp.min((amount - 0.0001).ceil() as u16 + battle.player.hp)
-        } else {
-            self.hp = self.max_hp.min((amount - 0.0001).ceil() as u16 + self.hp)
-        }        
-    }
 
-    pub fn max_hp(&self) -> u16 {
-        if let FloorState::Battle(battle) = self.floor_state {
-            battle.player.max_hp
-        } else {
-            self.max_hp
-        }
+        self.hp.add(amount);
     }
 
     pub fn remove_card(&mut self, card: Uuid) {
@@ -158,7 +126,7 @@ impl GameState {
         self.gold += amount;
     }
 
-    pub fn spend_gold(&mut self, amount: u16) {
+    /*pub fn spend_gold(&mut self, amount: u16) {
         self.gold -= amount;
 
         if let FloorState::Shop(_) = self.floor_state {
@@ -166,7 +134,7 @@ impl GameState {
                 relic.enabled = false;
             }
         }
-    }
+    }*/
 
     pub fn add_potion(&mut self, base: &'static BasePotion) {
         if let Some(slot) = self.potions.iter().position(|a| a.is_none()) {
@@ -275,15 +243,13 @@ impl GameState {
         let mut state = Self {
             class,
             map: MapState::new(),
-            floor_state: FloorState::Event(Event::by_name("Neow")),
             screen_state: ScreenState::Normal,
             relics: Relics::new(),
             act: 1,
             asc,
             deck,
             potions,
-            max_hp: hp,
-            hp,
+            hp: HpRange { amount: hp, max: max_hp },
             gold: 99,
             keys: None,
             won: None,
@@ -463,78 +429,61 @@ impl Relics {
 
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
+
+//The goal here is not to enumerate every possible screen state, but the states that the AI will hit (e.g. once the map has been viewed, no returning)
 pub enum FloorState {
-    Event(Event),
-    Rest,
-    Chest(ChestType),
+    Event(EventState),
+    Rest(GameState),
+    Chest(ChestState),
     Battle(BattleState),
-    GameOver,
-    Rewards(Vector<Reward>),
+    BattleOver(BattleOverState),
+    GameOver(GameState),
     Shop(ShopState),
+    Map(GameState),
 }
 
 impl FloorState {
-    pub fn battle(&self) -> &BattleState {
-        match &self {
-            FloorState::Battle(a) => a,
-            _ => panic!("Not in a battle!"),
-        }
-    }
-
-    pub fn battle_mut(&mut self) -> &mut BattleState {
+    pub fn game_state(&self) -> &GameState {
         match self {
-            FloorState::Battle(a) => a,
-            _ => panic!("Not in a battle!"),
+            FloorState::Event(event) => &event.game_state,
+            FloorState::Rest(state) => state,
+            FloorState::Chest(_, state) => state,
+            FloorState::Battle(battle) => &battle.game_state,
+            FloorState::GameOver(state) => state,
+            
         }
-    }
+    } 
+}
 
-    pub fn event(&self) -> &Event {
-        match &self {
-            FloorState::Event(a) => a,
-            _ => panic!("Not in an event!"),
-        }
-    }
 
-    pub fn event_mut(&mut self) -> &mut Event {
-        match self {
-            FloorState::Event(a) => a,
-            _ => panic!("Not in an event!"),
-        }
-    }
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+pub struct BattleOverState {
+    game_state: GameState,
+    rewards: RewardState,
+}
 
-    pub fn shop(&self) -> &ShopState {
-        match &self {
-            FloorState::Shop(a) => a,
-            _ => panic!("Not in a shop!"),
-        }
-    }
+pub struct RestState {
+    toking: bool,
+    smithing: bool,
+    deck_adding: bool,
+}
 
-    pub fn shop_mut(&mut self) -> &mut ShopState {
-        match self {
-            FloorState::Shop(a) => a,
-            _ => panic!("Not in a shop!"),
-        }
-    }
+pub enum RestScreenState {
+    Toke,
+    DreamCatch,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct ShopState {
-    pub generated: bool,
-    pub cards: Vector<(CardOffer, u16)>,
-    pub potions: Vector<(&'static BasePotion, u16)>,
-    pub relics: Vector<(&'static BaseRelic, u16)>,
-    pub can_purge: bool,
+pub struct ChestState {
+    chest: ChestType,
+    rewards: Option<RewardState>,  // Taking tiny house replaces this rewards list
+    state: GameState,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub enum ScreenState {
-    Normal,
-    InShop,
-    CardReward(Vector<CardOffer>, Option<usize>), // usize is the index of the reward in the rewards
-    CardChoose(CardChoiceState),
-    DeckChoose(u8, DeckOperation),
-    Proceed,
-    Map,
+pub struct RewardState {
+    rewards: Vector<Reward>,
+    viewing_reward: Option<usize>,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
