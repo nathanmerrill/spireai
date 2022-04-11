@@ -1,75 +1,61 @@
 use crate::models;
 use crate::models::acts::MonsterSet;
-use crate::models::core::{CardType, ChestType, DeckOperation, FightType, Rarity, RoomType, When, CardDestination};
+use crate::models::core::{CardType, ChestType, DeckOperation, FightType, Rarity, RoomType, When, CardDestination, Class};
 use crate::spireai::references::Binding;
 use crate::spireai::*;
-use crate::state::core::{Card, Event};
-use crate::state::game::{FloorState, Reward, ScreenState, ShopState};
+use crate::state::core::{Card};
+use crate::state::floor::FloorState;
 use crate::state::map::MapNodeIcon;
+use crate::state::shop::ShopScreenState;
 use im::vector;
 use models::choices::Choice;
 
-use super::evaluator::GamePossibility;
 use super::references::CreatureReference;
 
 pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
     match choice {
-        Choice::BuyCard(name) => {
-            let cards = &mut possibility.state.floor_state.shop_mut().cards;
-
-            let position = cards
-                .iter()
-                .position(|(card, _)| card.base.name == name)
-                .expect("Unable to find card that matches in shop");
-
-            let (_, cost) = cards.remove(position);
-
-            possibility.state.spend_gold(cost);
-            possibility.state.add_card(Card::by_name(&name));
+        Choice::BuyCard(index) => {
+            if let FloorState::Shop(shop) = &mut possibility.state {
+                shop.buy_card(index, &mut possibility.probability);                
+            } else {
+                panic!("Expected a Shop in BuyCard");
+            }
         }
-        Choice::BuyPotion(name) => {
-            let potions = &mut possibility.state.floor_state.shop_mut().potions;
-            let position = potions
-                .iter()
-                .position(|(potion, _)| potion.name == name)
-                .expect("Unable to find potion that matches in shop");
-
-            let (_, cost) = potions.remove(position);
-
-            possibility.state.spend_gold(cost);
-            possibility.state.add_potion(models::potions::by_name(&name));
+        Choice::BuyPotion(index) => {
+            if let FloorState::Shop(shop) = &mut possibility.state {
+                shop.buy_potion(index, &mut possibility.probability);                
+            } else {
+                panic!("Expected a Shop in BuyPotion");
+            }
         }
-        Choice::BuyRelic(name) => {
-            let relics = &mut possibility.state.floor_state.shop_mut().relics;
-
-            let position = relics
-                .iter()
-                .position(|(relic, _)| relic.name == name)
-                .expect("Unable to find relic that matches in shop");
-            let (_, cost) = relics.remove(position);
-
-            possibility.state.spend_gold(cost);
-            possibility.add_relic(models::relics::by_name(&name));
+        Choice::BuyRelic(index) => {
+            if let FloorState::Shop(shop) = &mut possibility.state {
+                shop.buy_relic(index, &mut possibility.probability)
+            } else {
+                panic!("Expected a Shop in BuyPotion");                
+            }
         }
         Choice::BuyRemoveCard(card) => {
-            let cost = possibility.state.purge_cost();
-            possibility.state.spend_gold(cost);
-            possibility.state.remove_card(card.uuid);
-            possibility.state.purge_count += 1;
-            possibility.state.floor_state.shop_mut().can_purge = false;
+            if let FloorState::Shop(shop) = &mut possibility.state {
+                shop.purge(card);
+            } else {
+                panic!("Expected a Shop in BuyPotion");                
+            }
         }
-        Choice::DeckSelect(cards) => if let ScreenState::DeckChoose(_, operation) = possibility.state.screen_state {
+        Choice::DeckSelect(cards, operation) => {
             match operation {
                 DeckOperation::Duplicate => {
+                    let state = possibility.state.game_state_mut();
                     for card in cards {
-                        let mut new_card = possibility.state.deck[&card.uuid].clone();
+                        let mut new_card = state.deck[&card.uuid].clone();
                         new_card.uuid = Uuid::new_v4();
-                        possibility.state.deck.insert(new_card.uuid, new_card);
+                        state.deck.insert(new_card.uuid, new_card);
                     }
                 }
                 DeckOperation::Remove => {
+                    let state = possibility.state.game_state_mut();
                     for card in cards {
-                        possibility.state.remove_card(card.uuid);
+                        state.remove_card(card.uuid);
                     }
                 }
                 DeckOperation::Transform | DeckOperation::TransformUpgrade => {
@@ -85,9 +71,10 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                             available_cards
                         })
                         .collect();
-
+                    
+                    let state = possibility.state.game_state_mut();
                     for card in cards {
-                        possibility.state.remove_card(card.uuid);
+                        state.remove_card(card.uuid);
                     }
 
                     for set in sets {
@@ -96,322 +83,197 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                         if operation == DeckOperation::TransformUpgrade {
                             card.upgrade()
                         }
-                        possibility.state.add_card(card);
+                        state.add_card(card);
                     }
                 }
                 DeckOperation::Upgrade => {
+                    let state = possibility.state.game_state_mut();
                     for card in cards {
-                        possibility.state.deck[&card.uuid].upgrade();
+                        state.deck[&card.uuid].upgrade();
                     }
                 }
             }
-        } else {
-            panic!("DeckSelect choice not in deck choose screen");
-        },
+        }
         Choice::Dig => {
-            let relic = possibility.random_relic(None, None, None, false);
-            possibility.add_relic(relic);
+            if let FloorState::Rest(rest) = &mut possibility.state {
+                let relic = rest.game_state.random_relic(None, None, false, &mut possibility.probability);
+                rest.game_state.relics.add(relic);
+            } else {
+                panic!("Expected a Rest in Dig");                
+            }
         }
         Choice::DiscardPotion { slot } => {
-            possibility.state.potions[slot] = None;
+            let state = possibility.state.game_state_mut();
+            state.potions[slot] = None;
         }
         Choice::DrinkPotion { slot, target } => possibility.drink_potion(
-            possibility.state.potion_at(slot).unwrap(),
+            possibility.state.game_state_mut().potion_at(slot).unwrap(),
             target.map(|m| m.creature_ref()),
         ),
         Choice::End => possibility.end_turn(),
         Choice::EnterShop => {
-            if !possibility.state.floor_state.shop().generated {
-                let mut discount = 1.0;
-                if possibility.state.relics.contains("The Courier") {
-                    discount = 0.8;
-                }
-                if possibility.state.relics.contains("Membership Card") {
-                    discount /= 2.0;
-                }
-
-                let available_cards =
-                    models::cards::available_cards_by_class(possibility.state.class);
-                let available_attacks = available_cards
-                    .iter()
-                    .copied()
-                    .filter(|c| c._type == CardType::Attack)
-                    .collect_vec();
-                let attack1 = possibility.generate_card_offer(None, &available_attacks);
-                let attack2 = possibility.generate_card_offer(
-                    None,
-                    &available_attacks
-                        .into_iter()
-                        .filter(|c| c.name != attack1.base.name)
-                        .collect_vec(),
-                );
-
-                let available_skills = available_cards
-                    .iter()
-                    .copied()
-                    .filter(|c| c._type == CardType::Skill)
-                    .collect_vec();
-                let skill1 = possibility.generate_card_offer(None, &available_skills);
-                let skill2 = possibility.generate_card_offer(
-                    None,
-                    &available_skills
-                        .into_iter()
-                        .filter(|c| c.name != skill1.base.name)
-                        .collect_vec(),
-                );
-
-                let available_powers = available_cards
-                    .iter()
-                    .copied()
-                    .filter(|c| c._type == CardType::Power)
-                    .collect_vec();
-                let power1 = possibility.generate_card_offer(None, &available_powers);
-
-                let available_colorless =
-                    models::cards::available_cards_by_class(models::core::Class::None);
-                let available_colorless_uncommon = available_colorless
-                    .iter()
-                    .copied()
-                    .filter(|c| c.rarity == models::core::Rarity::Uncommon)
-                    .collect_vec();
-                let available_colorless_rare = available_colorless
-                    .iter()
-                    .copied()
-                    .filter(|c| c.rarity == models::core::Rarity::Rare)
-                    .collect_vec();
-
-                let colorless1 =
-                    possibility.generate_card_offer(None, &available_colorless_uncommon);
-                let colorless2 = possibility.generate_card_offer(None, &available_colorless_rare);
-
-                let cards = vec![
-                    attack1, attack2, skill1, skill2, power1, colorless1, colorless2,
-                ];
-                let on_sale = possibility.probability.range(5);
-
-                let cards = cards
-                    .into_iter()
-                    .enumerate()
-                    .map(|(p, c)| {
-                        let (min, max) = match c.base._class {
-                            models::core::Class::None => match c.base.rarity {
-                                models::core::Rarity::Uncommon => (81, 91),
-                                models::core::Rarity::Rare => (162, 198),
-                                _ => panic!("Unexpected rarity"),
-                            },
-                            _ => match c.base.rarity {
-                                models::core::Rarity::Common => (45, 55),
-                                models::core::Rarity::Uncommon => (68, 82),
-                                models::core::Rarity::Rare => (135, 165),
-                                _ => panic!("Unexpected rarity"),
-                            },
-                        };
-
-                        let final_discount = if p == on_sale {
-                            discount / 2.0
-                        } else {
-                            discount
-                        };
-
-                        let min = (min as f64 * final_discount).ceil() as usize;
-                        let max = (max as f64 * final_discount).ceil() as usize;
-
-                        (c, (possibility.probability.range(max - min) + min) as u16)
-                    })
-                    .collect();
-
-                let relic1 = possibility.random_relic(None, None, None, true);
-                let relic2 = possibility.random_relic(None, None, Some(relic1), true);
-                let relic3 = possibility.random_relic(None, Some(Rarity::Shop), None, true);
-
-                let relics = vec![relic1, relic2, relic3];
-                let relics_prices = relics
-                    .into_iter()
-                    .map(|r| {
-                        let (min, max) = match r.rarity {
-                            Rarity::Shop | Rarity::Common => (143, 157),
-                            Rarity::Uncommon => (238, 262),
-                            Rarity::Rare => (285, 315),
-                            _ => panic!("Unexpected rarity"),
-                        };
-
-                        (r, (possibility.probability.range(max - min) + min) as u16)
-                    })
-                    .collect();
-
-                let potions = (0..3)
-                    .map(|_| {
-                        let potion = possibility.random_potion(false);
-                        let (min, max) = match potion.rarity {
-                            Rarity::Common => (48, 52),
-                            Rarity::Uncommon => (72, 78),
-                            Rarity::Rare => (95, 105),
-                            _ => panic!("Unexpected rarity"),
-                        };
-
-                        (
-                            potion,
-                            (possibility.probability.range(max - min) + min) as u16,
-                        )
-                    })
-                    .collect();
-
-                possibility.state.floor_state = FloorState::Shop(ShopState {
-                    generated: true,
-                    can_purge: true,
-                    cards,
-                    relics: relics_prices,
-                    potions,
-                });
+            if let FloorState::Shop(shop) = &mut possibility.state {
+                shop.generate(&mut possibility.probability);
+                shop.screen_state = ShopScreenState::InShop
+            } else {
+                panic!("Expected a Shop in EnterShop");
             }
-
-            possibility.state.screen_state = ScreenState::InShop
         }
         Choice::Event(name) => {
-            let event = possibility.state.floor_state.event().base;
-            let choice = event
-                .choices
-                .iter()
-                .find(|base| base.name == name)
-                .unwrap();
-            if choice.effects.is_empty() {
-                possibility.state.screen_state = ScreenState::Map;
+            if let FloorState::Event(event) = &mut possibility.state {
+                let choice = event
+                    .base
+                    .choices
+                    .iter()
+                    .find(|base| base.name == name)
+                    .unwrap();
+                if choice.effects.is_empty() {
+                    possibility.state = FloorState::Map(event.game_state)
+                } else {
+                    event.eval_effects(&choice.effects);
+                }
             } else {
-                possibility.eval_effects(&choice.effects, Binding::CurrentEvent, None);
+                panic!("Expected an Event in Event");
             }
         }
         Choice::Lift => {
-            possibility.state.relics.find_mut("Girya").unwrap().vars.x += 1;
+            if let FloorState::Rest(rest) = &mut possibility.state {
+                rest.game_state.relics.find_mut("Girya").unwrap().vars.x += 1;
+            } else {
+                panic!("Expected a Shop in Lift");
+            }
         }
         Choice::NavigateToNode(node) => {
-            possibility.state.map.floor += 1;
-            if let Some(relic) = possibility.state.relics.find("Maw Bank") {
-                if relic.enabled {
-                    possibility.state.gold += 12;
-                }
-            }
-            let node = possibility.state.map.nodes[&(possibility.state.map.floor, node)].clone();
-            let act = &models::acts::ACTS[possibility.state.act as usize];
-            match node.icon {
-                MapNodeIcon::Boss(name) => {
-                    let boss = act.bosses.iter().find(|b| b.name == name).unwrap();
-                    let monsters = eval_monster_set(&boss.monsters, possibility);
-                    possibility.fight(&monsters, FightType::Boss)
-                }
-                MapNodeIcon::BurningElite | MapNodeIcon::Elite => {
-                    let options = if let Some(last) = possibility.state.map.history.last_elite {
-                        let mut vec = (0..last).collect_vec();
-                        vec.extend((last + 1)..act.elites.len());
-                        vec
-                    } else {
-                        (0..act.elites.len()).collect_vec()
-                    };
-
-                    let choice = possibility.probability.choose(options).unwrap();
-                    let monsters = eval_monster_set(&act.elites[choice], possibility);
-                    possibility.fight(
-                        &monsters,
-                        FightType::Elite {
-                            burning: node.icon == MapNodeIcon::BurningElite,
-                        },
-                    );
-                }
-                MapNodeIcon::Campfire => {
-                    possibility.state.floor_state = FloorState::Rest;
-                    possibility.eval_when(When::RoomEnter(RoomType::Rest))
-                }
-                MapNodeIcon::Chest => {
-                    let chests = &vec![
-                        (ChestType::Small, 3),
-                        (ChestType::Medium, 2),
-                        (ChestType::Large, 1),
-                    ];
-                    let chest_type = possibility.probability.choose_weighted(chests).unwrap();
-
-                    possibility.state.floor_state = FloorState::Chest(*chest_type);
-                }
-                MapNodeIcon::Monster => {
-                    normal_fight(possibility);
-                }
-                MapNodeIcon::Question => {
-                    if possibility.state.relics.contains("Ssserpent Head") {
-                        possibility.state.gold = 50;
+            if let FloorState::Map(state) = &mut possibility.state {
+                state.map.floor += 1;
+                if let Some(relic) = state.relics.find("Maw Bank") {
+                    if relic.enabled {
+                        state.gold += 12;
                     }
-
-                    let mut normal_probability =
-                        (possibility.state.map.history.unknown_normal_count + 1) * 10;
-                    let mut shop_probability =
-                        (possibility.state.map.history.unknown_shop_count + 1) * 3;
-                    let mut treasure_probability =
-                        (possibility.state.map.history.unknown_treasure_count + 1) * 2;
-
-                    if let FloorState::Shop(_) = possibility.state.floor_state {
-                        shop_probability = 0
+                }
+                let node = state.map.nodes[&(state.map.floor, node)].clone();
+                let act = &models::acts::ACTS[state.act as usize];
+                match node.icon {
+                    MapNodeIcon::Boss(name) => {
+                        let boss = act.bosses.iter().find(|b| b.name == name).unwrap();
+                        let monsters = eval_monster_set(&boss.monsters, possibility);
+                        possibility.fight(&monsters, FightType::Boss)
                     }
+                    MapNodeIcon::BurningElite | MapNodeIcon::Elite => {
+                        let options = if let Some(last) = state.map.history.last_elite {
+                            let mut vec = (0..last).collect_vec();
+                            vec.extend((last + 1)..act.elites.len());
+                            vec
+                        } else {
+                            (0..act.elites.len()).collect_vec()
+                        };
 
-                    if let Some(relic) = possibility.state.relics.find_mut("Tiny Chest") {
-                        relic.vars.x += 1;
-                        if relic.vars.x == 4 {
-                            relic.vars.x = 0;
-                            shop_probability = 0;
-                            treasure_probability = 100;
+                        let choice = possibility.probability.choose(options).unwrap();
+                        let monsters = eval_monster_set(&act.elites[choice], possibility);
+                        possibility.fight(
+                            &monsters,
+                            FightType::Elite {
+                                burning: node.icon == MapNodeIcon::BurningElite,
+                            },
+                        );
+                    }
+                    MapNodeIcon::Campfire => {
+                        state.floor_state = FloorState::Rest;
+                        possibility.eval_when(When::RoomEnter(RoomType::Rest))
+                    }
+                    MapNodeIcon::Chest => {
+                        let chests = &vec![
+                            (ChestType::Small, 3),
+                            (ChestType::Medium, 2),
+                            (ChestType::Large, 1),
+                        ];
+                        let chest_type = possibility.probability.choose_weighted(chests).unwrap();
+
+                        state.floor_state = FloorState::Chest(*chest_type);
+                    }
+                    MapNodeIcon::Monster => {
+                        normal_fight(possibility);
+                    }
+                    MapNodeIcon::Question => {
+                        if state.relics.contains("Ssserpent Head") {
+                            state.gold = 50;
+                        }
+
+                        let mut normal_probability =
+                            (state.map.history.unknown_normal_count + 1) * 10;
+                        let mut shop_probability =
+                            (state.map.history.unknown_shop_count + 1) * 3;
+                        let mut treasure_probability =
+                            (state.map.history.unknown_treasure_count + 1) * 2;
+
+                        if let FloorState::Shop(_) = state.floor_state {
+                            shop_probability = 0
+                        }
+
+                        if let Some(relic) = state.relics.find_mut("Tiny Chest") {
+                            relic.vars.x += 1;
+                            if relic.vars.x == 4 {
+                                relic.vars.x = 0;
+                                shop_probability = 0;
+                                treasure_probability = 100;
+                                normal_probability = 0;
+                            }
+                        }
+
+                        if state.relics.contains("Juzu Bracelet") {
                             normal_probability = 0;
                         }
-                    }
 
-                    if possibility.state.relics.contains("Juzu Bracelet") {
-                        normal_probability = 0;
-                    }
-
-                    let mut total_probability =
-                        normal_probability + shop_probability + treasure_probability;
-                    if total_probability > 100 {
-                        let reduction = (total_probability - 100).min(treasure_probability);
-                        treasure_probability -= reduction;
-                        total_probability -= reduction;
-                    }
-                    if total_probability > 100 {
-                        let reduction = (total_probability - 100).min(shop_probability);
-                        shop_probability -= reduction;
-                        total_probability -= reduction;
-                    }
-                    let choices = vec![
-                        (UnknownRoom::Fight, normal_probability),
-                        (UnknownRoom::Shop, shop_probability),
-                        (UnknownRoom::Treasure, treasure_probability),
-                        (UnknownRoom::Event, 100 - total_probability),
-                    ];
-
-                    let choice = *possibility.probability.choose_weighted(&choices).unwrap();
-
-                    match choice {
-                        UnknownRoom::Fight => {
-                            possibility.state.map.history.unknown_normal_count = 0;
-                            possibility.state.map.history.unknown_shop_count += 1;
-                            possibility.state.map.history.unknown_treasure_count += 1;
-                            normal_fight(possibility)
+                        let mut total_probability =
+                            normal_probability + shop_probability + treasure_probability;
+                        if total_probability > 100 {
+                            let reduction = (total_probability - 100).min(treasure_probability);
+                            treasure_probability -= reduction;
+                            total_probability -= reduction;
                         }
-                        UnknownRoom::Shop => {
-                            possibility.state.map.history.unknown_normal_count += 1;
-                            possibility.state.map.history.unknown_shop_count = 0;
-                            possibility.state.map.history.unknown_treasure_count += 1;
-                            shop(possibility);
+                        if total_probability > 100 {
+                            let reduction = (total_probability - 100).min(shop_probability);
+                            shop_probability -= reduction;
+                            total_probability -= reduction;
                         }
-                        UnknownRoom::Treasure => {
-                            possibility.state.map.history.unknown_normal_count += 1;
-                            possibility.state.map.history.unknown_shop_count += 1;
-                            possibility.state.map.history.unknown_treasure_count = 0;
-                            treasure(possibility);
-                        }
-                        UnknownRoom::Event => {
-                            possibility.state.map.history.unknown_normal_count += 1;
-                            possibility.state.map.history.unknown_shop_count += 1;
-                            possibility.state.map.history.unknown_treasure_count += 1;
-                            event(possibility);
+                        let choices = vec![
+                            (UnknownRoom::Fight, normal_probability),
+                            (UnknownRoom::Shop, shop_probability),
+                            (UnknownRoom::Treasure, treasure_probability),
+                            (UnknownRoom::Event, 100 - total_probability),
+                        ];
+
+                        let choice = *possibility.probability.choose_weighted(&choices).unwrap();
+
+                        match choice {
+                            UnknownRoom::Fight => {
+                                state.map.history.unknown_normal_count = 0;
+                                state.map.history.unknown_shop_count += 1;
+                                state.map.history.unknown_treasure_count += 1;
+                                normal_fight(possibility)
+                            }
+                            UnknownRoom::Shop => {
+                                state.map.history.unknown_normal_count += 1;
+                                state.map.history.unknown_shop_count = 0;
+                                state.map.history.unknown_treasure_count += 1;
+                                shop(possibility);
+                            }
+                            UnknownRoom::Treasure => {
+                                state.map.history.unknown_normal_count += 1;
+                                state.map.history.unknown_shop_count += 1;
+                                state.map.history.unknown_treasure_count = 0;
+                                treasure(possibility);
+                            }
+                            UnknownRoom::Event => {
+                                state.map.history.unknown_normal_count += 1;
+                                state.map.history.unknown_shop_count += 1;
+                                state.map.history.unknown_treasure_count += 1;
+                                event(possibility);
+                            }
                         }
                     }
+                    MapNodeIcon::Shop => shop(possibility),
                 }
-                MapNodeIcon::Shop => shop(possibility),
             }
         }
         Choice::OpenChest => {
@@ -596,6 +458,7 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
         }
     }
 }
+
 
 fn remove_card_reward(possibility: &mut GamePossibility) {
     if let ScreenState::CardReward(_, index) = possibility.state.screen_state {    

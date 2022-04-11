@@ -1,5 +1,6 @@
 use crate::comm::interop;
 use crate::comm::request::GameState as CommState;
+use crate::state::floor::GamePossibility;
 use crate::{
     models,
     state::{game::GameState, probability::Probability},
@@ -13,11 +14,8 @@ use std::cmp::Ordering;
 use std::rc::Rc;
 use uuid::Uuid;
 
-use self::evaluator::GamePossibility;
-
 pub mod appraiser;
 pub mod enumerator;
-pub mod evaluator;
 pub mod predictor;
 pub mod references;
 

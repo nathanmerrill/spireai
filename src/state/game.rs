@@ -1,25 +1,23 @@
-use std::ops::Range;
-
-use im::{vector, HashMap, Vector};
+use im::{vector, HashMap, Vector, HashSet};
+use itertools::Itertools;
 use uuid::Uuid;
 
 use crate::{
     models::{
         self,
         cards::BaseCard,
-        core::{CardEffect, CardType, ChestType, Class, DeckOperation, When, FightType},
+        core::{CardType, ChestType, Class, When, FightType, Rarity},
         potions::BasePotion,
         relics::{Activation, BaseRelic},
     },
     spireai::references::{
-        CardReference, PotionReference, RelicReference,
-    },
+        PotionReference, RelicReference,
+    }
 };
 
 use super::{
-    battle::BattleState,
-    core::{Buff, Card, CardOffer, Creature, Event, Potion, Relic, HpRange},
-    map::MapState, shop::ShopState,
+    core::{Card, CardOffer, Potion, Relic, HpRange},
+    map::MapState, shop::ShopState, probability::Probability, floor::KeyState,
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -33,7 +31,6 @@ pub struct GameState {
     pub gold: u16,
     pub hp: HpRange,
     pub map: MapState,
-    pub screen_state: ScreenState,
     pub keys: Option<KeyState>,
     pub won: Option<bool>,
     pub purge_count: u8,
@@ -56,26 +53,6 @@ impl GameState {
 
     pub fn remove_card(&mut self, card: Uuid) {
         self.deck.remove(&card);
-    }
-
-    pub fn purge_cost(&self) -> u16 {
-        if self.relics.contains("Smiling Mask") {
-            50
-        } else {
-            let discount = if self.relics.contains("Membership Card") {
-                if self.relics.contains("The Courier") {
-                    0.6
-                } else {
-                    0.5
-                }
-            } else if self.relics.contains("The Courier") {
-                0.8
-            } else {
-                1.0
-            };
-
-            ((self.purge_count * 25 + 75) as f32 * discount).ceil() as u16
-        }
     }
 
     pub fn add_card(&mut self, mut card: Card) {
@@ -125,16 +102,23 @@ impl GameState {
 
         self.gold += amount;
     }
+    
+    pub fn random_potion(&mut self, no_healing: bool, probability: &mut Probability) -> &'static BasePotion {
+        let rarities = vec![
+            (Rarity::Common, 70),
+            (Rarity::Uncommon, 25),
+            (Rarity::Rare, 5),
+        ];
 
-    /*pub fn spend_gold(&mut self, amount: u16) {
-        self.gold -= amount;
+        let rarity = *probability.choose_weighted(&rarities).unwrap();
 
-        if let FloorState::Shop(_) = self.floor_state {
-            if let Some(relic) = self.relics.find_mut("Maw Bank") {
-                relic.enabled = false;
-            }
-        }
-    }*/
+        let potions = models::potions::POTIONS
+            .values()
+            .filter(|a| a.rarity == rarity && !(no_healing && a.name == "Fruit Juice"))
+            .collect_vec();
+
+        probability.choose(potions).unwrap()
+    }
 
     pub fn add_potion(&mut self, base: &'static BasePotion) {
         if let Some(slot) = self.potions.iter().position(|a| a.is_none()) {
@@ -243,7 +227,6 @@ impl GameState {
         let mut state = Self {
             class,
             map: MapState::new(),
-            screen_state: ScreenState::Normal,
             relics: Relics::new(),
             act: 1,
             asc,
@@ -260,6 +243,285 @@ impl GameState {
         state.relics.add(models::relics::by_name(starting_relic));
 
         state
+    }
+    
+    pub fn random_relic(
+        &mut self,
+        chest_type: Option<ChestType>,
+        rarity: Option<Rarity>,
+        in_shop: bool,
+        probability: &mut Probability
+    ) -> &'static BaseRelic {
+        let probabilities = match chest_type {
+            None => match rarity {
+                None => [50, 33, 17, 0, 0],
+                Some(Rarity::Shop) => [0, 0, 0, 0, 100],
+                Some(Rarity::Boss) => [0, 0, 0, 100, 0],
+                Some(Rarity::Rare) => [0, 0, 100, 0, 0],
+                Some(Rarity::Uncommon) => [0, 100, 0, 0, 0],
+                Some(Rarity::Common) => [100, 0, 0, 0, 0],
+                _ => panic!("Unexpected rarity"),
+            },
+            Some(ChestType::Small) => [75, 25, 0, 0, 0],
+            Some(ChestType::Medium) => [35, 50, 15, 0, 0],
+            Some(ChestType::Large) => [0, 75, 25, 0, 0],
+            Some(ChestType::Boss) => [0, 0, 0, 100, 0],
+        };
+
+        let rarities = [
+            Rarity::Common,
+            Rarity::Uncommon,
+            Rarity::Rare,
+            Rarity::Boss,
+            Rarity::Shop,
+        ];
+
+        let choices = rarities
+            .iter()
+            .zip(probabilities.iter().copied())
+            .collect_vec();
+
+        let rarity = probability.choose_weighted(&choices).unwrap();
+
+        let available_relics = models::relics::RELICS
+            .values()
+            .filter(|relic| {
+                relic.rarity == **rarity
+                    && (relic.class == self.class || relic.class == Class::All)
+                    && !self.relics.contains(&relic.name)
+                    && !self.relics.seen.contains(relic)
+                    && (relic.max_floor == 0 || relic.max_floor as i8 >= self.map.floor)
+                    && match relic.name.as_str() {
+                        "Maw Bank" | "Smiling Mask" | "The Courier" | "Old Coin" => !in_shop,
+                        "Bottled Flame" => self.deck.values().any(|c| {
+                            c.base._type == CardType::Attack && c.base.rarity != Rarity::Starter
+                        }),
+                        "Bottled Lightning" => self.deck.values().any(|c| {
+                            c.base._type == CardType::Skill && c.base.rarity != Rarity::Starter
+                        }),
+                        "Bottled Tornado" => self
+                            .deck
+                            .values()
+                            .any(|c| c.base._type == CardType::Power),
+                        "Girya" => {
+                            !self.relics.contains("Peace Pipe")
+                                || !self.relics.contains("Shovel")
+                        }
+                        "Shovel" => {
+                            !self.relics.contains("Peace Pipe")
+                                || !self.relics.contains("Girya")
+                        }
+                        "Peace Pipe" => {
+                            !self.relics.contains("Girya")
+                                || !self.relics.contains("Shovel")
+                        }
+                        "Black Blood" => self.relics.contains("Burning Blood"),
+                        "Frozen Core" => self.relics.contains("Cracked Core"),
+                        "Holy Water" => self.relics.contains("Pure Water"),
+                        "Ring of the Snake" => self.relics.contains("Ring of the Serpent"),
+                        _ => true,
+                    }
+            })
+            .collect();
+
+        let relic = probability
+            .choose(available_relics)
+            .expect("No available relics to be chosen!");
+
+        self.relics.seen.insert(relic);
+
+        relic
+    }
+
+    pub fn generate_card_rewards(
+        &mut self,
+        fight_type: FightType,
+        colorless: bool,
+        probability: &mut Probability
+    ) -> Vector<CardOffer> {
+        let cards = {
+            if colorless {
+                models::cards::available_cards_by_class(Class::None)
+            } else if self.relics.contains("Prismatic Shard") {
+                models::cards::available_cards_by_class(Class::All)
+            } else {
+                models::cards::available_cards_by_class(self.class)
+            }
+        };
+
+        let count =
+            if self.relics.contains("Busted Crown") {
+                1
+            } else {
+                2
+            }
+            +
+            if self.relics.contains("Question Card") {
+                1
+            } else {
+                0
+            };
+
+        self.generate_card_offers(Some(fight_type), cards, count, true, probability)
+    }
+
+    fn generate_card_offers(
+        &mut self,
+        fight_type: Option<FightType>,
+        available: &[&'static BaseCard],
+        count: usize,
+        reset_rarity: bool,
+        probability: &mut Probability
+    ) -> Vector<CardOffer> {
+        let mut cards = available.to_owned();
+
+        (0..count)
+            .map(|_| {
+                let offer = self.generate_card_offer(fight_type, &cards, probability);
+                let index = cards.iter().position(|b| b == &offer.base).unwrap();
+                cards.remove(index);
+                match offer.base.rarity {
+                    Rarity::Rare => {
+                        if reset_rarity {
+                            self.rare_probability_offset = 0;
+                        }
+                    }
+                    Rarity::Common => {
+                        self.rare_probability_offset =
+                            std::cmp::min(self.rare_probability_offset + 1, 40);
+                    }
+                    _ => {}
+                }
+                offer
+            })
+            .collect()
+    }
+
+    
+    pub fn generate_card_offer(
+        &self,
+        fight_type: Option<FightType>,
+        available: &[&'static BaseCard],
+        probability: &mut Probability
+    ) -> CardOffer {
+        let has_nloth = self.relics.contains("N'loth's Gift");
+
+        let rarity_probabilities = match fight_type {
+            Some(FightType::Common) => {
+                if has_nloth {
+                    [
+                        4 + self.rare_probability_offset,
+                        37,
+                        59 - self.rare_probability_offset,
+                    ]
+                } else if self.rare_probability_offset < 2 {
+                    [
+                        0,
+                        35 + self.rare_probability_offset,
+                        65 - self.rare_probability_offset,
+                    ]
+                } else {
+                    [
+                        self.rare_probability_offset - 2,
+                        37,
+                        65 - self.rare_probability_offset,
+                    ]
+                }
+            }
+            Some(FightType::Elite { .. }) => {
+                if has_nloth {
+                    if self.rare_probability_offset < 31 {
+                        [
+                            25 + self.rare_probability_offset,
+                            40,
+                            35 - self.rare_probability_offset,
+                        ]
+                    } else {
+                        [
+                            25 + self.rare_probability_offset,
+                            75 - self.rare_probability_offset,
+                            0,
+                        ]
+                    }
+                } else {
+                    [
+                        5 + self.rare_probability_offset,
+                        40,
+                        55 - self.rare_probability_offset,
+                    ]
+                }
+            }
+            Some(FightType::Boss) => [100, 0, 0],
+            None => [
+                4 + self.rare_probability_offset,
+                37,
+                59 - self.rare_probability_offset,
+            ],
+        };
+
+        let [mut rare, mut uncommon, mut common] = rarity_probabilities;
+
+        let (mut has_rare, mut has_uncommon, mut has_common) = (false, false, false);
+        for card in available {
+            match card.rarity {
+                Rarity::Rare => has_rare = true,
+                Rarity::Uncommon => has_uncommon = true,
+                Rarity::Common => has_common = true,
+                _ => panic!("Unexpected rarity!"),
+            }
+        }
+
+        if !has_rare {
+            rare = 0;
+        }
+        if !has_uncommon {
+            uncommon = 0;
+        }
+        if !has_common {
+            common = 0;
+        }
+
+        let rarity = *probability
+            .choose_weighted(&[
+                (Rarity::Rare, rare),
+                (Rarity::Uncommon, uncommon),
+                (Rarity::Common, common),
+            ])
+            .unwrap();
+
+        let card = probability
+            .choose(
+                available
+                    .iter()
+                    .filter(|card| card.rarity == rarity)
+                    .collect(),
+            )
+            .unwrap();
+
+        let is_default_upgraded = match card._type {
+            CardType::Attack => self.relics.contains("Molten Egg"),
+            CardType::Skill => self.relics.contains("Toxic Egg"),
+            CardType::Power => self.relics.contains("Frozen Egg"),
+            _ => panic!("Unexpected card type!"),
+        };
+
+        let is_upgraded = is_default_upgraded || {
+            let chance = match self.act {
+                1 => 0,
+                2 => 2,
+                3 | 4 => 4,
+                _ => panic!("Unexpected ascension"),
+            } / if self.asc < 12 { 1 } else { 2 };
+
+            *probability
+                .choose_weighted(&[(true, chance), (false, 8 - chance)])
+                .unwrap()
+        };
+
+        CardOffer {
+            base: card,
+            upgraded: is_upgraded,
+        }
     }
 
     pub fn deck(&self) -> impl Iterator<Item = DeckCard> + '_ {
@@ -316,6 +578,7 @@ pub struct DeckCard {
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Relics {
     pub relics: HashMap<Uuid, Relic>,
+    pub seen: HashSet<&'static BaseRelic>,
     pub relic_whens: HashMap<When, Vector<Uuid>>,
     pub relic_names: HashMap<String, Uuid>,
 }
@@ -326,6 +589,7 @@ impl Relics {
             relics: HashMap::new(),
             relic_whens: HashMap::new(),
             relic_names: HashMap::new(),
+            seen: HashSet::new(),
         }
     }
 
@@ -428,86 +692,3 @@ impl Relics {
 }
 
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-
-//The goal here is not to enumerate every possible screen state, but the states that the AI will hit (e.g. once the map has been viewed, no returning)
-pub enum FloorState {
-    Event(EventState),
-    Rest(GameState),
-    Chest(ChestState),
-    Battle(BattleState),
-    BattleOver(BattleOverState),
-    GameOver(GameState),
-    Shop(ShopState),
-    Map(GameState),
-}
-
-impl FloorState {
-    pub fn game_state(&self) -> &GameState {
-        match self {
-            FloorState::Event(event) => &event.game_state,
-            FloorState::Rest(state) => state,
-            FloorState::Chest(_, state) => state,
-            FloorState::Battle(battle) => &battle.game_state,
-            FloorState::GameOver(state) => state,
-            
-        }
-    } 
-}
-
-
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct BattleOverState {
-    game_state: GameState,
-    rewards: RewardState,
-}
-
-pub struct RestState {
-    toking: bool,
-    smithing: bool,
-    deck_adding: bool,
-}
-
-pub enum RestScreenState {
-    Toke,
-    DreamCatch,
-}
-
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct ChestState {
-    chest: ChestType,
-    rewards: Option<RewardState>,  // Taking tiny house replaces this rewards list
-    state: GameState,
-}
-
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct RewardState {
-    rewards: Vector<Reward>,
-    viewing_reward: Option<usize>,
-}
-
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub enum Reward {
-    CardChoice(Vector<CardOffer>, FightType, bool), // True if colorless
-    Gold(u16),
-    Relic(&'static BaseRelic),
-    Potion(Potion),
-    EmeraldKey,
-    SapphireKey,
-    SapphireLinkedRelic(&'static BaseRelic),
-}
-
-#[derive(PartialEq, Eq, Hash, Clone, Copy,Debug)]
-pub struct KeyState {
-    pub ruby: bool,
-    pub emerald: bool,
-    pub sapphire: bool,
-}
-
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct CardChoiceState {
-    pub choices: Vector<CardReference>,
-    pub count_range: Range<usize>,
-    pub then: Vector<CardEffect>,
-    pub scry: bool,
-}

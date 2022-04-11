@@ -20,7 +20,7 @@
               low: 12,
               high: 12,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           CreateCard(
             name: "Slimed",
@@ -39,7 +39,7 @@
           AddBuff(
             buff: "Weak",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Debuff,
@@ -53,7 +53,7 @@
               low: 18,
               high: 18,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -124,7 +124,7 @@
               low: 8,
               high: 8,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           CreateCard(
             name: "Slimed",
@@ -138,7 +138,7 @@
         effects: [
           AddBuff(
             buff: "Weak",
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Debuff,
@@ -152,7 +152,7 @@
               low: 12,
               high: 12,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -199,7 +199,7 @@
         effects: [
           AddBuff(
             buff: "Weak",
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Debuff,
@@ -213,7 +213,7 @@
               low: 4,
               high: 4,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -251,7 +251,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(20),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -261,7 +261,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(6),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(4),
           ),
         ],
@@ -282,7 +282,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(40),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -292,7 +292,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(18),
-            target: OneEnemy,
+            target: Player,
           ),
           CreateCard(
             name: "Void",
@@ -306,7 +306,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(10),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(3),
           ),
         ],
@@ -409,7 +409,7 @@
               low: -2,
               high: -4,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Debuff,
@@ -419,7 +419,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(9),
-            target: OneEnemy,
+            target: Player,
           ),
           Block(
             amount: ByAsc(
@@ -440,7 +440,7 @@
               low: 20,
               high: 20,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -483,7 +483,7 @@
               low: 13,
               high: 13,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -497,7 +497,7 @@
               low: 8,
               high: 8,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Weak",
@@ -506,7 +506,7 @@
               low: 1,
               high: 2,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -548,7 +548,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(6),
-            target: OneEnemy,
+            target: Player,
             times: Custom,
           )
         ],
@@ -563,7 +563,7 @@
               low: 24,
               high: 24,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -625,7 +625,7 @@
               low: 8,
               high: 8,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AttackDamage(
             amount: ByAsc(
@@ -633,7 +633,7 @@
               low: 8,
               high: 8,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -668,7 +668,7 @@
               low: 50,
               high: 50,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -747,7 +747,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(8),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -825,7 +825,7 @@
         name: "Peck",
         effects: [
           AttackDamage(
-            target: OneEnemy,
+            target: Player,
             times: ByAsc(base: 5, low: 6, high: 6,),
           ),
         ],
@@ -840,7 +840,7 @@
               low: 14,
               high: 14,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -864,7 +864,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(3),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -948,7 +948,7 @@
               low: 14,
               high: 14,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -962,7 +962,7 @@
               low: 7,
               high: 7,
             ),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(3),
           ),
         ],
@@ -989,7 +989,7 @@
               low: 15,
               high: 20,
             ),
-            target: RandomFriendly,
+            target: OtherMonster,
           ),
         ],
         intent: Defend,
@@ -1057,7 +1057,7 @@
               high: 6,
             ),
             times: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -1071,7 +1071,7 @@
               low: 21,
               high: 21,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -1085,12 +1085,12 @@
               low: 12,
               high: 12,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Vulnerable",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -1101,7 +1101,7 @@
           AddBuff(
             buff: "Weak",
             amount: Fixed(3),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Strength",
@@ -1115,7 +1115,7 @@
         effects: [
           AddBuff(
             buff: "Hex",
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: StrongDebuff,
@@ -1183,17 +1183,17 @@
           AddBuff(
             buff: "Vulnerable",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Weak",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Frail",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           CreateCard(
             name: "Dazed",
@@ -1223,7 +1223,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
             times: ByAsc(base: 12, low: 15, high: 15,)
           ),
         ],
@@ -1238,7 +1238,7 @@
               low: 45,
               high: 45,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -1457,7 +1457,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(6),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -1495,7 +1495,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(9),
-            target: OneEnemy,
+            target: Player,
           ),
           CreateCard(
             name: "Wound",
@@ -1509,7 +1509,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(25),
-            target: OneEnemy,
+            target: Player,
           ),
           Die(),
         ],
@@ -1542,7 +1542,7 @@
         effects: [
           AttackDamage(
             amount: N,
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Buff,
@@ -1556,7 +1556,7 @@
               low: 9,
               high: 9,
             ),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(2)
           ),
         ],
@@ -1681,7 +1681,7 @@
         effects: [
           Block(
             amount: Fixed(16),
-            target: AnyFriendly,
+            target: AllMonsters,
           ),
           If(
             condition: Asc(19),
@@ -1689,7 +1689,7 @@
               AddBuff(
                 buff: "Plated Armor",
                 amount: Fixed(3),
-                target: AnyFriendly,
+                target: AllMonsters,
               ),
             ],
           ),
@@ -1705,7 +1705,7 @@
               low: 12,
               high: 12,
             ),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(2),
           ),
           CreateCard(
@@ -1757,7 +1757,7 @@
           AddBuff(
             buff: "Strength",
             amount: Fixed(3),
-            target: AnyFriendly,
+            target: AllMonsters,
           ),
         ],
         intent: Buff,
@@ -1772,7 +1772,7 @@
               high: 12,
             ),
             times: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -1814,7 +1814,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(9),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Buff,
@@ -1824,7 +1824,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(30),
-            target: OneEnemy,
+            target: Player,
           ),
           Die(),
         ],
@@ -1868,18 +1868,18 @@
               low: 5,
               high: 5,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Weak",
-            target: OneEnemy,
+            target: Player,
           ),
           If(
             condition: Asc(17),
             then: [
               AddBuff(
                 buff: "Frail",
-                target: OneEnemy,
+                target: Player,
               ),
             ],
           ),
@@ -1912,7 +1912,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(6),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -1973,7 +1973,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(13),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -1983,7 +1983,7 @@
         effects: [
           AddBuff(
             buff: "Weak",
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Debuff,
@@ -1993,7 +1993,7 @@
         effects: [
           AttackDamage(
             amount: Custom,
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -2079,7 +2079,7 @@
         effects: [
           AttackDamage(
             amount: X,
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -2090,7 +2090,7 @@
           AddBuff(
             buff: "Weak",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Debuff,
@@ -2167,7 +2167,7 @@
               low: 4,
               high: 5,
             ),
-            target: AnyFriendly,
+            target: AllMonsters,
           ),
           Block(
             amount: ByAsc(
@@ -2175,7 +2175,7 @@
               low: 6,
               high: 10,
             ),
-            target: AnyFriendly,
+            target: AllMonsters,
           ),
         ],
         intent: DefendBuff,
@@ -2201,7 +2201,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(6),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(3),
           ),
         ],
@@ -2319,7 +2319,7 @@
               low: 16,
               high: 16,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -2329,12 +2329,12 @@
         effects: [
           AttackDamage(
             amount: Fixed(6),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Vulnerable",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -2403,7 +2403,7 @@
               low: 30,
               high: 30,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -2454,7 +2454,7 @@
         effects: [
           AttackDamage(
             amount: N,
-            target: OneEnemy,
+            target: Player,
             times: Fixed(6),
           ),
         ],
@@ -2469,7 +2469,7 @@
               low: 3,
               high: 3,
             ),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(6),
           ),
           CreateCard(
@@ -2493,7 +2493,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(6),
-            target: OneEnemy,
+            target: Player,
           ),
           If(
             condition: Asc(19),
@@ -2520,7 +2520,7 @@
               low: 6,
               high: 6,
             ),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(2),
           ),
         ],
@@ -2587,7 +2587,7 @@
               low: 12,
               high: 12,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -2597,7 +2597,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(7),
-            target: OneEnemy,
+            target: Player,
           ),
           Block(
             amount: Fixed(5),
@@ -2701,7 +2701,7 @@
               low: 20,
               high: 20,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -2716,7 +2716,7 @@
               low: -1,
               high: -2,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Dexterity",
@@ -2725,7 +2725,7 @@
               low: -1,
               high: -2,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: StrongDebuff,
@@ -2810,7 +2810,7 @@
               low: 11,
               high: 11,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           Custom,
         ],
@@ -2825,7 +2825,7 @@
               low: 14,
               high: 14,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           Custom,
         ],
@@ -2907,7 +2907,7 @@
               low: 5,
               high: 5,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -2952,7 +2952,7 @@
               low: 11,
               high: 11,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           Custom,
         ],
@@ -2967,7 +2967,7 @@
               low: 18,
               high: 18,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           Custom,
         ],
@@ -3049,7 +3049,7 @@
               low: 16,
               high: 20,
             ),
-            target: AnyFriendly,
+            target: AllMonsters,
           ),
           Heal(
             amount: ByAsc(
@@ -3071,7 +3071,7 @@
               low: 3,
               high: 4,
             ),
-            target: AnyFriendly,
+            target: AllMonsters,
           ),
         ],
         intent: Buff,
@@ -3085,12 +3085,12 @@
               low: 9,
               high: 9,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Frail",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -3183,7 +3183,7 @@
               low: 7,
               high: 7,
             ),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(3)
           ),
         ],
@@ -3194,7 +3194,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(45),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -3257,7 +3257,7 @@
               low: 11,
               high: 11,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           CreateCard(
             name: "Burn",
@@ -3279,7 +3279,7 @@
               low: 16,
               high: 16,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -3335,7 +3335,7 @@
               low: 6,
               high: 6,
             ),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(2),
           ),
         ],
@@ -3367,7 +3367,7 @@
         effects: [
           AttackDamage(
             amount: X,
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -3457,7 +3457,7 @@
               low: 14,
               high: 14,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -3471,7 +3471,7 @@
               low: 9,
               high: 9,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Vulnerable",
@@ -3480,7 +3480,7 @@
               low: 1,
               high: 2,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -3490,7 +3490,7 @@
         effects: [
           AddBuff(
             buff: "Entangled",
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Debuff,
@@ -3627,11 +3627,11 @@
               high: 16,
             ),
             times: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Weak",
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -3645,7 +3645,7 @@
               low: 34,
               high: 34,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -3717,7 +3717,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(11),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Unknown,
@@ -3780,7 +3780,7 @@
               low: 12,
               high: 13,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Weak",
@@ -3789,7 +3789,7 @@
               low: 2,
               high: 3,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -3803,7 +3803,7 @@
               low: 17,
               high: 17,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -3859,7 +3859,7 @@
               low: 10,
               high: 10,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Unknown,
@@ -3925,7 +3925,7 @@
               high: 7,
             ),
             times: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -3946,12 +3946,12 @@
               low: 21,
               high: 21,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Frail",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -4043,7 +4043,7 @@
               low: 8,
               high: 11,
             ),
-            target: RandomFriendly,
+            target: OtherMonster,
           ),
         ],
         intent: Defend,
@@ -4057,7 +4057,7 @@
               low: 8,
               high: 8,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -4130,7 +4130,7 @@
               low: 38,
               high: 38,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Unknown,
@@ -4185,7 +4185,7 @@
               low: 8,
               high: 8,
             ),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(3),
           ),
         ],
@@ -4197,12 +4197,12 @@
           AddBuff(
             buff: "Frail",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Weak",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Unknown,
@@ -4262,7 +4262,7 @@
               low: 10,
               high: 10,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: StrongDebuff,
@@ -4293,7 +4293,7 @@
         effects: [
           AddBuff(
             buff: "Confused",
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: StrongDebuff,
@@ -4307,12 +4307,12 @@
               low: 10,
               high: 10,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Vulnerable",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           If(
             condition: Asc(17),
@@ -4320,7 +4320,7 @@
               AddBuff(
                 buff: "Weak",
                 amount: Fixed(2),
-                target: OneEnemy,
+                target: Player,
               ),
             ],
           ),
@@ -4336,7 +4336,7 @@
               low: 18,
               high: 18,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -4389,7 +4389,7 @@
               low: 11,
               high: 11,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AttackDamage(
             amount: ByAsc(
@@ -4397,7 +4397,7 @@
               low: 11,
               high: 11,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -4424,7 +4424,7 @@
               low: 11,
               high: 11,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           Block(
             amount: ByAsc(
@@ -4445,12 +4445,12 @@
               low: 11,
               high: 11,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Frail",
             amount: Fixed(5),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -4501,7 +4501,7 @@
               low: 18,
               high: 18,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           CreateCard(
             name: "Slimed",
@@ -4524,7 +4524,7 @@
               low: 2,
               high: 3,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Debuff,
@@ -4588,7 +4588,7 @@
               low: 10,
               high: 10,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           CreateCard(
             name: "Slimed",
@@ -4602,7 +4602,7 @@
         effects: [
           AddBuff(
             buff: "Frail",
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Debuff,
@@ -4648,7 +4648,7 @@
               low: 6,
               high: 6,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -4683,7 +4683,7 @@
               low: 9,
               high: 9,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -4763,7 +4763,7 @@
               low: 11,
               high: 11,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AttackDamage(
             amount: ByAsc(
@@ -4771,7 +4771,7 @@
               low: 11,
               high: 11,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -4798,7 +4798,7 @@
               low: 11,
               high: 11,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           Block(
             amount: ByAsc(
@@ -4908,7 +4908,7 @@
               low: 14,
               high: 14,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           If(
             condition: HasOrbSlot,
@@ -4916,14 +4916,14 @@
               AddBuff(
                 buff: "Focus",
                 amount: Fixed(-1),
-                target: OneEnemy,
+                target: Player,
               ),
             ],
             _else: [
               AddBuff(
                 buff: "Strength",
                 amount: Fixed(-1),
-                target: OneEnemy,
+                target: Player,
               ),
             ],
           ),
@@ -4935,7 +4935,7 @@
         effects: [
           Block(
             amount: Fixed(30),
-            target: AnyFriendly,
+            target: AllMonsters,
           ),
         ],
         intent: Buff,
@@ -5003,7 +5003,7 @@
               low: 6,
               high: 6,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           If(
             condition: Asc(18),
@@ -5036,7 +5036,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(10),
-            target: OneEnemy,
+            target: Player,
             times: ByAsc(base: 3, low: 4, high: 4,),
           ),
         ],
@@ -5048,7 +5048,7 @@
           AddBuff(
             buff: "Strength",
             amount: Fixed(2),
-            target: AnyFriendly,
+            target: AllMonsters,
           ),
         ],
         intent: Buff,
@@ -5112,7 +5112,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(7),
-            target: OneEnemy,
+            target: Player,
           ),
           If(
             condition: Asc(18),
@@ -5212,17 +5212,17 @@
               low: 14,
               high: 14,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Frail",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Vulnerable",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           AddN(Fixed(1)),
         ],
@@ -5234,12 +5234,12 @@
           AddBuff(
             buff: "Weak",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Vulnerable",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           SetN(Fixed(0)),
         ],
@@ -5254,7 +5254,7 @@
               low: 18,
               high: 18,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddN(Fixed(1)),
         ],
@@ -5280,7 +5280,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(10),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(2),
           ),
           SetN(Fixed(0)),
@@ -5593,7 +5593,7 @@
               low: 4,
               high: 5,
             ),
-            target: AnyFriendly,
+            target: AllMonsters,
           ),
           Block(
             amount: ByAsc(
@@ -5614,7 +5614,7 @@
               low: 21,
               high: 21,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -5629,7 +5629,7 @@
               low: 3,
               high: 5,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Vulnerable",
@@ -5638,7 +5638,7 @@
               low: 3,
               high: 5,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Frail",
@@ -5647,7 +5647,7 @@
               low: 3,
               high: 5,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: StrongDebuff,
@@ -5812,7 +5812,7 @@
               low: 36,
               high: 36,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -5823,12 +5823,12 @@
           AddBuff(
             buff: "Weak",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Vulnerable",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: StrongDebuff,
@@ -5838,7 +5838,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(5),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(4),
           ),
         ],
@@ -5854,7 +5854,7 @@
               low: 3,
               high: 4,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: StrongDebuff,
@@ -5868,7 +5868,7 @@
               low: 10,
               high: 10,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: StrongDebuff,
@@ -5878,7 +5878,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(8),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(2),
           ),
           Unbuff("Sharp Hide"),
@@ -5952,7 +5952,7 @@
               low: 3,
               high: 5,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Frail",
@@ -5961,7 +5961,7 @@
               low: 3,
               high: 5,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: StrongDebuff,
@@ -5989,7 +5989,7 @@
               low: 30,
               high: 30,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: StrongDebuff,
@@ -5999,7 +5999,7 @@
         effects: [
           AttackDamage(
             amount: Custom,
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: AttackDebuff,
@@ -6058,7 +6058,7 @@
               low: 8,
               high: 8,
             ),
-            target: OneEnemy,
+            target: Player,
             times: Fixed(3),
           ),
         ],
@@ -6073,12 +6073,12 @@
               low: 32,
               high: 32,
             ),
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Draw Reduction",
             amount: Fixed(2),
-            target: OneEnemy,
+            target: Player,
           ),
           If(
             condition: Asc(19),
@@ -6104,18 +6104,18 @@
           ),
           AddBuff(
             buff: "Weak",
-            target: OneEnemy,
+            target: Player,
           ),
           AddBuff(
             buff: "Vulnerable",
-            target: OneEnemy,
+            target: Player,
           ),
           If(
             condition: Asc(19),
             then: [
               AddBuff(
                 buff: "Frail",
-                target: OneEnemy,
+                target: Player,
               ),
             ],
           ),
@@ -6198,7 +6198,7 @@
         effects: [
           AttackDamage(
             amount: Fixed(7),
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -6229,7 +6229,7 @@
         effects: [
           AttackDamage(
             amount: Custom,
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -6271,7 +6271,7 @@
       (
         name: "Implant",
         effects: [
-          DeckAdd("Parasite"),
+          Custom,
           SetN(Fixed(1)),
         ],
         intent: Attack,
@@ -6281,7 +6281,7 @@
         effects: [
           AttackDamage(
             amount: Custom,
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -6291,7 +6291,7 @@
         effects: [
           AttackDamage(
             amount: Custom,
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -6301,7 +6301,7 @@
         effects: [
           AttackDamage(
             amount: Custom,
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,
@@ -6311,7 +6311,7 @@
         effects: [
           AttackDamage(
             amount: Custom,
-            target: OneEnemy,
+            target: Player,
           ),
         ],
         intent: Attack,

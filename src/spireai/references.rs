@@ -4,14 +4,10 @@ use ::std::hash::{Hash, Hasher};
 
 use crate::{
     models::{
-        self, buffs::BaseBuff, core::CardLocation, monsters::BaseMonster, potions::BasePotion,
+        self, buffs::BaseBuff, core::{CardLocation, Target}, monsters::BaseMonster, potions::BasePotion,
         relics::BaseRelic,
     },
-    state::{
-        battle::BattleState,
-        core::{Monster, Vars},
-        game::GameState,
-    },
+    state::core::Monster
 };
 
 #[derive(Eq, Debug, Clone, Copy)]
@@ -150,6 +146,10 @@ impl Binding {
             Binding::Creature(creature) => creature,
         }
     }
+
+    pub fn monster_ref(self) -> Option<MonsterReference> {
+        self.creature_ref().monster_ref()
+    }
 }
 
 impl Monster {
@@ -171,4 +171,30 @@ impl Monster {
             buff: b.uuid,
         })
     }
+}
+
+
+impl Target {
+    pub fn creature_ref(self, binding: Binding, action: Option<GameAction>) -> CreatureReference {
+        match self {
+            Target::_Self => binding.creature_ref(),
+            Target::Attacker => {
+                let action = action.expect("Expected action!");
+                debug_assert!(action.is_attack, "Expected attack action!");
+                action.creature
+            }
+            Target::TargetMonster => {
+                action.expect("Expected action!").target.expect("Expected target!")
+            }
+            Target::Player => CreatureReference::Player,
+            _ => panic!("Target does not resolve to a single creature! {:?}", self),
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+pub struct GameAction {
+    pub is_attack: bool,
+    pub creature: CreatureReference,
+    pub target: Option<CreatureReference>,
 }

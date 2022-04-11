@@ -75,7 +75,7 @@
         activation: When(CombatStart),
         effect: [AddBuff(
             buff: "Vulnerable",
-            target: AllEnemies,
+            target: AllMonsters,
         )],
     ),
     (
@@ -382,7 +382,7 @@
         ),
         effect: [Damage(
             amount: Fixed(5),
-            target: AllEnemies,
+            target: AllMonsters,
         )],
     ),
     (
@@ -408,7 +408,7 @@
         activation: When(BeforeHandDraw),
         effect: [Damage(
             amount: Fixed(3),
-            target: AllEnemies,
+            target: AllMonsters,
         )],
     ),
     (
@@ -731,7 +731,7 @@
         ),
         effect: [Damage(
             amount: Fixed(50),
-            target: AllEnemies,
+            target: AllMonsters,
         )],
     ),
     (
@@ -779,7 +779,7 @@
         activation: When(Exhaust),
         effect: [Damage(
             amount: Fixed(3),
-            target: AllEnemies,
+            target: AllMonsters,
         )],
         class: Ironclad,
     ),
@@ -823,7 +823,7 @@
         activation: When(Discard),
         effect: [Damage(
             amount: Fixed(3),
-            target: RandomEnemy,
+            target: RandomMonster,
         )],
         class: Silent,
     ),
@@ -943,7 +943,7 @@
             ),
             AddBuff(
                 buff: "Strength",
-                target: AllEnemies,
+                target: AllMonsters,
             ),
         ],
         class: Ironclad,
@@ -969,7 +969,7 @@
         effect: [AddBuff(
             buff: "Poison",
             amount: Fixed(4),
-            target: AllEnemies,
+            target: AllMonsters,
         )],
         class: Defect,
     ),
@@ -1042,7 +1042,7 @@
         activation: When(CombatStart),
         effect: [AddBuff(
             buff: "Strength",
-            target: AllEnemies,
+            target: AllMonsters,
         )],
         energy_relic: true,
     ),
@@ -1307,7 +1307,7 @@
         activation: When(CombatStart),
         effect: [AddBuff(
             buff: "Weak",
-            target: AllEnemies,
+            target: AllMonsters,
         )],
     ),
     (

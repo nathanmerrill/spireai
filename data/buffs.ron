@@ -68,7 +68,7 @@
         effect: [
           Damage(
             amount: X,
-            target: AllEnemies,
+            target: AllMonsters,
           ),
         ],
       ),
@@ -213,7 +213,7 @@
         effect: [
           Damage(
             amount: X,
-            target: AllEnemies,
+            target: AllMonsters,
           ),
         ],
       ),
@@ -250,7 +250,7 @@
               X,
               MaxHp,
             ]),
-            target: AnyFriendly,
+            target: AllMonsters,
           ),
         ],
       ),
@@ -458,7 +458,7 @@
           AddBuff(
             buff: "Poison",
             amount: X,
-            target: OneEnemy,
+            target: TargetMonster,
           ),
         ],
       ),
@@ -548,7 +548,7 @@
         effect: [
           Damage(
             amount: X,
-            target: AllEnemies,
+            target: AllMonsters,
           ),
         ],
       ),
@@ -557,7 +557,7 @@
         effect: [
           Damage(
             amount: X,
-            target: AllEnemies,
+            target: AllMonsters,
           ),
         ],
       ),
@@ -744,7 +744,7 @@
         effect: [
           Damage(
             amount: X,
-            target: RandomEnemy,
+            target: RandomMonster,
           ),
         ],
       ),
@@ -949,7 +949,7 @@
           AddBuff(
             buff: "Poison",
             amount: X,
-            target: AllEnemies,
+            target: AllMonsters,
           ),
         ],
       ),
@@ -963,7 +963,7 @@
         effect: [
           Damage(
             amount: X,
-            target: AllEnemies,
+            target: AllMonsters,
           ),
         ],
       ),
@@ -1004,7 +1004,7 @@
               ResetN,
               Damage(
                 amount: X,
-                target: AllEnemies,
+                target: AllMonsters,
               ),
             ],
           ),
@@ -1228,7 +1228,7 @@
           AddBuff(
             buff: "Vulnerable",
             amount: X,
-            target: AllEnemies,
+            target: AllMonsters,
           ),
         ],
       ),
@@ -1327,7 +1327,7 @@
             condition: Equals(X, Fixed(1)),
             then: [
               Damage(
-                target: AllEnemies,
+                target: AllMonsters,
                 amount: N,
               )
             ],
@@ -1358,7 +1358,7 @@
         effect: [
           Damage(
             amount: X,
-            target: AllEnemies,
+            target: AllMonsters,
           ),
         ],
       ),
@@ -1428,7 +1428,7 @@
           AddBuff(
             buff: "Weak",
             amount: X,
-            target: AllEnemies,
+            target: AllMonsters,
           ),
         ],
       ),

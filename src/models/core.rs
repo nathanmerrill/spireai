@@ -285,7 +285,6 @@ pub enum GameEffect {
     AddMaxHp(Amount),
     ReduceMaxHpPercentage(Amount),    
     AddGold(Amount),
-    LoseAllGold,
 }
 
 
@@ -351,6 +350,8 @@ pub enum BattleEffect {
     Draw(Amount),
     Scry(Amount),
     AddEnergy(Amount),
+    AddGold(Amount),
+    AddMaxHp(Amount),
 
     Heal {
         #[serde(default, skip_serializing_if = "is_default")]
@@ -417,7 +418,7 @@ pub enum BattleEffect {
         exclude_healing: bool,
     },
 
-    GameEffect(GameEffect),
+    //GameEffect(GameEffect),
 
     // Monster
     Split(String, String),
@@ -428,7 +429,7 @@ pub enum BattleEffect {
     },
 
 
-    ShowChoices(Vec<String>),
+    //ShowChoices(Vec<String>),
 
     //Control Structures
     If {
@@ -490,12 +491,11 @@ pub enum RewardType {
 pub enum Target {
     _Self,
     Player,
-    RandomEnemy,
-    OneEnemy,
-    AllEnemies,
+    RandomMonster,
+    TargetMonster,
     Attacker,
-    AnyFriendly,    // Includes self
-    RandomFriendly, // Self if only remaining
+    AllMonsters,
+    OtherMonster, // Self if only remaining
 }
 
 impl Default for Target {
@@ -557,16 +557,16 @@ pub enum Condition {
     MultipleOr(Vec<Condition>),
     HasRelic(String),
     HasGold(Amount),
-    IsVariant(String), //Event variant
+    /*IsVariant(String), //Event variant*/
     Always,
     Class(Class),
     HasUpgradableCard,
-    HasRemoveableCards {
+    /*HasRemoveableCards {
         #[serde(default = "one", skip_serializing_if = "is_one")]
         count: u8,
         #[serde(default, skip_serializing_if = "is_default")]
         card_type: CardType,
-    },
+    },*/
     OnFloor(u8),
     Never,
     Custom,

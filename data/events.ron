@@ -1025,7 +1025,7 @@
       (
         name: "Pay",
         effects: [
-          LoseAllGold,
+          Custom,
         ],
       ),
       (

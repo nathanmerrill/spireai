@@ -6,8 +6,7 @@ use crate::{
         self,
         buffs::BaseBuff,
         cards::BaseCard,
-        core::{Amount, CardLocation, CardType, Condition, OrbType, When},
-        events::BaseEvent,
+        core::{Amount, CardLocation, CardType, Condition, OrbType, When, FightType},
         monsters::{BaseMonster, Intent, MonsterMove},
         potions::BasePotion,
         relics::BaseRelic,
@@ -17,7 +16,7 @@ use crate::{
     },
 };
 
-use super::game::GameState;
+use super::probability::Probability;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Vars {
@@ -27,7 +26,7 @@ pub struct Vars {
 }
 
 impl Vars {
-    fn new() -> Vars {
+    pub fn new() -> Vars {
         Vars {
             n: 0,
             n_reset: 0,
@@ -433,11 +432,32 @@ pub struct Monster {
 }
 
 impl Monster {
-    pub fn by_name(name: &str, max_hp: u16) -> Self {
-        Self::new(models::monsters::by_name(name), max_hp)
+    pub fn with_hp(name: &str, max_hp: u16) -> Self {
+        Self::create(models::monsters::by_name(name), max_hp)
+    }
+        
+    pub fn new(name: &str, asc: u8, probability: &mut Probability) -> Self {
+        let base = crate::models::monsters::by_name(name);
+        let upgrade_asc = match base.fight_type {
+            FightType::Common => 7,
+            FightType::Elite { .. } => 8,
+            FightType::Boss => 9,
+        };
+
+        let hp_range = if asc >= upgrade_asc {
+            &base.hp_range_asc
+        } else {
+            &base.hp_range
+        };
+
+        let hp = probability
+            .range((hp_range.max - hp_range.min + 1) as usize) as u16
+            + hp_range.min;
+
+        Monster::create(base, hp)
     }
 
-    pub fn new(base: &'static BaseMonster, max_hp: u16) -> Self {
+    pub fn create(base: &'static BaseMonster, max_hp: u16) -> Self {
         let uuid = Uuid::new_v4();
         let reference = MonsterReference {
             base,
@@ -462,42 +482,6 @@ impl Monster {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct EventState {
-    pub base: &'static BaseEvent,
-    pub game_state: GameState,
-    pub vars: Vars,
-    pub variant: Option<String>,
-    pub variant_cards: Vec<CardReference>,
-    pub variant_relics: Vec<RelicReference>,
-    pub variant_amount: Option<u16>,
-    pub available_choices: Vec<String>,
-}
-
-impl EventState {
-    pub fn by_name(name: &str, game_state: GameState) -> Self {
-        Self::new(models::events::by_name(name), game_state)
-    }
-
-    pub fn new(base: &'static BaseEvent, game_state: GameState) -> Self {
-        Self {
-            base,
-            vars: Vars::new(),
-            variant: None,
-            variant_cards: vec![],
-            variant_relics: vec![],
-            variant_amount: None,
-            available_choices: base
-                .choices
-                .iter()
-                .filter(|c| c.initial)
-                .map(|c| c.name.to_string())
-                .collect(),
-            game_state,
-        }
-    }
-}
-
 #[derive(PartialEq, Eq, Hash, Clone, Debug, Copy)]
 pub struct Potion {
     pub base: &'static BasePotion,
@@ -516,4 +500,22 @@ impl Potion {
             index,
         }
     }
+}
+
+
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+pub struct RewardState {
+    pub rewards: Vector<Reward>,
+    pub viewing_reward: Option<usize>,
+}
+
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+pub enum Reward {
+    CardChoice(Vector<CardOffer>, FightType, bool), // True if colorless
+    Gold(u16),
+    Relic(&'static BaseRelic),
+    Potion(Potion),
+    EmeraldKey,
+    SapphireKey,
+    SapphireLinkedRelic(&'static BaseRelic),
 }
