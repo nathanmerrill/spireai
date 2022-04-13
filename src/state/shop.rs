@@ -1,9 +1,9 @@
 use im::{Vector, vector};
 use itertools::Itertools;
 
-use crate::{models::{potions::BasePotion, relics::BaseRelic, core::{CardType, Rarity, Class}, self}};
+use crate::{models::{potions::BasePotion, relics::BaseRelic, core::{CardType, Rarity, Class, DeckOperation}, self}};
 
-use super::{core::{CardOffer, Card, RewardState}, game::{GameState, DeckCard}, probability::Probability};
+use super::{core::{CardOffer, Card, RewardState, Reward}, game::{GameState, DeckCard}, probability::Probability};
 
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -105,7 +105,38 @@ impl ShopState {
         
 
         self.spend_gold(cost);
-        self.game_state.relics.add(relic);
+        self.game_state.add_relic(relic, probability);
+        match relic.name.as_str() {
+            "Cauldron" => {
+                self.screen_state = ShopScreenState::Reward(RewardState {
+                    rewards: (0..5).map(|_|
+                        Reward::Potion(super::game::random_potion(false, probability))                        
+                    ).collect(),
+                    viewing_reward: None
+                })
+            }
+            "Orrery" => {
+                self.screen_state = ShopScreenState::Reward(RewardState {
+                    rewards: (0..5).map(|_|
+                        Reward::CardChoice(vector![], None, false)
+                    ).collect(),
+                    viewing_reward: None
+                })
+            }
+            "Dollys Mirror" => {
+                self.screen_state = ShopScreenState::DeckChoose(DeckOperation::Duplicate)
+            }
+            "Bottled Flame" => {
+                self.screen_state = ShopScreenState::DeckChoose(DeckOperation::BottleFlame)
+            }
+            "Bottled Lightning" => {
+                self.screen_state = ShopScreenState::DeckChoose(DeckOperation::BottleLightning)
+            }
+            "Bottled Tornado" => {
+                self.screen_state = ShopScreenState::DeckChoose(DeckOperation::BottleTornado)
+            }
+            _ => {}
+        }
     }
 
     pub fn generate(&mut self, probability: &mut Probability) {
@@ -172,7 +203,7 @@ impl ShopState {
     }
 
     fn generate_potion(&self, probability: &mut Probability) -> StorePotion {
-        let potion = self.game_state.random_potion(false, probability);
+        let potion = super::game::random_potion(false, probability);
         let (mut min, mut max) = match potion.rarity {
             Rarity::Common => (48, 52),
             Rarity::Uncommon => (72, 78),
@@ -249,7 +280,7 @@ impl ShopState {
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum ShopScreenState {
     Entrance,
-    Dolly,
+    DeckChoose(DeckOperation),
     Reward(RewardState), // After this, state goes to the entrance
     InShop,
 }

@@ -1,5 +1,5 @@
 use crate::models;
-use crate::models::core::DeckOperation;
+use crate::models::core::{DeckOperation, CardType};
 use crate::state::core::{CardOffer, RewardState, Reward};
 use crate::state::event::EventScreenState;
 use crate::state::floor::{FloorState, RestScreenState};
@@ -9,16 +9,19 @@ use im::Vector;
 use itertools::Itertools;
 use models::choices::Choice;
 
+
 pub fn all_choices(state: &FloorState) -> Vec<Choice> {
     let mut choices: Vec<Choice> = Vec::new();
-    choices.extend(
-        state.game_state()
-            .potions
-            .iter()
-            .enumerate()
-            .filter(|(_, potion)| potion.is_some())
-            .map(|(position, _)| Choice::DiscardPotion { slot: position }),
-    );
+    for potion in state.game_state().potions() {
+        choices.push(Choice::DiscardPotion { slot: potion.index });
+        
+        match potion.base.name.as_str() {
+            "Blood Potion" | "Entropic Brew" | "Fruit Juice" => {
+                choices.push(Choice::DrinkPotion { slot: potion.index, target: None });
+            }
+            _ => {}
+        }
+    }    
 
     match state {
         FloorState::Battle(battle_state) => {
@@ -90,25 +93,7 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
             match &event.screen_state {
                 Some(EventScreenState::Rewards(rewards)) => choices.extend(get_reward_choices(rewards, &event.game_state)),
                 Some(EventScreenState::DeckChoose(operation, count)) => {
-                    let cards: Vec<DeckCard> = match operation {
-                        DeckOperation::Duplicate => event.game_state.deck().collect(),
-                        DeckOperation::Remove
-                        | DeckOperation::Transform
-                        | DeckOperation::TransformUpgrade => event.game_state.removable_cards().collect(),
-                        DeckOperation::Upgrade => event.game_state.upgradable_cards().collect(),
-                    };
-        
-                    let mut real_count = *count as usize;
-                    if cards.len() > real_count {
-                        real_count = cards.len()
-                    }
-        
-                    choices.extend(
-                        cards
-                            .into_iter()
-                            .combinations(real_count)
-                            .map(|cards| Choice::DeckSelect(cards, *operation)),
-                    )
+                    choices.extend(get_operation_choices(*operation, *count, &event.game_state))
                 }
                 None => {
                     for available_choice in &event.available_choices {
@@ -141,63 +126,68 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
         }
         FloorState::Rest(state) => {
             match &state.screen_state {
-                Some(RestScreenState::DreamCatch(offer)) => {
+                RestScreenState::DreamCatch(offer) => {
                     choices.extend(get_offer_choices(offer, &state.game_state))
                 }
-                Some(RestScreenState::Smith) => {
+                RestScreenState::Smith => {
                     for card in state.game_state.upgradable_cards() {
                         choices.push(Choice::DeckSelect(vec![card], DeckOperation::Upgrade))
                     }
                 }
-                Some(RestScreenState::Toke) => {
+                RestScreenState::Toke => {
                     for card in state.game_state.removable_cards() {
                         choices.push(Choice::DeckSelect(vec![card], DeckOperation::Remove))
                     }
                 }
-                None => {
+                RestScreenState::Dig(rewards) => {
+                    choices.extend(get_reward_choices(rewards, &state.game_state))
+                }
+                RestScreenState::DeckSelect(operation) => {
+                    choices.extend(get_operation_choices(*operation, 1, &state.game_state))
+                }
+                RestScreenState::Proceed => {
+                    choices.push(Choice::Proceed)
+                }
+                RestScreenState::IShouldRest => {
+                    let rest_choices = vec![];
                     if !state.game_state.relics.contains("Coffee Dripper") {
-                        choices.push(Choice::Rest)
+                        rest_choices.push(Choice::Rest)
                     }
                     if !state.game_state.relics.contains("Fusion Hammer") {
-                        choices.extend(
-                            state.game_state
-                                .upgradable_cards()
-                                .map(Choice::Smith),
-                        );
+                        rest_choices.push(Choice::Smith)
                     }
                     if let Some(relic) = state.game_state.relics.find("Girya") {
                         if relic.vars.x < 3 {
-                            choices.push(Choice::Lift)
+                            rest_choices.push(Choice::Lift)
                         }
                     }
                     if state.game_state.relics.contains("Shovel") {
-                        choices.push(Choice::Dig)
+                        rest_choices.push(Choice::Dig)
                     }
                     if state.game_state.relics.contains("Peace Pipe") {
-                        choices.extend(
-                            state.game_state
-                                .removable_cards()
-                                .map(Choice::Toke),
-                        );
+                        rest_choices.push(Choice::Toke)
                     }
                     match &state.game_state.keys {
                         Some(keys) => {
                             if !keys.ruby {
-                                choices.push(Choice::Recall)
+                                rest_choices.push(Choice::Recall)
                             }
                         }
                         None => {}
                     }
 
+                    if rest_choices.is_empty() {
+                        choices.push(Choice::Proceed)
+                    } else {
+                        choices.extend(rest_choices)
+                    }
                 }
             }
         }
         FloorState::Shop(shop) => {
             match &shop.screen_state {
-                ShopScreenState::Dolly => {
-                    for card in shop.game_state.deck() {
-                        choices.push(Choice::DeckSelect(vec![card], DeckOperation::Duplicate))
-                    }
+                ShopScreenState::DeckChoose(operation) => {
+                    choices.extend(get_operation_choices(*operation, 1, &shop.game_state))
                 }
                 ShopScreenState::Entrance => {
                     choices.push(Choice::EnterShop);
@@ -240,6 +230,28 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
     }
 
     choices
+}
+
+fn get_operation_choices(operation: DeckOperation, mut count: usize, state: &GameState) -> impl Iterator<Item = Choice> + '_ {
+    let cards: Vec<DeckCard> = match operation {
+        DeckOperation::Duplicate => state.deck().collect(),
+        DeckOperation::Remove
+        | DeckOperation::Transform
+        | DeckOperation::TransformUpgrade => state.removable_cards().collect(),
+        DeckOperation::Upgrade => state.upgradable_cards().collect(),
+        DeckOperation::BottleFlame => state.deck().filter(|a| a.base._type == CardType::Attack).collect(),
+        DeckOperation::BottleLightning => state.deck().filter(|a| a.base._type == CardType::Skill).collect(),
+        DeckOperation::BottleTornado => state.deck().filter(|a| a.base._type == CardType::Power).collect(),                        
+    };
+
+    if cards.len() < count {
+        count = cards.len()
+    }
+
+    cards
+        .into_iter()
+        .combinations(count)
+        .map(move |cards| Choice::DeckSelect(cards, operation))
 }
 
 fn get_reward_choices(rewards: &RewardState, state: &GameState) -> Vec<Choice> {

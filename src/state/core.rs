@@ -482,21 +482,10 @@ impl Monster {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug, Copy)]
-pub struct Potion {
-    pub base: &'static BasePotion,
-}
-
-impl Potion {
-    pub fn by_name(name: &str) -> Self {
-        Self {
-            base: models::potions::by_name(name),
-        }
-    }
-
-    pub fn reference(&self, index: usize) -> PotionReference {
+impl BasePotion {
+    pub fn reference(&'static self, index: usize) -> PotionReference {
         PotionReference {
-            base: self.base,
+            base: self,
             index,
         }
     }
@@ -511,10 +500,10 @@ pub struct RewardState {
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum Reward {
-    CardChoice(Vector<CardOffer>, FightType, bool), // True if colorless
+    CardChoice(Vector<CardOffer>, Option<FightType>, bool), // True if colorless
     Gold(u16),
     Relic(&'static BaseRelic),
-    Potion(Potion),
+    Potion(&'static BasePotion),
     EmeraldKey,
     SapphireKey,
     SapphireLinkedRelic(&'static BaseRelic),

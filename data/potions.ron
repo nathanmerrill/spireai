@@ -216,9 +216,6 @@
     name: "Entropic Brew",
     class: None,
     rarity: Rare,
-    on_drink: [
-      Custom,
-    ],
   ),
   (
     name: "Essence Of Darkness",

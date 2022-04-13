@@ -55,7 +55,6 @@
         name: "Ancient Tea Set",
         activation: WhenEnabled(
             activated_at: CombatStart,
-            enabled_at: RoomEnter(Rest),
             disabled_at: CombatStart,
         ),
         effect: [AddEnergy(Fixed(2))],
@@ -110,8 +109,6 @@
     ),
     (
         name: "Dream Catcher",
-        activation: When(Rest),
-        effect: [Custom],
         max_floor: 49,
     ),
     (
@@ -195,7 +192,6 @@
     (
         name: "Potion Belt",
         activation: Immediate,
-        effect: [AddPotionSlot(2)],
         max_floor: 49,
     ),
     (
@@ -217,7 +213,6 @@
     (
         name: "Strawberry",
         activation: Immediate,
-        effect: [AddMaxHp(Fixed(7))],
     ),
     (
         name: "The Boot",
@@ -438,16 +433,11 @@
     (
         name: "Pantograph",
         rarity: Uncommon,
-        activation: When(RoomEnter(Fight(Boss))),
-        effect: [Heal(
-            amount: Fixed(25),
-        )],
     ),
     (
         name: "Pear",
         rarity: Uncommon,
         activation: Immediate,
-        effect: [AddMaxHp(Fixed(10))],
     ),
     (
         name: "Question Card",
@@ -688,13 +678,11 @@
         name: "Mango",
         rarity: Rare,
         activation: Immediate,
-        effect: [AddMaxHp(Fixed(14))],
     ),
     (
         name: "Old Coin",
         rarity: Rare,
         activation: Immediate,
-        effect: [AddGold(Fixed(300))],
         max_floor: 49,
     ),
     (
@@ -862,7 +850,6 @@
     (
         name: "Frozen Eye",
         rarity: Shop,
-        activation: Immediate,
     ),
     (
         name: "Hand Drill",
@@ -873,12 +860,6 @@
         name: "Lees Waffle",
         rarity: Shop,
         activation: Immediate,
-        effect: [
-            HealPercentage(
-                amount: Fixed(100),
-            ),
-            AddMaxHp(Fixed(7)),
-        ],
     ),
     (
         name: "Medical Kit",
@@ -908,11 +889,6 @@
     (
         name: "Sling Of Courage",
         rarity: Shop,
-        activation: When(RoomEnter(Fight(Elite()))),
-        effect: [AddBuff(
-            buff: "Strength",
-            amount: Fixed(2),
-        )],
     ),
     (
         name: "Strange Spoon",
@@ -991,14 +967,6 @@
         name: "Calling Bell",
         rarity: Boss,
         activation: Immediate,
-        effect: [
-            DeckAdd("Curse Of The Bell"),
-            ShowReward([
-                RandomRelic,
-                RandomRelic,
-                RandomRelic,
-            ]),
-        ],
     ),
     (
         name: "Coffee Dripper",
@@ -1021,10 +989,6 @@
         name: "Empty Cage",
         rarity: Boss,
         activation: Immediate,
-        effect: [DeckOperation(
-            operation: Remove,
-            amount: 2,
-        )],
     ),
     (
         name: "Fusion Hammer",

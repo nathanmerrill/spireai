@@ -6,7 +6,7 @@ use crate::{
     models::{
         self,
         cards::BaseCard,
-        core::{CardType, ChestType, Class, When, FightType, Rarity},
+        core::{CardType, ChestType, Class, When, FightType, Rarity, Condition, Amount},
         potions::BasePotion,
         relics::{Activation, BaseRelic},
     },
@@ -16,7 +16,7 @@ use crate::{
 };
 
 use super::{
-    core::{Card, CardOffer, Potion, Relic, HpRange},
+    core::{Card, CardOffer, Relic, HpRange},
     map::MapState, shop::ShopState, probability::Probability, floor::KeyState,
 };
 
@@ -27,7 +27,7 @@ pub struct GameState {
     pub act: u8,
     pub asc: u8,
     pub deck: HashMap<Uuid, Card>,
-    pub potions: Vector<Option<Potion>>,
+    pub potions: Vector<Option<&'static BasePotion>>,
     pub gold: u16,
     pub hp: HpRange,
     pub map: MapState,
@@ -35,6 +35,26 @@ pub struct GameState {
     pub won: Option<bool>,
     pub purge_count: u8,
     pub rare_probability_offset: u8,
+}
+
+impl Default for GameState {
+    fn default() -> Self {
+        Self { 
+            class: Class::All, 
+            relics: Relics::new(),
+            act: 0, 
+            asc: 0, 
+            deck: Default::default(), 
+            potions: Default::default(), 
+            gold: Default::default(), 
+            hp: HpRange::new(0), 
+            map: MapState::new(), 
+            keys: Default::default(), 
+            won: Default::default(), 
+            purge_count: Default::default(), 
+            rare_probability_offset: Default::default() 
+        }
+    }
 }
 
 impl GameState {
@@ -102,27 +122,10 @@ impl GameState {
 
         self.gold += amount;
     }
-    
-    pub fn random_potion(&mut self, no_healing: bool, probability: &mut Probability) -> &'static BasePotion {
-        let rarities = vec![
-            (Rarity::Common, 70),
-            (Rarity::Uncommon, 25),
-            (Rarity::Rare, 5),
-        ];
 
-        let rarity = *probability.choose_weighted(&rarities).unwrap();
-
-        let potions = models::potions::POTIONS
-            .values()
-            .filter(|a| a.rarity == rarity && !(no_healing && a.name == "Fruit Juice"))
-            .collect_vec();
-
-        probability.choose(potions).unwrap()
-    }
-
-    pub fn add_potion(&mut self, base: &'static BasePotion) {
+    pub fn add_potion(&mut self, potion: &'static BasePotion) {
         if let Some(slot) = self.potions.iter().position(|a| a.is_none()) {
-            self.potions.set(slot, Some(Potion { base }));
+            self.potions.set(slot, Some(potion));
         }
     }
 
@@ -335,14 +338,14 @@ impl GameState {
 
     pub fn generate_card_rewards(
         &mut self,
-        fight_type: FightType,
+        fight_type: Option<FightType>,
         colorless: bool,
         probability: &mut Probability
     ) -> Vector<CardOffer> {
         let cards = {
             if colorless {
                 models::cards::available_cards_by_class(Class::None)
-            } else if self.relics.contains("Prismatic Shard") {
+            } else if fight_type.is_some() && self.relics.contains("Prismatic Shard") {
                 models::cards::available_cards_by_class(Class::All)
             } else {
                 models::cards::available_cards_by_class(self.class)
@@ -362,7 +365,7 @@ impl GameState {
                 0
             };
 
-        self.generate_card_offers(Some(fight_type), cards, count, true, probability)
+        self.generate_card_offers(fight_type, cards, count, true, probability)
     }
 
     fn generate_card_offers(
@@ -567,6 +570,107 @@ impl GameState {
             .enumerate()
             .map(|(position, opt)| opt.as_ref().map(|potion| potion.reference(position)))
     }
+
+    pub fn eval_condition(&self, condition: &Condition) -> bool
+    {
+        match condition {
+            Condition::Asc(i) => self.asc >= *i,
+            Condition::Act(i) => self.act >= *i,
+            Condition::Not(c) => !self.eval_condition(condition),
+            Condition::MultipleAnd(conditions) => conditions.iter().all(|c| self.eval_condition(c)),
+            Condition::MultipleOr(conditions) => conditions.iter().any(|c| self.eval_condition(c)),
+            Condition::HasRelic(relic) => self.relics.contains(relic.as_str()),
+            Condition::HasGold(amount) => {
+                if let Amount::Fixed(i) = amount {
+                    self.gold >= *i as u16
+                } else {
+                    panic!("Cannot handle non-fixed amount in static condition")
+                }
+            },
+            Condition::Always => true,
+            Condition::Class(c) => self.class == *c,
+            Condition::HasUpgradableCard => self.upgradable_cards().any(|_| true),
+            Condition::OnFloor(i) => self.map.floor >= *i,
+            Condition::Never => false,
+            Condition::Custom => unimplemented!(),
+            _ => panic!("Cannot handle game state condition: {:?}", condition)
+        }
+    }
+
+    pub fn drink_potion(&mut self, potion: PotionReference, eval_effects: bool, probability: &mut Probability) 
+    {
+        if eval_effects {
+            match potion.base.name.as_str() 
+            {
+                "Fruit Juice" => {
+                    let amount = if self.relics.contains("Sacred Bark") {
+                        10
+                    } else {
+                        5
+                    };
+
+                    self.add_max_hp(amount)
+                }
+                "Blood Potion" => {
+                    let amount = if self.relics.contains("Sacred Bark") {
+                        0.40
+                    } else {
+                        0.20
+                    };
+                    self.heal(self.hp.max as f64 * amount)
+                }
+                "Entropic Brew" => {
+                    let amount = self.potion_slots().filter(|a| a.is_none()).count();
+                    (0..amount).for_each(|a| self.add_potion(random_potion(true, probability)))                    
+                }
+            }
+        }
+    }
+
+    pub fn add_relic(&mut self, base: &'static BaseRelic, probability: &mut Probability) {
+        self.relics.add(base);
+
+        match base.activation {
+            Activation::Immediate => {
+                match base.name.as_str() {
+                    "Potion Belt" => self.potions.append(vector![None, None]),
+                    "Strawberry" => self.add_max_hp(7),
+                    "Pear" => self.add_max_hp(10),
+                    "Mango" => self.add_max_hp(14),
+                    "Old Coin" => self.add_gold(300),
+                    "Lees Waffle" => {
+                        self.hp.max += 7;
+                        self.heal(self.hp.max as f64)
+                    },
+                    "War Paint" | "Whetstone" => {
+                        let card_type = if base.name == "War Paint" {
+                            CardType::Skill
+                        } else {
+                            CardType::Attack
+                        };
+                        let available_cards: Vec<DeckCard> = self
+                            .upgradable_cards()
+                            .filter(|card| card_type.matches(card.base._type))
+                            .collect();
+    
+                        let cards = probability.choose_multiple(available_cards, 2);
+    
+                        for card in cards {
+                            self.deck[&card.uuid].upgrade();
+                        }
+                    }
+                    "Bottled Flame" | "Bottled Lightning" | "Bottled Tornado" | "Astrolabe" | "Calling Bell" | "Empty Cage" | "Pandoras Box" | "Tiny House" => {
+                        unimplemented!("Add to chest activation")
+                    }
+                    "Cauldron" | "Dollys Mirror" | "Orrery" => {}
+                    _ => {
+                        panic!("Unexpected immediate activation: {}", base.name)
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
@@ -620,7 +724,7 @@ impl Relics {
         self.relic_names.contains_key(name)
     }
 
-    pub fn add(&mut self, base: &'static BaseRelic) -> RelicReference {
+    fn add(&mut self, base: &'static BaseRelic) -> RelicReference {
         let relic = Relic::new(base);
         self.relic_names
             .insert(relic.base.name.to_string(), relic.uuid);
@@ -670,7 +774,7 @@ impl Relics {
         self.relics.insert(relic.uuid, relic);
 
         reference
-    }
+    }   
 
     pub fn remove(&mut self, name: &str) {
         let uuid = self.relic_names.remove(name).unwrap();
@@ -690,5 +794,20 @@ impl Relics {
         self.relics.get_mut(&relic.relic).unwrap()
     }
 }
+    
+pub fn random_potion(no_healing: bool, probability: &mut Probability) -> &'static BasePotion {
+    let rarities = vec![
+        (Rarity::Common, 70),
+        (Rarity::Uncommon, 25),
+        (Rarity::Rare, 5),
+    ];
 
+    let rarity = *probability.choose_weighted(&rarities).unwrap();
 
+    let potions = models::potions::POTIONS
+        .values()
+        .filter(|a| a.rarity == rarity && !(no_healing && a.name == "Fruit Juice"))
+        .collect_vec();
+
+    probability.choose(potions).unwrap()
+}

@@ -17,6 +17,7 @@ pub struct MapHistory {
     pub unknown_shop_count: u8,
     pub unknown_treasure_count: u8,
     pub event_history: HashSet<String>,
+    pub last_shop: bool,
 }
 
 impl MapHistory {
@@ -29,6 +30,7 @@ impl MapHistory {
             unknown_shop_count: 0,
             unknown_treasure_count: 0,
             event_history: HashSet::new(),
+            last_shop: false
         }
     }
 }

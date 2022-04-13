@@ -251,6 +251,9 @@ pub enum DeckOperation {
     TransformUpgrade,
     Remove,
     Duplicate,
+    BottleFlame,
+    BottleLightning,
+    BottleTornado
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
@@ -567,7 +570,7 @@ pub enum Condition {
         #[serde(default, skip_serializing_if = "is_default")]
         card_type: CardType,
     },*/
-    OnFloor(u8),
+    OnFloor(i8),
     Never,
     Custom,
 }

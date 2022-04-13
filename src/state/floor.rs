@@ -1,6 +1,6 @@
 use im::Vector;
 
-use crate::models::core::ChestType;
+use crate::models::core::{ChestType, DeckOperation};
 
 use super::{core::{CardOffer, RewardState}, battle::BattleState, game::GameState, shop::ShopState, probability::Probability, event::EventState};
 
@@ -63,15 +63,19 @@ pub struct BattleOverState {
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct RestState {
-    pub screen_state: Option<RestScreenState>,
+    pub screen_state: RestScreenState,
     pub game_state: GameState,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum RestScreenState {
+    IShouldRest,
     Toke,
     DreamCatch(Vector<CardOffer>),
-    Smith
+    Smith,
+    Dig(RewardState),
+    DeckSelect(DeckOperation),
+    Proceed
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
