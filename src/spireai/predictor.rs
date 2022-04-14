@@ -4,7 +4,7 @@ use crate::models::core::{CardType, ChestType, DeckOperation, FightType, Rarity,
 use crate::spireai::*;
 use crate::state::battle::BattleState;
 use crate::state::core::{Card, RewardState, Reward};
-use crate::state::event::EventState;
+use crate::state::event::{EventState, EventScreenState};
 use crate::state::floor::{FloorState, RestState, ChestState, RestScreenState};
 use crate::state::map::MapNodeIcon;
 use crate::state::shop::{ShopScreenState, ShopState};
@@ -410,36 +410,57 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
             }
         }
         Choice::AddCardToDeck(card) => {
-            
             let card = Card::by_name(&card);
-
-            match possibility.state {
+            match &mut possibility.state {
                 FloorState::Battle(_) => panic!("Unexpected battle state when adding card to deck"),
                 FloorState::Rest(rest) => { // Dreamcatching
                     rest.game_state.add_card(card);
                     rest.screen_state = RestScreenState::Proceed
                 }
                 FloorState::BattleOver(state) => {
-                    if let Some(reward_index) = state.rewards.viewing_reward {
-                        state.rewards.rewards.remove(reward_index);
-                        state.rewards.viewing_reward = false;
+                    state.game_state.add_card(card);
+                    remove_card_reward(&mut state.rewards);
+                }
+                FloorState::Chest(chest) => {
+                    chest.game_state.add_card(card);
+                    if let Some(rewards) = &mut chest.rewards {
+                        remove_card_reward(rewards);
+                    } else {
+                        panic!("Expected a rewards screen when adding a card to deck")
+                    }
+                }
+                FloorState::Event(event) => {
+                    event.game_state.add_card(card);
+                    if let Some(screen_state) = &mut event.screen_state {
+                        match screen_state {
+                            EventScreenState::Rewards(reward) => {
+                                remove_card_reward(reward)
+                            }
+                            _ => panic!("Expected a rewards screen when adding a card to deck")
+                        }
+                    }
+                }
+                FloorState::GameOver(_) => panic!("Unexpected game over state when adding card to deck"),
+                FloorState::Map(_) => panic!("Unexpected map state when adding card to deck"),
+                FloorState::Shop(shop) => {
+                    shop.game_state.add_card(card);
+                    if let ShopScreenState::Reward(reward) = &mut shop.screen_state {
+                        remove_card_reward(reward)
+                    } else {
+                        panic!("Expected a rewards screen when adding card to deck")
                     }
                 }
             }
-            
-            possibility.state.add_card(card);
-            remove_card_reward(possibility);
         }
         Choice::SelectCards(cards) => {
-            let effects = 
-            if let ScreenState::CardChoose(choice_state) = &possibility.state.screen_state {
-                choice_state.then.iter().cloned().collect_vec()
+            if let FloorState::Battle(battle) = &mut possibility.state {
+                if let Some(choice) = &mut battle.card_choose {
+                    for card in cards {
+                        battle.eval_card_effects(&choice.then.iter().cloned().collect_vec(), card, &mut possibility.probability)
+                    }
+                }
             } else {
-                panic!("Screen state is not card choose!")
-            };
-            
-            for card in cards {
-                possibility.eval_card_effects(&effects, card)
+                panic!("Expected Battle state during SelectCards choice")
             }
         }
         Choice::SingingBowl => {
@@ -533,21 +554,56 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
     }
 }
 
-
-fn remove_card_reward(possibility: &mut GamePossibility) {
-    if let ScreenState::CardReward(_, index) = possibility.state.screen_state {    
-        if let Some(index) = index {
-            if let FloorState::Rewards(rewards) = &mut possibility.state.floor_state {
-                rewards.remove(index);
+fn get_rewards_mut(state: &mut FloorState) -> &mut RewardState {
+    match state {
+        FloorState::Battle(_) => panic!("No rewards during Battle"),
+        FloorState::GameOver(_) => panic!("No rewards during GameOver"),
+        FloorState::Map(_) => panic!("No rewards during Map"),
+        FloorState::Rest(rest) => { // Dreamcatching
+            rest.game_state.add_card(card);
+            rest.screen_state = RestScreenState::Proceed
+        }
+        FloorState::BattleOver(state) => {
+            state.game_state.add_card(card);
+            remove_card_reward(&mut state.rewards);
+        }
+        FloorState::Chest(chest) => {
+            chest.game_state.add_card(card);
+            if let Some(rewards) = &mut chest.rewards {
+                remove_card_reward(rewards);
             } else {
-                panic!("Floor state is not a rewards!")
+                panic!("Expected a rewards screen when adding a card to deck")
             }
         }
-    } else {
-        panic!("Not in card reward screen!")
+        FloorState::Event(event) => {
+            event.game_state.add_card(card);
+            if let Some(screen_state) = &mut event.screen_state {
+                match screen_state {
+                    EventScreenState::Rewards(reward) => {
+                        remove_card_reward(reward)
+                    }
+                    _ => panic!("Expected a rewards screen when adding a card to deck")
+                }
+            }
+        }
+        FloorState::Shop(shop) => {
+            shop.game_state.add_card(card);
+            if let ShopScreenState::Reward(reward) = &mut shop.screen_state {
+                remove_card_reward(reward)
+            } else {
+                panic!("Expected a rewards screen when adding card to deck")
+            }
+        }
     }
+}
 
-    possibility.state.screen_state = ScreenState::Normal;
+fn remove_card_reward(rewards: &mut RewardState) {
+    if let Some(reward_index) = rewards.viewing_reward {
+        rewards.rewards.remove(reward_index);
+        rewards.viewing_reward = None;
+    } else {
+        panic!("Expected to be viewing a reward in Choice::AddCardToDeck FloorState::BattleOver")
+    }
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
