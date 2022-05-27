@@ -1,6 +1,6 @@
 use crate::comm::interop;
 use crate::comm::request::GameState as CommState;
-use crate::state::floor::GamePossibility;
+use crate::state::floor::{GamePossibility, FloorState};
 use crate::{
     models,
     state::{game::GameState, probability::Probability},
@@ -20,14 +20,14 @@ pub mod predictor;
 pub mod references;
 
 pub struct SpireAi {
-    state: Rc<GameState>,
+    state: Rc<FloorState>,
     last_choice: Option<Choice>, // Neural net nodes
     tree: MonteCarloTree,
     pub uuid_map: HashMap<String, Uuid>,
 }
 
 impl SpireAi {
-    pub fn new(state: GameState) -> SpireAi {
+    pub fn new(state: FloorState) -> SpireAi {
         SpireAi {
             state: Rc::new(state),
             last_choice: None,
@@ -38,7 +38,7 @@ impl SpireAi {
         }
     }
 
-    pub fn choose(&mut self, comm_state: &CommState) -> Choice {
+    pub fn choose(&mut self, comm_state: &Option<CommState>) -> Choice {
         if let Some(choice) = self.last_choice.clone() {
             if let Some(matching_state) = self.find_match(&choice, comm_state) {
                 let mut new_state = matching_state.as_ref().clone();
@@ -56,7 +56,7 @@ impl SpireAi {
         next_choice
     }
 
-    fn find_match(&mut self, choice: &Choice, comm_state: &CommState) -> Option<Rc<GameState>> {
+    fn find_match(&mut self, choice: &Choice, comm_state: &Option<CommState>) -> Option<Rc<FloorState>> {
         if let Some(choices) = self.tree.choices.get(&self.state) {
             if let Some(outcomes) = choices.get(choice) {
                 for outcome in outcomes.outcomes.iter() {
@@ -76,7 +76,7 @@ impl SpireAi {
 
 #[derive(PartialEq, Clone)]
 struct MonteCarloTree {
-    choices: HashMap<Rc<GameState>, HashMap<Choice, ChoiceOutcomes>>,
+    choices: HashMap<Rc<FloorState>, HashMap<Choice, ChoiceOutcomes>>,
 }
 
 #[derive(PartialEq, Clone)]
@@ -87,7 +87,7 @@ struct ChoiceOutcomes {
 
 #[derive(Clone)]
 struct Outcome {
-    state: Rc<GameState>,
+    state: Rc<FloorState>,
     probability: f64,
     evaluation: f64,
 }
@@ -108,7 +108,7 @@ impl Eq for Outcome {}
 
 fn search(
     tree: &mut MonteCarloTree,
-    state: Rc<GameState>,
+    state: Rc<FloorState>,
     iterations: usize,
     max_depth: usize,
     exploration_factor: f64,
@@ -139,7 +139,7 @@ fn score_outcomes(outcomes: &ChoiceOutcomes) -> f64 {
         .sum()
 }
 
-fn best_choice(tree: &MonteCarloTree, state: Rc<GameState>, exploration_factor: f64) -> Choice {
+fn best_choice(tree: &MonteCarloTree, state: Rc<FloorState>, exploration_factor: f64) -> Choice {
     tree.choices[&state]
         .iter()
         .map(|(choice, outcomes)| {
@@ -159,7 +159,7 @@ fn best_choice(tree: &MonteCarloTree, state: Rc<GameState>, exploration_factor: 
 
 fn descend(
     tree: &mut MonteCarloTree,
-    mut state: Rc<GameState>,
+    mut state: Rc<FloorState>,
     max_depth: usize,
     exploration_factor: f64,
 ) {
@@ -214,16 +214,17 @@ fn descend(
     }
 }
 
-fn evaluate(state: &GameState) -> f64 {
-    state.map.floor as f64 * 100.0 + state.player.creature.hp as f64
+fn evaluate(state: &FloorState) -> f64 {
+    let game_state = state.game_state();
+    game_state.map.floor as f64 * 100.0 + game_state.hp.amount as f64
     // Neural net
 }
 
 fn resolve_choice(
-    state: &GameState,
+    state: &FloorState,
     choice: Choice,
     possible_outcomes: &mut ChoiceOutcomes,
-) -> Rc<GameState> {
+) -> Rc<FloorState> {
     let mut possibility = GamePossibility {
         state: state.clone(),
         probability: Probability::new(),

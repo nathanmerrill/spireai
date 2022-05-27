@@ -1,6 +1,6 @@
 use crate::models;
 use crate::models::acts::MonsterSet;
-use crate::models::core::{CardType, ChestType, DeckOperation, FightType, Rarity, RoomType, When, CardDestination, Class};
+use crate::models::core::{ChestType, DeckOperation, FightType, When, CardDestination};
 use crate::spireai::*;
 use crate::state::battle::BattleState;
 use crate::state::core::{Card, RewardState, Reward};
@@ -10,8 +10,6 @@ use crate::state::map::MapNodeIcon;
 use crate::state::shop::{ShopScreenState, ShopState};
 use im::vector;
 use models::choices::Choice;
-
-use super::references::CreatureReference;
 
 pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
     match choice {
@@ -100,13 +98,27 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                     }
                 }
             }
+
+            match &mut possibility.state {
+                FloorState::Rest(rest) => {
+                    rest.screen_state = RestScreenState::Proceed;
+                }
+                FloorState::Event(event) => {
+                    event.screen_state = None
+                }
+                FloorState::Shop(shop) => {
+                    shop.screen_state = ShopScreenState::InShop;
+                }
+                _ => panic!("Unexpected floor state when performing a deck operation!")
+            }
         }
         Choice::Dig => {
             if let FloorState::Rest(rest) = &mut possibility.state {
                 let relic = rest.game_state.random_relic(None, None, false, &mut possibility.probability);
                 rest.screen_state = RestScreenState::Dig(RewardState {
                     rewards: vector![Reward::Relic(relic)],
-                    viewing_reward: None
+                    viewing_reward: None,
+                    deck_operation: None,
                 });
             } else {
                 panic!("Expected a Rest in Dig");                
@@ -185,7 +197,7 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                 match icon {
                     MapNodeIcon::Boss(name) => {
                         let boss = act.bosses.iter().find(|b| b.name == name).unwrap();
-                        let monsters = eval_monster_set(&boss.monsters, possibility);
+                        let monsters = eval_monster_set(&boss.monsters, &mut possibility.probability);
                         FloorState::Battle(BattleState::new(state, &monsters, FightType::Boss, &mut possibility.probability))
                     }
                     MapNodeIcon::BurningElite | MapNodeIcon::Elite => {
@@ -198,7 +210,7 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                         };
 
                         let choice = possibility.probability.choose(options).unwrap();
-                        let monsters = eval_monster_set(&act.elites[choice], possibility);
+                        let monsters = eval_monster_set(&act.elites[choice], &mut possibility.probability);
                         
                         FloorState::Battle(BattleState::new(state, &monsters, FightType::Elite {
                             burning: icon == MapNodeIcon::BurningElite,
@@ -355,7 +367,8 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
 
                 chest.rewards = Some(RewardState {
                     viewing_reward: None,
-                    rewards
+                    rewards,
+                    deck_operation: None,
                 })
             } else {
                 panic!("Floor state is not a chest!")
@@ -442,6 +455,7 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                 }
                 FloorState::GameOver(_) => panic!("Unexpected game over state when adding card to deck"),
                 FloorState::Map(_) => panic!("Unexpected map state when adding card to deck"),
+                FloorState::Menu => panic!("Unexpected menu state when adding card to deck"),
                 FloorState::Shop(shop) => {
                     shop.game_state.add_card(card);
                     if let ShopScreenState::Reward(reward) = &mut shop.screen_state {
@@ -464,92 +478,158 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
             }
         }
         Choice::SingingBowl => {
-            possibility.state.player.add_max_hp(2, &possibility.state.relics);
-            remove_card_reward(possibility);
+            match &mut possibility.state {
+                FloorState::Battle(_) => panic!("Unexpected battle state during singing bowl"),
+                FloorState::Rest(rest) => { // Dreamcatching
+                    rest.game_state.add_max_hp(2);
+                    rest.screen_state = RestScreenState::Proceed
+                }
+                FloorState::BattleOver(state) => {
+                    state.game_state.add_max_hp(2);
+                    remove_card_reward(&mut state.rewards);
+                }
+                FloorState::Chest(chest) => {
+                    chest.game_state.add_max_hp(2);
+                    if let Some(rewards) = &mut chest.rewards {
+                        remove_card_reward(rewards);
+                    } else {
+                        panic!("Expected a rewards screen during singing bowl")
+                    }
+                }
+                FloorState::Event(event) => {
+                    event.game_state.add_max_hp(2);
+                    if let Some(screen_state) = &mut event.screen_state {
+                        match screen_state {
+                            EventScreenState::Rewards(reward) => {
+                                remove_card_reward(reward)
+                            }
+                            _ => panic!("Expected a rewards screen during singing bowl")
+                        }
+                    }
+                }
+                FloorState::GameOver(_) => panic!("Unexpected GameOver state during singing bowl"),
+                FloorState::Map(_) => panic!("Unexpected map state during singing bowl"),
+                FloorState::Menu => panic!("Unexpected menu state during singing bowl"),
+                FloorState::Shop(shop) => {
+                    shop.game_state.add_max_hp(2);
+                    if let ShopScreenState::Reward(reward) = &mut shop.screen_state {
+                        remove_card_reward(reward)
+                    } else {
+                        panic!("Expected a rewards screen during singing bowl")
+                    }
+                }
+            }
         }
         Choice::Skip => {
-            possibility.state.screen_state = ScreenState::Normal;
+            match &mut possibility.state {
+                FloorState::Battle(_) => panic!("Unexpected battle state during skip"),
+                FloorState::Rest(rest) => { // Dreamcatching
+                    rest.screen_state = RestScreenState::Proceed
+                }
+                FloorState::BattleOver(state) => {
+                    state.rewards.viewing_reward = None;
+                }
+                FloorState::Chest(chest) => {
+                    if let Some(rewards) = &mut chest.rewards {
+                        rewards.viewing_reward = None;
+                    } else {
+                        panic!("Expected a rewards screen during skip")
+                    }
+                }
+                FloorState::Event(event) => {
+                    if let Some(screen_state) = &mut event.screen_state {
+                        match screen_state {
+                            EventScreenState::Rewards(reward) => {
+                                reward.viewing_reward = None;
+                            }
+                            _ => panic!("Expected a rewards screen during skip")
+                        }
+                    }
+                }
+                FloorState::GameOver(_) => panic!("Unexpected GameOver state during skip"),
+                FloorState::Map(_) => panic!("Unexpected map state during skip"),
+                FloorState::Menu => panic!("Unexpected menu state during skip"),
+                FloorState::Shop(shop) => {
+                    if let ShopScreenState::Reward(reward) = &mut shop.screen_state {
+                        reward.viewing_reward = None
+                    } else {
+                        panic!("Expected a rewards screen during singing bowl")
+                    }
+                }
+            }
+            
         }
-        Choice::Smith(card) => {
-            possibility.state.deck[&card.uuid].upgrade();
-            possibility.state.screen_state = ScreenState::Proceed;
+        Choice::Smith => {
+            if let FloorState::Rest(rest) = &mut possibility.state { 
+                rest.screen_state = RestScreenState::Smith
+            }
         }
         Choice::Start {player_class, ascension} => {
             *possibility = GamePossibility {
-                state: GameState::new(player_class, ascension.unwrap_or(0)),
+                state: FloorState::Event(EventState::by_name("Neow", GameState::new(player_class, ascension.unwrap_or(0)))),
                 probability: Probability::new()
             };
         }
         Choice::State => {}
         Choice::TakeReward(reward_index) => {
-            let (card_reward, gold_reward) = if let FloorState::Rewards(rewards) = &possibility.state.floor_state {
-                let reward = &rewards[reward_index];
-                match reward {
-                    Reward::CardChoice(_, fight_type, colorless) => {
-                        (Some((*fight_type, *colorless)), None)
+            match get_rewards_mut(&mut possibility.state).rewards[reward_index].clone() {
+                Reward::CardChoice(offer, fight_type, colorless) => {
+                    let new_offer = if offer.is_empty() {
+                        possibility.state.game_state_mut().generate_card_rewards(fight_type, colorless, &mut possibility.probability)
+                    } else {
+                        vector![]
+                    };
+
+                    let reward_state = get_rewards_mut(&mut possibility.state);
+                    reward_state.viewing_reward = Some(reward_index);
+                    if let Reward::CardChoice(choices, _, _) = &mut reward_state.rewards[reward_index] {
+                        choices.extend(new_offer);
                     }
-                    Reward::Gold(amount) => {
-                        (None, Some(*amount))
-                    }
-                    _ => (None, None)
                 }
-            } else {
-                panic!("Floor state is not rewards!")
-            };
+                Reward::EmeraldKey => {
+                    if let Some(keys) = &mut possibility.state.game_state_mut().keys {
+                        keys.emerald = true
+                    }
 
-            let card_offers = card_reward.map(|(fight_type, colorless)| {
-                possibility.generate_card_rewards(fight_type, colorless)
-            });
+                    get_rewards_mut(&mut possibility.state).rewards.remove(reward_index);
+                }
+                Reward::Gold(amount) => {
+                    possibility.state.game_state_mut().add_gold(amount);
 
-            if let Some(gold) = gold_reward {
-                possibility.state.add_gold(gold);
-            }
-
-
-            if let FloorState::Rewards(rewards) = &mut possibility.state.floor_state {
-                let reward = &mut rewards[reward_index];
-                match reward {
-                    Reward::CardChoice(offer, _, _) => {
-                        if offer.is_empty() {
-                            offer.extend(card_offers.unwrap());
-                        }
-                    }
-                    Reward::EmeraldKey => {
-                        possibility.state.keys.as_mut().unwrap().emerald = true;
-                        rewards.remove(reward_index);
-                    }
-                    Reward::Gold(_) => {
-                        rewards.remove(reward_index);
-                    }
-                    Reward::Potion(potion) => {
-                        if let Some(empty) = possibility.state.potions.iter_mut().find(|f| f.is_none()) {
-                            *empty = Some(*potion);
-                            rewards.remove(reward_index);
-                        }
-                    }
-                    Reward::Relic(relic) => {
-                        possibility.state.relics.add(relic);
-                        rewards.remove(reward_index);
-                    }
-                    Reward::SapphireKey => {
-                        possibility.state.keys.as_mut().unwrap().sapphire = true;
-                        rewards.remove(reward_index);
-                        rewards.remove(reward_index);//Remove linked relic
-                    }
-                    Reward::SapphireLinkedRelic(relic) => {
-                        possibility.state.relics.add(relic);
-                        rewards.remove(reward_index-1); //Remove linked key
-                        rewards.remove(reward_index-1);
-                    }
+                    get_rewards_mut(&mut possibility.state).rewards.remove(reward_index);
+                }
+                Reward::Potion(potion) => {
+                    if possibility.state.game_state_mut().add_potion(potion) {
+                        get_rewards_mut(&mut possibility.state).rewards.remove(reward_index);
+                    }                    
+                }
+                Reward::Relic(relic) => {
+                    possibility.state.game_state_mut().add_relic(relic, &mut possibility.probability);
                     
+                    get_rewards_mut(&mut possibility.state).rewards.remove(reward_index);
                 }
-            } else {
-                panic!("Floor state is not rewards!")
+                Reward::SapphireKey => {
+                    if let Some(keys) = &mut possibility.state.game_state_mut().keys {
+                        keys.sapphire = true;
+                    }
+                    let mut rewards = get_rewards_mut(&mut possibility.state).rewards;
+                    rewards.remove(reward_index);
+                    rewards.remove(reward_index);//Remove linked relic
+                }
+                Reward::SapphireLinkedRelic(relic) => {
+                    possibility.state.game_state_mut().add_relic(relic, &mut possibility.probability);
+                    let mut rewards = get_rewards_mut(&mut possibility.state).rewards;
+                    rewards.remove(reward_index-1); //Remove linked key
+                    rewards.remove(reward_index-1);
+                }
             }
         }
-        Choice::Toke(card) => {
-            possibility.state.deck.remove(&card.uuid);
-            possibility.state.screen_state = ScreenState::Proceed;
+        Choice::Toke => {
+            if let FloorState::Rest(rest_state) = &mut possibility.state {
+                rest_state.screen_state = RestScreenState::Toke
+            } else {
+                panic!("Expected rest state when toking!")
+            }
         }
     }
 }
@@ -559,39 +639,35 @@ fn get_rewards_mut(state: &mut FloorState) -> &mut RewardState {
         FloorState::Battle(_) => panic!("No rewards during Battle"),
         FloorState::GameOver(_) => panic!("No rewards during GameOver"),
         FloorState::Map(_) => panic!("No rewards during Map"),
-        FloorState::Rest(rest) => { // Dreamcatching
-            rest.game_state.add_card(card);
-            rest.screen_state = RestScreenState::Proceed
-        }
-        FloorState::BattleOver(state) => {
-            state.game_state.add_card(card);
-            remove_card_reward(&mut state.rewards);
-        }
-        FloorState::Chest(chest) => {
-            chest.game_state.add_card(card);
-            if let Some(rewards) = &mut chest.rewards {
-                remove_card_reward(rewards);
-            } else {
-                panic!("Expected a rewards screen when adding a card to deck")
+        FloorState::Menu => panic!("No rewards during Menu"),
+        FloorState::Rest(rest) => {
+            match &mut rest.screen_state {
+                RestScreenState::Dig(rewards) => {
+                    &mut rewards
+                }
+                _ => panic!("Rewards only apply when digging")
             }
         }
+        FloorState::BattleOver(state) => {
+            &mut state.rewards
+        }
+        FloorState::Chest(chest) => {
+            &mut chest.rewards.expect("Chest is empty!")
+        }
         FloorState::Event(event) => {
-            event.game_state.add_card(card);
-            if let Some(screen_state) = &mut event.screen_state {
-                match screen_state {
-                    EventScreenState::Rewards(reward) => {
-                        remove_card_reward(reward)
-                    }
-                    _ => panic!("Expected a rewards screen when adding a card to deck")
+            match &mut event.screen_state.expect("No screen state when fetching rewards!") {
+                EventScreenState::Rewards(rewards) => {
+                    &mut rewards
                 }
+                _ => panic!("Unexpected rewards during FloorState::Event")
             }
         }
         FloorState::Shop(shop) => {
-            shop.game_state.add_card(card);
-            if let ShopScreenState::Reward(reward) = &mut shop.screen_state {
-                remove_card_reward(reward)
-            } else {
-                panic!("Expected a rewards screen when adding card to deck")
+            match shop.screen_state {
+                ShopScreenState::Reward(rewards) => {
+                    &mut rewards
+                }
+                _ => panic!("Unexpected rewards in shop")
             }
         }
     }
@@ -672,20 +748,20 @@ fn treasure(state: GameState, probability: &mut Probability) -> FloorState {
 }
 
 fn normal_fight(state: GameState, probability: &mut Probability) -> FloorState {
-    let act = &models::acts::ACTS[possibility.state.act as usize];
-    if possibility.state.map.history.easy_fight_count == act.easy_count {
-        possibility.state.map.history.last_normal = None
+    let act = &models::acts::ACTS[state.act as usize];
+    if state.map.history.easy_fight_count == act.easy_count {
+        state.map.history.last_normal = None
     }
 
-    possibility.state.map.history.easy_fight_count += 1;
+    state.map.history.easy_fight_count += 1;
 
-    let fights = if possibility.state.map.history.easy_fight_count <= act.easy_count {
+    let fights = if state.map.history.easy_fight_count <= act.easy_count {
         &act.easy_fights
     } else {
         &act.normal_fights
     };
 
-    let options = if let Some(last) = possibility.state.map.history.last_normal {
+    let options = if let Some(last) = state.map.history.last_normal {
         fights[0..last]
             .iter()
             .chain(fights[last + 1..fights.len()].iter())
@@ -698,20 +774,17 @@ fn normal_fight(state: GameState, probability: &mut Probability) -> FloorState {
         .iter()
         .map(|f| (&f.set, f.probability))
         .collect_vec();
-    let fight = possibility
-        .probability
+    let fight = probability
         .choose_weighted(&probabilities)
         .unwrap();
-    let monsters = eval_monster_set(fight, possibility);
-    possibility.fight(&monsters, FightType::Common);
+    let monsters = eval_monster_set(fight, probability);
+    FloorState::Battle(BattleState::new(state, &monsters, FightType::Common, &mut probability))
 }
 
-fn eval_monster_set(set: &MonsterSet, possibility: &mut GamePossibility) -> Vec<String> {
+fn eval_monster_set(set: &MonsterSet, probability: &mut Probability) -> Vec<String> {
     match set {
-        MonsterSet::ChooseN { n, choices } => possibility
-            .probability
-            .choose_multiple(choices.to_vec(), *n as usize),
+        MonsterSet::ChooseN { n, choices } => probability.choose_multiple(choices.to_vec(), *n as usize),
         MonsterSet::Fixed(monsters) => monsters.to_vec(),
-        MonsterSet::RandomSet(sets) => possibility.probability.choose(sets.to_vec()).unwrap(),
+        MonsterSet::RandomSet(sets) => probability.choose(sets.to_vec()).unwrap(),
     }
 }

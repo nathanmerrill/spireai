@@ -112,7 +112,8 @@ impl ShopState {
                     rewards: (0..5).map(|_|
                         Reward::Potion(super::game::random_potion(false, probability))                        
                     ).collect(),
-                    viewing_reward: None
+                    viewing_reward: None,
+                    deck_operation: None,
                 })
             }
             "Orrery" => {
@@ -120,7 +121,8 @@ impl ShopState {
                     rewards: (0..5).map(|_|
                         Reward::CardChoice(vector![], None, false)
                     ).collect(),
-                    viewing_reward: None
+                    viewing_reward: None,
+                    deck_operation: None,
                 })
             }
             "Dollys Mirror" => {

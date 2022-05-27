@@ -2,7 +2,6 @@
 
 use crate::comm::request::GameState;
 use crate::models::choices::Choice;
-use crate::models::core::Class;
 use comm::request::Request;
 use comm::response::Response;
 use std::error::Error;
@@ -23,7 +22,7 @@ fn main() {
 }
 
 fn run() {
-    let mut ai = spireai::SpireAi::new(crate::state::game::GameState::new(Class::Ironclad, 0));
+    let mut ai = spireai::SpireAi::new(crate::state::floor::FloorState::Menu);
     let mut game_state: Option<GameState> = None;
     let mut queue: Vec<Response> = vec![Response::Simple(String::from("ready"))];
     loop {
@@ -36,19 +35,7 @@ fn run() {
 }
 
 fn handle_request(request: &Request, ai: &mut spireai::SpireAi) -> Choice {
-    match &request.game_state {
-        Some(state) => ai.choose(state),
-        None => {
-            if request.available_commands.contains(&String::from("start")) {
-                Choice::Start {
-                    player_class: DESIRED_CLASS,
-                    ascension: None,
-                }
-            } else {
-                Choice::State
-            }
-        }
-    }
+    ai.choose(&request.game_state)
 }
 
 fn process_queue(queue: &mut Vec<Response>, game_state: &Option<GameState>) -> Request {

@@ -6,7 +6,7 @@ use crate::{
         self,
         buffs::BaseBuff,
         cards::BaseCard,
-        core::{Amount, CardLocation, CardType, Condition, OrbType, When, FightType},
+        core::{Amount, CardLocation, CardType, Condition, OrbType, When, FightType, DeckOperation},
         monsters::{BaseMonster, Intent, MonsterMove},
         potions::BasePotion,
         relics::BaseRelic,
@@ -495,6 +495,7 @@ impl BasePotion {
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct RewardState {
     pub rewards: Vector<Reward>,
+    pub deck_operation: Option<DeckOperation>,
     pub viewing_reward: Option<usize>,
 }
 

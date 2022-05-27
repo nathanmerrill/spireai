@@ -7,37 +7,46 @@ use crate::models::{self, core as internal_core};
 use crate::state as internal;
 
 pub fn state_matches(
-    external: &external::GameState,
-    internal: &internal::game::GameState,
+    external: &Option<external::GameState>,
+    internal: &internal::floor::FloorState,
     uuid_map: &mut HashMap<String, Uuid>,
 ) -> bool {
-    (if let Some(combat_state) = &external.combat_state {
-        buffs_match(
-            &combat_state.player.powers,
-            &internal.player.creature.buffs,
-            uuid_map,
-        ) && combat_state.player.block as u16 == internal.player.creature.block
+    if let Some(external) = external {
+        if let Some(combat_state) = &external.combat_state {
+            if let internal::floor::FloorState::Battle(battle_state) = &internal {
+                buffs_match(
+                    &combat_state.player.powers,
+                    &battle_state.player.buffs,
+                    uuid_map,
+                ) && combat_state.player.block as u16 == battle_state.player.block
+            } else {
+                false
+            }
+        } else {
+            let internal = internal.game_state();
+            class_matches(&external.class, internal.class)
+            && external.current_hp as u16 == internal.hp.amount
+            && external.max_hp as u16 == internal.hp.max
+            && external.gold as u16 == internal.gold
+            && external.floor as i8 == internal.map.floor
+            && floor_state_matches(
+                external,
+                &internal.floor_state,
+                &internal.screen_state,
+                uuid_map,
+            )
+            && cards_match(&external.deck, &internal.deck, uuid_map)
+            && potions_match(&external.potions, &internal.potions)
+            && relics_match(&external.relics, &internal.relics.relics, uuid_map)
+            && external.act as u8 == internal.act
+            && external.ascension_level as u8 == internal.asc
+        }
     } else {
-        !internal.floor_state.battle().active
-    }) && class_matches(&external.class, internal.class)
-        && external.current_hp as u16 == internal.player.creature.hp
-        && external.max_hp as u16 == internal.player.creature.max_hp
-        && external.gold as u16 == internal.gold
-        && external.floor as i8 == internal.map.floor
-        && floor_state_matches(
-            external,
-            &internal.floor_state,
-            &internal.screen_state,
-            uuid_map,
-        )
-        && cards_match(&external.deck, &internal.deck, uuid_map)
-        && potions_match(&external.potions, &internal.potions)
-        && relics_match(&external.relics, &internal.relics.relics, uuid_map)
-        && external.act as u8 == internal.act
-        && external.ascension_level as u8 == internal.asc
+        matches!(internal, internal::floor::FloorState::Menu)
+    }
 }
 
-pub fn update_state(external: &external::GameState, internal: &mut internal::game::GameState) {
+pub fn update_state(external: &Option<external::GameState>, internal: &mut internal::floor::FloorState) {
     match external.floor {
         0 | 18 | 35 | 52 => {
             if external.combat_state.is_none() {

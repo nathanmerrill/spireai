@@ -21,9 +21,10 @@ pub enum FloorState {
     Chest(ChestState),
     Battle(BattleState),
     BattleOver(BattleOverState),
-    GameOver(GameState),
+    GameOver(bool),
     Shop(ShopState),
     Map(GameState),
+    Menu
 }
 
 impl FloorState {
@@ -34,9 +35,10 @@ impl FloorState {
             FloorState::Chest(state) => &state.game_state,
             FloorState::Battle(state) => &state.game_state,
             FloorState::BattleOver(state) => &state.game_state,
-            FloorState::GameOver(state) => state,
             FloorState::Shop(state) => &state.game_state,
             FloorState::Map(state) => state,
+            FloorState::GameOver(_) => panic!("No game state in GameOver"),
+            FloorState::Menu => panic!("No game state in Menu"),
         }
     }
 
@@ -47,9 +49,10 @@ impl FloorState {
             FloorState::Chest(state) => &mut state.game_state,
             FloorState::Battle(state) => &mut state.game_state,
             FloorState::BattleOver(state) => &mut state.game_state,
-            FloorState::GameOver(state) => state,
             FloorState::Shop(state) => &mut state.game_state,
             FloorState::Map(state) => state,
+            FloorState::GameOver(_) => panic!("No game state in GameOver"),
+            FloorState::Menu => panic!("No game state in Menu"),
         }
     }
 }

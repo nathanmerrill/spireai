@@ -123,9 +123,12 @@ impl GameState {
         self.gold += amount;
     }
 
-    pub fn add_potion(&mut self, potion: &'static BasePotion) {
+    pub fn add_potion(&mut self, potion: &'static BasePotion) -> bool {
         if let Some(slot) = self.potions.iter().position(|a| a.is_none()) {
             self.potions.set(slot, Some(potion));
+            true
+        } else {
+            false
         }
     }
 
@@ -621,7 +624,9 @@ impl GameState {
                 }
                 "Entropic Brew" => {
                     let amount = self.potion_slots().filter(|a| a.is_none()).count();
-                    (0..amount).for_each(|a| self.add_potion(random_potion(true, probability)))                    
+                    (0..amount).for_each(|a| {
+                        self.add_potion(random_potion(true, probability));
+                    })                    
                 }
             }
         }

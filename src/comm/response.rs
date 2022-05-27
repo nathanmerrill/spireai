@@ -21,6 +21,9 @@ pub fn serialize_response(response: &Response, state: &Option<GameState>) -> Str
 
             format!("CHOOSE {}", selection)
         }
+        Response::ChooseIdx(idx) => {
+            format!("CHOOSE {}", idx)
+        }
         Response::CardInGrid(position) => format!("CHOOSE {}", position),
         Response::CardInDeck(position) => {
             let game_state = state.as_ref().unwrap();
@@ -43,6 +46,7 @@ pub fn serialize_response(response: &Response, state: &Option<GameState>) -> Str
 pub enum Response {
     Simple(String),
     Choose(String),
+    ChooseIdx(usize),
     CardInGrid(usize),
     CardInDeck(usize),
 }
@@ -92,9 +96,9 @@ pub fn decompose_choice(
         Choice::State => vec![Response::Simple(String::from("STATE"))],
         Choice::Skip => vec![Response::Simple(String::from("SKIP"))],
         Choice::SingingBowl => vec![Response::Simple(String::from("SINGING_BOWL"))],
-        Choice::BuyCard(card) => vec![Response::Choose(card)],
-        Choice::BuyPotion(potion) => vec![Response::Choose(potion)],
-        Choice::BuyRelic(relic) => vec![Response::Choose(relic)],
+        Choice::BuyCard(card) => vec![Response::ChooseIdx(card)],
+        Choice::BuyPotion(potion) => vec![Response::ChooseIdx(potion)],
+        Choice::BuyRelic(relic) => vec![Response::ChooseIdx(relic)],
         Choice::BuyRemoveCard(card) => vec![
             Response::Choose(String::from("purge")),
             Response::CardInDeck(get_card_position_in_deck(card, request, uuid_map)),
@@ -106,11 +110,8 @@ pub fn decompose_choice(
             Response::Choose(String::from("rest")),
             Response::Simple(String::from("PROCEED")),
         ],
-        Choice::Smith(card) => vec![
+        Choice::Smith => vec![
             Response::Choose(String::from("smith")),
-            Response::CardInDeck(get_card_position_in_deck(card, request, uuid_map)),
-            Response::Simple(String::from("CONFIRM")),
-            Response::Simple(String::from("PROCEED")),
         ],
         Choice::Dig => vec![
             Response::Choose(String::from("dig")),
@@ -124,9 +125,8 @@ pub fn decompose_choice(
             Response::Choose(String::from("recall")),
             Response::Simple(String::from("PROCEED")),
         ],
-        Choice::Toke(card) => vec![
+        Choice::Toke => vec![
             Response::Choose(String::from("toke")),
-            Response::CardInDeck(get_card_position_in_deck(card, request, uuid_map)),
         ],
         Choice::SelectCards(cards) | Choice::Scry(cards) => {
             let available_cards = &request
@@ -153,7 +153,7 @@ pub fn decompose_choice(
                 .collect()
         }
 
-        Choice::DeckSelect(cards) => cards
+        Choice::DeckSelect(cards, _) => cards
             .into_iter()
             .map(|card| Response::CardInDeck(get_card_position_in_deck(card, request, uuid_map)))
             .chain(once(Response::Simple(String::from("CONFIRM"))))
