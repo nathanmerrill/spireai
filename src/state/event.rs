@@ -1,9 +1,16 @@
-use crate::{models::{events::BaseEvent, core::{DeckOperation, EventEffect}, self}, spireai::references::{CardReference, RelicReference}};
+use crate::{
+    models::{
+        self,
+        core::{DeckOperation, EventEffect},
+        events::BaseEvent,
+    },
+    spireai::references::{CardReference, RelicReference},
+};
 
-use super::{game::GameState, core::{Vars, RewardState}};
-
-
-
+use super::{
+    core::{RewardState, Vars},
+    game::GameState,
+};
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum EventScreenState {
@@ -48,8 +55,7 @@ impl EventState {
         }
     }
 
-    pub fn eval_effects(&mut self, effects: &[EventEffect]) 
-    {
+    pub fn eval_effects(&mut self, _effects: &[EventEffect]) {
         unimplemented!()
-    }    
+    }
 }

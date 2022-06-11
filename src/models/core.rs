@@ -67,7 +67,7 @@ pub enum FightType {
     Common,
     Elite {
         #[serde(default, skip_serializing_if = "is_default")]
-        burning: bool 
+        burning: bool,
     },
     Boss,
 }
@@ -253,7 +253,7 @@ pub enum DeckOperation {
     Duplicate,
     BottleFlame,
     BottleLightning,
-    BottleTornado
+    BottleTornado,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
@@ -286,10 +286,9 @@ pub enum GameEffect {
     LoseHpPercentage(Amount),
     Heal(Amount),
     AddMaxHp(Amount),
-    ReduceMaxHpPercentage(Amount),    
+    ReduceMaxHpPercentage(Amount),
     AddGold(Amount),
 }
-
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub enum BattleEffect {
@@ -430,7 +429,6 @@ pub enum BattleEffect {
         #[serde(default, skip_serializing_if = "is_default")]
         count: Amount,
     },
-
 
     //ShowChoices(Vec<String>),
 

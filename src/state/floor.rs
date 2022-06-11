@@ -2,16 +2,20 @@ use im::Vector;
 
 use crate::models::core::{ChestType, DeckOperation};
 
-use super::{core::{CardOffer, RewardState}, battle::BattleState, game::GameState, shop::ShopState, probability::Probability, event::EventState};
-
-
+use super::{
+    battle::BattleState,
+    core::{CardOffer, RewardState},
+    event::EventState,
+    game::GameState,
+    probability::Probability,
+    shop::ShopState,
+};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct GamePossibility {
     pub state: FloorState,
     pub probability: Probability,
 }
-
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 //The goal here is not to enumerate every possible screen state, but the states that the AI will hit (e.g. once the map has been viewed, no returning)
@@ -24,7 +28,7 @@ pub enum FloorState {
     GameOver(bool),
     Shop(ShopState),
     Map(GameState),
-    Menu
+    Menu,
 }
 
 impl FloorState {
@@ -57,7 +61,6 @@ impl FloorState {
     }
 }
 
-
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct BattleOverState {
     pub game_state: GameState,
@@ -78,17 +81,17 @@ pub enum RestScreenState {
     Smith,
     Dig(RewardState),
     DeckSelect(DeckOperation),
-    Proceed
+    Proceed,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct ChestState {
     pub chest: ChestType,
-    pub rewards: Option<RewardState>,  // Taking tiny house replaces this rewards list
+    pub rewards: Option<RewardState>, // Taking tiny house replaces this rewards list
     pub game_state: GameState,
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy,Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct KeyState {
     pub ruby: bool,
     pub emerald: bool,

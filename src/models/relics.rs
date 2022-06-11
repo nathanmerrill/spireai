@@ -5,7 +5,7 @@ use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use ron::de::from_reader;
 
-use super::core::{is_default, Class, BattleEffect, Rarity, When};
+use super::core::{is_default, BattleEffect, Class, Rarity, When};
 
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BaseRelic {

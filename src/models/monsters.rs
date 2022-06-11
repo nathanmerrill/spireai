@@ -4,7 +4,7 @@ use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use ::std::hash::{Hash, Hasher};
 
-use super::core::{is_default, Amount, Condition, FightType, When, BattleEffect};
+use super::core::{is_default, Amount, BattleEffect, Condition, FightType, When};
 
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BaseMonster {

@@ -1,6 +1,6 @@
 use crate::comm::interop;
 use crate::comm::request::GameState as CommState;
-use crate::state::floor::{GamePossibility, FloorState};
+use crate::state::floor::{FloorState, GamePossibility};
 use crate::{
     models,
     state::{game::GameState, probability::Probability},
@@ -56,7 +56,11 @@ impl SpireAi {
         next_choice
     }
 
-    fn find_match(&mut self, choice: &Choice, comm_state: &Option<CommState>) -> Option<Rc<FloorState>> {
+    fn find_match(
+        &mut self,
+        choice: &Choice,
+        comm_state: &Option<CommState>,
+    ) -> Option<Rc<FloorState>> {
         if let Some(choices) = self.tree.choices.get(&self.state) {
             if let Some(outcomes) = choices.get(choice) {
                 for outcome in outcomes.outcomes.iter() {

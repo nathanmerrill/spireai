@@ -14,81 +14,82 @@ pub fn state_matches(
     if let Some(external) = external {
         if let Some(combat_state) = &external.combat_state {
             if let internal::floor::FloorState::Battle(battle_state) = &internal {
-                buffs_match(
-                    &combat_state.player.powers,
-                    &battle_state.player.buffs,
-                    uuid_map,
-                ) && combat_state.player.block as u16 == battle_state.player.block
+                battle_state_matches(combat_state, battle_state, uuid_map)
             } else {
                 false
             }
         } else {
-            let internal = internal.game_state();
-            class_matches(&external.class, internal.class)
-            && external.current_hp as u16 == internal.hp.amount
-            && external.max_hp as u16 == internal.hp.max
-            && external.gold as u16 == internal.gold
-            && external.floor as i8 == internal.map.floor
-            && floor_state_matches(
-                external,
-                &internal.floor_state,
-                &internal.screen_state,
-                uuid_map,
-            )
-            && cards_match(&external.deck, &internal.deck, uuid_map)
-            && potions_match(&external.potions, &internal.potions)
-            && relics_match(&external.relics, &internal.relics.relics, uuid_map)
-            && external.act as u8 == internal.act
-            && external.ascension_level as u8 == internal.asc
+            let game = internal.game_state();
+            class_matches(&external.class, game.class)
+                && external.current_hp as u16 == game.hp.amount
+                && external.max_hp as u16 == game.hp.max
+                && external.gold as u16 == game.gold
+                && external.floor as i8 == game.map.floor
+                && floor_state_matches(external, internal, uuid_map)
+                && cards_match(&external.deck, &game.deck, uuid_map)
+                && potions_match(&external.potions, &game.potions)
+                && relics_match(&external.relics, &game.relics.relics, uuid_map)
+                && external.act as u8 == game.act
+                && external.ascension_level as u8 == game.asc
         }
     } else {
         matches!(internal, internal::floor::FloorState::Menu)
     }
 }
 
-pub fn update_state(external: &Option<external::GameState>, internal: &mut internal::floor::FloorState) {
-    match external.floor {
-        0 | 18 | 35 | 52 => {
-            if external.combat_state.is_none() {
-                internal.map = convert_map(external);
+pub fn update_state(
+    external: &Option<external::GameState>,
+    internal: &mut internal::floor::FloorState,
+) {
+    if let Some(external) = external {
+        match external.floor {
+            0 | 18 | 35 | 52 => {
+                if external.combat_state.is_none() {
+                    internal.game_state_mut().map = convert_map(external);
+                }
+            }
+            _ => {}
+        }
+
+        if let external::ScreenState::ShopScreen(state) = &external.screen_state {
+            if let internal::floor::FloorState::Shop(shop_state) = internal {
+                if !shop_state.updated {
+                    convert_shop(state, shop_state);
+                }
+            } else {
+                panic!("Expected shop state!");
             }
         }
-        _ => {}
-    }
-
-    if let external::ScreenState::ShopScreen(state) = &external.screen_state {
-        internal.floor_state = convert_shop(state);
     }
 }
 
-pub fn convert_shop(state: &external::ShopScreen) -> internal::game::FloorState {
-    internal::game::FloorState::Shop(internal::game::ShopState {
-        generated: true,
-        cards: state
-            .cards
-            .iter()
-            .map(|a| {
-                (
-                    internal::core::CardOffer {
-                        base: models::cards::by_name(&a.name),
-                        upgraded: a.upgrades > 0,
-                    },
-                    a.price.unwrap() as u16,
-                )
-            })
-            .collect(),
-        potions: state
-            .potions
-            .iter()
-            .map(|a| (models::potions::by_name(&a.name), a.price.unwrap() as u16))
-            .collect(),
-        relics: state
-            .relics
-            .iter()
-            .map(|a| (models::relics::by_name(&a.name), a.price.unwrap() as u16))
-            .collect(),
-        can_purge: state.purge_available,
-    })
+pub fn convert_shop(state: &external::ShopScreen, shop: &mut internal::shop::ShopState) {
+    shop.generated = true;
+    shop.updated = true;
+    shop.cards = state
+        .cards
+        .iter()
+        .map(|a| {
+            (
+                internal::core::CardOffer {
+                    base: models::cards::by_name(&a.name),
+                    upgraded: a.upgrades > 0,
+                },
+                a.price.unwrap() as u16,
+            )
+        })
+        .collect();
+    shop.potions = state
+        .potions
+        .iter()
+        .map(|a| (models::potions::by_name(&a.name), a.price.unwrap() as u16))
+        .collect();
+    shop.relics = state
+        .relics
+        .iter()
+        .map(|a| (models::relics::by_name(&a.name), a.price.unwrap() as u16))
+        .collect();
+    shop.can_purge = state.purge_available;
 }
 
 pub fn convert_map(state: &external::GameState) -> internal::map::MapState {
@@ -118,6 +119,7 @@ pub fn convert_map(state: &external::GameState) -> internal::map::MapState {
             unknown_shop_count: 0,
             unknown_treasure_count: 0,
             event_history: HashSet::new(),
+            last_shop: false,
         },
     }
 }
@@ -158,7 +160,8 @@ pub fn battle_state_matches(
     internal: &internal::battle::BattleState,
     uuid_map: &mut HashMap<String, Uuid>,
 ) -> bool {
-    internal.active
+    buffs_match(&external.player.powers, &internal.player.buffs, uuid_map)
+        && external.player.block as u16 == internal.player.block
         && cards_match(
             &external.hand,
             &internal
@@ -203,14 +206,13 @@ pub fn battle_state_matches(
 
 pub fn floor_state_matches(
     external: &external::GameState,
-    internal: &internal::game::FloorState,
-    screen_state: &internal::game::ScreenState,
+    internal: &internal::floor::FloorState,
     uuid_map: &mut HashMap<String, Uuid>,
 ) -> bool {
     match &external.screen_state {
         external::ScreenState::None {} => match &external.room_phase {
             external::RoomPhase::Combat => {
-                if let internal::game::FloorState::Battle(battle_state) = internal {
+                if let internal::floor::FloorState::Battle(battle_state) = internal {
                     battle_state_matches(
                         external.combat_state.as_ref().unwrap(),
                         battle_state,
@@ -223,96 +225,60 @@ pub fn floor_state_matches(
             _ => false,
         },
         external::ScreenState::Event(event) => {
-            if let internal::game::FloorState::Event(event_state) = internal {
+            if let internal::floor::FloorState::Event(event_state) = internal {
                 events_match(event, event_state)
             } else {
                 false
             }
         }
         external::ScreenState::Map(_) => {
-            matches!(screen_state, internal::game::ScreenState::Map)
+            matches!(internal, internal::floor::FloorState::Map(_))
         }
         external::ScreenState::CombatReward(external_rewards) => {
-            if let internal::game::FloorState::Rewards(internal_rewards) = internal {
-                rewards_match(external_rewards, internal_rewards)
-            } else {
-                false
-            }
-        }
-        external::ScreenState::CardReward(external_rewards) => {
-            if let internal::game::ScreenState::CardReward(internal_rewards, _) = screen_state {
-                external_rewards.cards.iter().all(|card| {
-                    internal_rewards.iter().any(|offer| {
-                        card.name == offer.base.name && (card.upgrades > 0) == offer.upgraded
-                    })
-                })
+            if let internal::floor::FloorState::BattleOver(battle_over) = internal {
+                rewards_match(external_rewards, &battle_over.rewards.rewards)
             } else {
                 false
             }
         }
         external::ScreenState::ShopRoom {} => match internal {
-            internal::game::FloorState::Shop(_) => {
-                matches!(screen_state, internal::game::ScreenState::Normal)
-            }
+            internal::floor::FloorState::Shop(_) => true,
             _ => false,
         },
-        external::ScreenState::ShopScreen(_) => {
+        external::ScreenState::ShopScreen(external) => {
             match internal {
-                internal::game::FloorState::Shop(_) => {
-                    // No need to check internals of shop, as they will statistically never match
-                    matches!(screen_state, internal::game::ScreenState::InShop)
+                internal::floor::FloorState::Shop(internal) => {
+                    internal.cards.iter().zip(&external.cards).all(
+                        |((offer, price), external_card)| {
+                            card_offer_matches(external_card, offer, *price)
+                        },
+                    ) && internal.relics.iter().zip(&external.relics).all(
+                        |((offer, price), external_relic)| {
+                            offer.name == external_relic.name
+                                && external_relic.price.unwrap() as u16 == *price
+                        },
+                    ) && internal.potions.iter().zip(&external.potions).all(
+                        |((offer, price), external_potion)| {
+                            offer.name == external_potion.name
+                                && external_potion.price.unwrap() as u16 == *price
+                        },
+                    ) && internal.can_purge == external.purge_available
                 }
                 _ => false,
             }
         }
-        external::ScreenState::Rest(_) => internal == &internal::game::FloorState::Rest,
-        external::ScreenState::Grid(grid) => match &external.room_phase {
-            external::RoomPhase::Combat => match screen_state {
-                internal::game::ScreenState::CardChoose(_) => match internal {
-                    internal::game::FloorState::Battle(battle_state) => battle_state_matches(
-                        external.combat_state.as_ref().unwrap(),
-                        battle_state,
-                        uuid_map,
-                    ),
-                    _ => false,
-                },
-                _ => false,
-            },
-            external::RoomPhase::Event => match screen_state {
-                internal::game::ScreenState::DeckChoose(count, operation) => {
-                    let mut matches = grid.any_number || *count == grid.num_cards as u8;
-                    if grid.for_purge && operation != &internal_core::DeckOperation::Remove {
-                        matches = false;
-                    }
-                    if grid.for_transform
-                        && (operation != &internal_core::DeckOperation::Transform
-                            || operation != &internal_core::DeckOperation::TransformUpgrade)
-                    {
-                        matches = false;
-                    }
-                    if grid.for_upgrade && operation != &internal_core::DeckOperation::Upgrade {
-                        matches = false;
-                    }
-                    matches
-                }
-                _ => false,
-            },
-            _ => panic!("Unexpected room phase in grid choice"),
-        },
+        external::ScreenState::Rest(_) => matches!(internal, internal::floor::FloorState::Rest(_)),
         external::ScreenState::Chest(chest) => {
-            if let internal::game::FloorState::Chest(chest_type) = internal {
-                chest_matches(chest, *chest_type)
+            if let internal::floor::FloorState::Chest(chest_type) = internal {
+                chest_matches(chest, chest_type.chest)
             } else {
                 false
             }
         }
-        // ScreenState::CardReward(CardReward),
-        // ScreenState::BossReward(Vec<Relic>),
-        // ScreenState::Grid(Grid) => internal::game::FloorState::CardSelect,
-        // ScreenState::HandSelect(HandSelect),
-        external::ScreenState::GameOver(_) => internal == &internal::game::FloorState::GameOver,
-        // ScreenState::Complete,
-        _ => panic!("Unhandled screen state"),
+        external::ScreenState::GameOver(_) => {
+            matches!(internal, internal::floor::FloorState::GameOver(_))
+        }
+        _ => true,
     }
 }
 
@@ -329,32 +295,32 @@ fn chest_matches(external: &external::Chest, internal: internal_core::ChestType)
 
 fn rewards_match(
     external: &external::CombatRewards,
-    internal: &Vector<internal::game::Reward>,
+    internal: &Vector<internal::core::Reward>,
 ) -> bool {
     external.rewards.iter().all(|a| {
         internal.iter().any(|b| match a {
-            external::RewardType::Card => matches!(b, &internal::game::Reward::CardChoice(_, _, _)),
-            external::RewardType::EmeraldKey => b == &internal::game::Reward::EmeraldKey,
-            external::RewardType::Gold { gold } => b == &internal::game::Reward::Gold(*gold as u16),
+            external::RewardType::Card => matches!(b, &internal::core::Reward::CardChoice(_, _, _)),
+            external::RewardType::EmeraldKey => b == &internal::core::Reward::EmeraldKey,
+            external::RewardType::Gold { gold } => b == &internal::core::Reward::Gold(*gold as u16),
             external::RewardType::Potion { potion } => {
-                if let internal::game::Reward::Potion(p) = b {
-                    potion.name == p.base.name
+                if let internal::core::Reward::Potion(p) = b {
+                    potion.name == p.name
                 } else {
                     false
                 }
             }
             external::RewardType::Relic { relic } => {
-                if let internal::game::Reward::Relic(r) = b {
+                if let internal::core::Reward::Relic(r) = b {
                     relic.name == r.name
                 } else {
                     false
                 }
             }
             external::RewardType::StolenGold { gold } => {
-                b == &internal::game::Reward::Gold(*gold as u16)
+                b == &internal::core::Reward::Gold(*gold as u16)
             }
             external::RewardType::SapphireKey { link } => {
-                if let internal::game::Reward::SapphireLinkedRelic(r) = b {
+                if let internal::core::Reward::SapphireLinkedRelic(r) = b {
                     link.name == r.name
                 } else {
                     false
@@ -364,7 +330,7 @@ fn rewards_match(
     })
 }
 
-fn events_match(external: &external::Event, internal: &internal::core::Event) -> bool {
+fn events_match(external: &external::Event, internal: &internal::event::EventState) -> bool {
     external.event_name == internal.base.name
         && external.options.iter().all(|option| {
             internal
@@ -413,8 +379,8 @@ fn monsters_match(
     for internal in internal_map.values() {
         let external = &external_map[internal.position];
         if !(buffs_match(&external.powers, &internal.creature.buffs, uuid_map)
-            && external.current_hp as u16 == internal.creature.hp
-            && external.max_hp as u16 == internal.creature.hp
+            && external.current_hp as u16 == internal.creature.hp.amount
+            && external.max_hp as u16 == internal.creature.hp.max
             && external.block as u16 == internal.creature.block
             && external.is_gone != internal.targetable
             && external.name == internal.base.name
@@ -466,7 +432,7 @@ fn buffs_match(
 
 fn potions_match(
     external: &[external::Potion],
-    internal: &Vector<Option<internal::core::Potion>>,
+    internal: &Vector<Option<&'static models::potions::BasePotion>>,
 ) -> bool {
     if external.len() != internal.len() {
         return false;
@@ -475,7 +441,7 @@ fn potions_match(
     for idx in 0..external.len() {
         let name = match &internal[idx] {
             None => "Potion Slot",
-            Some(p) => p.base.name.as_str(),
+            Some(p) => p.name.as_str(),
         };
 
         if name != external[idx].name {
@@ -556,6 +522,21 @@ fn card_matches(external: &external::Card, internal: &internal::core::Card) -> b
     name == internal.base.name
         && external.upgrades as u8 == internal.upgrades
         && external.cost as u8 == internal.cost
+}
+
+fn card_offer_matches(
+    external: &external::Card,
+    internal: &internal::core::CardOffer,
+    price: u16,
+) -> bool {
+    let name = if external.name.ends_with('+') {
+        &external.name[0..external.name.len() - 1]
+    } else {
+        external.name.as_str()
+    };
+    name == internal.base.name
+        && (external.upgrades > 0) == internal.upgraded
+        && external.price.unwrap() as u16 == price
 }
 
 fn class_matches(external: &external::PlayerClass, internal: internal_core::Class) -> bool {

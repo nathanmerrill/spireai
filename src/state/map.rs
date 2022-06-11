@@ -30,7 +30,7 @@ impl MapHistory {
             unknown_shop_count: 0,
             unknown_treasure_count: 0,
             event_history: HashSet::new(),
-            last_shop: false
+            last_shop: false,
         }
     }
 }

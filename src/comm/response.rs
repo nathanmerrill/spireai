@@ -110,9 +110,7 @@ pub fn decompose_choice(
             Response::Choose(String::from("rest")),
             Response::Simple(String::from("PROCEED")),
         ],
-        Choice::Smith => vec![
-            Response::Choose(String::from("smith")),
-        ],
+        Choice::Smith => vec![Response::Choose(String::from("smith"))],
         Choice::Dig => vec![
             Response::Choose(String::from("dig")),
             Response::Simple(String::from("PROCEED")),
@@ -125,9 +123,7 @@ pub fn decompose_choice(
             Response::Choose(String::from("recall")),
             Response::Simple(String::from("PROCEED")),
         ],
-        Choice::Toke => vec![
-            Response::Choose(String::from("toke")),
-        ],
+        Choice::Toke => vec![Response::Choose(String::from("toke"))],
         Choice::SelectCards(cards) | Choice::Scry(cards) => {
             let available_cards = &request
                 .game_state

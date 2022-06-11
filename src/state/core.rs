@@ -6,13 +6,16 @@ use crate::{
         self,
         buffs::BaseBuff,
         cards::BaseCard,
-        core::{Amount, CardLocation, CardType, Condition, OrbType, When, FightType, DeckOperation},
+        core::{
+            Amount, CardLocation, CardType, Condition, DeckOperation, FightType, OrbType, When,
+        },
         monsters::{BaseMonster, Intent, MonsterMove},
         potions::BasePotion,
         relics::BaseRelic,
     },
     spireai::references::{
-        BuffReference, CardReference, CreatureReference, PotionReference, RelicReference, MonsterReference,
+        BuffReference, CardReference, CreatureReference, MonsterReference, PotionReference,
+        RelicReference,
     },
 };
 
@@ -41,11 +44,10 @@ pub struct Orb {
     pub n: u16,
 }
 
-
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct HpRange {
     pub amount: u16,
-    pub max: u16
+    pub max: u16,
 }
 
 impl HpRange {
@@ -61,7 +63,7 @@ impl HpRange {
     pub fn new(amount: u16) -> Self {
         Self {
             amount,
-            max: amount
+            max: amount,
         }
     }
 }
@@ -104,11 +106,10 @@ impl Creature {
         }
     }
 
-    pub fn creature_ref(&self) -> CreatureReference 
-    {
+    pub fn creature_ref(&self) -> CreatureReference {
         match self.monster {
             Some(_ref) => CreatureReference::Creature(_ref),
-            None => CreatureReference::Player
+            None => CreatureReference::Player,
         }
     }
 
@@ -187,7 +188,7 @@ impl Creature {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct CardOffer {
     pub base: &'static BaseCard,
     pub upgraded: bool,
@@ -435,7 +436,7 @@ impl Monster {
     pub fn with_hp(name: &str, max_hp: u16) -> Self {
         Self::create(models::monsters::by_name(name), max_hp)
     }
-        
+
     pub fn new(name: &str, asc: u8, probability: &mut Probability) -> Self {
         let base = crate::models::monsters::by_name(name);
         let upgrade_asc = match base.fight_type {
@@ -450,19 +451,15 @@ impl Monster {
             &base.hp_range
         };
 
-        let hp = probability
-            .range((hp_range.max - hp_range.min + 1) as usize) as u16
-            + hp_range.min;
+        let hp =
+            probability.range((hp_range.max - hp_range.min + 1) as usize) as u16 + hp_range.min;
 
         Monster::create(base, hp)
     }
 
     pub fn create(base: &'static BaseMonster, max_hp: u16) -> Self {
         let uuid = Uuid::new_v4();
-        let reference = MonsterReference {
-            base,
-            uuid,
-        };
+        let reference = MonsterReference { base, uuid };
 
         Monster {
             base,
@@ -484,13 +481,9 @@ impl Monster {
 
 impl BasePotion {
     pub fn reference(&'static self, index: usize) -> PotionReference {
-        PotionReference {
-            base: self,
-            index,
-        }
+        PotionReference { base: self, index }
     }
 }
-
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct RewardState {

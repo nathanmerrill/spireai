@@ -1,14 +1,23 @@
-use im::{Vector, vector};
+use im::{vector, Vector};
 use itertools::Itertools;
 
-use crate::{models::{potions::BasePotion, relics::BaseRelic, core::{CardType, Rarity, Class, DeckOperation}, self}};
+use crate::models::{
+    self,
+    core::{CardType, DeckOperation, Rarity},
+    potions::BasePotion,
+    relics::BaseRelic,
+};
 
-use super::{core::{CardOffer, Card, RewardState, Reward}, game::{GameState, DeckCard}, probability::Probability};
-
+use super::{
+    core::{Card, CardOffer, Reward, RewardState},
+    game::{DeckCard, GameState},
+    probability::Probability,
+};
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct ShopState {
     pub generated: bool,
+    pub updated: bool, // Whether the shop has been updated from the external source
     pub cards: Vector<StoreCard>,
     pub potions: Vector<StorePotion>,
     pub relics: Vector<StoreRelic>,
@@ -34,12 +43,10 @@ impl ShopState {
         let (potion, cost) = self.potions.remove(index);
 
         if self.game_state.relics.contains("The Courier") {
-
             let new_potion = self.generate_potion(probability);
 
             self.potions.insert(index, new_potion)
         }
-        
 
         self.spend_gold(cost);
         self.game_state.add_potion(potion);
@@ -49,30 +56,23 @@ impl ShopState {
         let (offer, cost) = self.cards.remove(index);
 
         if self.game_state.relics.contains("The Courier") {
-            let available = models::cards::available_cards_by_class(offer.base._class);
-
-            if offer.base._class != Class::None {
-                available = &available.iter().copied().filter(|c| c._type == offer.base._type).collect_vec()
-            }
-
             let new_offer = self.generate_card_offer(offer.base._type, false, None, probability);
 
             self.cards.insert(index, new_offer)
         }
-        
+
         self.spend_gold(cost);
         self.game_state.add_card(Card::new(offer.base));
     }
 
-    pub fn purge(&mut self, card: DeckCard) 
-    {
+    pub fn purge(&mut self, card: DeckCard) {
         let cost = self.purge_cost();
         self.spend_gold(cost);
         self.game_state.remove_card(card.uuid);
         self.game_state.purge_count += 1;
         self.can_purge = false;
     }
-    
+
     pub fn purge_cost(&self) -> u16 {
         if self.game_state.relics.contains("Smiling Mask") {
             50
@@ -97,30 +97,28 @@ impl ShopState {
         let (relic, cost) = self.relics.remove(index);
 
         if self.game_state.relics.contains("The Courier") {
-
             let new_relic = self.generate_relic(false, probability);
 
             self.relics.insert(index, new_relic)
         }
-        
 
         self.spend_gold(cost);
         self.game_state.add_relic(relic, probability);
         match relic.name.as_str() {
             "Cauldron" => {
                 self.screen_state = ShopScreenState::Reward(RewardState {
-                    rewards: (0..5).map(|_|
-                        Reward::Potion(super::game::random_potion(false, probability))                        
-                    ).collect(),
+                    rewards: (0..5)
+                        .map(|_| Reward::Potion(super::game::random_potion(false, probability)))
+                        .collect(),
                     viewing_reward: None,
                     deck_operation: None,
                 })
             }
             "Orrery" => {
                 self.screen_state = ShopScreenState::Reward(RewardState {
-                    rewards: (0..5).map(|_|
-                        Reward::CardChoice(vector![], None, false)
-                    ).collect(),
+                    rewards: (0..5)
+                        .map(|_| Reward::CardChoice(vector![], None, false))
+                        .collect(),
                     viewing_reward: None,
                     deck_operation: None,
                 })
@@ -144,22 +142,22 @@ impl ShopState {
     pub fn generate(&mut self, probability: &mut Probability) {
         if !self.generated {
             let on_sale = probability.range(5);
-            let attack1 = self.generate_card_offer( CardType::Attack, on_sale == 0, None, probability);
-            let attack2 = self.generate_card_offer(CardType::Attack, on_sale == 1, Some(attack1), probability);
-            let skill1 = self.generate_card_offer( CardType::Skill, on_sale == 2, None, probability);
-            let skill2 = self.generate_card_offer(CardType::Skill, on_sale == 3, Some(skill1), probability);
-            let power = self.generate_card_offer( CardType::Power, on_sale == 4, None, probability);
+            let attack1 =
+                self.generate_card_offer(CardType::Attack, on_sale == 0, None, probability);
+            let attack2 = self.generate_card_offer(
+                CardType::Attack,
+                on_sale == 1,
+                Some(attack1),
+                probability,
+            );
+            let skill1 = self.generate_card_offer(CardType::Skill, on_sale == 2, None, probability);
+            let skill2 =
+                self.generate_card_offer(CardType::Skill, on_sale == 3, Some(skill1), probability);
+            let power = self.generate_card_offer(CardType::Power, on_sale == 4, None, probability);
             let colorless1 = self.generate_colorless_offer(false, probability);
             let colorless2 = self.generate_colorless_offer(true, probability);
 
-            self.cards = vector![
-                attack1, attack2, skill1, skill2, power, colorless1, colorless2,
-            ];
-
-
-            let relic1 = self.game_state.random_relic(None, None,  true, probability);
-            let relic2 = self.game_state.random_relic(None, None, true, probability);
-            let relic3 = self.game_state.random_relic(None, Some(Rarity::Shop),  true, probability);
+            self.cards = vector![attack1, attack2, skill1, skill2, power, colorless1, colorless2,];
 
             self.relics = vector![
                 self.generate_relic(false, probability),
@@ -167,15 +165,21 @@ impl ShopState {
                 self.generate_relic(true, probability),
             ];
 
-            self.potions = (0..3).map(|_|self.generate_potion(probability)).collect();
+            self.potions = (0..3).map(|_| self.generate_potion(probability)).collect();
             self.generated = true;
         }
     }
 
-    fn generate_relic(&self, is_shop: bool, probability: &mut Probability) -> (&'static BaseRelic, u16) {
+    fn generate_relic(
+        &mut self,
+        is_shop: bool,
+        probability: &mut Probability,
+    ) -> (&'static BaseRelic, u16) {
         let rarity = if is_shop { Some(Rarity::Shop) } else { None };
 
-        let relic = self.game_state.random_relic(None, rarity,  true, probability);
+        let relic = self
+            .game_state
+            .random_relic(None, rarity, true, probability);
 
         let (mut min, mut max) = match relic.rarity {
             Rarity::Shop | Rarity::Common => (143, 157),
@@ -183,14 +187,13 @@ impl ShopState {
             Rarity::Rare => (285, 315),
             _ => panic!("Unexpected rarity"),
         };
-        
+
         let discount = self.get_discount();
 
         min = (min as f64 * discount).ceil() as usize;
         max = (max as f64 * discount).ceil() as usize;
 
         (relic, (probability.range(max - min) + min) as u16)
-        
     }
 
     fn get_discount(&self) -> f64 {
@@ -218,41 +221,65 @@ impl ShopState {
         min = (min as f64 * discount).ceil() as usize;
         max = (max as f64 * discount).ceil() as usize;
 
-        (
-            potion,
-            (probability.range(max - min) + min) as u16,
-        )
+        (potion, (probability.range(max - min) + min) as u16)
     }
 
-    fn generate_card_offer(&self, _type: CardType, on_sale: bool, exclude: Option<StoreCard>, probability: &mut Probability) -> StoreCard {
+    fn generate_card_offer(
+        &self,
+        _type: CardType,
+        on_sale: bool,
+        exclude: Option<StoreCard>,
+        probability: &mut Probability,
+    ) -> StoreCard {
         let cards = models::cards::available_cards_by_class(self.game_state.class);
-        let available = cards.iter().copied().filter(|card| {
-            card._type == _type && exclude.map(|a| a.0.base.name != card.name).unwrap_or(true)
-        }).collect_vec();
+        let available = cards
+            .iter()
+            .copied()
+            .filter(|card| {
+                card._type == _type
+                    && exclude
+                        .as_ref()
+                        .map(|a| a.0.base.name != card.name)
+                        .unwrap_or(true)
+            })
+            .collect_vec();
 
-        let card = self.game_state.generate_card_offer(None, &available, probability);
-        
+        let card = self
+            .game_state
+            .generate_card_offer(None, &available, probability);
+
         let cost = self.calculate_card_cost(card, on_sale, probability);
 
         (card, cost)
     }
 
     fn generate_colorless_offer(&self, rare: bool, probability: &mut Probability) -> StoreCard {
-        let rarity = if rare { models::core::Rarity::Rare } else { models::core::Rarity::Uncommon };
+        let rarity = if rare {
+            models::core::Rarity::Rare
+        } else {
+            models::core::Rarity::Uncommon
+        };
         let available = models::cards::available_cards_by_class(models::core::Class::None)
-                    .iter()
-                    .copied()
-                    .filter(|c| c.rarity == models::core::Rarity::Uncommon)
-                    .collect_vec();
+            .iter()
+            .copied()
+            .filter(|c| c.rarity == rarity)
+            .collect_vec();
 
-        let card = self.game_state.generate_card_offer(None, &available, probability);
+        let card = self
+            .game_state
+            .generate_card_offer(None, &available, probability);
 
         let cost = self.calculate_card_cost(card, false, probability);
 
         (card, cost)
     }
-    
-    fn calculate_card_cost(&self, card: CardOffer, on_sale: bool, probability: &mut Probability) -> u16 {
+
+    fn calculate_card_cost(
+        &self,
+        card: CardOffer,
+        on_sale: bool,
+        probability: &mut Probability,
+    ) -> u16 {
         let (min, max) = match card.base._class {
             models::core::Class::None => match card.base.rarity {
                 models::core::Rarity::Uncommon => (81, 91),
@@ -267,7 +294,7 @@ impl ShopState {
             },
         };
 
-        let discount = self.get_discount();
+        let mut discount = self.get_discount();
         if on_sale {
             discount *= 0.5;
         }

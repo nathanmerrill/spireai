@@ -4,10 +4,14 @@ use ::std::hash::{Hash, Hasher};
 
 use crate::{
     models::{
-        self, buffs::BaseBuff, core::{CardLocation, Target}, monsters::BaseMonster, potions::BasePotion,
+        self,
+        buffs::BaseBuff,
+        core::{CardLocation, Target},
+        monsters::BaseMonster,
+        potions::BasePotion,
         relics::BaseRelic,
     },
-    state::core::Monster
+    state::core::Monster,
 };
 
 #[derive(Eq, Debug, Clone, Copy)]
@@ -133,7 +137,7 @@ pub enum Binding {
     Card(CardReference),
     Creature(CreatureReference),
     Potion(PotionReference),
-    Relic(RelicReference)
+    Relic(RelicReference),
 }
 
 impl Binding {
@@ -173,7 +177,6 @@ impl Monster {
     }
 }
 
-
 impl Target {
     pub fn creature_ref(self, binding: Binding, action: Option<GameAction>) -> CreatureReference {
         match self {
@@ -183,9 +186,10 @@ impl Target {
                 debug_assert!(action.is_attack, "Expected attack action!");
                 action.creature
             }
-            Target::TargetMonster => {
-                action.expect("Expected action!").target.expect("Expected target!")
-            }
+            Target::TargetMonster => action
+                .expect("Expected action!")
+                .target
+                .expect("Expected target!"),
             Target::Player => CreatureReference::Player,
             _ => panic!("Target does not resolve to a single creature! {:?}", self),
         }
