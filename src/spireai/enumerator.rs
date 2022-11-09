@@ -11,17 +11,20 @@ use models::choices::Choice;
 
 pub fn all_choices(state: &FloorState) -> Vec<Choice> {
     let mut choices: Vec<Choice> = Vec::new();
-    for potion in state.game_state().potions() {
-        choices.push(Choice::DiscardPotion { slot: potion.index });
 
-        match potion.base.name.as_str() {
-            "Blood Potion" | "Entropic Brew" | "Fruit Juice" => {
-                choices.push(Choice::DrinkPotion {
-                    slot: potion.index,
-                    target: None,
-                });
+    if !matches!(state, FloorState::Menu) {
+        for potion in state.game_state().potions() {
+            choices.push(Choice::DiscardPotion { slot: potion.index });
+
+            match potion.base.name.as_str() {
+                "Blood Potion" | "Entropic Brew" | "Fruit Juice" => {
+                    choices.push(Choice::DrinkPotion {
+                        slot: potion.index,
+                        target: None,
+                    });
+                }
+                _ => {}
             }
-            _ => {}
         }
     }
 
@@ -41,38 +44,44 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
                     }),
             ),
             None => {
+                if battle_state.wish > 0 {
+                    choices.push(Choice::WishGold);
+                    choices.push(Choice::WishPlated);
+                    choices.push(Choice::WishStrength);
+                } else {
                 choices.push(Choice::End);
-                for card_ref in battle_state.hand() {
-                    if battle_state.card_playable(card_ref) {
-                        if battle_state.get_card(card_ref).targeted() {
-                            choices.extend(battle_state.available_monsters().map(|monster| {
-                                Choice::PlayCard {
+                    for card_ref in battle_state.hand() {
+                        if battle_state.card_playable(card_ref) {
+                            if battle_state.get_card(card_ref).targeted() {
+                                choices.extend(battle_state.available_monsters().map(|monster| {
+                                    Choice::PlayCard {
+                                        card: card_ref,
+                                        target: Some(monster),
+                                    }
+                                }));
+                            } else {
+                                choices.push(Choice::PlayCard {
                                     card: card_ref,
+                                    target: None,
+                                })
+                            }
+                        }
+                    }
+
+                    for potion in battle_state.game_state.potions() {
+                        if potion.base.targeted {
+                            choices.extend(battle_state.available_monsters().map(|monster| {
+                                Choice::DrinkPotion {
+                                    slot: potion.index,
                                     target: Some(monster),
                                 }
                             }));
                         } else {
-                            choices.push(Choice::PlayCard {
-                                card: card_ref,
-                                target: None,
-                            })
-                        }
-                    }
-                }
-
-                for potion in battle_state.game_state.potions() {
-                    if potion.base.targeted {
-                        choices.extend(battle_state.available_monsters().map(|monster| {
-                            Choice::DrinkPotion {
+                            choices.push(Choice::DrinkPotion {
                                 slot: potion.index,
-                                target: Some(monster),
-                            }
-                        }));
-                    } else {
-                        choices.push(Choice::DrinkPotion {
-                            slot: potion.index,
-                            target: None,
-                        });
+                                target: None,
+                            });
+                        }
                     }
                 }
             }
@@ -123,19 +132,28 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
         }
         FloorState::Map(state) => {
             let map = &state.map;
-            match &map.floor {
-                -1 => {
-                    for (y, x) in map.nodes.keys() {
-                        if *y == 0 {
-                            choices.push(Choice::NavigateToNode(*x))
-                        }
-                    }
+            match &map.index {
+                None  => {
+                    let bottom_nodes = map.nodes.iter().flatten().take_while(|a| a.y == 0);
+                    choices.extend(bottom_nodes.map(|a| Choice::NavigateToNode(a.x)))
                 }
-                _ => {
-                    let node = &map.nodes[&(map.floor, map.x)];
+                Some(node_index) => {
+                    let node = &map.nodes[*node_index].unwrap();
 
-                    for next in &node.next {
-                        choices.push(Choice::NavigateToNode(*next))
+                    if node.left {
+                        choices.push(Choice::NavigateToNode(node.x - 1))
+                    }
+
+                    if node.up {
+                        choices.push(Choice::NavigateToNode(node.x))
+                    }
+
+                    if node.right {
+                        choices.push(Choice::NavigateToNode(node.x + 1))
+                    }
+
+                    if !node.left && !node.right && !node.up { // Boss
+                        choices.push(Choice::NavigateToNode(0))
                     }
                 }
             }

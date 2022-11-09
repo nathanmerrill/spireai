@@ -257,41 +257,7 @@ pub enum DeckOperation {
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub enum EventEffect {
-    ShowReward(Vec<RewardType>),
-    RemoveRelic(String),
-    RandomRelic,
-    AddRelic(String),
-    Fight {
-        monsters: Vec<String>,
-        room: FightType,
-    },
-    GameEffect(GameEffect),
-    AddPotionSlot(u8),
-    Custom,
-}
-
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub enum GameEffect {
-    DeckOperation {
-        #[serde(default, skip_serializing_if = "is_default")]
-        random: bool,
-        #[serde(default = "one", skip_serializing_if = "is_one")]
-        count: u8,
-        operation: DeckOperation,
-    },
-    DeckAdd(String),
-    RandomPotion,
-    LoseHp(Amount),
-    LoseHpPercentage(Amount),
-    Heal(Amount),
-    AddMaxHp(Amount),
-    ReduceMaxHpPercentage(Amount),
-    AddGold(Amount),
-}
-
-#[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
-pub enum BattleEffect {
+pub enum Effect {
     //Targeted
     Block {
         #[serde(default, skip_serializing_if = "is_default")]
@@ -313,7 +279,7 @@ pub enum BattleEffect {
         #[serde(default, skip_serializing_if = "is_default")]
         times: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
-        if_fatal: Vec<BattleEffect>,
+        if_fatal: Vec<Effect>,
     },
     LoseHp {
         #[serde(default, skip_serializing_if = "is_default")]
@@ -420,8 +386,6 @@ pub enum BattleEffect {
         exclude_healing: bool,
     },
 
-    //GameEffect(GameEffect),
-
     // Monster
     Split(String, String),
     Spawn {
@@ -430,28 +394,49 @@ pub enum BattleEffect {
         count: Amount,
     },
 
-    //ShowChoices(Vec<String>),
-
     //Control Structures
     If {
         condition: Condition,
         #[serde(default, skip_serializing_if = "is_default")]
-        then: Vec<BattleEffect>,
+        then: Vec<Effect>,
         #[serde(default, skip_serializing_if = "is_default")]
-        _else: Vec<BattleEffect>,
+        _else: Vec<Effect>,
     },
     RandomChance(Vec<EffectChance>),
     Repeat {
         n: Amount,
-        effect: Vec<BattleEffect>,
+        effect: Vec<Effect>,
     },
+
+    DeckOperation {
+        #[serde(default, skip_serializing_if = "is_default")]
+        random: bool,
+        #[serde(default = "one", skip_serializing_if = "is_one")]
+        count: u8,
+        operation: DeckOperation,
+    },
+    DeckAdd(String),
+    RandomPotion,
+    LoseHpPercentage(Amount),
+    ReduceMaxHpPercentage(Amount),
+    ShowReward(Vec<RewardType>),
+    RemoveRelic(String),
+    RandomRelic,
+    AddRelic(String),
+    Fight {
+        monsters: Vec<String>,
+        room: FightType,
+    },
+    AddPotionSlot(u8),
+    ShowChoices(Vec<String>),
+
     Custom,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
 pub struct EffectChance {
     pub amount: Amount,
-    pub effect: Vec<BattleEffect>,
+    pub effect: Vec<Effect>,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug, Deserialize, Serialize)]
@@ -472,7 +457,7 @@ pub enum CardEffect {
     AutoPlay,
     Retain,
     ReduceCost(Amount),
-    Custom,
+    Custom(String),
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, Deserialize, Serialize)]
@@ -508,7 +493,7 @@ impl Default for Target {
 #[derive(PartialEq, Eq, Clone, Deserialize, Serialize)]
 pub struct WhenEffect {
     pub when: When,
-    pub effect: Vec<BattleEffect>,
+    pub effect: Vec<Effect>,
 }
 
 #[derive(PartialEq, Eq, Clone, Debug, strum_macros::AsStaticStr, Deserialize, Serialize)]
@@ -558,16 +543,16 @@ pub enum Condition {
     MultipleOr(Vec<Condition>),
     HasRelic(String),
     HasGold(Amount),
-    /*IsVariant(String), //Event variant*/
+    IsVariant(String), //Event variant*/
     Always,
     Class(Class),
     HasUpgradableCard,
-    /*HasRemoveableCards {
+    HasRemoveableCards {
         #[serde(default = "one", skip_serializing_if = "is_one")]
         count: u8,
         #[serde(default, skip_serializing_if = "is_default")]
         card_type: CardType,
-    },*/
+    },
     OnFloor(i8),
     Never,
     Custom,

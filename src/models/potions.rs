@@ -3,7 +3,7 @@ use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
-use super::core::{is_default, BattleEffect, Class, Rarity};
+use super::core::{is_default, Effect, Class, Rarity};
 
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BasePotion {
@@ -13,7 +13,7 @@ pub struct BasePotion {
     #[serde(default, skip_serializing_if = "is_default")]
     pub rarity: Rarity,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_drink: Vec<BattleEffect>,
+    pub on_drink: Vec<Effect>,
     #[serde(default, skip_serializing_if = "is_default")]
     pub targeted: bool,
 }

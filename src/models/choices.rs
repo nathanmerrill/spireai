@@ -22,7 +22,7 @@ pub enum Choice {
         target: Option<MonsterReference>,
     },
     Event(String),
-    NavigateToNode(i8),
+    NavigateToNode(u8),
     TakeReward(usize),
     AddCardToDeck(String),
     SelectCards(Vec<CardReference>),
@@ -45,4 +45,7 @@ pub enum Choice {
     Skip,
     SingingBowl,
     State,
+    WishPlated,
+    WishStrength,
+    WishGold
 }

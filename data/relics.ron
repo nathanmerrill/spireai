@@ -55,6 +55,7 @@
         name: "Ancient Tea Set",
         activation: WhenEnabled(
             activated_at: CombatStart,
+            enabled_at: RoomEnter(Rest),
             disabled_at: CombatStart,
         ),
         effect: [AddEnergy(Fixed(2))],

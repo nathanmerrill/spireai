@@ -253,3 +253,18 @@ fn resolve_choice(
 
     state
 }
+
+
+#[cfg(test)]
+mod test {
+    use crate::{state::floor::FloorState, models::choices::Choice};
+
+    use super::SpireAi;
+
+    #[test]
+    fn test_start() {
+        let mut ai = SpireAi::new(FloorState::Menu);
+        let choice = ai.choose(&None);
+        assert!(matches!(choice, Choice::Start { ..}))
+    }
+}

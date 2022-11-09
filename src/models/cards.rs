@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use ::std::hash::{Hash, Hasher};
 use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
-use super::core::{is_default, Amount, BattleEffect, CardType, Class, Condition, Rarity};
+use super::core::{is_default, Amount, Effect, CardType, Class, Condition, Rarity};
 
 #[derive(Eq, Clone, Deserialize, Serialize)]
 pub struct BaseCard {
@@ -23,19 +23,19 @@ pub struct BaseCard {
     )]
     pub playable_if: Condition,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_start: Vec<BattleEffect>,
+    pub on_start: Vec<Effect>,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_play: Vec<BattleEffect>,
+    pub on_play: Vec<Effect>,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_discard: Vec<BattleEffect>,
+    pub on_discard: Vec<Effect>,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_draw: Vec<BattleEffect>,
+    pub on_draw: Vec<Effect>,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_exhaust: Vec<BattleEffect>,
+    pub on_exhaust: Vec<Effect>,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_retain: Vec<BattleEffect>,
+    pub on_retain: Vec<Effect>,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub on_turn_end: Vec<BattleEffect>, //Happens if card is in hand, before cards are discarded
+    pub on_turn_end: Vec<Effect>, //Happens if card is in hand, before cards are discarded
     #[serde(
         default = "Condition::never",
         skip_serializing_if = "Condition::is_never"

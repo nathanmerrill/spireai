@@ -6,9 +6,9 @@ use crate::{
     models::{
         self,
         cards::BaseCard,
-        core::{Amount, CardType, ChestType, Class, Condition, FightType, Rarity, When},
+        core::{Amount, CardType, ChestType, Class, Condition, FightType, Rarity, When, Effect, DeckOperation},
         potions::BasePotion,
-        relics::{Activation, BaseRelic},
+        relics::{Activation, BaseRelic, self},
     },
     spireai::references::{PotionReference, RelicReference},
 };
@@ -222,7 +222,7 @@ impl GameState {
 
         let starting_relic = match class {
             Class::Ironclad => "Burning Blood",
-            Class::Silent => "Ring of the Snake",
+            Class::Silent => "Ring Of The Snake",
             Class::Defect => "Cracked Core",
             Class::Watcher => "Pure Water",
             _ => panic!("Unexpected class!"),
@@ -589,6 +589,143 @@ impl GameState {
             Condition::Never => false,
             Condition::Custom => unimplemented!(),
             _ => panic!("Cannot handle game state condition: {:?}", condition),
+        }
+    }
+
+    pub fn eval_effect(&mut self, effect: &Effect, probability: &mut Probability) 
+    {
+        match effect {
+            Effect::AddPotionSlot(amount) => {
+                for _ in 0..*amount {
+                    self.potions.push_back(None)
+                }
+            }
+            Effect::AddRelic(name) => {
+                self.relics.add(relics::by_name(name));
+            } 
+            /*
+            Effect::ShowChoices(choices) => {
+                let event = self.game_state.floor_state.event_mut();
+                event.available_choices = choices.clone();
+            }
+            Effect::ShowReward(rewards) => {
+                self.game_state.floor_state = FloorState::Rewards(
+                    rewards
+                        .iter()
+                        .map(|reward| match reward {
+                            RewardType::ColorlessCard => Reward::CardChoice(vector![], FightType::Common, true),
+                            RewardType::EliteCard => Reward::CardChoice(vector![], FightType::Common, false),
+                            RewardType::Gold { min, max } => {
+                                let amount =
+                                    probability.range((max - min) as usize) as u16 + min;
+                                Reward::Gold(amount)
+                            }
+                            RewardType::RandomBook => {
+                                let book = self
+                                    .probability
+                                    .choose(vec!["Necronomicon", "Enchiridion", "Nilry's Codex"])
+                                    .unwrap();
+                                Reward::Relic(models::relics::by_name(book))
+                            }
+                            RewardType::RandomPotion => {
+                                let base = self.random_potion(false);
+                                Reward::Potion(Potion { base })
+                            }
+                            RewardType::RandomRelic => {
+                                let base = self.random_relic(None, None, None, false);
+                                Reward::Relic(base)
+                            }
+                            RewardType::Relic(rarity) => {
+                                let base = self.random_relic(None, Some(*rarity), None, false);
+                                Reward::Relic(base)
+                            }
+                            RewardType::RelicName(name) => Reward::Relic(models::relics::by_name(name)),
+                            RewardType::StandardCard => Reward::CardChoice(vector![], FightType::Common, false),
+                        })
+                        .collect(),
+                )
+            } */
+            
+            Effect::RemoveRelic(relic) => {
+                self.relics.remove(relic);
+            }
+            Effect::RandomPotion => {
+                let potion = random_potion(false, probability);
+                self.add_potion(potion);
+            }
+            Effect::RandomRelic => {
+                let relic = self.random_relic(None, None, false, probability);
+                self.add_relic(relic, probability);
+            }
+            Effect::ReduceMaxHpPercentage(amount) => {
+                let percentage = self.eval_amount(amount);
+                let total = (self.hp.max as f64 * (percentage as f64 / 100.0))
+                    .floor() as u16;
+                self.hp.reduce_max_hp(total)
+            }
+            Effect::LoseHpPercentage(amount) => {
+                let percentage = self.eval_amount(amount) as f64 / 1000.0;
+                let damage = (self.hp.max as f64 * percentage).floor() as u16;
+                self.hp.amount -= damage
+            }
+            Effect::DeckAdd(name) =>  {
+                self.add_card(Card::by_name(name));
+            },
+            Effect::DeckOperation {
+                random,
+                count,
+                operation,
+            } => {
+                if *random {
+                    assert!(*operation == DeckOperation::Upgrade);
+                    let choices = self.upgradable_cards().collect_vec();
+                    let selected = probability.choose_multiple(choices, *count as usize);
+                    for card in selected {
+                        self.deck.get_mut(&card.uuid).unwrap().upgrade();
+                    }
+                } else {
+                    panic!("Deck operation must occur during an event!")
+                }
+            },
+            Effect::AddMaxHp(amount) => {
+                let amount = self.eval_amount(amount) as u16;
+                self.hp.max += amount;
+                self.hp.amount += amount;
+            }
+            _ => {
+                panic!("Cannot handle effect in Game: {:?}", effect)
+            }
+        }
+    }
+
+    
+    pub fn eval_amount(&self, amount: &Amount) -> i16 {
+        match amount {
+            Amount::ByAsc { amount, high, .. } => {
+                if self.asc >= 15 {
+                    *high
+                } else {
+                    *amount
+                }
+            }
+            Amount::Custom => unimplemented!(),
+            Amount::MaxHp => self.hp.max as i16,
+            Amount::Fixed(amount) => *amount,
+            Amount::Mult(amount_mult) => {
+                let mut product = 1;
+                for amount in amount_mult {
+                    product *= self.eval_amount(amount);
+                }
+                product
+            }
+            Amount::Sum(amount_sum) => {
+                let mut sum = 0;
+                for amount in amount_sum {
+                    sum += self.eval_amount(amount);
+                }
+                sum
+            }
+            _ => panic!("Unexpected amount in game.eval_amount: {:?}", amount)
         }
     }
 

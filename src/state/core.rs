@@ -38,7 +38,7 @@ impl Vars {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Orb {
     pub base: OrbType,
     pub n: u16,

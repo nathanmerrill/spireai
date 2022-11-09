@@ -93,7 +93,7 @@
     ),
     rarity: Rare,
     on_play: [
-      RandomPotion,
+      Custom,
     ],
   ),
   (
@@ -4638,7 +4638,7 @@
     name: "Reaper",
     type: Attack,
     class: Ironclad,
-    cost: Fixed(0),
+    cost: Fixed(2),
     rarity: Rare,
     on_play: [
       Custom,
@@ -5087,7 +5087,7 @@
     ],
   ),
   (
-    name: "Secret Techique",
+    name: "Secret Technique",
     type: Skill,
     class: None,
     cost: Fixed(0),
@@ -5685,7 +5685,7 @@
           upgraded: 11,
         ),
       ),
-      Custom,
+      AddBuff("Free Attack Power")
     ],
   ),
   (

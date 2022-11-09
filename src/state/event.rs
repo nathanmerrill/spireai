@@ -1,7 +1,7 @@
 use crate::{
     models::{
         self,
-        core::{DeckOperation, EventEffect},
+        core::{DeckOperation, Effect, Amount},
         events::BaseEvent,
     },
     spireai::references::{CardReference, RelicReference},
@@ -9,7 +9,7 @@ use crate::{
 
 use super::{
     core::{RewardState, Vars},
-    game::GameState,
+    game::GameState, probability::Probability,
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -54,8 +54,59 @@ impl EventState {
             screen_state: None,
         }
     }
+    
+    pub fn eval_effects(&mut self, effects: &[Effect], probability: &mut Probability) {
+        for effect in effects {
+            self.eval_effect(effect, probability);
+        }
+    }
 
-    pub fn eval_effects(&mut self, _effects: &[EventEffect]) {
-        unimplemented!()
+    pub fn eval_effect(&mut self, effect: &Effect, probability: &mut Probability) {
+        match effect {
+            Effect::ShowChoices(choices) => {
+                self.available_choices = choices.to_vec();
+            }
+            Effect::SetN(n) => {
+                let amount = self.eval_amount(n);
+                self.vars.n = amount;
+                self.vars.n_reset = amount;
+            }
+            Effect::AddN(n) => {
+                self.vars.n += self.eval_amount(n)
+            }
+            Effect::SetX(x) => {
+                self.vars.x = self.eval_amount(x)
+            }
+            Effect::AddX(x) => {
+                self.vars.x += self.eval_amount(x)
+            }
+            Effect::ResetN => {
+                self.vars.n = self.vars.n_reset
+            }
+            _ => self.game_state.eval_effect(effect, probability)
+        }
+    }
+
+    pub fn eval_amount(&self, amount: &Amount) -> i16 {
+        match amount {
+            Amount::N => self.vars.n,
+            Amount::X => self.vars.x,
+            Amount::NegX => -self.vars.x,
+            Amount::Mult(amount_mult) => {
+                let mut product = 1;
+                for amount in amount_mult {
+                    product *= self.eval_amount(amount);
+                }
+                product
+            }
+            Amount::Sum(amount_sum) => {
+                let mut sum = 0;
+                for amount in amount_sum {
+                    sum += self.eval_amount(amount);
+                }
+                sum
+            }
+            _ => self.game_state.eval_amount(amount)
+        }
     }
 }

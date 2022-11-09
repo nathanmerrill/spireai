@@ -93,10 +93,10 @@ pub fn convert_shop(state: &external::ShopScreen, shop: &mut internal::shop::Sho
 }
 
 pub fn convert_map(state: &external::GameState) -> internal::map::MapState {
-    let mut nodes: HashMap<(i8, i8), internal::map::MapNode> = HashMap::new();
+    let mut nodes = [None; 105];
     for node in &state.map {
         let new_node = convert_node(node);
-        nodes.insert((new_node.floor, new_node.x), new_node);
+        nodes[new_node.index()] = Some(new_node)
     }
 
     let (x, y) = match &state.screen_state {
@@ -109,8 +109,9 @@ pub fn convert_map(state: &external::GameState) -> internal::map::MapState {
 
     internal::map::MapState {
         nodes,
-        x: x as i8,
+        index: if y >= 0 {Some((y*7 + x) as usize)} else {None},
         floor: y as i8,
+        boss: state.act_boss.as_ref().unwrap().to_string(),
         history: internal::map::MapHistory {
             last_elite: None,
             last_normal: None,
@@ -126,7 +127,11 @@ pub fn convert_map(state: &external::GameState) -> internal::map::MapState {
 
 pub fn convert_node(node: &external::MapNode) -> internal::map::MapNode {
     internal::map::MapNode {
-        floor: node.y as i8,
+        x: node.x as u8,
+        y: node.y as u8,
+        left: node.children.iter().any(|a| a.x + 1 == node.x),
+        up: node.children.iter().any(|a| a.x == node.x),
+        right: node.children.iter().any(|a| a.x == node.x + 1),
         icon: match node.symbol {
             'M' => internal::map::MapNodeIcon::Monster,
             '?' => internal::map::MapNodeIcon::Question,
@@ -135,9 +140,7 @@ pub fn convert_node(node: &external::MapNode) -> internal::map::MapNode {
             'T' => internal::map::MapNodeIcon::Chest,
             'E' => internal::map::MapNodeIcon::Elite,
             _ => panic!("Unhandled node type: {}", node.symbol),
-        },
-        next: node.children.iter().map(|a| a.x as i8).collect(),
-        x: node.x as i8,
+        }
     }
 }
 

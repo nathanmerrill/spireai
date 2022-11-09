@@ -4,7 +4,7 @@ use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
 use ron::de::from_reader;
 
-use super::core::{Condition, _true, is_default, is_true, EventEffect};
+use super::core::{Condition, _true, is_default, is_true, Effect};
 
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BaseEvent {
@@ -36,7 +36,7 @@ impl PartialEq for BaseEvent {
 pub struct BaseEventChoice {
     pub name: String,
     #[serde(default, skip_serializing_if = "is_default")]
-    pub effects: Vec<EventEffect>,
+    pub effects: Vec<Effect>,
     #[serde(
         default = "Condition::always",
         skip_serializing_if = "Condition::is_always"
