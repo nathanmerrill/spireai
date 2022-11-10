@@ -238,7 +238,7 @@ pub fn floor_state_matches(
             matches!(internal, internal::floor::FloorState::Map(_))
         }
         external::ScreenState::CombatReward(external_rewards) => {
-            if let internal::floor::FloorState::BattleOver(battle_over) = internal {
+            if let internal::floor::FloorState::BattleRewards(battle_over) = internal {
                 rewards_match(external_rewards, &battle_over.rewards.rewards)
             } else {
                 false

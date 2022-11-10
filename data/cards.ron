@@ -264,7 +264,7 @@
     name: "Ascenders Bane",
     type: Curse,
     class: Curse,
-    rarity: Curse,
+    rarity: Special,
     playable_if: Never,
     on_turn_end: [
       SelfEffect(Exhaust),
@@ -1539,7 +1539,7 @@
     name: "Curse Of The Bell",
     type: Curse,
     class: Curse,
-    rarity: Curse,
+    rarity: Special,
     playable_if: Never,
   ),
   (
@@ -3973,7 +3973,7 @@
     name: "Necronomicurse",
     type: Curse,
     class: Curse,
-    rarity: Curse,
+    rarity: Special,
     playable_if: Never,
     on_exhaust: [
       CreateCard(
@@ -4424,7 +4424,7 @@
     name: "Pride",
     type: Curse,
     class: Curse,
-    rarity: Curse,
+    rarity: Special,
     on_play: [
       SelfEffect(Exhaust),
     ],

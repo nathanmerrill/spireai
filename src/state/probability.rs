@@ -25,6 +25,19 @@ impl Probability {
         choices.into_iter().choose(&mut self.rng)
     }
 
+    pub fn choose_percentage(&mut self, percentage: f64) -> bool 
+    {
+        let result = self.rng.gen_bool(percentage);
+
+        if result {
+            self.probability *= percentage;
+        } else {
+            self.probability *= 1.0 - percentage;
+        }
+
+        result
+    }
+
     pub fn range(&mut self, max: usize) -> usize {
         if max == 0 {
             return 0;

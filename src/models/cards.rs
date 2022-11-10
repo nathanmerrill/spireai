@@ -130,6 +130,7 @@ lazy_static! {
     static ref CURSES: Vec<&'static BaseCard> =
         ALL_CARDS.values()
         .filter(|a| a._type == CardType::Curse)
+        .filter(|a| a.rarity != Rarity::Special)
         //.map(|a| a.name.to_string())
         .collect();
 

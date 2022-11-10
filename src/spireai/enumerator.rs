@@ -1,5 +1,5 @@
 use crate::models;
-use crate::models::core::{CardType, Class, DeckOperation};
+use crate::models::core::{CardType, Class, DeckOperation, ChestType};
 use crate::state::core::{CardOffer, Reward, RewardState};
 use crate::state::event::EventScreenState;
 use crate::state::floor::{FloorState, RestScreenState};
@@ -29,58 +29,64 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
     }
 
     match state {
-        FloorState::Battle(battle_state) => match &battle_state.card_choose {
-            Some(card_choice_state) => choices.extend(
-                card_choice_state
-                    .count_range
-                    .clone()
-                    .flat_map(|i| card_choice_state.choices.iter().copied().combinations(i))
-                    .map(|a| {
-                        if card_choice_state.scry {
-                            Choice::Scry(a)
-                        } else {
-                            Choice::SelectCards(a)
-                        }
-                    }),
-            ),
-            None => {
-                if battle_state.wish > 0 {
-                    choices.push(Choice::WishGold);
-                    choices.push(Choice::WishPlated);
-                    choices.push(Choice::WishStrength);
-                } else {
-                choices.push(Choice::End);
-                    for card_ref in battle_state.hand() {
-                        if battle_state.card_playable(card_ref) {
-                            if battle_state.get_card(card_ref).targeted() {
-                                choices.extend(battle_state.available_monsters().map(|monster| {
-                                    Choice::PlayCard {
-                                        card: card_ref,
-                                        target: Some(monster),
-                                    }
-                                }));
-                            } else {
-                                choices.push(Choice::PlayCard {
-                                    card: card_ref,
-                                    target: None,
-                                })
-                            }
-                        }
-                    }
-
-                    for potion in battle_state.game_state.potions() {
-                        if potion.base.targeted {
-                            choices.extend(battle_state.available_monsters().map(|monster| {
-                                Choice::DrinkPotion {
-                                    slot: potion.index,
-                                    target: Some(monster),
+        FloorState::Battle(battle_state) => {
+            if battle_state.battle_over {
+                choices.push(Choice::Proceed)
+            } else {
+                match &battle_state.card_choose {
+                    Some(card_choice_state) => choices.extend(
+                        card_choice_state
+                            .count_range
+                            .clone()
+                            .flat_map(|i| card_choice_state.choices.iter().copied().combinations(i))
+                            .map(|a| {
+                                if card_choice_state.scry {
+                                    Choice::Scry(a)
+                                } else {
+                                    Choice::SelectCards(a)
                                 }
-                            }));
+                            }),
+                    ),
+                    None => {
+                        if battle_state.wish > 0 {
+                            choices.push(Choice::WishGold);
+                            choices.push(Choice::WishPlated);
+                            choices.push(Choice::WishStrength);
                         } else {
-                            choices.push(Choice::DrinkPotion {
-                                slot: potion.index,
-                                target: None,
-                            });
+                        choices.push(Choice::End);
+                            for card_ref in battle_state.hand() {
+                                if battle_state.card_playable(card_ref) {
+                                    if battle_state.get_card(card_ref).targeted() {
+                                        choices.extend(battle_state.available_monsters().map(|monster| {
+                                            Choice::PlayCard {
+                                                card: card_ref,
+                                                target: Some(monster),
+                                            }
+                                        }));
+                                    } else {
+                                        choices.push(Choice::PlayCard {
+                                            card: card_ref,
+                                            target: None,
+                                        })
+                                    }
+                                }
+                            }
+
+                            for potion in battle_state.game_state.potions() {
+                                if potion.base.targeted {
+                                    choices.extend(battle_state.available_monsters().map(|monster| {
+                                        Choice::DrinkPotion {
+                                            slot: potion.index,
+                                            target: Some(monster),
+                                        }
+                                    }));
+                                } else {
+                                    choices.push(Choice::DrinkPotion {
+                                        slot: potion.index,
+                                        target: None,
+                                    });
+                                }
+                            }
                         }
                     }
                 }
@@ -104,11 +110,32 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
                 ascension: None,
             });
         }
-        FloorState::BattleOver(state) => {
+        FloorState::BattleRewards(state) => {
             choices.extend(get_reward_choices(&state.rewards, &state.game_state))
         }
         FloorState::Chest(state) => match &state.rewards {
-            Some(rewards) => choices.extend(get_reward_choices(rewards, &state.game_state)),
+            Some(rewards) => {
+                match state.chest {
+                    ChestType::Boss => {
+                        if rewards.rewards.is_empty() {
+                            choices.push(Choice::Proceed)
+                        } else {
+                            for (index, reward) in rewards.rewards.iter().enumerate() {
+                                match reward {
+                                    Reward::Relic(relic) => {
+                                        choices.push(Choice::TakeReward(index))
+                                    }
+                                    _ => panic!("Unexpected non-relic reward in boss chest")
+                                }
+                            }
+                            choices.push(Choice::Skip)
+                        }
+                    }
+                    _ => {
+                        choices.extend(get_reward_choices(rewards, &state.game_state));
+                    }
+                }
+            },
             None => {
                 choices.push(Choice::OpenChest);
                 choices.push(Choice::Proceed);
@@ -127,7 +154,7 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
                 }
             }
         },
-        FloorState::GameOver(_) => {
+        FloorState::GameOver(..) => {
             choices = vec![Choice::Proceed];
         }
         FloorState::Map(state) => {

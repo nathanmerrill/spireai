@@ -9,9 +9,35 @@ pub enum Rarity {
     Special,
     Event,
     Status,
-    Curse,
     Shop,
     Boss,
+}
+
+//Implements ordering for Automaton
+impl Ord for Rarity {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match self {
+            Rarity::Rare => match other {
+                Rarity::Rare => std::cmp::Ordering::Equal,
+                _ => std::cmp::Ordering::Greater
+            },
+            Rarity::Uncommon => match other {
+                Rarity::Rare => std::cmp::Ordering::Less,
+                Rarity::Uncommon => std::cmp::Ordering::Equal,
+                _ => std::cmp::Ordering::Greater
+            }
+            _ => match other {
+                Rarity::Rare | Rarity::Uncommon => std::cmp::Ordering::Less,
+                _ => std::cmp::Ordering::Equal
+            }
+        }
+    }
+}
+
+impl PartialOrd for Rarity {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl Default for Rarity {

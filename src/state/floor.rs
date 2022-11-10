@@ -24,8 +24,8 @@ pub enum FloorState {
     Rest(RestState),
     Chest(ChestState),
     Battle(BattleState),
-    BattleOver(BattleOverState),
-    GameOver(bool),
+    BattleRewards(BattleRewardsState),
+    GameOver(bool, bool), // Win, Beat heart
     Shop(ShopState),
     Map(GameState),
     Menu,
@@ -38,10 +38,10 @@ impl FloorState {
             FloorState::Rest(state) => &state.game_state,
             FloorState::Chest(state) => &state.game_state,
             FloorState::Battle(state) => &state.game_state,
-            FloorState::BattleOver(state) => &state.game_state,
+            FloorState::BattleRewards(state) => &state.game_state,
             FloorState::Shop(state) => &state.game_state,
             FloorState::Map(state) => state,
-            FloorState::GameOver(_) => panic!("No game state in GameOver"),
+            FloorState::GameOver(..) => panic!("No game state in GameOver"),
             FloorState::Menu => panic!("No game state in Menu"),
         }
     }
@@ -52,17 +52,18 @@ impl FloorState {
             FloorState::Rest(state) => &mut state.game_state,
             FloorState::Chest(state) => &mut state.game_state,
             FloorState::Battle(state) => &mut state.game_state,
-            FloorState::BattleOver(state) => &mut state.game_state,
+            FloorState::BattleRewards(state) => &mut state.game_state,
             FloorState::Shop(state) => &mut state.game_state,
             FloorState::Map(state) => state,
-            FloorState::GameOver(_) => panic!("No game state in GameOver"),
+            FloorState::GameOver(..) => panic!("No game state in GameOver"),
             FloorState::Menu => panic!("No game state in Menu"),
         }
     }
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct BattleOverState {
+pub struct BattleRewardsState {
+    pub boss: bool,
     pub game_state: GameState,
     pub rewards: RewardState,
 }

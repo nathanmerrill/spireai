@@ -7,7 +7,7 @@ use crate::{
         self,
         buffs::BaseBuff,
         core::{CardLocation, Target},
-        monsters::BaseMonster,
+        monsters::{BaseMonster, MonsterMove},
         potions::BasePotion,
         relics::BaseRelic,
     },
@@ -201,4 +201,5 @@ pub struct GameAction {
     pub is_attack: bool,
     pub creature: CreatureReference,
     pub target: Option<CreatureReference>,
+    pub monster_move: Option<&'static MonsterMove>,
 }

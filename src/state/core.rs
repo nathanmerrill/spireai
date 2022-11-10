@@ -79,7 +79,7 @@ pub struct Creature {
 }
 
 impl Creature {
-    pub fn add_buff(&mut self, name: &str, amount: i16) {
+    pub fn add_buff(&mut self, name: &str, amount: i16) -> &mut Buff {
         if let Some(uuid) = self.buff_names.get(name) {
             let buff = self.buffs.get_mut(uuid).unwrap();
             if !buff.base.repeats {
@@ -93,8 +93,10 @@ impl Creature {
                     x: amount,
                 })
             }
+            buff
         } else {
             let new_buff = Buff::by_name(name, amount);
+            let id = new_buff.uuid;
             for effects in &new_buff.base.effects {
                 self.buffs_when
                     .entry(effects.when.clone())
@@ -102,7 +104,8 @@ impl Creature {
                     .push_back(new_buff.uuid)
             }
             self.buff_names.insert(name.to_string(), new_buff.uuid);
-            self.buffs.insert(new_buff.uuid, new_buff);
+            self.buffs.insert(id, new_buff);
+            self.buffs.get_mut(&id).unwrap()
         }
     }
 

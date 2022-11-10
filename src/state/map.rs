@@ -67,7 +67,6 @@ impl MapState {
     pub fn generate(&mut self, more_elites: bool, burning_elite: bool, probability: &mut Probability) {
         let mut grid: [Option<MapNode>; 105] = [None; 105];
         let mut first_x = 0;
-        let mut last_direction = Direction::Up;
         for path_num in 0 .. 6 {// Create 6 paths to the top
 
             let mut next_x = if path_num != 1 { // Ensure that the second path does not start on the same node
@@ -108,10 +107,8 @@ impl MapState {
                 if can_right {
                     directions.push(Direction::Right);
                 }
-
-                last_direction = probability.choose(directions).unwrap();
     
-                next_x = match last_direction {
+                next_x = match probability.choose(directions).unwrap() {
                     Direction::Left => {
                         node.left = true;
                         next_x - 1

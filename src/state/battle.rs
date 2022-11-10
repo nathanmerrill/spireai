@@ -56,10 +56,12 @@ pub struct BattleState {
     pub power_count: u8,
     pub last_card_played: Option<CardType>,
     pub end_turn: bool,
+    pub gold_recovered: u16,
     pub skip_monsters: bool,
     pub wish: u8,
     pub game_state: GameState,
     pub card_choose: Option<CardChoiceState>,
+    pub battle_over: bool,
 }
 
 impl BattleState {
@@ -112,19 +114,25 @@ impl BattleState {
             if burning || has_preserved_insect {
                 monsters.iter_mut().for_each(|(_, monster)| {
                     match burning_type {
-                        0 => monster
+                        0 => {
+                            monster
                             .creature
-                            .add_buff("Strength", (state.act + 1) as i16),
+                            .add_buff("Strength", (state.act + 1) as i16);
+                        }
                         1 => {
                             let new_hp = monster.creature.hp.max + monster.creature.hp.max / 4;
                             monster.creature.hp = HpRange::new(new_hp);
                         }
-                        2 => monster
+                        2 => {
+                            monster
                             .creature
-                            .add_buff("Metallicize", (state.act * 2 + 2) as i16),
-                        3 => monster
+                            .add_buff("Metallicize", (state.act * 2 + 2) as i16);
+                        }
+                        3 => {
+                            monster
                             .creature
-                            .add_buff("Regenerate", (state.act * 2 + 1) as i16),
+                            .add_buff("Regenerate", (state.act * 2 + 1) as i16);
+                        }
                         4 => {}
                         _ => panic!("Unexpected burning type!"),
                     }
@@ -165,9 +173,11 @@ impl BattleState {
             last_card_played: None,
             end_turn: false,
             skip_monsters: false,
+            gold_recovered: 0,
             wish: 0,
             game_state: state,
             card_choose: None,
+            battle_over: false
         };
 
         for monster_ref in battle_state.available_monsters().collect_vec() {
@@ -218,6 +228,12 @@ impl BattleState {
         if self.game_state.relics.contains("Frozen Eye") {
             self.peek_top(self.draw.len(), probability)
         }
+    }
+
+    pub fn combat_end(&mut self, probability: &mut Probability) 
+    {
+        self.battle_over = true;
+        self.eval_when(When::CombatEnd, probability);
     }
 
     fn set_monster_move(
@@ -984,6 +1000,49 @@ impl BattleState {
                     }
                     _ => panic!("Unrecognized custom card!"),
                 },
+                Binding::Creature(creature) => {
+                    match action.unwrap().monster_move.unwrap().name.as_str() {
+                        "Stasis" => {
+                            let options = 
+                            if self.draw.is_empty() {
+                                self.discard().max_set_by_key(|a| a.base.rarity)
+                            } else {
+                                self.draw().max_set_by_key(|a| a.base.rarity)
+                            };         
+                            
+                            if let Some(selected) = probability.choose(options) {
+                                if let Some(creature) = self.get_creature_mut(creature) {
+                                    creature.add_buff("Stasis", 1).card_stasis = Some(selected.uuid);
+                                    self.move_out(selected);
+                                }
+                            }
+                        },
+                        "Support Beam" => {
+                            let boss = self.monsters.iter().find(|a| a.1.base.name == "Bronze Automaton").unwrap().1.creature_ref();
+
+                            self.add_block(12, boss, false, probability);                            
+                        }
+                        "Inferno" => {
+                            for (_, card) in self.cards.iter_mut() {
+                                if card.base.name == "Burn" {
+                                    card.upgrades = 1
+                                }
+                            }
+                        }
+                        "Mug" | "Lunge" => {
+                            let max_gold = self.game_state.gold as i16;
+                            let stolen = if let Some(monster) = self.get_monster_mut(creature.monster_ref().unwrap()) {
+                                let amount = (monster.creature.get_buff_amount("Innate Thievery")).min(max_gold);
+                                monster.vars.x += amount;
+                                amount
+                            } else {0};
+
+                            self.game_state.gold -= stolen as u16;
+                        }
+                        _ => unimplemented!()
+                    }
+                    
+                }
                 _ => unimplemented!(),
             },
             Effect::Damage { amount, target } => {
@@ -1264,6 +1323,7 @@ impl BattleState {
                     is_attack: card.base._type == CardType::Attack,
                     creature: CreatureReference::Player,
                     target: target.map(|a| a.creature_ref()),
+                    monster_move: None,
                 }),
                 probability,
             )
@@ -1494,10 +1554,11 @@ impl BattleState {
         };
 
         if let Some(current_move) = current_move {
+            let reference = CreatureReference::Creature(monster);
             self.eval_effects(
                 &current_move.effects,
-                Binding::Creature(CreatureReference::Creature(monster)),
-                None,
+                Binding::Creature(reference),
+                Some(GameAction { is_attack: false, creature: reference, target: Some(CreatureReference::Player), monster_move: Some(current_move) }),
                 probability,
             );
             self.next_move(monster, current_move, probability);
@@ -2172,13 +2233,17 @@ impl BattleState {
                         }
                     }
                     "Bronze Orb" => {
-                        if let Some(buff) = self
+                        if let Some(card) = self
                             .get_creature(creature_ref)
                             .and_then(|a| a.find_buff("Stasis"))
                             .map(|b| b.card_stasis.unwrap())
                         {
-                            self.move_in(buff, CardDestination::PlayerHand, probability);
+                            self.move_in(card, CardDestination::PlayerHand, probability);
                         }
+                        true
+                    }
+                    "Mugger" | "Looter" => {
+                        self.gold_recovered += self.get_monster(monster_ref).unwrap().vars.x as u16;
                         true
                     }
                     _ => true,
@@ -2186,6 +2251,10 @@ impl BattleState {
 
                 if dies {
                     self.remove_monster(monster_ref.uuid);
+                    
+                    if self.monsters.is_empty() {
+                        self.combat_end(probability);
+                    }
                 }
 
                 dies
@@ -2217,6 +2286,7 @@ impl BattleState {
                 creature: CreatureReference::Player,
                 is_attack: false,
                 target: target.map(|a| a.creature_ref()),
+                monster_move: None,
             }),
             probability,
         );

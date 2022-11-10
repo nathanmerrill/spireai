@@ -35,6 +35,7 @@ pub struct GameState {
     pub won: Option<bool>,
     pub purge_count: u8,
     pub rare_probability_offset: u8,
+    pub potion_chance: u8,
 }
 
 impl Default for GameState {
@@ -53,11 +54,17 @@ impl Default for GameState {
             won: Default::default(),
             purge_count: Default::default(),
             rare_probability_offset: Default::default(),
+            potion_chance: 0,
         }
     }
 }
 
 impl GameState {
+    pub fn generate_map(&mut self, probability: &mut Probability) {
+        unimplemented!("Act 4 generation");
+        self.map.generate(self.asc > 0, self.keys.map(|a| !a.emerald).unwrap_or(false), probability)
+    }
+
     pub fn add_max_hp(&mut self, amount: u16) {
         self.hp.max += amount;
         self.heal(amount as f64);
@@ -243,6 +250,7 @@ impl GameState {
             gold: 99,
             keys: None,
             won: None,
+            potion_chance: 4,
             purge_count: 0,
             rare_probability_offset: 0,
         };

@@ -594,7 +594,7 @@
   ),
   (
     name: "Bronze Automaton",
-    fight_type: Elite(),
+    fight_type: Boss(),
     hp_range: (
       min: 300,
       max: 300,
@@ -725,7 +725,7 @@
   ),
   (
     name: "Bronze Orb",
-    fight_type: Elite(),
+    fight_type: Boss(),
     hp_range: (
       min: 52,
       max: 58,
