@@ -59,9 +59,11 @@ pub struct BattleState {
     pub gold_recovered: u16,
     pub skip_monsters: bool,
     pub wish: u8,
+    pub stance_pot: bool,
     pub game_state: GameState,
     pub card_choose: Option<CardChoiceState>,
     pub battle_over: bool,
+    pub skip_rewards: bool
 }
 
 impl BattleState {
@@ -175,9 +177,11 @@ impl BattleState {
             skip_monsters: false,
             gold_recovered: 0,
             wish: 0,
+            stance_pot: false,
             game_state: state,
             card_choose: None,
-            battle_over: false
+            battle_over: false,
+            skip_rewards: false,
         };
 
         for monster_ref in battle_state.available_monsters().collect_vec() {
@@ -234,6 +238,7 @@ impl BattleState {
     {
         self.battle_over = true;
         self.eval_when(When::CombatEnd, probability);
+        self.game_state.hp = self.player.hp;
     }
 
     fn set_monster_move(
@@ -1039,11 +1044,59 @@ impl BattleState {
 
                             self.game_state.gold -= stolen as u16;
                         }
-                        _ => unimplemented!()
+                        "Escape" => {
+                            self.remove_monster(creature.monster_ref().unwrap().uuid);
+                            if self.monsters.is_empty() {
+                                self.combat_end(probability);
+                            }                          
+                        }
+                        "Suck" => {
+                            let amount = if self.game_state.asc > 1 {12} else {10};
+
+                            let (_, damage_dealt) = self.attack_damage(amount, 1, vec![CreatureReference::Player], creature, probability);
+                            self.heal_creature(damage_dealt as f64, creature);
+                        }
+                        "Smash" => {
+                            let amount = if self.game_state.asc > 2 {38} else {39};
+
+                            let (_, damage_dealt) = self.attack_damage(amount, 1, vec![CreatureReference::Player], creature, probability);
+                            if self.game_state.asc > 17 {
+                                self.add_block(99, creature, false, probability);
+                            } else {
+                                self.add_block(damage_dealt, creature, false, probability);
+                            }
+                        }
+                        "Implant" => {
+                            let curse = probability.choose(models::cards::available_cards_by_class(models::core::Class::Curse).to_vec()).unwrap();                    
+
+                            self.game_state.add_card(Card::new(curse))
+                        }
+                        
+                        a => panic!("Unexpected Custom in creature move: {}", a)
                     }
-                    
                 }
-                _ => unimplemented!(),
+                Binding::Potion(potion) => {
+                    match potion.base.name.as_str() {
+                        "Smoke Bomb" => {
+                            self.skip_rewards = true;
+                            self.combat_end(probability);
+                        }
+                        "Snecko Oil" => {
+                            for card in self.hand().collect_vec() {
+                                let card = self.get_card_mut(card);
+                                card.base_cost = probability.range(5) as u8;
+                                card.cost = card.base_cost;
+                            }
+                        }
+                        "Stance Potion" => {
+                            self.stance_pot = true;
+                        }
+                        a => panic!("Unexpected Custom effect in potion: {}", a)
+                    }
+                }
+                Binding::Relic(_) => {
+                    panic!("Unexpected Custom effect in relic");
+                }
             },
             Effect::Damage { amount, target } => {
                 let total = self.eval_amount(amount, binding) as u16;
@@ -1168,7 +1221,7 @@ impl BattleState {
                 vars.n_reset = amount;
             }
             Effect::SetStance(stance) => {
-                self.stance = *stance;
+                self.set_stance(*stance, probability)
             }
             Effect::SetX(x) => {
                 let amount = self.eval_amount(x, binding);
@@ -1226,6 +1279,27 @@ impl BattleState {
             }
         }
     }
+
+    pub fn set_stance(&mut self, stance: Stance, probability: &mut Probability) {
+        if self.stance == stance {
+            return
+        }
+        
+        if self.stance == Stance::Calm {
+            self.energy += if self.game_state.relics.contains("Violet Lotus") {2} else {3}
+        }
+
+        match stance {
+            Stance::Calm | Stance::None => {}
+            Stance::Divinity => {
+                self.energy += 3;
+            }
+            Stance::Wrath => {
+                self.draw_card(self.player.get_buff_amount("Rushdown") as u8, probability);
+            }
+            Stance::All => panic!("Unexpected All stance enter")
+        }
+    }
     pub fn eval_card_effects(
         &mut self,
         effects: &[CardEffect],
@@ -1267,6 +1341,11 @@ impl BattleState {
             }
             CardEffect::Exhaust => {
                 self.exhaust_cards(vec![card], probability);                
+            }
+            CardEffect::If {condition, then} => {
+                if self.eval_condition(condition, Binding::Card(card), None) {
+                    self.eval_card_effects(then, card, probability)
+                }
             }
             CardEffect::MoveTo(destination) => {
                 self.move_card(*destination, card, probability);
@@ -2010,8 +2089,14 @@ impl BattleState {
             }
 
             if creature.is_player() {
-                if self.stance == Stance::Wrath {
-                    amount *= 2;
+                match self.stance {
+                    Stance::Wrath => {
+                        amount *= 2
+                    }
+                    Stance::Divinity => {
+                        amount *= 3
+                    }
+                    _ => {}
                 }
             }
         }
@@ -2291,8 +2376,13 @@ impl BattleState {
             probability,
         );
 
-        self.game_state
-            .drink_potion(potion, potion.base.name == "Entropic Brew", probability);
+        if self.game_state.relics.contains("Toy Ornithopter") {
+            self.heal(5.0);
+        }
+
+        if potion.base.name == "Entropic Brew" {
+            self.game_state.drink_potion(potion, false, probability);
+        }
     }
 
     pub fn trigger_passive(

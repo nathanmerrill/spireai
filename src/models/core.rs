@@ -241,11 +241,6 @@ pub enum When {
     OnMove(String),
     OnLoseBuff(String),
 
-    // Non-fight
-    Rest,
-    RoomEnter(RoomType),
-    UsePotion,
-
     // Meta
     Never,
 }
@@ -479,6 +474,10 @@ pub enum CardEffect {
         #[serde(default, skip_serializing_if = "is_default")]
         then: Vec<CardEffect>,
     },
+    If {
+        condition: Condition,
+        then: Vec<CardEffect>,
+    },
     Scry,
     AutoPlay,
     Retain,
@@ -499,7 +498,7 @@ pub enum RewardType {
     RandomBook,
 }
 
-#[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Hash, Copy, Debug, Deserialize, Serialize)]
 pub enum Target {
     _Self,
     Player,
@@ -522,7 +521,7 @@ pub struct WhenEffect {
     pub effect: Vec<Effect>,
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, strum_macros::AsStaticStr, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Clone, Hash, Debug, strum_macros::AsStaticStr, Deserialize, Serialize)]
 pub enum Condition {
     Stance(Stance),
     RemainingHp {

@@ -55,7 +55,6 @@
         name: "Ancient Tea Set",
         activation: WhenEnabled(
             activated_at: CombatStart,
-            enabled_at: RoomEnter(Rest),
             disabled_at: CombatStart,
         ),
         effect: [AddEnergy(Fixed(2))],
@@ -134,16 +133,10 @@
     ),
     (
         name: "Maw Bank",
-        activation: When(RoomEnter(All)),
-        effect: [AddGold(Fixed(12))],
         max_floor: 49,
     ),
     (
         name: "Meal Ticket",
-        activation: When(RoomEnter(Shop)),
-        effect: [Heal(
-            amount: Fixed(15),
-        )],
         max_floor: 49,
     ),
     (
@@ -201,10 +194,6 @@
     ),
     (
         name: "Regal Pillow",
-        activation: When(Rest),
-        effect: [Heal(
-            amount: Fixed(15),
-        )],
         max_floor: 49,
     ),
     (
@@ -221,20 +210,10 @@
     ),
     (
         name: "Tiny Chest",
-        activation: Counter(
-            increment: RoomEnter(Question),
-            reset: Never,
-            auto_reset: true,
-            target: 4,
-        ),
         max_floor: 36,
     ),
     (
         name: "Toy Ornithopter",
-        activation: When(UsePotion),
-        effect: [Heal(
-            amount: Fixed(5),
-        )],
     ),
     (
         name: "Vajra",
@@ -310,10 +289,7 @@
     (
         name: "Eternal Feather",
         rarity: Uncommon,
-        activation: When(RoomEnter(Rest)),
-        effect: [
-            Custom,
-        ]
+        effect: []
     ),
     (
         name: "Frozen Egg",
@@ -1025,7 +1001,6 @@
     (
         name: "Sacred Bark",
         rarity: Boss,
-        activation: When(UsePotion),
     ),
     (
         name: "Slavers Collar",
@@ -1283,8 +1258,6 @@
     (
         name: "Ssserpent Head",
         rarity: Event,
-        activation: When(RoomEnter(Question)),
-        effect: [AddGold(Fixed(50))],
     ),
     (
         name: "Warped Tongs",

@@ -30,7 +30,17 @@
         type: Attack,
         then: [
           ZeroTurnCost,
-          Custom,
+          If (
+            condition: HasRelic("Sacred Bark")
+            then: [
+              CopyTo (
+                destination: PlayerHand
+                then: [
+                  ZeroTurnCost
+                ]
+              )
+            ]
+          ),
         ],
         choices: Fixed(3),
         exclude_healing: false,
@@ -100,7 +110,17 @@
         class: Some(None),
         then: [
           ZeroTurnCost,
-          Custom,
+          If (
+            condition: HasRelic("Sacred Bark")
+            then: [
+              CopyTo (
+                destination: PlayerHand
+                then: [
+                  ZeroTurnCost
+                ]
+              )
+            ]
+          ),
         ],
         choices: Fixed(3),
         exclude_healing: false,
@@ -343,7 +363,14 @@
     class: None,
     rarity: Uncommon,
     on_drink: [
-      Custom,
+      ChooseCards(
+        location: PlayerHand,
+        then: [
+          Custom("Gamblers Brew")
+        ],
+        min: Fixed(0),
+        max: Fixed(10),
+      ),
     ],
   ),
   (
@@ -445,7 +472,17 @@
         type: Power,
         then: [
           ZeroTurnCost,
-          Custom,
+          If (
+            condition: HasRelic("Sacred Bark")
+            then: [
+              CopyTo (
+                destination: PlayerHand
+                then: [
+                  ZeroTurnCost
+                ]
+              )
+            ]
+          ),
         ],
         choices: Fixed(3),
         exclude_healing: false,
@@ -475,7 +512,17 @@
         type: Skill,
         then: [
           ZeroTurnCost,
-          Custom,
+          If (
+            condition: HasRelic("Sacred Bark")
+            then: [
+              CopyTo (
+                destination: PlayerHand
+                then: [
+                  ZeroTurnCost
+                ]
+              )
+            ]
+          )
         ],
         choices: Fixed(3),
         exclude_healing: false,

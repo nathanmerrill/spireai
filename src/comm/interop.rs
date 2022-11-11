@@ -279,7 +279,7 @@ pub fn floor_state_matches(
             }
         }
         external::ScreenState::GameOver(_) => {
-            matches!(internal, internal::floor::FloorState::GameOver(_))
+            matches!(internal, internal::floor::FloorState::GameOver(..))
         }
         _ => true,
     }

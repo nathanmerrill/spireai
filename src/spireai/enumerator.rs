@@ -48,12 +48,15 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
                             }),
                     ),
                     None => {
-                        if battle_state.wish > 0 {
+                        if battle_state.stance_pot {
+                            choices.push(Choice::StanceCalm);
+                            choices.push(Choice::StanceWrath);
+                        } else if battle_state.wish > 0 {
                             choices.push(Choice::WishGold);
                             choices.push(Choice::WishPlated);
                             choices.push(Choice::WishStrength);
                         } else {
-                        choices.push(Choice::End);
+                            choices.push(Choice::End);
                             for card_ref in battle_state.hand() {
                                 if battle_state.card_playable(card_ref) {
                                     if battle_state.get_card(card_ref).targeted() {
@@ -122,7 +125,7 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
                         } else {
                             for (index, reward) in rewards.rewards.iter().enumerate() {
                                 match reward {
-                                    Reward::Relic(relic) => {
+                                    Reward::Relic(_) => {
                                         choices.push(Choice::TakeReward(index))
                                     }
                                     _ => panic!("Unexpected non-relic reward in boss chest")
@@ -179,7 +182,7 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
                         choices.push(Choice::NavigateToNode(node.x + 1))
                     }
 
-                    if !node.left && !node.right && !node.up { // Boss
+                    if node.is_top() {// Boss
                         choices.push(Choice::NavigateToNode(0))
                     }
                 }

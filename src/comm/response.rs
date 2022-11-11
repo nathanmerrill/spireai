@@ -159,6 +159,8 @@ pub fn decompose_choice(
         Choice::WishPlated => vec![Response::Simple(String::from("CHOOSE 0"))],
         Choice::WishStrength => vec![Response::Simple(String::from("CHOOSE 1"))],
         Choice::WishGold => vec![Response::Simple(String::from("CHOOSE 2"))],
+        Choice::StanceCalm => vec![Response::Simple(String::from("CHOOSE 0"))],
+        Choice::StanceWrath => vec![Response::Simple(String::from("CHOOSE 1"))],
     }
 }
 

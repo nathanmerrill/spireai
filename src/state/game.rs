@@ -60,9 +60,15 @@ impl Default for GameState {
 }
 
 impl GameState {
-    pub fn generate_map(&mut self, probability: &mut Probability) {
-        unimplemented!("Act 4 generation");
-        self.map.generate(self.asc > 0, self.keys.map(|a| !a.emerald).unwrap_or(false), probability)
+    pub fn next_act(&mut self, probability: &mut Probability) {
+        self.act += 1;
+        self.map.index = None;
+        self.next_floor();
+        if self.act == 4 {
+            self.map.generate_act4()
+        } else {
+            self.map.generate(self.asc > 0, self.keys.map(|a| !a.emerald).unwrap_or(false), probability)
+        }
     }
 
     pub fn add_max_hp(&mut self, amount: u16) {
@@ -115,6 +121,16 @@ impl GameState {
         card.bottled = false;
 
         self.deck.insert(card.uuid, card);
+    }
+
+    pub fn next_floor(&mut self) {
+        self.map.floor += 1;
+        
+        if let Some(relic) = self.relics.find("Maw Bank") {
+            if relic.enabled {
+                self.add_gold(12);
+            }
+        }
     }
 
     pub fn add_gold(&mut self, amount: u16) {
@@ -743,34 +759,37 @@ impl GameState {
         eval_effects: bool,
         probability: &mut Probability,
     ) {
-        if eval_effects {
-            match potion.base.name.as_str() {
-                "Fruit Juice" => {
-                    let amount = if self.relics.contains("Sacred Bark") {
-                        10
-                    } else {
-                        5
-                    };
+        match potion.base.name.as_str() {
+            "Fruit Juice" => {
+                let amount = if self.relics.contains("Sacred Bark") {
+                    10
+                } else {
+                    5
+                };
 
-                    self.add_max_hp(amount)
-                }
-                "Blood Potion" => {
-                    let amount = if self.relics.contains("Sacred Bark") {
-                        0.40
-                    } else {
-                        0.20
-                    };
-                    self.heal(self.hp.max as f64 * amount)
-                }
-                "Entropic Brew" => {
-                    let amount = self.potion_slots().filter(|a| a.is_none()).count();
-                    (0..amount).for_each(|_| {
-                        self.add_potion(random_potion(true, probability));
-                    })
-                }
-                _ => panic!("Unexpected potion!"),
+                self.add_max_hp(amount)
             }
+            "Blood Potion" => {
+                let amount = if self.relics.contains("Sacred Bark") {
+                    0.40
+                } else {
+                    0.20
+                };
+                self.heal(self.hp.max as f64 * amount)
+            }
+            "Entropic Brew" => {
+                let amount = self.potion_slots().filter(|a| a.is_none()).count();
+                (0..amount).for_each(|_| {
+                    self.add_potion(random_potion(true, probability));
+                })
+            }
+            _ => panic!("Unexpected potion!"),
         }
+
+        if eval_effects && self.relics.contains("Toy Ornithopter") {
+            self.heal(5.0);
+        }
+        
     }
 
     pub fn add_relic(&mut self, base: &'static BaseRelic, probability: &mut Probability) {

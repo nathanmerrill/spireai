@@ -64,6 +64,38 @@ impl MapState {
         }
     }
 
+    pub fn current_node(&self) -> Option<MapNode> {
+        self.index.and_then(|f| self.nodes[f])
+    }
+
+    pub fn generate_act4(&mut self) {
+        self.nodes = [None; 105];
+        self.nodes[0] = Some(MapNode { 
+            y: 0, 
+            x: 0, 
+            left: false, 
+            up: true, 
+            right: false, 
+            icon: MapNodeIcon::Campfire 
+        });
+        self.nodes[7] = Some(MapNode { 
+            y: 1, 
+            x: 0, 
+            left: false, 
+            up: true, 
+            right: false, 
+            icon: MapNodeIcon::Shop
+        });
+        self.nodes[14] = Some(MapNode { 
+            y: 2, 
+            x: 0, 
+            left: false, 
+            up: false, 
+            right: false, 
+            icon: MapNodeIcon::Elite
+        });
+    }
+
     pub fn generate(&mut self, more_elites: bool, burning_elite: bool, probability: &mut Probability) {
         let mut grid: [Option<MapNode>; 105] = [None; 105];
         let mut first_x = 0;
@@ -256,6 +288,10 @@ pub struct MapNode {
 impl MapNode {
     pub fn index(&self) -> usize {
         (self.x + self.y * 7) as usize
+    }
+
+    pub fn is_top(&self) -> bool {
+        !self.left && !self.right && !self.up
     }
 }
 
