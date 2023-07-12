@@ -2573,10 +2573,8 @@ impl BattleState {
                         if self.draw_visible {
                             let position = probability.range(self.draw.len());
                             self.draw_top_known.insert(position, card);
-                        } else {
-                            if self.draw_top_known.contains(&card) || self.draw_bottom_known.contains(&card) {
-                                self.draw_inserted.push_back(card);
-                            }
+                        } else if self.draw_top_known.contains(&card) || self.draw_bottom_known.contains(&card) {
+                            self.draw_inserted.push_back(card);
                         }
                     }
                 };
@@ -2723,7 +2721,7 @@ impl BattleState {
         let mut new_top = vector![];
 
         for _ in 0..n {
-            if self.draw_inserted.len() > 0 {
+            if !self.draw_inserted.is_empty() {
                 let chosen = probability.range(self.draw.len());
                 if chosen < self.draw_inserted.len() {
                     new_top.push_back(self.draw_inserted.remove(chosen));
@@ -2736,7 +2734,7 @@ impl BattleState {
                 continue;
             }
 
-            if remaining_choices.len() > 0 {
+            if !remaining_choices.is_empty() {
                 let choice = probability.range(remaining_choices.len());
                 new_top.push_back(remaining_choices.remove(choice)) 
             } else {
@@ -2745,7 +2743,7 @@ impl BattleState {
         }        
 
         self.draw_top_known.extend(new_top);
-        if remaining_choices.len() == 0 {
+        if remaining_choices.is_empty() {
             while let Some(card) = self.draw_bottom_known.pop_back() {
                 self.draw_top_known.push_back(card)
             }

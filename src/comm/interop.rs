@@ -244,10 +244,7 @@ pub fn floor_state_matches(
                 false
             }
         }
-        external::ScreenState::ShopRoom {} => match internal {
-            internal::floor::FloorState::Shop(_) => true,
-            _ => false,
-        },
+        external::ScreenState::ShopRoom {} => matches!(internal, internal::floor::FloorState::Shop(_)),
         external::ScreenState::ShopScreen(external) => {
             match internal {
                 internal::floor::FloorState::Shop(internal) => {

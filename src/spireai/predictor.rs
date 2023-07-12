@@ -208,10 +208,10 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                             if let Some(relic) = state.relics.find_mut("Ancient Tea Set") {
                                 relic.enabled = true;
                             }
+                            
                             if state.relics.contains("Eternal Feather") {
                                 state.heal((state.deck.len() / 5 * 3) as f64)
                             }
-                            state.relics.find_mut("Ancient Tea Set").map(|a| a.enabled = true);
 
                             FloorState::Rest(RestState {
                                 screen_state: RestScreenState::IShouldRest,
@@ -745,22 +745,19 @@ fn generate_rewards_battle(state: &mut GameState, fight_type: FightType, gold_re
     }
 
 
-    match fight_type {
-        FightType::Elite { burning } => {
-            let relic = state.random_relic(
-                None,
-                None,
-                false,
-                probability,
-            );
-    
-            rewards.push_back(Reward::Relic(relic));   
+    if let FightType::Elite{burning} =  fight_type {
+        let relic = state.random_relic(
+            None,
+            None,
+            false,
+            probability,
+        );
 
-            if burning {
-                rewards.push_back(Reward::EmeraldKey)
-            }
+        rewards.push_back(Reward::Relic(relic));   
+
+        if burning {
+            rewards.push_back(Reward::EmeraldKey)
         }
-        _ => {}
     }
 
     if probability.choose_percentage(state.potion_chance as f64 / 10.0) {

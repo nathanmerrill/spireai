@@ -157,15 +157,13 @@ impl MapState {
             }
         }
         let mut count: u8 = 0;
-        for node in grid.iter_mut() {
-            if let Some(node) = node {
-                match node.y {
-                    14 => node.icon = MapNodeIcon::Campfire,
-                    8 => node.icon = MapNodeIcon::Chest,
-                    0 => node.icon = MapNodeIcon::Monster,
-                    _ => count += 1,
-                }
-            }
+        for node in grid.iter_mut().flatten() {
+            match node.y {
+                14 => node.icon = MapNodeIcon::Campfire,
+                8 => node.icon = MapNodeIcon::Chest,
+                0 => node.icon = MapNodeIcon::Monster,
+                _ => count += 1,
+            }            
         }
 
         let shops = ((count as f64) * 0.05).round() as u8;
@@ -248,11 +246,9 @@ impl MapState {
             }
         }
 
-        for node in grid.iter_mut() {
-            if let Some(node) = node {
-                if node.icon == MapNodeIcon::BurningElite {
-                    node.icon = MapNodeIcon::Monster
-                }
+        for node in grid.iter_mut().flatten() {
+            if node.icon == MapNodeIcon::BurningElite {
+                node.icon = MapNodeIcon::Monster
             }
         }
 
