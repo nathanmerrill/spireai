@@ -1,16 +1,17 @@
 use crate::comm::interop;
 use crate::comm::request::GameState as CommState;
 use crate::state::floor::{FloorState, GamePossibility};
-use crate::{
-    models,
-    state::{game::GameState, probability::Probability},
-};
-use ::std::hash::{Hash, Hasher};
+use crate::{models, state::probability::Probability};
 use im::{HashMap, HashSet};
 use itertools::Itertools;
 use models::choices::Choice;
+use num::complex::ComplexFloat;
+use rand::rngs::ThreadRng;
+use rand::seq::SliceRandom;
 use rand::Rng;
+use rustc_hash::FxHasher;
 use std::cmp::Ordering;
+use std::hash::{BuildHasher, Hash};
 use std::rc::Rc;
 use uuid::Uuid;
 
@@ -20,8 +21,7 @@ pub mod predictor;
 pub mod references;
 
 pub struct SpireAi {
-    state: Rc<FloorState>,
-    last_choice: Option<Choice>, // Neural net nodes
+    last_choice: Option<Choice>,
     tree: MonteCarloTree,
     pub uuid_map: HashMap<String, Uuid>,
 }
@@ -29,48 +29,34 @@ pub struct SpireAi {
 impl SpireAi {
     pub fn new(state: FloorState) -> SpireAi {
         SpireAi {
-            state: Rc::new(state),
             last_choice: None,
-            tree: MonteCarloTree {
-                choices: HashMap::new(),
-            },
+            tree: MonteCarloTree::new(Rc::new(Box::new(state))),
             uuid_map: HashMap::new(),
         }
     }
 
-    pub fn choose(&mut self, comm_state: &Option<CommState>) -> Choice {
-        if let Some(choice) = self.last_choice.clone() {
-            if let Some(matching_state) = self.find_match(&choice, comm_state) {
-                let mut new_state = matching_state.as_ref().clone();
-                interop::update_state(comm_state, &mut new_state);
-                self.state = Rc::new(new_state);
+    pub fn update_state(&mut self, comm_state: &Option<CommState>) {
+        if let Some(choice) = self.last_choice {
+            if let Some(mut matching_state) = self.find_match(&choice, comm_state) {
+                interop::update_state(comm_state, matching_state.as_mut());
+                self.tree.new_root(matching_state);
             } else {
                 panic!("No matching state found!")
             }
         }
-
-        let next_choice = search(&mut self.tree, self.state.clone(), 50000, 10, 2.0f64.sqrt());
-
-        self.last_choice = Some(next_choice.clone());
-
-        next_choice
     }
 
-    fn find_match(
-        &mut self,
-        choice: &Choice,
-        comm_state: &Option<CommState>,
-    ) -> Option<Rc<FloorState>> {
-        if let Some(choices) = self.tree.choices.get(&self.state) {
-            if let Some(outcomes) = choices.get(choice) {
-                for outcome in outcomes.outcomes.iter() {
-                    if interop::state_matches(
-                        comm_state,
-                        outcome.state.as_ref(),
-                        &mut self.uuid_map,
-                    ) {
-                        return Some(outcome.state.clone());
-                    }
+    pub fn choose(&mut self) -> Option<Choice> {
+        let choice = self.tree.make_choice();
+        self.last_choice = choice;
+        choice
+    }
+
+    fn find_match(&mut self, choice: &Choice, comm_state: &Option<CommState>) -> Option<GameState> {
+        if let Some(outcomes) = self.tree.root.get_outcomes(choice) {
+            for outcome in outcomes.outcomes.keys() {
+                if interop::state_matches(comm_state, outcome, &mut self.uuid_map) {
+                    return Some(*outcome);
                 }
             }
         }
@@ -78,143 +64,185 @@ impl SpireAi {
     }
 }
 
+type GameState = Rc<Box<FloorState>>;
+
 #[derive(PartialEq, Clone)]
 struct MonteCarloTree {
-    choices: HashMap<Rc<FloorState>, HashMap<Choice, ChoiceOutcomes>>,
+    root: MonteCarloNode,
+    nodes: HashMap<GameState, MonteCarloNode, FxBuildHasher>,
+}
+
+impl MonteCarloTree {
+    pub fn new(state: GameState) -> Self {
+        let root = MonteCarloNode::new(state, 0);
+        let mut nodes = HashMap::with_hasher(FxBuildHasher::default());
+        Self {
+            root,
+            nodes,
+        }
+    }
+
+    pub fn new_root(&mut self, root: GameState) {
+        let old_depth = self.root.depth;
+        if let Some(node) = self.nodes.remove(&root) {
+            self.root = node;
+            self.nodes.retain(|_, v| v.depth > old_depth)
+        } else {
+            *self = MonteCarloTree::new(root);
+        }
+    }
+
+    pub fn make_choice(&self) -> Option<Choice> {
+        self.root.choose().map(|a| a.choice)
+    }
+
+    pub fn explore(&mut self) -> Vec<(Choice, GameState)> {
+        let mut current_node = &self.root;
+        let mut path: Vec<(Choice, GameState)> = vec![];
+        loop {
+            if let Some(choice) = current_node.choose() {
+                
+                let outcome = choice.predict_outcome(current_node.game);
+                let mut inserted = false;
+                current_node = self.nodes.entry(outcome).or_insert_with(|| {
+                    inserted = true;
+                    MonteCarloNode::new(outcome, current_node.depth + 1, )
+                });
+                path.push((choice.choice, current_node.game));
+                
+                if inserted
+                {
+                    return path;
+                }
+            }
+        }
+    }
+}
+
+#[derive(PartialEq, Clone)]
+struct MonteCarloNode {
+    game: GameState,
+    depth: usize,
+    visits: f64,
+    eval: f64,
+    children: Vec<ChoiceOutcomes>,
+}
+
+impl MonteCarloNode {
+    pub fn new(state: GameState, depth: usize) -> Self {
+        let eval = evaluate(&state);
+        let mut children: Vec<_> = enumerator::all_choices(&state)
+            .into_iter()
+            .map(ChoiceOutcomes::new)
+            .collect();
+
+        // Shuffle children to make exploration of choices balanced
+        children.shuffle(&mut rand::thread_rng());
+
+        Self {
+            game: state,
+            depth,
+            visits: 0.0,
+            eval,
+            children,
+        }
+    }
+
+    pub fn get_outcomes(&self, choice: &Choice) -> Option<&ChoiceOutcomes> {
+        self.children.iter().find(|f| &f.choice == choice)
+    }
+
+    pub fn choose(&self) -> Option<&ChoiceOutcomes> {
+        let total_visits_factor = self.visits.ln() * 2.0;
+        self.children.iter()
+            .map(|child| (child, child.eval(total_visits_factor)))
+            .reduce(|child1, child2| {
+                if child1.1 < child2.1 {
+                    child2
+                } else {
+                    child1
+                }
+            })
+            .map(|a| a.0)
+    }
 }
 
 #[derive(PartialEq, Clone)]
 struct ChoiceOutcomes {
-    outcomes: HashSet<Outcome>,
-    evaluation_count: u32,
+    choice: Choice,
+    outcomes: HashMap<GameState, f64>,
+    visits: f64,
+    fully_evaluated: bool,
 }
 
-#[derive(Clone)]
-struct Outcome {
-    state: Rc<FloorState>,
-    probability: f64,
-    evaluation: f64,
-}
-
-impl Hash for Outcome {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.state.hash(state)
-    }
-}
-
-impl PartialEq for Outcome {
-    fn eq(&self, other: &Outcome) -> bool {
-        self.state.eq(&other.state)
-    }
-}
-
-impl Eq for Outcome {}
-
-fn search(
-    tree: &mut MonteCarloTree,
-    state: Rc<FloorState>,
-    iterations: usize,
-    max_depth: usize,
-    exploration_factor: f64,
-) -> Choice {
-    for _ in 0..iterations {
-        descend(tree, state.clone(), max_depth, exploration_factor)
+impl ChoiceOutcomes {
+    fn new(choice: Choice) -> Self {
+        Self {
+            choice,
+            outcomes: HashMap::new(),
+            visits: 0.0,
+            fully_evaluated: false,
+        }
     }
 
-    //Prune tree to remove game states that are no longer relevant
-
-    best_choice(tree, state, 0.0)
-}
-
-fn total_probability(outcomes: &ChoiceOutcomes) -> f64 {
-    let total_probability: f64 = outcomes.outcomes.iter().map(|a| a.probability).sum();
-    if total_probability > 1.00001 {
-        panic!("Total probability greater than 1!")
+    fn total_probability(&self) -> f64 {
+        let total_probability: f64 = self.outcomes.values().sum();
+        assert!(
+            total_probability < 1.00001,
+            "Total probability greater than 1!"
+        );
+        total_probability
     }
-    total_probability
-}
 
-fn score_outcomes(outcomes: &ChoiceOutcomes) -> f64 {
-    let total_probability = total_probability(outcomes);
-    outcomes
-        .outcomes
-        .iter()
-        .map(|a| a.evaluation * a.probability / total_probability)
-        .sum()
-}
+    fn eval(&self, total_visits_factor: f64) -> f64 {
+        if self.outcomes.is_empty() {
+            return f64::MAX;
+        }
 
-fn best_choice(tree: &MonteCarloTree, state: Rc<FloorState>, exploration_factor: f64) -> Choice {
-    tree.choices[&state]
-        .iter()
-        .map(|(choice, outcomes)| {
-            let score = score_outcomes(outcomes);
-            let exploration_score = if exploration_factor != 0.0 {
-                score * (exploration_factor / (outcomes.evaluation_count as f64)).sqrt()
-            } else {
-                score
-            };
-            (choice, exploration_score)
-        })
-        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Less))
-        .unwrap()
-        .0
-        .clone()
-}
+        let mut total_probability: f64 = 0.0;
+        let mut total_eval: f64 = 0.0;
+        for (outcome, probability) in self.outcomes {
+            total_probability += probability;
+            total_eval += outcome.eval * outcome.probability;
+        }
 
-fn descend(
-    tree: &mut MonteCarloTree,
-    mut state: Rc<FloorState>,
-    max_depth: usize,
-    exploration_factor: f64,
-) {
-    for _ in 0..max_depth {
-        tree.choices.entry(state.clone()).or_insert_with(|| {
-            enumerator::all_choices(state.as_ref())
-                .into_iter()
-                .map(|c| {
-                    let mut evaluation = ChoiceOutcomes {
-                        outcomes: HashSet::new(),
-                        evaluation_count: 1,
-                    };
+        total_eval / total_probability + (total_visits_factor / self.visits).sqrt()
+    }
 
-                    resolve_choice(state.as_ref(), c.clone(), &mut evaluation);
+    fn predict_outcome(&mut self, state: GameState) -> GameState {
+        if self.fully_evaluated {
+            let mut remaining = rand::thread_rng().gen_range(0.0..1.0);
+            for (state, val) in self.outcomes {
+                remaining -= val;
+                if remaining < 0.00001 {
+                    return state;
+                }
+            }
 
-                    (c, evaluation)
-                })
-                .collect()
-        });
-
-        let choice = best_choice(tree, state.clone(), exploration_factor);
-
-        let possible_outcomes = tree
-            .choices
-            .get_mut(&state)
-            .unwrap()
-            .get_mut(&choice)
-            .unwrap();
-
-        let total_probability = total_probability(possible_outcomes);
-        state = if total_probability > 0.99999 {
-            let mut option: f64 = rand::thread_rng().gen();
-            possible_outcomes
-                .outcomes
-                .iter()
-                .find_or_last(|a| {
-                    if option < a.probability {
-                        true
-                    } else {
-                        option -= a.probability;
-                        false
-                    }
-                })
-                .unwrap()
-                .state
-                .clone()
-        } else {
-            resolve_choice(state.as_ref(), choice, possible_outcomes)
+            panic!("Expected total probability to be greater than the random range!")
+        }
+        let mut possibility = GamePossibility {
+            state: state.clone(),
+            probability: Probability::new(),
         };
 
-        // Use state to back-propagate evaluation function
+        predictor::predict_outcome(self.choice, &mut possibility);
+
+        let probability = possibility.probability.probability;
+        let state = Rc::new(Box::new(possibility.state));
+
+        let existing_probability = *self.outcomes.entry(state).or_insert(probability);
+
+        assert!(
+            (probability - existing_probability).abs() < 0.0001,
+            "Probabilities of equal states are different!"
+        );
+
+        if self.total_probability() > 0.99999 {
+            self.fully_evaluated = true
+        }
+
+        state
     }
 }
 
@@ -224,40 +252,20 @@ fn evaluate(state: &FloorState) -> f64 {
     // Neural net
 }
 
-fn resolve_choice(
-    state: &FloorState,
-    choice: Choice,
-    possible_outcomes: &mut ChoiceOutcomes,
-) -> Rc<FloorState> {
-    let mut possibility = GamePossibility {
-        state: state.clone(),
-        probability: Probability::new(),
-    };
+#[derive(Default)]
+struct FxBuildHasher;
 
-    predictor::predict_outcome(choice, &mut possibility);
+impl BuildHasher for FxBuildHasher {
+    type Hasher = FxHasher;
 
-    let state = Rc::new(possibility.state);
-
-    let mut outcome = Outcome {
-        state: state.clone(),
-        probability: possibility.probability.probability,
-        evaluation: 0.0,
-    };
-
-    if !possible_outcomes.outcomes.contains(&outcome) {
-        outcome.evaluation = evaluate(state.as_ref());
-        possible_outcomes.outcomes.insert(outcome);
+    fn build_hasher(&self) -> Self::Hasher {
+        FxHasher::default()
     }
-
-    possible_outcomes.evaluation_count += 1;
-
-    state
 }
-
 
 #[cfg(test)]
 mod test {
-    use crate::{state::floor::FloorState, models::choices::Choice};
+    use crate::{models::choices::Choice, state::floor::FloorState};
 
     use super::SpireAi;
 
@@ -265,6 +273,6 @@ mod test {
     fn test_start() {
         let mut ai = SpireAi::new(FloorState::Menu);
         let choice = ai.choose(&None);
-        assert!(matches!(choice, Choice::Start { ..}))
+        assert!(matches!(choice, Choice::Start { .. }))
     }
 }

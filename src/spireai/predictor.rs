@@ -1,12 +1,14 @@
-use crate::models;
 use crate::models::acts::MonsterSet;
-use crate::models::core::{CardDestination, ChestType, DeckOperation, FightType, When, Stance};
+use crate::models::buffs::{PLATED_ARMOR, STRENGTH};
+use crate::models::core::{CardDestination, ChestType, DeckOperation, FightType, Stance};
+use crate::models::relics::MEAL_TICKET;
+use crate::models::{self, relics};
 use crate::spireai::*;
 use crate::state::battle::BattleState;
 use crate::state::core::{Card, Reward, RewardState};
 use crate::state::event::{EventScreenState, EventState};
-use crate::state::floor::{ChestState, FloorState, RestScreenState, RestState, BattleRewardsState};
-use crate::state::map::{MapNodeIcon};
+use crate::state::floor::{BattleRewardsState, ChestState, FloorState, RestScreenState, RestState};
+use crate::state::map::MapNodeIcon;
 use crate::state::shop::{ShopScreenState, ShopState};
 use im::{vector, Vector};
 use models::choices::Choice;
@@ -181,7 +183,11 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
         }
         Choice::Lift => {
             if let FloorState::Rest(rest) = &mut possibility.state {
-                rest.game_state.relics.find_mut("Girya").unwrap().vars.x += 1;
+                rest.game_state
+                    .get_relic_mut(relics::GIRYA)
+                    .expect("Expected Girya!")
+                    .vars
+                    .x += 1;
                 rest.screen_state = RestScreenState::Proceed
             } else {
                 panic!("Expected a Shop in Lift");
@@ -190,26 +196,39 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
         Choice::NavigateToNode(node) => {
             let floor: FloorState = if let FloorState::Map(state) = &mut possibility.state {
                 let mut state = std::mem::take(state);
-                
+
                 state.next_floor();
 
-                if state.map.current_node().map(|a| a.is_top()).unwrap_or(false) {
+                if state
+                    .map
+                    .current_node()
+                    .map(|a| a.is_top())
+                    .unwrap_or(false)
+                {
                     boss_fight(state, false, &mut possibility.probability)
-                } else {                
-                    let index = state.map.index.map_or(0, |i| i - state.map.nodes[i].unwrap().x as usize + 7) + (node as usize);
+                } else {
+                    let index = state
+                        .map
+                        .index
+                        .map_or(0, |i| i - state.map.nodes[i].unwrap().x as usize + 7)
+                        + (node as usize);
                     state.map.index = Some(index);
                     let icon = state.map.nodes[index].unwrap().icon;
                     let last_shop = state.map.history.last_shop;
                     state.map.history.last_shop = false;
                     match icon {
-                        MapNodeIcon::BurningElite => elite_fight(state, true, &mut possibility.probability),
-                        MapNodeIcon::Elite => elite_fight(state, false, &mut possibility.probability),
+                        MapNodeIcon::BurningElite => {
+                            elite_fight(state, true, &mut possibility.probability)
+                        }
+                        MapNodeIcon::Elite => {
+                            elite_fight(state, false, &mut possibility.probability)
+                        }
                         MapNodeIcon::Campfire => {
-                            if let Some(relic) = state.relics.find_mut("Ancient Tea Set") {
+                            if let Some(relic) = state.get_relic_mut(relics::ANCIENT_TEA_SET) {
                                 relic.enabled = true;
                             }
-                            
-                            if state.relics.contains("Eternal Feather") {
+
+                            if state.has_relic(relics::ETERNAL_FEATHER) {
                                 state.heal((state.deck.len() / 5 * 3) as f64)
                             }
 
@@ -221,13 +240,14 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                         MapNodeIcon::Chest => treasure(state, &mut possibility.probability),
                         MapNodeIcon::Monster => normal_fight(state, &mut possibility.probability),
                         MapNodeIcon::Question => {
-                            if state.relics.contains("Ssserpent Head") {
+                            if state.has_relic(relics::SSSERPENT_HEAD) {
                                 state.gold += 50;
                             }
 
                             let mut normal_probability =
                                 (state.map.history.unknown_normal_count + 1) * 10;
-                            let mut shop_probability = (state.map.history.unknown_shop_count + 1) * 3;
+                            let mut shop_probability =
+                                (state.map.history.unknown_shop_count + 1) * 3;
                             let mut treasure_probability =
                                 (state.map.history.unknown_treasure_count + 1) * 2;
 
@@ -235,7 +255,7 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                                 shop_probability = 0;
                             }
 
-                            if let Some(relic) = state.relics.find_mut("Tiny Chest") {
+                            if let Some(relic) = state.get_relic_mut(relics::TINY_CHEST) {
                                 relic.vars.x += 1;
                                 if relic.vars.x == 4 {
                                     relic.vars.x = 0;
@@ -245,7 +265,7 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                                 }
                             }
 
-                            if state.relics.contains("Juzu Bracelet") {
+                            if state.has_relic(relics::JUZU_BRACELET) {
                                 normal_probability = 0;
                             }
 
@@ -268,7 +288,8 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                                 (UnknownRoom::Event, 100 - total_probability),
                             ];
 
-                            let choice = *possibility.probability.choose_weighted(&choices).unwrap();
+                            let choice =
+                                *possibility.probability.choose_weighted(&choices).unwrap();
 
                             match choice {
                                 UnknownRoom::Fight => {
@@ -300,7 +321,6 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                         MapNodeIcon::Shop => shop(state),
                     }
                 }
-                    
             } else {
                 panic!("Unexpected floor state!")
             };
@@ -309,14 +329,23 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
         }
         Choice::OpenChest => {
             if let FloorState::Chest(chest) = &mut possibility.state {
-                let rewards = generate_rewards_chest(&mut chest.game_state, chest.chest, &mut possibility.probability);
+                let rewards = generate_rewards_chest(
+                    &mut chest.game_state,
+                    chest.chest,
+                    &mut possibility.probability,
+                );
 
-                if chest.game_state.relics.contains("Cursed Key") 
-                {
-                    let curse = possibility.probability.choose(models::cards::available_cards_by_class(models::core::Class::Curse).to_vec()).unwrap();                    
+                if chest.game_state.has_relic(relics::CURSED_KEY) {
+                    let curse = possibility
+                        .probability
+                        .choose(
+                            models::cards::available_cards_by_class(models::core::Class::Curse)
+                                .to_vec(),
+                        )
+                        .unwrap();
                     chest.game_state.add_card(Card::new(curse))
                 }
-                
+
                 chest.rewards = Some(RewardState {
                     viewing_reward: None,
                     rewards,
@@ -335,34 +364,33 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
         }
         Choice::Proceed => {
             let mut state = std::mem::take(possibility.state.game_state_mut());
-            let new_state = match &mut possibility.state 
-            {           
-                FloorState::Battle(_) => {
-                    match (state.map.floor, state.asc) {
-                        (50, 20) => {
-                            state.next_floor();
-                            boss_fight(state, true, &mut possibility.probability)
-                        }
-                        (51, 20) | (50, _) => {
-                            if state.keys.map(|a| a.emerald && a.ruby && a.sapphire).unwrap_or(false) {
-                                FloorState::GameOver(true, false)
-                            } else {
-                                state.next_act(&mut possibility.probability);
-                                FloorState::Map(state)
-                            }
-                        }
-                        (55, 20) | (54, _) => {
-                            FloorState::GameOver(true, true)
-                        }
-                        _ => panic!("Unexpected proceed in a battle")
+            let new_state = match &mut possibility.state {
+                FloorState::Battle(_) => match (state.map.floor, state.asc) {
+                    (50, 20) => {
+                        state.next_floor();
+                        boss_fight(state, true, &mut possibility.probability)
                     }
+                    (51, 20) | (50, _) => {
+                        if state
+                            .keys
+                            .map(|a| a.emerald && a.ruby && a.sapphire)
+                            .unwrap_or(false)
+                        {
+                            FloorState::GameOver(true, false)
+                        } else {
+                            state.next_act(&mut possibility.probability);
+                            FloorState::Map(state)
+                        }
+                    }
+                    (55, 20) | (54, _) => FloorState::GameOver(true, true),
+                    _ => panic!("Unexpected proceed in a battle"),
                 },
-                FloorState::BattleRewards(battle_over) =>  {
+                FloorState::BattleRewards(battle_over) => {
                     if battle_over.boss {
                         FloorState::Chest(ChestState {
                             chest: ChestType::Boss,
                             rewards: None,
-                            game_state: state
+                            game_state: state,
                         })
                     } else {
                         FloorState::Map(state)
@@ -374,11 +402,10 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                     }
                     FloorState::Map(state)
                 }
-                _ => FloorState::Map(state)
+                _ => FloorState::Map(state),
             };
 
             possibility.state = new_state
-            
         }
         Choice::Recall => {
             if let FloorState::Rest(rest) = &mut possibility.state {
@@ -391,11 +418,11 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
         Choice::Rest => {
             if let FloorState::Rest(rest) = &mut possibility.state {
                 let mut amount = rest.game_state.hp.max as f64 * 0.3;
-                if rest.game_state.relics.contains("Regal Pillow") {
+                if rest.game_state.has_relic(relics::REGAL_PILLOW) {
                     amount += 15.0;
                 }
                 rest.game_state.heal(amount);
-                if rest.game_state.relics.contains("Dream Catcher") {
+                if rest.game_state.has_relic(relics::DREAM_CATCHER) {
                     let offers = rest.game_state.generate_card_rewards(
                         None,
                         false,
@@ -419,7 +446,7 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                     );
                 }
 
-                battle.eval_when(When::Scry, &mut possibility.probability);
+                todo!("When Scry");
             } else {
                 panic!("Expected a battle in Choice::PlayCard")
             }
@@ -640,7 +667,7 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
                             .remove(reward_index);
                     }
                 }
-                Reward::Relic(relic) => {                    
+                Reward::Relic(relic) => {
                     possibility
                         .state
                         .game_state_mut()
@@ -686,7 +713,7 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
         }
         Choice::WishPlated => {
             if let FloorState::Battle(battle_state) = &mut possibility.state {
-                battle_state.player.add_buff("Plated Armor", 6);
+                battle_state.player.add_buff(PLATED_ARMOR, 6);
                 battle_state.wish -= 1;
             } else {
                 panic!("Expected battle state when wishing")
@@ -694,7 +721,7 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
         }
         Choice::WishStrength => {
             if let FloorState::Battle(battle_state) = &mut possibility.state {
-                battle_state.player.add_buff("Strength", 3);
+                battle_state.player.add_buff(STRENGTH, 3);
                 battle_state.wish -= 1;
             } else {
                 panic!("Expected battle state when wishing")
@@ -706,7 +733,12 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
         if battle_state.battle_over {
             let mut state = std::mem::take(&mut battle_state.game_state);
             if battle_state.fight_type != FightType::Boss || battle_state.game_state.act < 3 {
-                let rewards = generate_rewards_battle(&mut state, battle_state.fight_type, battle_state.gold_recovered, &mut possibility.probability);
+                let rewards = generate_rewards_battle(
+                    &mut state,
+                    battle_state.fight_type,
+                    battle_state.gold_recovered,
+                    &mut possibility.probability,
+                );
 
                 possibility.state = FloorState::BattleRewards(BattleRewardsState {
                     boss: battle_state.fight_type == FightType::Boss,
@@ -722,11 +754,14 @@ pub fn predict_outcome(choice: Choice, possibility: &mut GamePossibility) {
     }
 }
 
-
-fn generate_rewards_battle(state: &mut GameState, fight_type: FightType, gold_recovered: u16, probability: &mut Probability) -> Vector<Reward>
-{
+fn generate_rewards_battle(
+    state: &mut GameState,
+    fight_type: FightType,
+    gold_recovered: u16,
+    probability: &mut Probability,
+) -> Vector<Reward> {
     let mut rewards = vector![];
-    
+
     let (gold_min, gold_max) = match fight_type {
         FightType::Common => (10, 20),
         FightType::Elite { .. } => (25, 35),
@@ -734,26 +769,20 @@ fn generate_rewards_battle(state: &mut GameState, fight_type: FightType, gold_re
     };
 
     let mut gold_amount = (probability.range(gold_max - gold_min) + gold_min) as u16;
-    if state.relics.contains("Golden Idol") {
+    if state.has_relic(relics::GOLDEN_IDOL) {
         gold_amount = (gold_amount as f64 * 1.25).floor() as u16;
     }
-    
+
     rewards.push_back(Reward::Gold(gold_amount));
 
     if gold_recovered > 0 {
         rewards.push_back(Reward::Gold(gold_recovered));
     }
 
+    if let FightType::Elite { burning } = fight_type {
+        let relic = state.random_relic(None, None, false, probability);
 
-    if let FightType::Elite{burning} =  fight_type {
-        let relic = state.random_relic(
-            None,
-            None,
-            false,
-            probability,
-        );
-
-        rewards.push_back(Reward::Relic(relic));   
+        rewards.push_back(Reward::Relic(relic));
 
         if burning {
             rewards.push_back(Reward::EmeraldKey)
@@ -768,24 +797,21 @@ fn generate_rewards_battle(state: &mut GameState, fight_type: FightType, gold_re
         state.potion_chance += 1;
     }
 
-
-    if fight_type == FightType::Common && state.relics.contains("Prayer Wheel") {
+    if fight_type == FightType::Common && state.has_relic(relics::PRAYER_WHEEL) {
         rewards.push_back(Reward::CardChoice(vector![], Some(fight_type), false));
     }
-    
+
     rewards.push_back(Reward::CardChoice(vector![], Some(fight_type), false));
-    
+
     rewards
 }
 
-fn generate_rewards_chest(state: &mut GameState, chest_type: ChestType, probability: &mut Probability) -> Vector<Reward>
-{
-    let relic = state.random_relic(
-        Some(chest_type),
-        None,
-        false,
-        probability,
-    );
+fn generate_rewards_chest(
+    state: &mut GameState,
+    chest_type: ChestType,
+    probability: &mut Probability,
+) -> Vector<Reward> {
+    let relic = state.random_relic(Some(chest_type), None, false, probability);
     let (gold_chance, gold_min, gold_max) = match chest_type {
         ChestType::Small => (50, 23, 27),
         ChestType::Medium => (35, 45, 55),
@@ -801,31 +827,24 @@ fn generate_rewards_chest(state: &mut GameState, chest_type: ChestType, probabil
         vector![Reward::Relic(relic)]
     };
 
-    let extra_relic =
-        if let Some(relic) = state.relics.find_mut("Matryoshka") {
-            if relic.vars.x < 2 {
-                relic.vars.x += 1;
-                true
-            } else {
-                false
-            }
+    let extra_relic = if let Some(relic) = state.get_relic_mut(relics::MATRYOSHKA) {
+        if relic.vars.x < 2 {
+            relic.vars.x += 1;
+            true
         } else {
             false
-        };
+        }
+    } else {
+        false
+    };
 
     if extra_relic {
-        let relic = state.random_relic(
-            Some(chest_type),
-            None,
-            false,
-            probability,
-        );
+        let relic = state.random_relic(Some(chest_type), None, false, probability);
         rewards.insert(0, Reward::Relic(relic))
     }
 
     if gets_gold {
-        let gold_amount =
-            (probability.range(gold_max - gold_min) + gold_min) as u16;
+        let gold_amount = (probability.range(gold_max - gold_min) + gold_min) as u16;
         rewards.push_back(Reward::Gold(gold_amount));
     };
     rewards
@@ -907,8 +926,8 @@ fn event(state: GameState, probability: &mut Probability) -> FloorState {
 
 fn shop(mut state: GameState) -> FloorState {
     state.map.history.last_shop = true;
-    
-    if state.relics.contains("Meal Ticket") {
+
+    if state.has_relic(MEAL_TICKET) {
         state.heal(15.0);
     }
 
@@ -939,17 +958,23 @@ fn treasure(state: GameState, probability: &mut Probability) -> FloorState {
     })
 }
 
-fn boss_fight(state: GameState, second: bool, probability: &mut Probability)  -> FloorState {
+fn boss_fight(state: GameState, second: bool, probability: &mut Probability) -> FloorState {
     let act = &models::acts::ACTS[state.act as usize];
     let boss = if !second {
-        act.bosses.iter().find(|b| b.name == state.map.boss).unwrap()
+        act.bosses
+            .iter()
+            .find(|b| b.name == state.map.boss)
+            .unwrap()
     } else {
-        let choices = act.bosses.iter().filter(|b| b.name != state.map.boss).collect();
+        let choices = act
+            .bosses
+            .iter()
+            .filter(|b| b.name != state.map.boss)
+            .collect();
         probability.choose(choices).unwrap()
     };
 
-    let monsters =
-        eval_monster_set(&boss.monsters, probability);
+    let monsters = eval_monster_set(&boss.monsters, probability);
     FloorState::Battle(BattleState::new(
         state,
         &monsters,
@@ -970,15 +995,12 @@ fn elite_fight(state: GameState, elite: bool, probability: &mut Probability) -> 
     };
 
     let choice = probability.choose(options).unwrap();
-    let monsters =
-        eval_monster_set(&act.elites[choice], probability);
+    let monsters = eval_monster_set(&act.elites[choice], probability);
 
     FloorState::Battle(BattleState::new(
         state,
         &monsters,
-        FightType::Elite {
-            burning: elite,
-        },
+        FightType::Elite { burning: elite },
         probability,
     ))
 }

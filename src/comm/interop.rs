@@ -28,7 +28,7 @@ pub fn state_matches(
                 && floor_state_matches(external, internal, uuid_map)
                 && cards_match(&external.deck, &game.deck, uuid_map)
                 && potions_match(&external.potions, &game.potions)
-                && relics_match(&external.relics, &game.relics.relics, uuid_map)
+                && relics_match(&external.relics, &game.relics, uuid_map)
                 && external.act as u8 == game.act
                 && external.ascension_level as u8 == game.asc
         }
@@ -109,7 +109,11 @@ pub fn convert_map(state: &external::GameState) -> internal::map::MapState {
 
     internal::map::MapState {
         nodes,
-        index: if y >= 0 {Some((y*7 + x) as usize)} else {None},
+        index: if y >= 0 {
+            Some((y * 7 + x) as usize)
+        } else {
+            None
+        },
         floor: y as i8,
         boss: state.act_boss.as_ref().unwrap().to_string(),
         history: internal::map::MapHistory {
@@ -140,13 +144,13 @@ pub fn convert_node(node: &external::MapNode) -> internal::map::MapNode {
             'T' => internal::map::MapNodeIcon::Chest,
             'E' => internal::map::MapNodeIcon::Elite,
             _ => panic!("Unhandled node type: {}", node.symbol),
-        }
+        },
     }
 }
 
 pub fn relics_match(
     external: &[external::Relic],
-    internal: &HashMap<Uuid, internal::core::Relic>,
+    internal: &[internal::core::Relic],
     uuid_map: &mut HashMap<String, Uuid>,
 ) -> bool {
     sets_match(external, internal, uuid_map, relic_matches, |relic| {
@@ -244,7 +248,9 @@ pub fn floor_state_matches(
                 false
             }
         }
-        external::ScreenState::ShopRoom {} => matches!(internal, internal::floor::FloorState::Shop(_)),
+        external::ScreenState::ShopRoom {} => {
+            matches!(internal, internal::floor::FloorState::Shop(_))
+        }
         external::ScreenState::ShopScreen(external) => {
             match internal {
                 internal::floor::FloorState::Shop(internal) => {

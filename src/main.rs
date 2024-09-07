@@ -19,10 +19,10 @@ fn main() {
     run(stdin().lock(), stdout());
 }
 
-fn run<R, W>(mut reader: R, mut writer: W) 
-    where 
-        R: BufRead,
-        W: Write
+fn run<R, W>(mut reader: R, mut writer: W)
+where
+    R: BufRead,
+    W: Write,
 {
     let mut ai = spireai::SpireAi::new(crate::state::floor::FloorState::Menu);
     let mut game_state: Option<GameState> = None;
@@ -44,10 +44,15 @@ fn handle_request(request: &Request, ai: &mut spireai::SpireAi) -> Choice {
     ai.choose(&request.game_state)
 }
 
-fn process_queue<R, W>(queue: &mut Vec<Response>, game_state: &Option<GameState>, reader: &mut R, writer: &mut W) -> Request 
-where 
+fn process_queue<R, W>(
+    queue: &mut Vec<Response>,
+    game_state: &Option<GameState>,
+    reader: &mut R,
+    writer: &mut W,
+) -> Request
+where
     R: BufRead,
-    W: Write
+    W: Write,
 {
     loop {
         send_message(&queue[0], game_state, writer);
@@ -62,20 +67,22 @@ where
         if queue.len() > 1 {
             queue.remove(0);
         } else {
-            return request
+            return request;
         }
     }
 }
 
-fn send_message<W>(response: &Response, game: &Option<GameState>, writer: &mut W) 
-    where W: Write
+fn send_message<W>(response: &Response, game: &Option<GameState>, writer: &mut W)
+where
+    W: Write,
 {
     let serialized = comm::response::serialize_response(response, game);
     writeln!(writer, "{}", serialized).expect("Failed to write!");
 }
 
-fn read_request<R>(reader: &mut R) -> Request 
-where R: BufRead
+fn read_request<R>(reader: &mut R) -> Request
+where
+    R: BufRead,
 {
     let input = &mut String::new();
     let request = match reader.read_line(input) {

@@ -1,3 +1,5 @@
+use std::ptr;
+
 use im::{HashMap, Vector};
 use uuid::Uuid;
 
@@ -72,41 +74,47 @@ impl HpRange {
 pub struct Creature {
     pub hp: HpRange,
     pub monster: Option<MonsterReference>,
-    pub buffs_when: HashMap<When, Vector<Uuid>>,
-    pub buff_names: HashMap<String, Uuid>,
-    pub buffs: HashMap<Uuid, Buff>,
+    pub buffs: Vec<Buff>,
     pub block: u16,
 }
 
 impl Creature {
-    pub fn add_buff(&mut self, name: &str, amount: i16) -> &mut Buff {
-        if let Some(uuid) = self.buff_names.get(name) {
-            let buff = self.buffs.get_mut(uuid).unwrap();
-            if !buff.base.repeats {
-                if !buff.base.singular {
-                    buff.vars.x += amount
+    pub fn add_buff(&mut self, buff: &'static BaseBuff, amount: i16) {
+        if !buff.repeats {
+            if let Some(index) = self.buffs.iter().position(|a| ptr::eq(a.base, buff)) {
+                self.buffs[index].vars.x += amount;
+                if buff.zeroable && self.buffs[index].vars.x == 0 {
+                    self.buffs.remove(index);
                 }
-            } else {
-                buff.stacked_vars.push(Vars {
-                    n: 0,
-                    n_reset: 0,
-                    x: amount,
-                })
+                return;
             }
-            buff
-        } else {
-            let new_buff = Buff::by_name(name, amount);
-            let id = new_buff.uuid;
-            for effects in &new_buff.base.effects {
-                self.buffs_when
-                    .entry(effects.when.clone())
-                    .or_insert_with(Vector::new)
-                    .push_back(new_buff.uuid)
-            }
-            self.buff_names.insert(name.to_string(), new_buff.uuid);
-            self.buffs.insert(id, new_buff);
-            self.buffs.get_mut(&id).unwrap()
         }
+
+        let new_buff = Buff::new(buff, amount);
+        self.buffs.push(new_buff);
+    }
+
+    pub fn get_buff_mut(&mut self, buff: BuffReference) -> Option<&mut Buff> {
+        self.buffs.iter_mut().find(|a| a.uuid == buff.buff)
+    }
+
+    pub fn get_buff(&self, buff: BuffReference) -> Option<&Buff> {
+        self.buffs.iter().find(|a| a.uuid == buff.buff)
+    }
+
+    pub fn get_singular_buff_mut(&mut self, buff: &'static BaseBuff) -> Option<&mut Buff> {
+        self.buffs.iter_mut().find(move |a| ptr::eq(a.base, buff))
+    }
+
+    pub fn get_singular_buff(&self, buff: &'static BaseBuff) -> Option<&Buff> {
+        self.buffs.iter().find(move |a| ptr::eq(a.base, buff))
+    }
+
+    pub fn get_buffs_mut(
+        &mut self,
+        buff: &'static BaseBuff,
+    ) -> impl Iterator<Item = &mut Buff> + '_ {
+        self.buffs.iter_mut().filter(move |a| ptr::eq(a.base, buff))
     }
 
     pub fn creature_ref(&self) -> CreatureReference {
@@ -121,24 +129,22 @@ impl Creature {
     }
 
     pub fn buffs(&self) -> impl Iterator<Item = BuffReference> + '_ {
-        self.buffs.values().map(move |b| BuffReference {
+        self.buffs.iter().map(move |b| BuffReference {
             base: b.base,
             creature: self.creature_ref(),
             buff: b.uuid,
         })
     }
 
-    pub fn has_buff(&self, name: &str) -> bool {
-        self.buff_names.contains_key(name)
+    pub fn has_buff(&self, buff: &'static BaseBuff) -> bool {
+        self.buffs.iter().any(|a| ptr::eq(a.base, buff))
     }
 
     pub fn player(hp: HpRange) -> Creature {
         Creature {
             hp,
             monster: None,
-            buffs_when: HashMap::new(),
-            buff_names: HashMap::new(),
-            buffs: HashMap::new(),
+            buffs: Vec::new(),
             block: 0,
         }
     }
@@ -147,47 +153,30 @@ impl Creature {
         Creature {
             hp,
             monster: Some(monster),
-            buffs_when: HashMap::new(),
-            buff_names: HashMap::new(),
-            buffs: HashMap::new(),
+            buffs: Vec::new(),
             block: 0,
         }
     }
 
-    pub fn get_buff_amount(&self, name: &str) -> i16 {
-        self.find_buff(name).map_or(0, |b| b.vars.n)
-    }
-
-    pub fn find_buff(&self, name: &str) -> Option<&Buff> {
-        self.buff_names.get(name).map(|u| &self.buffs[u])
-    }
-    pub fn find_buff_mut(&mut self, name: &str) -> Option<&mut Buff> {
-        let uuid = self.buff_names.get(name).copied();
-        match uuid {
-            Some(u) => self.buffs.get_mut(&u),
-            None => None,
-        }
+    pub fn get_buff_amount(&self, buff: &'static BaseBuff) -> i16 {
+        self.buffs
+            .iter()
+            .find(|a| std::ptr::eq(buff, a.base))
+            .map_or(0, |b| b.vars.x)
     }
 
     pub fn remove_buff(&mut self, buff: BuffReference) {
-        self.remove_buff_by_uuid(buff.buff);
-    }
-
-    pub fn remove_buff_by_name(&mut self, name: &str) {
-        if let Some(uuid) = self.buff_names.get(name).copied() {
-            self.remove_buff_by_uuid(uuid)
-        };
-    }
-
-    pub fn remove_buff_by_uuid(&mut self, uuid: Uuid) {
-        let removed = self.buffs.remove(&uuid).unwrap();
-        self.buff_names.remove(&removed.base.name);
-
-        for (_, uuids) in self.buffs_when.iter_mut() {
-            if let Some(index) = uuids.index_of(&uuid) {
-                uuids.remove(index);
-            }
+        if let Some(position) = self.buffs.iter().position(|a| a.uuid == buff.buff) {
+            self.buffs.remove(position);
         }
+    }
+
+    pub fn remove_buffs_by_type(&mut self, base: &'static BaseBuff) {
+        self.buffs = self
+            .buffs
+            .into_iter()
+            .filter(|a| !ptr::eq(a.base, base))
+            .collect();
     }
 }
 
@@ -339,7 +328,6 @@ pub struct Buff {
     pub base: &'static BaseBuff,
     pub uuid: Uuid,
     pub vars: Vars,
-    pub stacked_vars: Vec<Vars>,
     pub card_stasis: Option<Uuid>,
 }
 
@@ -349,30 +337,11 @@ impl Buff {
     }
 
     pub fn new(base: &'static BaseBuff, amount: i16) -> Self {
-        if !base.repeats {
-            Buff {
-                base,
-                uuid: Uuid::new_v4(),
-                vars: Vars {
-                    n: 0,
-                    n_reset: 0,
-                    x: amount,
-                },
-                stacked_vars: vec![],
-                card_stasis: None,
-            }
-        } else {
-            Buff {
-                base,
-                uuid: Uuid::new_v4(),
-                vars: Vars::new(),
-                stacked_vars: vec![Vars {
-                    n: 0,
-                    n_reset: 0,
-                    x: amount,
-                }],
-                card_stasis: None,
-            }
+        Buff {
+            base,
+            uuid: Uuid::new_v4(),
+            vars: Vars::new(),
+            card_stasis: None,
         }
     }
 

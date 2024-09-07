@@ -134,6 +134,7 @@
     (
         name: "Maw Bank",
         max_floor: 49,
+        shop_relic: true,
     ),
     (
         name: "Meal Ticket",
@@ -199,6 +200,7 @@
     (
         name: "Smiling Mask",
         activation: Custom,
+        shop_relic: true,
     ),
     (
         name: "Strawberry",
@@ -460,6 +462,7 @@
         rarity: Uncommon,
         activation: Custom,
         max_floor: 49,
+        shop_relic: true,
     ),
     (
         name: "Toxic Egg",
@@ -661,6 +664,7 @@
         rarity: Rare,
         activation: Immediate,
         max_floor: 49,
+        shop_relic: true,
     ),
     (
         name: "Peace Pipe",

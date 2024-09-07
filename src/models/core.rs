@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use super::{buffs::BaseBuff, relics::BaseRelic};
+
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum Rarity {
     Starter,
@@ -19,17 +21,17 @@ impl Ord for Rarity {
         match self {
             Rarity::Rare => match other {
                 Rarity::Rare => std::cmp::Ordering::Equal,
-                _ => std::cmp::Ordering::Greater
+                _ => std::cmp::Ordering::Greater,
             },
             Rarity::Uncommon => match other {
                 Rarity::Rare => std::cmp::Ordering::Less,
                 Rarity::Uncommon => std::cmp::Ordering::Equal,
-                _ => std::cmp::Ordering::Greater
-            }
+                _ => std::cmp::Ordering::Greater,
+            },
             _ => match other {
                 Rarity::Rare | Rarity::Uncommon => std::cmp::Ordering::Less,
-                _ => std::cmp::Ordering::Equal
-            }
+                _ => std::cmp::Ordering::Equal,
+            },
         }
     }
 }
@@ -147,6 +149,8 @@ pub enum Amount {
     EnemyCount,
     PlayerBlock,
     MaxHp,
+    Blizzard,
+    Shield,
     Custom,
 }
 
@@ -308,9 +312,9 @@ pub enum Effect {
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
-    Unbuff(String),
+    Unbuff(&'static BaseBuff),
     AddBuff {
-        buff: String,
+        buff: &'static BaseBuff,
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
@@ -441,9 +445,9 @@ pub enum Effect {
     LoseHpPercentage(Amount),
     ReduceMaxHpPercentage(Amount),
     ShowReward(Vec<RewardType>),
-    RemoveRelic(String),
+    RemoveRelic(&'static BaseRelic),
     RandomRelic,
-    AddRelic(String),
+    AddRelic(&'static BaseRelic),
     Fight {
         monsters: Vec<String>,
         room: FightType,
@@ -451,6 +455,7 @@ pub enum Effect {
     AddPotionSlot(u8),
     ShowChoices(Vec<String>),
 
+    Catalyst,
     Custom,
 }
 
@@ -521,7 +526,7 @@ pub struct WhenEffect {
     pub effect: Vec<Effect>,
 }
 
-#[derive(PartialEq, Eq, Clone, Hash, Debug, strum_macros::AsStaticStr, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug, strum_macros::AsStaticStr, Deserialize, Serialize)]
 pub enum Condition {
     Stance(Stance),
     RemainingHp {
@@ -537,12 +542,12 @@ pub enum Condition {
         target: Target,
     },
     Buff {
-        buff: String,
+        buff: &'static BaseBuff,
         #[serde(default, skip_serializing_if = "is_default")]
         target: Target,
     },
     BuffX {
-        buff: String,
+        buff: &'static BaseBuff,
         #[serde(default, skip_serializing_if = "is_default")]
         amount: Amount,
         #[serde(default, skip_serializing_if = "is_default")]
@@ -566,7 +571,7 @@ pub enum Condition {
     HasDiscarded,
     MultipleAnd(Vec<Condition>),
     MultipleOr(Vec<Condition>),
-    HasRelic(String),
+    HasRelic(&'static BaseRelic),
     HasGold(Amount),
     IsVariant(String), //Event variant*/
     Always,

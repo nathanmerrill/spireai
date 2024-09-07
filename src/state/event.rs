@@ -1,7 +1,7 @@
 use crate::{
     models::{
         self,
-        core::{DeckOperation, Effect, Amount},
+        core::{Amount, DeckOperation, Effect},
         events::BaseEvent,
     },
     spireai::references::{CardReference, RelicReference},
@@ -9,7 +9,8 @@ use crate::{
 
 use super::{
     core::{RewardState, Vars},
-    game::GameState, probability::Probability,
+    game::GameState,
+    probability::Probability,
 };
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -54,7 +55,7 @@ impl EventState {
             screen_state: None,
         }
     }
-    
+
     pub fn eval_effects(&mut self, effects: &[Effect], probability: &mut Probability) {
         for effect in effects {
             self.eval_effect(effect, probability);
@@ -71,19 +72,11 @@ impl EventState {
                 self.vars.n = amount;
                 self.vars.n_reset = amount;
             }
-            Effect::AddN(n) => {
-                self.vars.n += self.eval_amount(n)
-            }
-            Effect::SetX(x) => {
-                self.vars.x = self.eval_amount(x)
-            }
-            Effect::AddX(x) => {
-                self.vars.x += self.eval_amount(x)
-            }
-            Effect::ResetN => {
-                self.vars.n = self.vars.n_reset
-            }
-            _ => self.game_state.eval_effect(effect, probability)
+            Effect::AddN(n) => self.vars.n += self.eval_amount(n),
+            Effect::SetX(x) => self.vars.x = self.eval_amount(x),
+            Effect::AddX(x) => self.vars.x += self.eval_amount(x),
+            Effect::ResetN => self.vars.n = self.vars.n_reset,
+            _ => self.game_state.eval_effect(effect, probability),
         }
     }
 
@@ -106,7 +99,7 @@ impl EventState {
                 }
                 sum
             }
-            _ => self.game_state.eval_amount(amount)
+            _ => self.game_state.eval_amount(amount),
         }
     }
 }

@@ -1,4 +1,4 @@
-use im::{vector, HashMap, HashSet, Vector};
+use im::{vector, HashMap, Vector};
 use itertools::Itertools;
 use uuid::Uuid;
 
@@ -6,11 +6,13 @@ use crate::{
     models::{
         self,
         cards::BaseCard,
-        core::{Amount, CardType, ChestType, Class, Condition, FightType, Rarity, When, Effect, DeckOperation},
+        core::{
+            Amount, CardType, ChestType, Class, Condition, DeckOperation, Effect, FightType, Rarity,
+        },
         potions::BasePotion,
-        relics::{Activation, BaseRelic, self},
+        relics::{self, Activation, BaseRelic},
     },
-    spireai::references::{PotionReference, RelicReference},
+    spireai::references::PotionReference,
 };
 
 use super::{
@@ -23,7 +25,8 @@ use super::{
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct GameState {
     pub class: Class,
-    pub relics: Relics,
+    pub relics: Vector<Relic>,
+    pub seen_relics: Vector<&'static BaseRelic>,
     pub act: u8,
     pub asc: u8,
     pub deck: HashMap<Uuid, Card>,
@@ -42,7 +45,8 @@ impl Default for GameState {
     fn default() -> Self {
         Self {
             class: Class::All,
-            relics: Relics::new(),
+            relics: Default::default(),
+            seen_relics: Default::default(),
             act: 0,
             asc: 0,
             deck: Default::default(),
@@ -67,7 +71,11 @@ impl GameState {
         if self.act == 4 {
             self.map.generate_act4()
         } else {
-            self.map.generate(self.asc > 0, self.keys.map(|a| !a.emerald).unwrap_or(false), probability)
+            self.map.generate(
+                self.asc > 0,
+                self.keys.map(|a| !a.emerald).unwrap_or(false),
+                probability,
+            )
         }
     }
 
@@ -76,8 +84,20 @@ impl GameState {
         self.heal(amount as f64);
     }
 
+    pub fn has_relic(&self, relic: &'static BaseRelic) -> bool {
+        self.relics.iter().any(|a| a.base == relic)
+    }
+
+    pub fn get_relic(&self, relic: &'static BaseRelic) -> Option<&Relic> {
+        self.relics.iter().find(|a| a.base == relic)
+    }
+
+    pub fn get_relic_mut(&mut self, relic: &'static BaseRelic) -> Option<&mut Relic> {
+        self.relics.iter_mut().find(|a| a.base == relic)
+    }
+
     pub fn heal(&mut self, amount: f64) {
-        if self.relics.contains("Mark Of The Bloom") {
+        if self.has_relic(relics::MARK_OF_THE_BLOOM) {
             return;
         }
 
@@ -90,25 +110,25 @@ impl GameState {
 
     pub fn add_card(&mut self, mut card: Card) {
         if card.base._type == CardType::Curse {
-            if let Some(relic) = self.relics.find_mut("Omamori") {
+            if let Some(relic) = self.get_relic_mut(relics::OMAMORI) {
                 if relic.vars.x > 0 {
                     relic.vars.x -= 1;
                     return;
                 }
             }
 
-            if self.relics.contains("Darkstone Periapt") {
+            if self.has_relic(relics::DARKSTONE_PERIAPT) {
                 self.add_max_hp(6);
             }
         }
 
-        if self.relics.contains("Ceramic Fish") {
+        if self.has_relic(relics::CERAMIC_FISH) {
             self.add_gold(9);
         }
         let should_upgrade = match card.base._type {
-            CardType::Attack => self.relics.contains("Molten Egg"),
-            CardType::Skill => self.relics.contains("Toxic Egg"),
-            CardType::Power => self.relics.contains("Frozen Egg"),
+            CardType::Attack => self.has_relic(relics::MOLTEN_EGG),
+            CardType::Skill => self.has_relic(relics::TOXIC_EGG),
+            CardType::Power => self.has_relic(relics::FROZEN_EGG),
             CardType::Curse => false,
             CardType::Status => false,
             CardType::All => panic!("Unexpected card type of All"),
@@ -125,8 +145,8 @@ impl GameState {
 
     pub fn next_floor(&mut self) {
         self.map.floor += 1;
-        
-        if let Some(relic) = self.relics.find("Maw Bank") {
+
+        if let Some(relic) = self.get_relic(relics::MAW_BANK) {
             if relic.enabled {
                 self.add_gold(12);
             }
@@ -134,11 +154,11 @@ impl GameState {
     }
 
     pub fn add_gold(&mut self, amount: u16) {
-        if self.relics.contains("Ectoplasm") {
+        if self.has_relic(relics::ECTOPLASM) {
             return;
         }
 
-        if self.relics.contains("Bloody Idol") {
+        if self.has_relic(relics::BLOODY_IDOL) {
             self.heal(5_f64);
         }
 
@@ -244,17 +264,18 @@ impl GameState {
         };
 
         let starting_relic = match class {
-            Class::Ironclad => "Burning Blood",
-            Class::Silent => "Ring Of The Snake",
-            Class::Defect => "Cracked Core",
-            Class::Watcher => "Pure Water",
+            Class::Ironclad => relics::BURNING_BLOOD,
+            Class::Silent => relics::RING_OF_THE_SNAKE,
+            Class::Defect => relics::CRACKED_CORE,
+            Class::Watcher => relics::PURE_WATER,
             _ => panic!("Unexpected class!"),
         };
 
         let mut state = Self {
             class,
             map: MapState::new(),
-            relics: Relics::new(),
+            relics: Vector::new(),
+            seen_relics: Vector::new(),
             act: 1,
             asc,
             deck,
@@ -271,7 +292,8 @@ impl GameState {
             rare_probability_offset: 0,
         };
 
-        state.relics.add(models::relics::by_name(starting_relic));
+        state.relics.push_back(Relic::new(starting_relic));
+        state.seen_relics.push_back(starting_relic);
 
         state
     }
@@ -319,35 +341,31 @@ impl GameState {
             .filter(|relic| {
                 relic.rarity == **rarity
                     && (relic.class == self.class || relic.class == Class::All)
-                    && !self.relics.contains(&relic.name)
-                    && !self.relics.seen.contains(relic)
+                    && !self.seen_relics.contains(relic)
                     && (relic.max_floor == 0 || relic.max_floor as i8 >= self.map.floor)
-                    && match relic.name.as_str() {
-                        "Maw Bank" | "Smiling Mask" | "The Courier" | "Old Coin" => !in_shop,
-                        "Bottled Flame" => self.deck.values().any(|c| {
+                    && (!relic.shop_relic || in_shop)
+                    && (!relic.replaces_starter || self.relics[0].base.rarity == Rarity::Starter)
+                    && (*relic != relics::BOTTLED_FLAME
+                        || self.deck.values().any(|c| {
                             c.base._type == CardType::Attack && c.base.rarity != Rarity::Starter
-                        }),
-                        "Bottled Lightning" => self.deck.values().any(|c| {
+                        }))
+                    && (*relic != relics::BOTTLED_LIGHTNING
+                        || self.deck.values().any(|c| {
                             c.base._type == CardType::Skill && c.base.rarity != Rarity::Starter
-                        }),
-                        "Bottled Tornado" => {
-                            self.deck.values().any(|c| c.base._type == CardType::Power)
-                        }
-                        "Girya" => {
-                            !self.relics.contains("Peace Pipe") || !self.relics.contains("Shovel")
-                        }
-                        "Shovel" => {
-                            !self.relics.contains("Peace Pipe") || !self.relics.contains("Girya")
-                        }
-                        "Peace Pipe" => {
-                            !self.relics.contains("Girya") || !self.relics.contains("Shovel")
-                        }
-                        "Black Blood" => self.relics.contains("Burning Blood"),
-                        "Frozen Core" => self.relics.contains("Cracked Core"),
-                        "Holy Water" => self.relics.contains("Pure Water"),
-                        "Ring of the Snake" => self.relics.contains("Ring of the Serpent"),
-                        _ => true,
-                    }
+                        }))
+                    && (*relic != relics::BOTTLED_TORNADO
+                        || self.deck.values().any(|c| {
+                            c.base._type == CardType::Power && c.base.rarity != Rarity::Starter
+                        }))
+                    && (*relic != relics::PEACE_PIPE
+                        || !self.has_relic(relics::SHOVEL)
+                        || !self.has_relic(relics::GIRYA))
+                    && (*relic != relics::SHOVEL
+                        || !self.has_relic(relics::PEACE_PIPE)
+                        || !self.has_relic(relics::GIRYA))
+                    && (*relic != relics::GIRYA
+                        || !self.has_relic(relics::PEACE_PIPE)
+                        || !self.has_relic(relics::SHOVEL))
             })
             .collect();
 
@@ -355,7 +373,7 @@ impl GameState {
             .choose(available_relics)
             .expect("No available relics to be chosen!");
 
-        self.relics.seen.insert(relic);
+        self.seen_relics.push_back(relic);
 
         relic
     }
@@ -369,18 +387,18 @@ impl GameState {
         let cards = {
             if colorless {
                 models::cards::available_cards_by_class(Class::None)
-            } else if fight_type.is_some() && self.relics.contains("Prismatic Shard") {
+            } else if fight_type.is_some() && self.has_relic(relics::PRISMATIC_SHARD) {
                 models::cards::available_cards_by_class(Class::All)
             } else {
                 models::cards::available_cards_by_class(self.class)
             }
         };
 
-        let count = if self.relics.contains("Busted Crown") {
+        let count = if self.has_relic(relics::BUSTED_CROWN) {
             1
         } else {
             2
-        } + if self.relics.contains("Question Card") {
+        } + if self.has_relic(relics::QUESTION_CARD) {
             1
         } else {
             0
@@ -427,7 +445,7 @@ impl GameState {
         available: &[&'static BaseCard],
         probability: &mut Probability,
     ) -> CardOffer {
-        let has_nloth = self.relics.contains("N'loth's Gift");
+        let has_nloth = self.has_relic(relics::NLOTHS_GIFT);
 
         let rarity_probabilities = match fight_type {
             Some(FightType::Common) => {
@@ -522,9 +540,9 @@ impl GameState {
             .unwrap();
 
         let is_default_upgraded = match card._type {
-            CardType::Attack => self.relics.contains("Molten Egg"),
-            CardType::Skill => self.relics.contains("Toxic Egg"),
-            CardType::Power => self.relics.contains("Frozen Egg"),
+            CardType::Attack => self.has_relic(relics::MOLTEN_EGG),
+            CardType::Skill => self.has_relic(relics::TOXIC_EGG),
+            CardType::Power => self.has_relic(relics::FROZEN_EGG),
             _ => panic!("Unexpected card type!"),
         };
 
@@ -598,7 +616,7 @@ impl GameState {
             Condition::Not(c) => !self.eval_condition(c),
             Condition::MultipleAnd(conditions) => conditions.iter().all(|c| self.eval_condition(c)),
             Condition::MultipleOr(conditions) => conditions.iter().any(|c| self.eval_condition(c)),
-            Condition::HasRelic(relic) => self.relics.contains(relic.as_str()),
+            Condition::HasRelic(relic) => self.has_relic(relic),
             Condition::HasGold(amount) => {
                 if let Amount::Fixed(i) = amount {
                     self.gold >= *i as u16
@@ -616,17 +634,16 @@ impl GameState {
         }
     }
 
-    pub fn eval_effect(&mut self, effect: &Effect, probability: &mut Probability) 
-    {
+    pub fn eval_effect(&mut self, effect: &Effect, probability: &mut Probability) {
         match effect {
             Effect::AddPotionSlot(amount) => {
                 for _ in 0..*amount {
                     self.potions.push_back(None)
                 }
             }
-            Effect::AddRelic(name) => {
-                self.relics.add(relics::by_name(name));
-            } 
+            Effect::AddRelic(relic) => {
+                self.add_relic(relic, probability);
+            }
             /*
             Effect::ShowChoices(choices) => {
                 let event = self.game_state.floor_state.event_mut();
@@ -669,9 +686,8 @@ impl GameState {
                         .collect(),
                 )
             } */
-            
             Effect::RemoveRelic(relic) => {
-                self.relics.remove(relic);
+                self.relics.retain(|r| r.base != *relic);
             }
             Effect::RandomPotion => {
                 let potion = random_potion(false, probability);
@@ -683,8 +699,7 @@ impl GameState {
             }
             Effect::ReduceMaxHpPercentage(amount) => {
                 let percentage = self.eval_amount(amount);
-                let total = (self.hp.max as f64 * (percentage as f64 / 100.0))
-                    .floor() as u16;
+                let total = (self.hp.max as f64 * (percentage as f64 / 100.0)).floor() as u16;
                 self.hp.reduce_max_hp(total)
             }
             Effect::LoseHpPercentage(amount) => {
@@ -692,9 +707,9 @@ impl GameState {
                 let damage = (self.hp.max as f64 * percentage).floor() as u16;
                 self.hp.amount -= damage
             }
-            Effect::DeckAdd(name) =>  {
+            Effect::DeckAdd(name) => {
                 self.add_card(Card::by_name(name));
-            },
+            }
             Effect::DeckOperation {
                 random,
                 count,
@@ -710,7 +725,7 @@ impl GameState {
                 } else {
                     panic!("Deck operation must occur during an event!")
                 }
-            },
+            }
             Effect::AddMaxHp(amount) => {
                 let amount = self.eval_amount(amount) as u16;
                 self.hp.max += amount;
@@ -722,7 +737,6 @@ impl GameState {
         }
     }
 
-    
     pub fn eval_amount(&self, amount: &Amount) -> i16 {
         match amount {
             Amount::ByAsc { amount, high, .. } => {
@@ -749,7 +763,7 @@ impl GameState {
                 }
                 sum
             }
-            _ => panic!("Unexpected amount in game.eval_amount: {:?}", amount)
+            _ => panic!("Unexpected amount in game.eval_amount: {:?}", amount),
         }
     }
 
@@ -761,7 +775,7 @@ impl GameState {
     ) {
         match potion.base.name.as_str() {
             "Fruit Juice" => {
-                let amount = if self.relics.contains("Sacred Bark") {
+                let amount = if self.has_relic(relics::SACRED_BARK) {
                     10
                 } else {
                     5
@@ -770,7 +784,7 @@ impl GameState {
                 self.add_max_hp(amount)
             }
             "Blood Potion" => {
-                let amount = if self.relics.contains("Sacred Bark") {
+                let amount = if self.has_relic(relics::SACRED_BARK) {
                     0.40
                 } else {
                     0.20
@@ -786,14 +800,15 @@ impl GameState {
             _ => panic!("Unexpected potion!"),
         }
 
-        if eval_effects && self.relics.contains("Toy Ornithopter") {
+        if eval_effects && self.has_relic(relics::TOY_ORNITHOPTER) {
             self.heal(5.0);
         }
-        
     }
 
     pub fn add_relic(&mut self, base: &'static BaseRelic, probability: &mut Probability) {
-        self.relics.add(base);
+        let relic = Relic::new(base);
+        self.relics.push_back(relic);
+        self.seen_relics.push_back(base);
 
         if base.activation == Activation::Immediate {
             match base.name.as_str() {
@@ -840,122 +855,6 @@ impl GameState {
 pub struct DeckCard {
     pub uuid: Uuid,
     pub base: &'static BaseCard,
-}
-
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub struct Relics {
-    pub relics: HashMap<Uuid, Relic>,
-    pub seen: HashSet<&'static BaseRelic>,
-    pub relic_whens: HashMap<When, Vector<Uuid>>,
-    pub relic_names: HashMap<String, Uuid>,
-}
-
-impl Relics {
-    pub fn new() -> Self {
-        Self {
-            relics: HashMap::new(),
-            relic_whens: HashMap::new(),
-            relic_names: HashMap::new(),
-            seen: HashSet::new(),
-        }
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = RelicReference> + '_ {
-        self.relics.iter().map(|(u, c)| RelicReference {
-            base: c.base,
-            relic: *u,
-        })
-    }
-
-    pub fn find_mut(&mut self, name: &str) -> Option<&mut Relic> {
-        if let Some(uuid) = self.relic_names.get(name) {
-            Some(self.relics.get_mut(uuid).unwrap())
-        } else {
-            None
-        }
-    }
-
-    pub fn find(&self, name: &str) -> Option<&Relic> {
-        if let Some(uuid) = self.relic_names.get(name) {
-            Some(self.relics.get(uuid).unwrap())
-        } else {
-            None
-        }
-    }
-
-    pub fn contains(&self, name: &str) -> bool {
-        self.relic_names.contains_key(name)
-    }
-
-    fn add(&mut self, base: &'static BaseRelic) -> RelicReference {
-        let relic = Relic::new(base);
-        self.relic_names
-            .insert(relic.base.name.to_string(), relic.uuid);
-        let whens = match &relic.base.activation {
-            Activation::Immediate | Activation::Custom => {
-                vec![]
-            }
-            Activation::Counter {
-                increment, reset, ..
-            } => {
-                if increment == reset {
-                    vec![increment]
-                } else {
-                    vec![increment, reset]
-                }
-            }
-            Activation::Uses { use_when, .. } => vec![use_when],
-            Activation::When(when) => vec![when],
-            Activation::WhenEnabled {
-                activated_at,
-                enabled_at,
-                disabled_at,
-            } => {
-                if activated_at == enabled_at {
-                    if activated_at == disabled_at {
-                        vec![activated_at]
-                    } else {
-                        vec![activated_at, disabled_at]
-                    }
-                } else if enabled_at == disabled_at {
-                    vec![activated_at, enabled_at]
-                } else {
-                    vec![activated_at, enabled_at, disabled_at]
-                }
-            }
-        };
-
-        for when in whens {
-            self.relic_whens
-                .entry(when.clone())
-                .or_insert_with(Vector::new)
-                .push_back(relic.uuid)
-        }
-
-        let reference = relic.reference();
-
-        self.relics.insert(relic.uuid, relic);
-
-        reference
-    }
-
-    pub fn remove(&mut self, name: &str) {
-        let uuid = self.relic_names.remove(name).unwrap();
-        self.relics.remove(&uuid);
-        for (_, uuids) in self.relic_whens.iter_mut() {
-            if let Some(index) = uuids.index_of(&uuid) {
-                uuids.remove(index);
-            }
-        }
-    }
-
-    pub fn get(&self, relic: RelicReference) -> &Relic {
-        self.relics.get(&relic.relic).unwrap()
-    }
-
-    pub fn get_mut(&mut self, relic: RelicReference) -> &mut Relic {
-        self.relics.get_mut(&relic.relic).unwrap()
-    }
 }
 
 pub fn random_potion(no_healing: bool, probability: &mut Probability) -> &'static BasePotion {

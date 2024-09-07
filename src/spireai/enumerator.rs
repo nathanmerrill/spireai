@@ -1,5 +1,5 @@
-use crate::models;
-use crate::models::core::{CardType, Class, DeckOperation, ChestType};
+use crate::models::core::{CardType, ChestType, Class, DeckOperation};
+use crate::models::{self, relics};
 use crate::state::core::{CardOffer, Reward, RewardState};
 use crate::state::event::EventScreenState;
 use crate::state::floor::{FloorState, RestScreenState};
@@ -60,12 +60,12 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
                             for card_ref in battle_state.hand() {
                                 if battle_state.card_playable(card_ref) {
                                     if battle_state.get_card(card_ref).targeted() {
-                                        choices.extend(battle_state.available_monsters().map(|monster| {
-                                            Choice::PlayCard {
+                                        choices.extend(battle_state.available_monsters().map(
+                                            |monster| Choice::PlayCard {
                                                 card: card_ref,
                                                 target: Some(monster),
-                                            }
-                                        }));
+                                            },
+                                        ));
                                     } else {
                                         choices.push(Choice::PlayCard {
                                             card: card_ref,
@@ -77,12 +77,12 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
 
                             for potion in battle_state.game_state.potions() {
                                 if potion.base.targeted {
-                                    choices.extend(battle_state.available_monsters().map(|monster| {
-                                        Choice::DrinkPotion {
+                                    choices.extend(battle_state.available_monsters().map(
+                                        |monster| Choice::DrinkPotion {
                                             slot: potion.index,
                                             target: Some(monster),
-                                        }
-                                    }));
+                                        },
+                                    ));
                                 } else {
                                     choices.push(Choice::DrinkPotion {
                                         slot: potion.index,
@@ -94,7 +94,7 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
                     }
                 }
             }
-        },
+        }
         FloorState::Menu => {
             choices.push(Choice::Start {
                 player_class: Class::Ironclad,
@@ -117,26 +117,22 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
             choices.extend(get_reward_choices(&state.rewards, &state.game_state))
         }
         FloorState::Chest(state) => match &state.rewards {
-            Some(rewards) => {
-                match state.chest {
-                    ChestType::Boss => {
-                        if rewards.rewards.is_empty() {
-                            choices.push(Choice::Proceed)
-                        } else {
-                            for (index, reward) in rewards.rewards.iter().enumerate() {
-                                match reward {
-                                    Reward::Relic(_) => {
-                                        choices.push(Choice::TakeReward(index))
-                                    }
-                                    _ => panic!("Unexpected non-relic reward in boss chest")
-                                }
+            Some(rewards) => match state.chest {
+                ChestType::Boss => {
+                    if rewards.rewards.is_empty() {
+                        choices.push(Choice::Proceed)
+                    } else {
+                        for (index, reward) in rewards.rewards.iter().enumerate() {
+                            match reward {
+                                Reward::Relic(_) => choices.push(Choice::TakeReward(index)),
+                                _ => panic!("Unexpected non-relic reward in boss chest"),
                             }
-                            choices.push(Choice::Skip)
                         }
+                        choices.push(Choice::Skip)
                     }
-                    _ => {
-                        choices.extend(get_reward_choices(rewards, &state.game_state));
-                    }
+                }
+                _ => {
+                    choices.extend(get_reward_choices(rewards, &state.game_state));
                 }
             },
             None => {
@@ -163,7 +159,7 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
         FloorState::Map(state) => {
             let map = &state.map;
             match &map.index {
-                None  => {
+                None => {
                     let bottom_nodes = map.nodes.iter().flatten().take_while(|a| a.y == 0);
                     choices.extend(bottom_nodes.map(|a| Choice::NavigateToNode(a.x)))
                 }
@@ -182,7 +178,8 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
                         choices.push(Choice::NavigateToNode(node.x + 1))
                     }
 
-                    if node.is_top() {// Boss
+                    if node.is_top() {
+                        // Boss
                         choices.push(Choice::NavigateToNode(0))
                     }
                 }
@@ -211,21 +208,21 @@ pub fn all_choices(state: &FloorState) -> Vec<Choice> {
             RestScreenState::Proceed => choices.push(Choice::Proceed),
             RestScreenState::IShouldRest => {
                 let mut rest_choices = vec![];
-                if !state.game_state.relics.contains("Coffee Dripper") {
+                if !state.game_state.has_relic(relics::COFFEE_DRIPPER) {
                     rest_choices.push(Choice::Rest)
                 }
-                if !state.game_state.relics.contains("Fusion Hammer") {
+                if !state.game_state.has_relic(relics::FUSION_HAMMER) {
                     rest_choices.push(Choice::Smith)
                 }
-                if let Some(relic) = state.game_state.relics.find("Girya") {
+                if let Some(relic) = state.game_state.get_relic(relics::GIRYA) {
                     if relic.vars.x < 3 {
                         rest_choices.push(Choice::Lift)
                     }
                 }
-                if state.game_state.relics.contains("Shovel") {
+                if state.game_state.has_relic(relics::SHOVEL) {
                     rest_choices.push(Choice::Dig)
                 }
-                if state.game_state.relics.contains("Peace Pipe") {
+                if state.game_state.has_relic(relics::PEACE_PIPE) {
                     rest_choices.push(Choice::Toke)
                 }
                 match &state.game_state.keys {
@@ -343,7 +340,7 @@ fn get_offer_choices(offers: &Vector<CardOffer>, state: &GameState) -> Vec<Choic
         choices.push(Choice::AddCardToDeck(card.base.name.to_string()))
     }
 
-    if state.relics.contains("Singing Bowl") {
+    if state.has_relic(relics::SINGING_BOWL) {
         choices.push(Choice::SingingBowl)
     }
 

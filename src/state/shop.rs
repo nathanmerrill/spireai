@@ -5,7 +5,7 @@ use crate::models::{
     self,
     core::{CardType, DeckOperation, Rarity},
     potions::BasePotion,
-    relics::BaseRelic,
+    relics::{self, BaseRelic},
 };
 
 use super::{
@@ -34,7 +34,7 @@ impl ShopState {
     pub fn spend_gold(&mut self, amount: u16) {
         self.game_state.gold -= amount;
 
-        if let Some(relic) = self.game_state.relics.find_mut("Maw Bank") {
+        if let Some(relic) = self.game_state.get_relic_mut(relics::MAW_BANK) {
             relic.enabled = false;
         }
     }
@@ -42,7 +42,7 @@ impl ShopState {
     pub fn buy_potion(&mut self, index: usize, probability: &mut Probability) {
         let (potion, cost) = self.potions.remove(index);
 
-        if self.game_state.relics.contains("The Courier") {
+        if self.game_state.has_relic(relics::THE_COURIER) {
             let new_potion = self.generate_potion(probability);
 
             self.potions.insert(index, new_potion)
@@ -55,7 +55,7 @@ impl ShopState {
     pub fn buy_card(&mut self, index: usize, probability: &mut Probability) {
         let (offer, cost) = self.cards.remove(index);
 
-        if self.game_state.relics.contains("The Courier") {
+        if self.game_state.has_relic(relics::THE_COURIER) {
             let new_offer = self.generate_card_offer(offer.base._type, false, None, probability);
 
             self.cards.insert(index, new_offer)
@@ -74,16 +74,16 @@ impl ShopState {
     }
 
     pub fn purge_cost(&self) -> u16 {
-        if self.game_state.relics.contains("Smiling Mask") {
+        if self.game_state.has_relic(relics::SMILING_MASK) {
             50
         } else {
-            let discount = if self.game_state.relics.contains("Membership Card") {
-                if self.game_state.relics.contains("The Courier") {
-                    0.6
+            let discount = if self.game_state.has_relic(relics::MEMBERSHIP_CARD) {
+                if self.game_state.has_relic(relics::THE_COURIER) {
+                    0.4
                 } else {
                     0.5
                 }
-            } else if self.game_state.relics.contains("The Courier") {
+            } else if self.game_state.has_relic(relics::THE_COURIER) {
                 0.8
             } else {
                 1.0
@@ -96,7 +96,7 @@ impl ShopState {
     pub fn buy_relic(&mut self, index: usize, probability: &mut Probability) {
         let (relic, cost) = self.relics.remove(index);
 
-        if self.game_state.relics.contains("The Courier") {
+        if self.game_state.has_relic(relics::THE_COURIER) {
             let new_relic = self.generate_relic(false, probability);
 
             self.relics.insert(index, new_relic)
@@ -198,10 +198,10 @@ impl ShopState {
 
     fn get_discount(&self) -> f64 {
         let mut discount = 1.0;
-        if self.game_state.relics.contains("The Courier") {
+        if self.game_state.has_relic(relics::THE_COURIER) {
             discount = 0.8;
         }
-        if self.game_state.relics.contains("Membership Card") {
+        if self.game_state.has_relic(relics::MEMBERSHIP_CARD) {
             discount /= 2.0;
         }
         discount

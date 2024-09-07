@@ -169,11 +169,7 @@ impl Monster {
     }
 
     pub fn buffs(&self) -> impl Iterator<Item = BuffReference> + '_ {
-        self.creature.buffs.values().map(move |b| BuffReference {
-            base: b.base,
-            creature: self.creature_ref(),
-            buff: b.uuid,
-        })
+        self.creature.buffs()
     }
 }
 

@@ -49,5 +49,5 @@ pub enum Choice {
     WishStrength,
     WishGold,
     StanceCalm,
-    StanceWrath
+    StanceWrath,
 }

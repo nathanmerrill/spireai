@@ -3,7 +3,7 @@ use ron::de::from_reader;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
-use super::core::{is_default, Effect, Class, Rarity};
+use super::core::{is_default, Class, Effect, Rarity};
 
 #[derive(Eq, Clone, Serialize, Deserialize)]
 pub struct BasePotion {

@@ -50,16 +50,27 @@ impl MapState {
         }
     }
 
-    pub fn parents(&self, node: MapNode) -> (Option<MapNode>, Option<MapNode>, Option<MapNode>)
-    {
+    pub fn parents(&self, node: MapNode) -> (Option<MapNode>, Option<MapNode>, Option<MapNode>) {
         let index = node.index();
         if index < 7 {
             (None, None, None)
         } else {
             (
-                if node.x > 0 { self.nodes[index-8].and_then(|f| if f.right { Some(f) } else { None})} else {None},
-                if node.x > 0 { self.nodes[index-7].and_then(|f| if f.up { Some(f) } else { None})} else {None},
-                if node.x > 0 { self.nodes[index-6].and_then(|f| if f.left { Some(f) } else { None})} else {None}
+                if node.x > 0 {
+                    self.nodes[index - 8].and_then(|f| if f.right { Some(f) } else { None })
+                } else {
+                    None
+                },
+                if node.x > 0 {
+                    self.nodes[index - 7].and_then(|f| if f.up { Some(f) } else { None })
+                } else {
+                    None
+                },
+                if node.x > 0 {
+                    self.nodes[index - 6].and_then(|f| if f.left { Some(f) } else { None })
+                } else {
+                    None
+                },
             )
         }
     }
@@ -70,38 +81,45 @@ impl MapState {
 
     pub fn generate_act4(&mut self) {
         self.nodes = [None; 105];
-        self.nodes[0] = Some(MapNode { 
-            y: 0, 
-            x: 0, 
-            left: false, 
-            up: true, 
-            right: false, 
-            icon: MapNodeIcon::Campfire 
+        self.nodes[0] = Some(MapNode {
+            y: 0,
+            x: 0,
+            left: false,
+            up: true,
+            right: false,
+            icon: MapNodeIcon::Campfire,
         });
-        self.nodes[7] = Some(MapNode { 
-            y: 1, 
-            x: 0, 
-            left: false, 
-            up: true, 
-            right: false, 
-            icon: MapNodeIcon::Shop
+        self.nodes[7] = Some(MapNode {
+            y: 1,
+            x: 0,
+            left: false,
+            up: true,
+            right: false,
+            icon: MapNodeIcon::Shop,
         });
-        self.nodes[14] = Some(MapNode { 
-            y: 2, 
-            x: 0, 
-            left: false, 
-            up: false, 
-            right: false, 
-            icon: MapNodeIcon::Elite
+        self.nodes[14] = Some(MapNode {
+            y: 2,
+            x: 0,
+            left: false,
+            up: false,
+            right: false,
+            icon: MapNodeIcon::Elite,
         });
     }
 
-    pub fn generate(&mut self, more_elites: bool, burning_elite: bool, probability: &mut Probability) {
+    pub fn generate(
+        &mut self,
+        more_elites: bool,
+        burning_elite: bool,
+        probability: &mut Probability,
+    ) {
         let mut grid: [Option<MapNode>; 105] = [None; 105];
         let mut first_x = 0;
-        for path_num in 0 .. 6 {// Create 6 paths to the top
+        for path_num in 0..6 {
+            // Create 6 paths to the top
 
-            let mut next_x = if path_num != 1 { // Ensure that the second path does not start on the same node
+            let mut next_x = if path_num != 1 {
+                // Ensure that the second path does not start on the same node
                 let next_x = probability.range(7) as u8;
                 if path_num == 0 {
                     first_x = next_x;
@@ -116,11 +134,11 @@ impl MapState {
                 }
             };
 
-            for y in 0 .. 15 {
+            for y in 0..15 {
                 let index = (next_x + (y * 7)) as usize;
-                
-                let can_left = next_x != 0 && grid[index-1].map_or(true, |node| !node.right);
-                let can_right = next_x != 6 && grid[index+1].map_or(true, |node| !node.left);
+
+                let can_left = next_x != 0 && grid[index - 1].map_or(true, |node| !node.right);
+                let can_right = next_x != 6 && grid[index + 1].map_or(true, |node| !node.left);
 
                 let node = grid[index].get_or_insert(MapNode {
                     x: next_x,
@@ -128,9 +146,8 @@ impl MapState {
                     left: false,
                     up: false,
                     right: false,
-                    icon: MapNodeIcon::BurningElite // Using burning elite to indicate "unselected"
+                    icon: MapNodeIcon::BurningElite, // Using burning elite to indicate "unselected"
                 });
-
 
                 let mut directions = vec![Direction::Up];
                 if can_left {
@@ -139,7 +156,7 @@ impl MapState {
                 if can_right {
                     directions.push(Direction::Right);
                 }
-    
+
                 next_x = match probability.choose(directions).unwrap() {
                     Direction::Left => {
                         node.left = true;
@@ -163,15 +180,15 @@ impl MapState {
                 8 => node.icon = MapNodeIcon::Chest,
                 0 => node.icon = MapNodeIcon::Monster,
                 _ => count += 1,
-            }            
+            }
         }
 
         let shops = ((count as f64) * 0.05).round() as u8;
         let rests = ((count as f64) * 0.12).round() as u8;
         let events = ((count as f64) * 0.22).round() as u8;
-        let elites = ((count as f64) * (if more_elites {0.128} else {0.08})).round() as u8;
+        let elites = ((count as f64) * (if more_elites { 0.128 } else { 0.08 })).round() as u8;
         let monsters = count - shops - rests - events - elites;
-        
+
         let mut all_options: HashMap<MapNodeIcon, u8> = HashMap::new();
         all_options.insert(MapNodeIcon::Shop, shops);
         all_options.insert(MapNodeIcon::Campfire, rests);
@@ -183,7 +200,7 @@ impl MapState {
             if let Some(node) = grid[index] {
                 let mut options = all_options.clone();
                 match node.y {
-                    0|8|14 => continue,
+                    0 | 8 | 14 => continue,
                     _ => {
                         let (left, down, right) = self.parents(node);
 
@@ -208,7 +225,7 @@ impl MapState {
                             }
 
                             // We don't check to the right, because that node isn't generated yet
-                            
+
                             match down_parent.icon {
                                 MapNodeIcon::Question | MapNodeIcon::Monster => {}
                                 _ => {
@@ -218,7 +235,6 @@ impl MapState {
                         }
 
                         if let Some(right_parent) = right {
-                            
                             match right_parent.icon {
                                 MapNodeIcon::Question | MapNodeIcon::Monster => {}
                                 _ => {
@@ -242,7 +258,6 @@ impl MapState {
 
                 grid[index].as_mut().unwrap().icon = icon;
                 all_options[&icon] -= 1;
-
             }
         }
 
@@ -253,22 +268,24 @@ impl MapState {
         }
 
         if burning_elite {
-            let choices = grid.iter().flatten().filter(|a| a.icon == MapNodeIcon::Elite).collect();
+            let choices = grid
+                .iter()
+                .flatten()
+                .filter(|a| a.icon == MapNodeIcon::Elite)
+                .collect();
             let choice = probability.choose(choices).unwrap();
             grid[choice.index()].unwrap().icon = MapNodeIcon::BurningElite;
         }
 
         self.nodes = grid;
-        
     }
 }
-
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 enum Direction {
     Up,
     Left,
-    Right
+    Right,
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
@@ -301,5 +318,3 @@ pub enum MapNodeIcon {
     Shop,
     Chest,
 }
-
-

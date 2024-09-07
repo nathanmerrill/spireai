@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use ::std::hash::{Hash, Hasher};
 use std::{collections::HashMap, error::Error, fs::File, path::Path};
 
-use super::core::{is_default, Amount, Effect, CardType, Class, Condition, Rarity};
+use super::core::{is_default, Amount, CardType, Class, Condition, Effect, Rarity};
 
 #[derive(Eq, Clone, Deserialize, Serialize)]
 pub struct BaseCard {
